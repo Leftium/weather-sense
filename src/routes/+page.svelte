@@ -21,20 +21,30 @@
 
 	onMount(async () => {
 		await import('leaflet.locatecontrol');
+		const { GestureHandling } = await import('leaflet-gesture-handling');
 		const L = await import('leaflet');
 
 		const lat = nsWeatherData.coords?.latitude || 0;
 		const lon = nsWeatherData.coords?.longitude || 0;
+		const accuracy = nsWeatherData.coords?.accuracy || 0;
 
-		let map = (leafletRemover = L.map(mapElement).setView([lat, lon], 13));
+		L.Map.addInitHook('addHandler', 'gestureHandling', GestureHandling);
+
+		let map = (leafletRemover = new L.Map(mapElement, {
+			center: [lat, lon],
+			zoom: 13,
+			gestureHandling: true
+		}));
 
 		L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 			attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 		}).addTo(map);
 
+		const accuracyCircle = L.circle([lat, lon], { radius: accuracy }).addTo(map);
+
 		L.control.locate().addTo(map);
 
-		function onLocationFound(e) {
+		map.on('locationfound', function onLocationFound(e) {
 			var radius = e.accuracy;
 
 			L.marker(e.latlng)
@@ -42,17 +52,19 @@
 				.bindPopup('You are within ' + radius + ' meters from this point')
 				.openPopup();
 
-			L.circle(e.latlng, radius).addTo(map);
+			accuracyCircle.setLatLng(e.latlng).setRadius(radius);
 
 			gg(e);
 
 			emit('weatherdata_requestedSetLocation', {
 				source: 'geolocation',
-				coords: e
+				coords: {
+					latitude: e.latlng.lat,
+					longitude: e.latlng.lng,
+					accuracy: e.accuracy
+				}
 			});
-		}
-
-		map.on('locationfound', onLocationFound);
+		});
 	});
 
 	onDestroy(() => {

@@ -7,7 +7,7 @@ export const load = async (loadEvent) => {
 	let coords = {
 		latitude: 37.5087,
 		longitude: 126.7219,
-		accuracy: 20_000_000
+		accuracy: 1_000
 	};
 
 	const city = headers.get('x-vercel-ip-city');

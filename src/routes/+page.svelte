@@ -1,5 +1,6 @@
 <script lang="ts">
 	import 'iconify-icon';
+	import { gg } from '$lib/gg.js';
 
 	let { data } = $props();
 
@@ -23,11 +24,12 @@
 				source: 'device geolocation'
 			};
 
-			console.log('Your current position is:');
-			console.log(`Latitude : ${crd.latitude}`);
-			console.log(`Longitude: ${crd.longitude}`);
-			console.log(`More or less ${crd.accuracy} meters.`);
-			console.log(location);
+			gg('Your current position is:');
+			gg(`Latitude : ${crd.latitude}`);
+			gg(`Longitude: ${crd.longitude}`);
+			gg(`More or less ${crd.accuracy} meters.`);
+			gg(location);
+			gg(pos);
 		}
 
 		function error(err: GeolocationPositionError) {

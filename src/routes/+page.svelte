@@ -1,12 +1,17 @@
 <script lang="ts">
 	import 'iconify-icon';
-	import { gg } from '$lib/gg.js';
+	import { type WeatherDataEvents, makeNsWeatherData } from '$lib/ns-weather-data.svelte.js';
+	import { getEmitter } from '$lib/emitter.js';
 
 	let { data } = $props();
 
-	let location: Record<string, any> = $state({
-		latitude: data.location.latitude,
-		longitude: data.location.longitude
+	const nsWeatherData = makeNsWeatherData();
+	const { emit } = getEmitter<WeatherDataEvents>(import.meta);
+
+	emit('weatherdata_requestedSetLocation', {
+		source: data.source,
+		name: data.name,
+		coords: data.coords
 	});
 
 	function onGeolocate() {
@@ -15,27 +20,13 @@
 		};
 
 		function success(pos: GeolocationPosition) {
-			const crd = pos.coords;
-
-			location = {
-				latitude: crd.latitude,
-				longitude: crd.longitude,
-				accuracy: crd.accuracy,
-				source: 'device geolocation'
-			};
-
-			gg('Your current position is:');
-			gg(`Latitude : ${crd.latitude}`);
-			gg(`Longitude: ${crd.longitude}`);
-			gg(`More or less ${crd.accuracy} meters.`);
-			gg(location);
-			gg(pos);
+			emit('weatherdata_requestedSetLocation', {
+				source: 'geolocation',
+				coords: pos.coords
+			});
 		}
 
 		function error(err: GeolocationPositionError) {
-			location = {
-				error: err
-			};
 			console.warn(`ERROR(${err.code}): ${err.message}`);
 		}
 
@@ -45,14 +36,14 @@
 
 <div class="container">
 	<div class="scroll">
+		<pre>nsWeatherData = {JSON.stringify(nsWeatherData, null, 4)}</pre>
 		<pre>data = {JSON.stringify(data, null, 4)}</pre>
-		<pre>location = {JSON.stringify(location, null, 4)}</pre>
 	</div>
 
 	<div>
 		<div role="group">
 			<button onclick={onGeolocate}><iconify-icon icon="gis:location-arrow"></iconify-icon></button>
-			<input type="text" value={`${location.latitude}, ${location.longitude}`} />
+			<input type="text" value={`${nsWeatherData.name}`} />
 			<button>Search</button>
 		</div>
 	</div>

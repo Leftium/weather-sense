@@ -1,2 +1,6 @@
-@import '@picocss/pico/scss/pico'; /* To import only what you need from Pico [check the documentaion](https://picocss.com/docs/customization.html) */
+@use '@picocss/pico/scss/pico' with (
+	$parent-selector: '.pico'
+);
+
+@import 'leaflet/dist/leaflet.css';
 /* Write your global styles here, in SCSS syntax. Variables and mixins from the src/variables.scss file are available here without importing */

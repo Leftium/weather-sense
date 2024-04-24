@@ -39,6 +39,7 @@
 	}
 
 	onMount(async () => {
+		await import('leaflet.locatecontrol');
 		const L = await import('leaflet');
 
 		const lat = nsWeatherData.coords?.latitude || 0;
@@ -49,6 +50,8 @@
 		L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 			attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 		}).addTo(map);
+
+		L.control.locate().addTo(map);
 	});
 
 	onDestroy(() => {

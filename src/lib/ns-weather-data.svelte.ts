@@ -24,7 +24,7 @@ export function makeNsWeatherData() {
 	let coords: Coordinates | null = $state(null);
 	let name: string | null = $state(null);
 
-	on('weatherdata_requestedSetLocation', function (params) {
+	on('weatherdata_requestedSetLocation', async function (params) {
 		gg('weatherdata_requestedSetLocation', params);
 
 		source = params.source;
@@ -44,6 +44,13 @@ export function makeNsWeatherData() {
 		} else if (params.coords) {
 			name = '...';
 			// name = REVERSE_GEOCODE(params.coords)
+			const resp = await fetch(
+				`/api/geo/reverse?lat=${params.coords.latitude}&lon=${params.coords.longitude}`
+			);
+			const json = await resp.json();
+			const result = json[0];
+
+			name = `${result.name}, ${result.country}`;
 		}
 
 		gg({ name, coords, params });

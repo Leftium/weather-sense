@@ -19,25 +19,6 @@
 		coords: data.coords
 	});
 
-	function onGeolocate() {
-		const options = {
-			enableHighAccuracy: true
-		};
-
-		function success(pos: GeolocationPosition) {
-			emit('weatherdata_requestedSetLocation', {
-				source: 'geolocation',
-				coords: pos.coords
-			});
-		}
-
-		function error(err: GeolocationPositionError) {
-			console.warn(`ERROR(${err.code}): ${err.message}`);
-		}
-
-		navigator.geolocation.getCurrentPosition(success, error, options);
-	}
-
 	onMount(async () => {
 		await import('leaflet.locatecontrol');
 		const L = await import('leaflet');
@@ -52,6 +33,26 @@
 		}).addTo(map);
 
 		L.control.locate().addTo(map);
+
+		function onLocationFound(e) {
+			var radius = e.accuracy;
+
+			L.marker(e.latlng)
+				.addTo(map)
+				.bindPopup('You are within ' + radius + ' meters from this point')
+				.openPopup();
+
+			L.circle(e.latlng, radius).addTo(map);
+
+			gg(e);
+
+			emit('weatherdata_requestedSetLocation', {
+				source: 'geolocation',
+				coords: e
+			});
+		}
+
+		map.on('locationfound', onLocationFound);
 	});
 
 	onDestroy(() => {
@@ -74,7 +75,6 @@
 
 	<div class="pico">
 		<div role="group">
-			<button onclick={onGeolocate}><iconify-icon icon="gis:location-arrow"></iconify-icon></button>
 			<input type="text" value={`${nsWeatherData.name}`} />
 			<button>Search</button>
 		</div>

@@ -52,7 +52,7 @@
 
 		new L.Control.Zoom({ position: 'topleft' }).addTo(map);
 		const locateControl = L.control
-			.locate({ position: 'bottomleft', initialZoomLevel: 10 })
+			.locate({ position: 'bottomleft', initialZoomLevel: 11 })
 			.addTo(map);
 
 		map.on('locationfound', function onLocationFound(e) {
@@ -107,7 +107,7 @@
 
 <style>
 	.map {
-		height: 400px;
+		height: 300px;
 	}
 
 	.container {

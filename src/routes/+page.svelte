@@ -32,7 +32,7 @@
 
 		let map = (leafletRemover = new L.Map(mapElement, {
 			center: [lat, lon],
-			zoom: 13,
+			zoom: 10,
 			gestureHandling: true
 		}));
 
@@ -42,7 +42,7 @@
 
 		const accuracyCircle = L.circle([lat, lon], { radius: accuracy }).addTo(map);
 
-		L.control.locate().addTo(map);
+		L.control.locate({ initialZoomLevel: 10 }).addTo(map);
 
 		map.on('locationfound', function onLocationFound(e) {
 			var radius = e.accuracy;

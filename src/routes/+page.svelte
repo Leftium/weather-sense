@@ -21,6 +21,7 @@
 
 	onMount(async () => {
 		await import('leaflet.locatecontrol');
+		await import('leaflet.fullscreen');
 		const { GestureHandling } = await import('leaflet-gesture-handling');
 		const L = await import('leaflet');
 
@@ -33,7 +34,13 @@
 		let map = (leafletRemover = new L.Map(mapElement, {
 			center: [lat, lon],
 			zoom: 10,
-			gestureHandling: true
+			zoomControl: false,
+			gestureHandling: true,
+			fullscreenControl: true,
+			forceSeparateButton: true,
+			fullscreenControlOptions: {
+				position: 'topright'
+			}
 		}));
 
 		L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -42,7 +49,8 @@
 
 		const accuracyCircle = L.circle([lat, lon], { radius: accuracy }).addTo(map);
 
-		L.control.locate({ initialZoomLevel: 10 }).addTo(map);
+		new L.Control.Zoom({ position: 'topleft' }).addTo(map);
+		L.control.locate({ position: 'bottomleft', initialZoomLevel: 10 }).addTo(map);
 
 		map.on('locationfound', function onLocationFound(e) {
 			var radius = e.accuracy;

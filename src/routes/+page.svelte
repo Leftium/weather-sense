@@ -50,17 +50,14 @@
 		const accuracyCircle = L.circle([lat, lon], { radius: accuracy }).addTo(map);
 
 		new L.Control.Zoom({ position: 'topleft' }).addTo(map);
-		L.control.locate({ position: 'bottomleft', initialZoomLevel: 10 }).addTo(map);
+		const locateControl = L.control
+			.locate({ position: 'bottomleft', initialZoomLevel: 10 })
+			.addTo(map);
 
 		map.on('locationfound', function onLocationFound(e) {
-			var radius = e.accuracy;
+			accuracyCircle.setLatLng(e.latlng).setRadius(e.accuracy);
 
-			L.marker(e.latlng)
-				.addTo(map)
-				.bindPopup('You are within ' + radius + ' meters from this point')
-				.openPopup();
-
-			accuracyCircle.setLatLng(e.latlng).setRadius(radius);
+			// locateControl.stop();
 
 			gg(e);
 

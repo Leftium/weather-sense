@@ -100,7 +100,7 @@
 
 <style>
 	.map {
-		height: 600px;
+		height: 400px;
 	}
 
 	.container {

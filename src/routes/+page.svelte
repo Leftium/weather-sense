@@ -1,5 +1,6 @@
 <script lang="ts">
 	import 'iconify-icon';
+	import haversine from 'haversine-distance';
 	import { onMount, onDestroy } from 'svelte';
 	import { type WeatherDataEvents, makeNsWeatherData } from '$lib/ns-weather-data.svelte.js';
 	import { gg } from '$lib/gg.js';
@@ -61,14 +62,20 @@
 
 			gg(e);
 
-			emit('weatherdata_requestedSetLocation', {
-				source: 'geolocation',
-				coords: {
-					latitude: e.latlng.lat,
-					longitude: e.latlng.lng,
-					accuracy: e.accuracy
-				}
-			});
+			const distance = nsWeatherData.coords
+				? haversine(nsWeatherData.coords, e.latlng)
+				: Number.MAX_VALUE;
+			gg({ distance });
+			if (distance > 1000) {
+				emit('weatherdata_requestedSetLocation', {
+					source: 'geolocation',
+					coords: {
+						latitude: e.latlng.lat,
+						longitude: e.latlng.lng,
+						accuracy: e.accuracy
+					}
+				});
+			}
 		});
 	});
 

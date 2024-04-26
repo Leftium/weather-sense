@@ -1,13 +1,18 @@
 <script lang="ts">
 	import 'iconify-icon';
 	import haversine from 'haversine-distance';
+
+	import L from 'leaflet';
+	import 'leaflet.locatecontrol';
+	import 'leaflet.fullscreen';
+	import { GestureHandling } from 'leaflet-gesture-handling';
+
 	import { onMount, onDestroy } from 'svelte';
 	import { type WeatherDataEvents, makeNsWeatherData } from '$lib/ns-weather-data.svelte.js';
 	import { gg } from '$lib/gg.js';
 	import { getEmitter } from '$lib/emitter.js';
 
 	let mapElement: HTMLDivElement;
-	let leafletRemover: { remove: () => void };
 
 	let { data } = $props();
 
@@ -22,19 +27,14 @@
 		coords: data.coords
 	});
 
-	onMount(async () => {
-		await import('leaflet.locatecontrol');
-		await import('leaflet.fullscreen');
-		const { GestureHandling } = await import('leaflet-gesture-handling');
-		const L = await import('leaflet');
-
+	onMount(() => {
 		const lat = nsWeatherData.coords?.latitude || 0;
 		const lon = nsWeatherData.coords?.longitude || 0;
 		const accuracy = nsWeatherData.coords?.accuracy || 0;
 
 		L.Map.addInitHook('addHandler', 'gestureHandling', GestureHandling);
 
-		let map = (leafletRemover = new L.Map(mapElement, {
+		let map = new L.Map(mapElement, {
 			center: [lat, lon],
 			zoom: 6,
 			zoomControl: false,
@@ -44,7 +44,7 @@
 			fullscreenControlOptions: {
 				position: 'topright'
 			}
-		}));
+		});
 
 		L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 			attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
@@ -53,6 +53,7 @@
 		const accuracyCircle = L.circle([lat, lon], { radius: accuracy }).addTo(map);
 
 		new L.Control.Zoom({ position: 'topleft' }).addTo(map);
+
 		const locateControl = L.control
 			.locate({ position: 'bottomleft', initialZoomLevel: 11 })
 			.addTo(map);
@@ -175,13 +176,13 @@
 		}
 
 		requestAnimationFrame(step);
-	});
 
-	onDestroy(() => {
-		if (leafletRemover) {
-			gg('Unloading Leaflet map.');
-			leafletRemover.remove();
-		}
+		return () => {
+			if (map) {
+				gg('Unloading Leaflet map.');
+				map.remove();
+			}
+		};
 	});
 </script>
 

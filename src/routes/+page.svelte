@@ -2,10 +2,10 @@
 	import 'iconify-icon';
 	import haversine from 'haversine-distance';
 
-	import L from 'leaflet';
-	import 'leaflet.locatecontrol';
+	import { Map, TileLayer, Circle, Control } from 'leaflet';
+	import Locate from 'leaflet.locatecontrol';
+	import GestureHandling from 'leaflet-gesture-handling';
 	import 'leaflet.fullscreen';
-	import { GestureHandling } from 'leaflet-gesture-handling';
 
 	import { onMount, onDestroy } from 'svelte';
 	import { type WeatherDataEvents, makeNsWeatherData } from '$lib/ns-weather-data.svelte.js';
@@ -32,9 +32,9 @@
 		const lon = nsWeatherData.coords?.longitude || 0;
 		const accuracy = nsWeatherData.coords?.accuracy || 0;
 
-		L.Map.addInitHook('addHandler', 'gestureHandling', GestureHandling);
+		Map.addInitHook('addHandler', 'gestureHandling', GestureHandling);
 
-		let map = new L.Map(mapElement, {
+		let map = new Map(mapElement, {
 			center: [lat, lon],
 			zoom: 6,
 			zoomControl: false,
@@ -46,17 +46,18 @@
 			}
 		});
 
-		L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+		new TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 			attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 		}).addTo(map);
 
-		const accuracyCircle = L.circle([lat, lon], { radius: accuracy }).addTo(map);
+		const accuracyCircle = new Circle([lat, lon], { radius: accuracy }).addTo(map);
 
-		new L.Control.Zoom({ position: 'topleft' }).addTo(map);
+		new Control.Zoom({ position: 'topleft' }).addTo(map);
 
-		const locateControl = L.control
-			.locate({ position: 'bottomleft', initialZoomLevel: 11 })
-			.addTo(map);
+		const locateControl = new Locate({
+			position: 'bottomleft',
+			initialZoomLevel: 11
+		}).addTo(map);
 
 		map.on('locationfound', function onLocationFound(e) {
 			accuracyCircle.setLatLng(e.latlng).setRadius(e.accuracy);
@@ -127,7 +128,7 @@
 
 				urlTemplates.push(urlTemplate);
 
-				const source = new L.TileLayer(urlTemplate, {
+				const source = new TileLayer(urlTemplate, {
 					tileSize: 256,
 					opacity: 0.01,
 					zIndex: frame.time

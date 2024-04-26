@@ -9,6 +9,8 @@ export type WeatherDataEvents = {
 		coords?: Coordinates;
 		name?: string;
 	};
+
+	weatherdata_updatedRadar: undefined;
 };
 
 type Coordinates = {
@@ -17,12 +19,43 @@ type Coordinates = {
 	accuracy: number;
 };
 
-const { on } = getEmitter<WeatherDataEvents>(import.meta);
+type RadarFrame = {
+	time: number;
+	path: string;
+};
+
+type Radar = {
+	generated: number;
+	host: string;
+	frames: RadarFrame[];
+};
+
+async function fetchRainviewerData() {
+	// Load all the available map frames from RainViewer API.
+	const fetched = await fetch('https://api.rainviewer.com/public/weather-maps.json');
+	const rainviewerData = await fetched.json();
+
+	const frames = (rainviewerData.radar.past || []).concat(rainviewerData.radar.nowcast || []);
+
+	return {
+		generated: rainviewerData.generated,
+		host: rainviewerData.host,
+		frames
+	};
+}
+
+const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 
 export function makeNsWeatherData() {
 	let source: string = $state('???');
 	let coords: Coordinates | null = $state(null);
 	let name: string | null = $state(null);
+
+	let radar: Radar = $state({ generated: 0, host: '', frames: [] });
+	fetchRainviewerData().then((data) => {
+		radar = data;
+		emit('weatherdata_updatedRadar');
+	});
 
 	on('weatherdata_requestedSetLocation', async function (params) {
 		gg('weatherdata_requestedSetLocation', params);
@@ -67,6 +100,10 @@ export function makeNsWeatherData() {
 
 		get name() {
 			return name;
+		},
+
+		get radar() {
+			return radar;
 		}
 	};
 

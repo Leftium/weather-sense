@@ -19,7 +19,7 @@ type Coordinates = {
 	accuracy: number;
 };
 
-type RadarFrame = {
+export type RadarFrame = {
 	time: number;
 	path: string;
 };

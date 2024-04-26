@@ -14,6 +14,8 @@
 	const nsWeatherData = makeNsWeatherData();
 	const { emit } = getEmitter<WeatherDataEvents>(import.meta);
 
+	let mapFrameIndex = $state(0);
+
 	emit('weatherdata_requestedSetLocation', {
 		source: data.source,
 		name: data.name,
@@ -34,7 +36,7 @@
 
 		let map = (leafletRemover = new L.Map(mapElement, {
 			center: [lat, lon],
-			zoom: 10,
+			zoom: 6,
 			zoomControl: false,
 			gestureHandling: true,
 			fullscreenControl: true,
@@ -77,6 +79,102 @@
 				});
 			}
 		});
+
+		///---------------------------------------------------------------------------------------///
+
+		gg('rainviewerData', $state.snapshot(data.rainviewerData));
+
+		let radarLayers = $state({});
+		let mapFrames = $state([]);
+		let urlTemplates: string[] = [];
+
+		const rvOption = {
+			tileSize: 512, // can be 256 or 512.
+			colorScheme: 4, // from 0 to 8. Check the https://rainviewer.com/api/color-schemes.html for additional information
+			smoothData: 1, // 0 - not smooth, 1 - smooth
+			snowColors: 1 // 0 - do not show snow colors, 1 - show snow colors
+		};
+
+		// Initialize internal data from the API response and options.
+		function initialize(rvData) {
+			// remove all already added tiled layers
+			for (const i in radarLayers) {
+				map.removeLayer(radarLayers[i]);
+			}
+			mapFrames = [];
+			radarLayers = {};
+
+			if (!rvData) {
+				return;
+			}
+
+			if (rvData?.radar.past) {
+				mapFrames = rvData.radar.past;
+				if (rvData?.radar.nowcast) {
+					mapFrames = mapFrames.concat(rvData.radar.nowcast);
+				}
+			}
+		}
+		// Animation functions
+		function addLayer(frame) {
+			if (!radarLayers[frame.path]) {
+				const colorScheme = rvOption.colorScheme;
+				const smooth = rvOption.smoothData;
+				const snow = rvOption.snowColors;
+
+				const urlTemplate = `${data.rainviewerData.host}/${frame.path}/${rvOption.tileSize}/{z}/{x}/{y}/${colorScheme}/${smooth}_${snow}.png`;
+
+				urlTemplates.push(urlTemplate);
+
+				const source = new L.TileLayer(urlTemplate, {
+					tileSize: 256,
+					opacity: 0.01,
+					zIndex: frame.time
+				});
+
+				// Track layer loading state to not display the overlay
+				// before it will completelly loads
+				//source.on('loading', startLoadingTile);
+				//source.on('load', finishLoadingTile);
+				//source.on('remove', finishLoadingTile);
+
+				radarLayers[frame.path] = source;
+			}
+			if (!map.hasLayer(radarLayers[frame.path])) {
+				map.addLayer(radarLayers[frame.path]);
+			}
+		}
+
+		initialize(data.rainviewerData);
+
+		mapFrames.forEach((frame, index) => {
+			addLayer(frame);
+		});
+
+		gg('mapFrames', $state.snapshot(mapFrames));
+		gg('urlTemplates', urlTemplates);
+		gg('generated', new Date(data.rainviewerData.generated * 1000));
+		mapFrames.forEach((frame) => {
+			gg(new Date(frame.time * 1000));
+		});
+
+		let startTime;
+		function step(timeStamp) {
+			if (!startTime) {
+				startTime = timeStamp;
+			}
+
+			const deltaTime = timeStamp - startTime;
+
+			mapFrameIndex = Math.floor(deltaTime / 100) % mapFrames.length;
+
+			Object.values(radarLayers).forEach((layer) => layer?.setOpacity(0));
+			radarLayers[mapFrames[mapFrameIndex].path]?.setOpacity(100);
+
+			requestAnimationFrame(step);
+		}
+
+		requestAnimationFrame(step);
 	});
 
 	onDestroy(() => {
@@ -92,6 +190,7 @@
 		<div class="map" bind:this={mapElement}></div>
 
 		<div class="pico">
+			{mapFrameIndex}
 			<pre>nsWeatherData = {JSON.stringify(nsWeatherData, null, 4)}</pre>
 			<pre>data = {JSON.stringify(data, null, 4)}</pre>
 		</div>
@@ -107,7 +206,7 @@
 
 <style>
 	.map {
-		height: 300px;
+		height: 500px;
 	}
 
 	.container {

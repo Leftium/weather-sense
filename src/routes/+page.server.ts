@@ -25,10 +25,15 @@ export const load = async (loadEvent) => {
 		};
 	}
 
+	// Load all the available map frames from RainViewer API.
+	const fetched = await fetch('https://api.rainviewer.com/public/weather-maps.json');
+	const rainviewerData = await fetched.json();
+
 	return {
 		ipAddress,
 		source,
 		name,
-		coords
+		coords,
+		rainviewerData
 	};
 };

@@ -2,7 +2,7 @@
 	import 'iconify-icon';
 	import haversine from 'haversine-distance';
 
-	import { Map, TileLayer, Circle, Control } from 'leaflet';
+	import { Map, TileLayer, Circle, Control, DomUtil, DomEvent } from 'leaflet';
 	import Locate from 'leaflet.locatecontrol';
 	import GestureHandling from 'leaflet-gesture-handling';
 	import 'leaflet.fullscreen';
@@ -146,6 +146,29 @@
 
 		///---------------------------------------------------------------------------------------///
 
+		// Insert div.leaflet-footer element into leaflet map.
+		// Add to list of Leaflet control corners as 'footer'.
+		map._controlCorners.footer = DomUtil.create('div', 'leaflet-footer', map._container);
+
+		// Define a simple control into newly created footer control corner:
+		const RadarControl = Control.extend({
+			options: {
+				position: 'footer'
+			},
+			onAdd: function () {
+				const container = DomUtil.create('div', 'description');
+				DomEvent.disableClickPropagation(container);
+				container.insertAdjacentHTML('beforeend', 'FOOTER');
+
+				return container;
+			}
+		});
+
+		// Add simple control defined above to map:
+		new RadarControl().addTo(map);
+
+		///---------------------------------------------------------------------------------------///
+
 		let prevTimestamp = 0;
 		function step(timeStamp: number) {
 			if (nsWeatherData.radar.generated) {
@@ -168,7 +191,7 @@
 			requestAnimationFrame(step);
 		}
 
-		requestAnimationFrame(step);
+		//requestAnimationFrame(step);
 
 		return () => {
 			if (map) {
@@ -207,6 +230,29 @@
 </div>
 
 <style>
+	:global(.leaflet-footer) {
+		/* Stick to bottom of map: */
+		position: absolute;
+		left: 0;
+		right: 0;
+		bottom: 0;
+
+		/* Display above map layers: */
+		z-index: 1000;
+
+		pointer-events: none;
+
+		background-color: whitesmoke;
+		height: 41px;
+
+		padding: 3px 10px;
+	}
+
+	/* Raise bottom control corners above footer: */
+	:global(.leaflet-bottom) {
+		bottom: 42px;
+	}
+
 	.map {
 		height: 500px;
 	}

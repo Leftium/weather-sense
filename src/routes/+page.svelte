@@ -58,8 +58,15 @@
 			}
 		});
 
+		/*
 		new TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 			attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+		}).addTo(map);
+        */
+
+		new TileLayer('https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg', {
+			attribution:
+				'<a target="_blank" href="http://stamen.com">Stamen Design</a>|<a href="https://stadiamaps.com/" target="_blank">Stadia Maps</a>|&copy;<a href="https://www.openstreetmap.org/about" target="_blank">OpenStreetMap</a>'
 		}).addTo(map);
 
 		const accuracyCircle = new Circle([lat, lon], { radius: accuracy }).addTo(map);
@@ -135,7 +142,7 @@
 
 			// Load and display current radar layer.
 			addLayer(radarFrame, radarFrameIndex)?.tileLayer.on('load', ({ target }) => {
-				target.setOpacity(100);
+				target.setOpacity(0.6);
 			});
 
 			// Start preloading other radar layers.
@@ -150,7 +157,7 @@
 		// Add to list of Leaflet control corners as 'footer'.
 		map._controlCorners.footer = DomUtil.create('div', 'leaflet-footer', map._container);
 
-		// Define a simple control into newly created footer control corner:
+		// Define a simple control class that positions itself into newly created footer control corner:
 		const RadarControl = Control.extend({
 			options: {
 				position: 'footer'
@@ -174,13 +181,13 @@
 			if (nsWeatherData.radar.generated) {
 				const deltaTime = timeStamp - prevTimestamp;
 
-				if (deltaTime > 100) {
+				if (deltaTime > 500) {
 					radarFrameIndex = (radarFrameIndex + 1) % nsWeatherData.radar.frames.length;
 					const path = nsWeatherData.radar.frames[radarFrameIndex].path;
 
 					if (radarLayers[path].loaded) {
 						Object.values(radarLayers).forEach((layer) => layer?.tileLayer.setOpacity(0));
-						radarLayers[path].tileLayer.setOpacity(100);
+						radarLayers[path].tileLayer.setOpacity(0.6);
 
 						prevTimestamp = timeStamp;
 					} else {
@@ -191,7 +198,7 @@
 			requestAnimationFrame(step);
 		}
 
-		//requestAnimationFrame(step);
+		requestAnimationFrame(step);
 
 		return () => {
 			if (map) {

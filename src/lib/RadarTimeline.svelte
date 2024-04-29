@@ -1,57 +1,56 @@
 <script lang="ts">
-	import type { WeatherDataEvents } from '$lib/ns-weather-data.svelte';
+	import { type NsWeatherData, type WeatherDataEvents } from '$lib/ns-weather-data.svelte';
 	import type { RadarLayer } from '$lib/types';
 
 	import _ from 'lodash-es';
-	import dateFormat from 'dateformat';
 
 	import { getEmitter } from '$lib/emitter';
 	import { gg } from '$lib/gg';
+	import { tsToTime } from '$lib/util';
 
-	let { radarLayers }: { radarLayers: Record<string, RadarLayer> } = $props();
+	let {
+		radarLayers,
+		nsWeatherData
+	}: { radarLayers: Record<string, RadarLayer>; nsWeatherData: NsWeatherData } = $props();
 
-	const { on } = getEmitter<WeatherDataEvents>(import.meta);
+	const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 
-	const step = 60;
+	const step = 1;
 	let min = $state(0);
 	let max = $state(0);
-	let value = $state(0);
 
 	function makeRange(min: number, max: number) {
 		const range = [];
-		for (let x = min; x <= max; x += step * 10) {
+		for (let x = min; x <= max; x += step * 10 * 60) {
 			range.push(x);
 		}
 		gg('range', range);
 		return range;
 	}
 
-	function tsToTime(ts: number, format = 'h:MMt') {
-		const date = new Date(ts * 1000);
-		return dateFormat(date, format);
-	}
-
 	on('weatherdata_updatedRadar', function ({ nsWeatherData }) {
 		gg('nsWeatherData.radar', $state.snapshot(nsWeatherData.radar));
 
-		value = Math.floor(+new Date() / 1000);
 		min = nsWeatherData.radar.frames[0].time;
-		max = nsWeatherData.radar.frames.at(-1)?.time || value;
-
-		gg({ min, max, value });
+		max = (nsWeatherData.radar.frames.at(-1)?.time || 0) + 10 * 60;
 	});
+
+	function oninput(this: HTMLInputElement) {
+		const time = Number(this.value);
+		emit('weatherdata_requestedSetTime', { time });
+	}
 </script>
 
 <div class="pico">
-	<input type="range" name="" id="" {min} {max} {value} {step} list="radar-markers" />
+	<input type="range" name="" id="" {min} {max} value={nsWeatherData.time} {step} {oninput} />
 
 	<datalist id="radar-markers">
 		{#each makeRange(min, max) as value, index}
-			{@const isMinorIndex = index % 3}
+			{@const isMinorIndex = index % 4}
 
 			<div
 				class="tick"
-				class:loaded={_.find(radarLayers, ['index', index])?.loaded}
+				class:loaded={index === 16 || _.find(radarLayers, ['index', index])?.loaded}
 				class:minor-time={isMinorIndex}
 			>
 				{tsToTime(value, isMinorIndex ? 'MM' : 'h:MMt')}

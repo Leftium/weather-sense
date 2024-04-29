@@ -11,6 +11,10 @@ export type WeatherDataEvents = {
 		name?: string;
 	};
 
+	weatherdata_requestedSetTime: {
+		time: number;
+	};
+
 	weatherdata_updatedRadar: {
 		nsWeatherData: NsWeatherData;
 	};
@@ -36,10 +40,16 @@ export type NsWeatherData = ReturnType<typeof makeNsWeatherData>;
 
 export function makeNsWeatherData() {
 	gg('makeNsWeatherData');
-	let source: string = $state('???');
+
+	// Inputs:
 	let coords: Coordinates | null = $state(null);
 	let name: string | null = $state(null);
+	let source: string = $state('???');
 
+	// The time for which to render weather data:
+	let time = $state(+new Date() / 1000);
+
+	let radarPlaying = $state(true);
 	let radar: Radar = $state({ generated: 0, host: '', frames: [] });
 	fetchRainviewerData().then((data) => {
 		radar = data;
@@ -78,6 +88,18 @@ export function makeNsWeatherData() {
 		gg({ name, coords, params });
 	});
 
+	on('weatherdata_requestedSetTime', function (params) {
+		// gg('weatherdata_requestedSetTime', params);
+
+		time = params.time;
+		const maxRadarTime = (radar.frames.at(-1)?.time || 0) + 10 * 60;
+		if (time > maxRadarTime) {
+			// time = maxRadarTime;
+			radarPlaying = false;
+			time = +new Date() / 1000;
+		}
+	});
+
 	const nsWeatherData = {
 		get source() {
 			return source;
@@ -91,8 +113,16 @@ export function makeNsWeatherData() {
 			return name;
 		},
 
+		get time() {
+			return time;
+		},
+
 		get radar() {
 			return radar;
+		},
+
+		get radarPlaying() {
+			return radarPlaying;
 		}
 	};
 

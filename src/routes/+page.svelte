@@ -16,6 +16,7 @@
 	import { getEmitter } from '$lib/emitter.js';
 	import { makeNsWeatherData } from '$lib/ns-weather-data.svelte.js';
 	import RadarTimeline from '$lib/RadarTimeline.svelte';
+	import { tsToTime } from '$lib/util.js';
 
 	let mapElement: HTMLDivElement;
 
@@ -100,6 +101,9 @@
 		///---------------------------------------------------------------------------------------///
 
 		function addLayer(frame: RadarFrame, index: number) {
+			if (!frame?.path) {
+				return null;
+			}
 			if (!radarLayers[frame.path]) {
 				const colorScheme = 4; // from 0 to 8. Check the https://rainviewer.com/api/color-schemes.html for additional information
 				const smooth = 1; // 0 - not smooth, 1 - smooth
@@ -168,7 +172,8 @@
 				const radarTimelineControl = mount(RadarTimeline, {
 					target: container,
 					props: {
-						radarLayers
+						radarLayers,
+						nsWeatherData
 					}
 				});
 
@@ -188,11 +193,14 @@
 			if (nsWeatherData.radar.generated) {
 				const deltaTime = timeStamp - prevTimestamp;
 
-				if (deltaTime > 500) {
-					radarFrameIndex = (radarFrameIndex + 1) % nsWeatherData.radar.frames.length;
-					const path = nsWeatherData.radar.frames[radarFrameIndex].path;
+				if (deltaTime > 20) {
+					if (nsWeatherData.radarPlaying) {
+						emit('weatherdata_requestedSetTime', { time: nsWeatherData.time + 20 });
+					}
 
-					if (radarLayers[path].loaded) {
+					const path = nsWeatherData.radar.frames[radarFrameIndex]?.path;
+
+					if (radarLayers[path]?.loaded) {
 						Object.values(radarLayers).forEach((layer) => layer?.tileLayer.setOpacity(0));
 						radarLayers[path].tileLayer.setOpacity(0.6);
 
@@ -214,6 +222,14 @@
 			}
 		};
 	});
+
+	$effect(() => {
+		const fractionPlayed =
+			(nsWeatherData.time - nsWeatherData.radar.frames[0]?.time) /
+			(nsWeatherData.radar.frames[15]?.time - nsWeatherData.radar.frames[0]?.time);
+
+		radarFrameIndex = Math.floor(15 * fractionPlayed);
+	});
 </script>
 
 <div class="container">
@@ -221,6 +237,7 @@
 		<div class="map" bind:this={mapElement}></div>
 
 		<div class="pico">
+			{tsToTime(nsWeatherData.time)}
 			{radarFrameIndex}
 			<pre>nsWeatherData = {JSON.stringify(nsWeatherData, null, 4)}</pre>
 			<pre>Object.keys(radarLayers) = {JSON.stringify(

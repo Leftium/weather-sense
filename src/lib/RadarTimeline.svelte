@@ -12,14 +12,14 @@
 
 	const { on } = getEmitter<WeatherDataEvents>(import.meta);
 
-	const step = 60 * 10;
+	const step = 60;
 	let min = $state(0);
-	let max = $state(100);
-	let value = $derived(min + step * 12);
+	let max = $state(0);
+	let value = $state(0);
 
 	function makeRange(min: number, max: number) {
 		const range = [];
-		for (let x = min; x <= max; x += step) {
+		for (let x = min; x <= max; x += step * 10) {
 			range.push(x);
 		}
 		gg('range', range);
@@ -34,7 +34,7 @@
 	on('weatherdata_updatedRadar', function ({ nsWeatherData }) {
 		gg('nsWeatherData.radar', $state.snapshot(nsWeatherData.radar));
 
-		// value = Math.floor(+new Date() / 1000);
+		value = Math.floor(+new Date() / 1000);
 		min = nsWeatherData.radar.frames[0].time;
 		max = nsWeatherData.radar.frames.at(-1)?.time || value;
 

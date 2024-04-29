@@ -7,7 +7,7 @@
 	import GestureHandling from 'leaflet-gesture-handling';
 	import 'leaflet.fullscreen';
 
-	import { onMount } from 'svelte';
+	import { mount, onMount } from 'svelte';
 	import {
 		type RadarFrame,
 		type WeatherDataEvents,
@@ -15,6 +15,8 @@
 	} from '$lib/ns-weather-data.svelte.js';
 	import { gg } from '$lib/gg.js';
 	import { getEmitter } from '$lib/emitter.js';
+	import RadarTimeline from '$lib/RadarTimeline.svelte';
+	import type { RadarLayer } from '$lib/types.js';
 
 	let mapElement: HTMLDivElement;
 
@@ -22,13 +24,6 @@
 
 	const nsWeatherData = makeNsWeatherData();
 	const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
-
-	type RadarLayer = {
-		index: number;
-		time: number;
-		loaded: boolean;
-		tileLayer: TileLayer;
-	};
 
 	let radarLayers: Record<string, RadarLayer> = $state({});
 	let radarFrameIndex = $state(12);
@@ -62,12 +57,14 @@
 		new TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 			attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 		}).addTo(map);
-        */
+		/**/
 
+		/**/
 		new TileLayer('https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg', {
 			attribution:
-				'<a target="_blank" href="http://stamen.com">Stamen Design</a>|<a href="https://stadiamaps.com/" target="_blank">Stadia Maps</a>|&copy;<a href="https://www.openstreetmap.org/about" target="_blank">OpenStreetMap</a>'
+				'<a href="https://www.rainviewer.com/api.html" target="_blank">Rainviewer</a> | <a target="_blank" href="http://stamen.com">Stamen</a> | <a href="https://stadiamaps.com/" target="_blank">Stadia</a> | &copy; <a href="https://www.openstreetmap.org/about" target="_blank">OpenStreetMap</a>'
 		}).addTo(map);
+		/**/
 
 		const accuracyCircle = new Circle([lat, lon], { radius: accuracy }).addTo(map);
 
@@ -138,6 +135,7 @@
 		}
 
 		on('weatherdata_updatedRadar', function () {
+			gg('Initialize Radar layers.');
 			const radarFrame = nsWeatherData.radar.frames[radarFrameIndex];
 
 			// Load and display current radar layer.
@@ -145,10 +143,12 @@
 				target.setOpacity(0.6);
 			});
 
+			/**/
 			// Start preloading other radar layers.
 			nsWeatherData.radar.frames.forEach((frame, index) => {
 				addLayer(frame, index);
 			});
+			/**/
 		});
 
 		///---------------------------------------------------------------------------------------///
@@ -163,9 +163,17 @@
 				position: 'footer'
 			},
 			onAdd: function () {
-				const container = DomUtil.create('div', 'description');
+				const container = DomUtil.create('div', 'full-width');
 				DomEvent.disableClickPropagation(container);
-				container.insertAdjacentHTML('beforeend', 'FOOTER');
+
+				const radarTimelineControl = mount(RadarTimeline, {
+					target: container,
+					props: {
+						radarLayers
+					}
+				});
+
+				DomEvent.disableClickPropagation(container);
 
 				return container;
 			}
@@ -250,14 +258,22 @@
 		pointer-events: none;
 
 		background-color: whitesmoke;
-		height: 41px;
+		height: 50px;
 
 		padding: 3px 10px;
 	}
 
 	/* Raise bottom control corners above footer: */
 	:global(.leaflet-bottom) {
-		bottom: 42px;
+		bottom: 51px;
+	}
+
+	:global(.leaflet-control-attribution) {
+		font-size: x-small;
+	}
+
+	:global(.full-width) {
+		width: 100%;
 	}
 
 	.map {

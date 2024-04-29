@@ -10,7 +10,9 @@ export type WeatherDataEvents = {
 		name?: string;
 	};
 
-	weatherdata_updatedRadar: undefined;
+	weatherdata_updatedRadar: {
+		nsWeatherData: NsWeatherData;
+	};
 };
 
 type Coordinates = {
@@ -46,7 +48,10 @@ async function fetchRainviewerData() {
 
 const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 
+export type NsWeatherData = ReturnType<typeof makeNsWeatherData>;
+
 export function makeNsWeatherData() {
+	gg('makeNsWeatherData');
 	let source: string = $state('???');
 	let coords: Coordinates | null = $state(null);
 	let name: string | null = $state(null);
@@ -54,7 +59,7 @@ export function makeNsWeatherData() {
 	let radar: Radar = $state({ generated: 0, host: '', frames: [] });
 	fetchRainviewerData().then((data) => {
 		radar = data;
-		emit('weatherdata_updatedRadar');
+		emit('weatherdata_updatedRadar', { nsWeatherData });
 	});
 
 	on('weatherdata_requestedSetLocation', async function (params) {

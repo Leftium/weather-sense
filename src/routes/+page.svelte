@@ -1,4 +1,7 @@
 <script lang="ts">
+	import type { RadarFrame, RadarLayer } from '$lib/types.js';
+	import type { WeatherDataEvents } from '$lib/ns-weather-data.svelte.js';
+
 	import 'iconify-icon';
 	import haversine from 'haversine-distance';
 
@@ -8,15 +11,11 @@
 	import 'leaflet.fullscreen';
 
 	import { mount, onMount } from 'svelte';
-	import {
-		type RadarFrame,
-		type WeatherDataEvents,
-		makeNsWeatherData
-	} from '$lib/ns-weather-data.svelte.js';
+
 	import { gg } from '$lib/gg.js';
 	import { getEmitter } from '$lib/emitter.js';
+	import { makeNsWeatherData } from '$lib/ns-weather-data.svelte.js';
 	import RadarTimeline from '$lib/RadarTimeline.svelte';
-	import type { RadarLayer } from '$lib/types.js';
 
 	let mapElement: HTMLDivElement;
 

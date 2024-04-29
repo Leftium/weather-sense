@@ -2,6 +2,7 @@
 
 import { getEmitter } from '$lib/emitter';
 import { gg } from '$lib/gg';
+import type { Coordinates, Radar } from '$lib/types';
 
 export type WeatherDataEvents = {
 	weatherdata_requestedSetLocation: {
@@ -13,23 +14,6 @@ export type WeatherDataEvents = {
 	weatherdata_updatedRadar: {
 		nsWeatherData: NsWeatherData;
 	};
-};
-
-type Coordinates = {
-	latitude: number;
-	longitude: number;
-	accuracy: number;
-};
-
-export type RadarFrame = {
-	time: number;
-	path: string;
-};
-
-type Radar = {
-	generated: number;
-	host: string;
-	frames: RadarFrame[];
 };
 
 async function fetchRainviewerData() {

@@ -148,7 +148,10 @@
 				target.setOpacity(0.6);
 			});
 
-			/**/
+			// Pre-load next radar layer:
+			addLayer(nsWeatherData.radar.frames[0], 0);
+
+			/*
 			// Start preloading other radar layers.
 			nsWeatherData.radar.frames.forEach((frame, index) => {
 				addLayer(frame, index);
@@ -207,6 +210,19 @@
 						radarLayers[path].tileLayer.setOpacity(0.6);
 
 						prevTimestamp = timeStamp;
+					} else {
+						const radarFrame = nsWeatherData.radar.frames[radarFrameIndex];
+
+						// Load and display current radar layer.
+						addLayer(radarFrame, radarFrameIndex)?.tileLayer.on('load', ({ target }) => {
+							target.setOpacity(0.6);
+						});
+
+						// Pre-load next radar layer:
+						const nextFrameIndex = radarFrameIndex + 1;
+						if (radarFrameIndex < 16) {
+							addLayer(nsWeatherData.radar.frames[nextFrameIndex], nextFrameIndex);
+						}
 					}
 				}
 			}
@@ -228,7 +244,7 @@
 			(nsWeatherData.time - nsWeatherData.radar.frames[0]?.time) /
 			(nsWeatherData.radar.frames[15]?.time - nsWeatherData.radar.frames[0]?.time);
 
-		radarFrameIndex = Math.floor(15 * fractionPlayed);
+		radarFrameIndex = Math.floor(15 * fractionPlayed) || 12;
 		untrack(() => {
 			// gg({ radarFrameIndex, fractionPlayed, 'nsWeatherData.time': nsWeatherData.time });
 		});

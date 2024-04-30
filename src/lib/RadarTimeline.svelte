@@ -91,7 +91,7 @@
 
 	input {
 		width: 100%;
-		padding: 0 calc((100% / 32) - (23.75px / 2)) !important;
+		padding: 0 calc(((100% / 17) - (23.75px)) / 2) !important;
 		margin: 0 !important;
 	}
 
@@ -102,7 +102,7 @@
 	}
 
 	div.tick {
-		width: calc(100% / 16);
+		width: calc(100% / 17);
 		opacity: 0;
 
 		font-size: x-small;

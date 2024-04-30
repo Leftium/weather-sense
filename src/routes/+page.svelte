@@ -318,6 +318,7 @@
 	.name,
 	.time {
 		margin: auto;
+		font-family: Lato, sans-serif;
 	}
 
 	.name {

@@ -15,6 +15,8 @@ export type WeatherDataEvents = {
 		time: number;
 	};
 
+	weatherdata_requestedTogglePlay: undefined;
+
 	weatherdata_updatedRadar: {
 		nsWeatherData: NsWeatherData;
 	};
@@ -49,7 +51,8 @@ export function makeNsWeatherData() {
 	// The time for which to render weather data:
 	let time = $state(+new Date() / 1000);
 
-	let radarPlaying = $state(true);
+	let radarPlaying = $state(false);
+	let resetRadarOnPlay = $state(true);
 	let radar: Radar = $state({ generated: 0, host: '', frames: [] });
 	fetchRainviewerData().then((data) => {
 		radar = data;
@@ -94,10 +97,19 @@ export function makeNsWeatherData() {
 		time = params.time;
 		const maxRadarTime = (radar.frames.at(-1)?.time || 0) + 10 * 60;
 		if (time > maxRadarTime) {
-			// time = maxRadarTime;
 			radarPlaying = false;
 			time = +new Date() / 1000;
+			resetRadarOnPlay = true;
 		}
+	});
+
+	on('weatherdata_requestedTogglePlay', function () {
+		radarPlaying = !radarPlaying;
+
+		if (resetRadarOnPlay) {
+			time = radar.frames[0].time;
+		}
+		resetRadarOnPlay = false;
 	});
 
 	const nsWeatherData = {

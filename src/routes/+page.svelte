@@ -195,7 +195,7 @@
 
 				if (deltaTime > 20) {
 					if (nsWeatherData.radarPlaying) {
-						emit('weatherdata_requestedSetTime', { time: nsWeatherData.time + 20 });
+						emit('weatherdata_requestedSetTime', { time: nsWeatherData.time + 40 });
 					}
 
 					const path = nsWeatherData.radar.frames[radarFrameIndex]?.path;
@@ -274,14 +274,14 @@
 		pointer-events: none;
 
 		background-color: whitesmoke;
-		height: 50px;
+		height: 42px;
 
 		padding: 3px 10px;
 	}
 
 	/* Raise bottom control corners above footer: */
 	:global(.leaflet-bottom) {
-		bottom: 51px;
+		bottom: 44px;
 	}
 
 	:global(.leaflet-control-attribution) {

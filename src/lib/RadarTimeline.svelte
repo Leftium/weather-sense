@@ -39,29 +39,52 @@
 		const time = Number(this.value);
 		emit('weatherdata_requestedSetTime', { time });
 	}
+
+	function onclick() {
+		emit('weatherdata_requestedTogglePlay');
+	}
 </script>
 
 <div class="pico">
-	<input type="range" name="" id="" {min} {max} value={nsWeatherData.time} {step} {oninput} />
+	<div class="range-wrapper">
+		<input type="range" name="" id="" {min} {max} value={nsWeatherData.time} {step} {oninput} />
+		<datalist id="radar-markers">
+			{#each makeRange(min, max) as value, index}
+				{@const isMinorIndex = index % 4}
+				<div
+					class="tick"
+					class:loaded={index === 16 || _.find(radarLayers, ['index', index])?.loaded}
+					class:minor-time={isMinorIndex}
+				>
+					{tsToTime(value, isMinorIndex ? 'MM' : 'h:MMt')}
+				</div>
+			{/each}
+		</datalist>
+	</div>
 
-	<datalist id="radar-markers">
-		{#each makeRange(min, max) as value, index}
-			{@const isMinorIndex = index % 4}
-
-			<div
-				class="tick"
-				class:loaded={index === 16 || _.find(radarLayers, ['index', index])?.loaded}
-				class:minor-time={isMinorIndex}
-			>
-				{tsToTime(value, isMinorIndex ? 'MM' : 'h:MMt')}
-			</div>
-		{/each}
-	</datalist>
+	<div role="none" class="play-pause" {onclick}>
+		{#if nsWeatherData.radarPlaying}
+			<iconify-icon icon="solar:pause-bold" width="2em" height="2em"></iconify-icon>
+		{:else}
+			<iconify-icon icon="solar:play-bold" width="2em" height="2em"></iconify-icon>
+		{/if}
+	</div>
 </div>
 
 <style>
 	.pico {
+		display: flex;
+		align-items: center;
 		line-height: 1;
+	}
+
+	.play-pause {
+		margin-right: 6px;
+		margin-top: 8px;
+	}
+
+	.range-wrapper {
+		flex-grow: 1;
 	}
 
 	input {
@@ -96,6 +119,10 @@
 	@media (max-width: 510px) {
 		div.tick.minor-time {
 			visibility: hidden;
+		}
+
+		.play-pause {
+			margin-left: 6px;
 		}
 	}
 </style>

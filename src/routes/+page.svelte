@@ -304,7 +304,7 @@
 		pointer-events: none;
 
 		background-color: whitesmoke;
-		height: 42px;
+		height: 44px;
 
 		padding: 3px 10px;
 	}

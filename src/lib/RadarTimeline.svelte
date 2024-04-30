@@ -64,9 +64,11 @@
 
 	<div role="none" class="play-pause" {onclick}>
 		{#if nsWeatherData.radarPlaying}
-			<iconify-icon icon="solar:pause-bold" width="2em" height="2em"></iconify-icon>
+			<iconify-icon icon="solar:pause-bold" width="2em" height="2em" style="color: black"
+			></iconify-icon>
 		{:else}
-			<iconify-icon icon="solar:play-bold" width="2em" height="2em"></iconify-icon>
+			<iconify-icon icon="solar:play-bold" width="2em" height="2em" style="color: black"
+			></iconify-icon>
 		{/if}
 	</div>
 </div>
@@ -106,6 +108,8 @@
 		font-size: x-small;
 		text-align: center;
 		text-wrap: nowrap;
+
+		color: black;
 	}
 
 	div.loaded {
@@ -122,7 +126,7 @@
 		}
 
 		.play-pause {
-			margin-left: 10px;
+			margin-left: 16px;
 		}
 	}
 </style>

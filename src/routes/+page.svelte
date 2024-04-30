@@ -133,10 +133,23 @@
 				});
 				//tileLayer.on('remove', finishLoadingTile);
 			}
-			if (!map.hasLayer(radarLayers[frame.path].tileLayer)) {
-				map.addLayer(radarLayers[frame.path].tileLayer);
+
+			const radarLayer = radarLayers[frame.path];
+			if (!map.hasLayer(radarLayer.tileLayer)) {
+				map
+					.addLayer(radarLayer.tileLayer)
+					.on('zoomstart', () => {
+						if (radarFrameIndex < radarLayer.index - 2 || radarFrameIndex > radarLayer.index + 2) {
+							map.removeLayer(radarLayer.tileLayer);
+						}
+					})
+					.on('zoomend', () => {
+						if (!map.hasLayer(radarLayer.tileLayer)) {
+							map.addLayer(radarLayer.tileLayer);
+						}
+					});
 			}
-			return radarLayers[frame.path];
+			return radarLayer;
 		}
 
 		on('weatherdata_updatedRadar', function () {
@@ -151,7 +164,7 @@
 			// Pre-load next radar layer:
 			addLayer(nsWeatherData.radar.frames[0], 0);
 
-			/*
+			/**/
 			// Start preloading other radar layers.
 			nsWeatherData.radar.frames.forEach((frame, index) => {
 				addLayer(frame, index);

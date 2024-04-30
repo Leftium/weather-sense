@@ -6,11 +6,11 @@
 	import haversine from 'haversine-distance';
 
 	import { Map, TileLayer, Circle, Control, DomUtil, DomEvent } from 'leaflet';
-	import Locate from 'leaflet.locatecontrol';
+	import 'leaflet.locatecontrol';
 	import GestureHandling from 'leaflet-gesture-handling';
 	import 'leaflet.fullscreen';
 
-	import { mount, onMount } from 'svelte';
+	import { mount, onMount, untrack } from 'svelte';
 
 	import { gg } from '$lib/gg.js';
 	import { getEmitter } from '$lib/emitter.js';
@@ -207,8 +207,6 @@
 						radarLayers[path].tileLayer.setOpacity(0.6);
 
 						prevTimestamp = timeStamp;
-					} else {
-						radarFrameIndex = Math.max(radarFrameIndex - 1, -1);
 					}
 				}
 			}
@@ -231,6 +229,9 @@
 			(nsWeatherData.radar.frames[15]?.time - nsWeatherData.radar.frames[0]?.time);
 
 		radarFrameIndex = Math.floor(15 * fractionPlayed);
+		untrack(() => {
+			// gg({ radarFrameIndex, fractionPlayed, 'nsWeatherData.time': nsWeatherData.time });
+		});
 	});
 </script>
 

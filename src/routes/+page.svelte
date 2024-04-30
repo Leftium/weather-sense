@@ -102,7 +102,7 @@
 
 		///---------------------------------------------------------------------------------------///
 
-		function addLayer(frame: RadarFrame, index: number) {
+		function addLayer(frame: RadarFrame, index: number, preload = false) {
 			if (!frame?.path) {
 				return null;
 			}
@@ -149,6 +149,11 @@
 						}
 					});
 			}
+
+			const nextIndex = index + 1;
+			if (preload && nextIndex < nsWeatherData.radar.frames.length) {
+				addLayer(nsWeatherData.radar.frames[nextIndex], nextIndex, true);
+			}
 			return radarLayer;
 		}
 
@@ -161,15 +166,8 @@
 				target.setOpacity(0.6);
 			});
 
-			// Pre-load next radar layer:
-			addLayer(nsWeatherData.radar.frames[0], 0);
-
-			/**/
-			// Start preloading other radar layers.
-			nsWeatherData.radar.frames.forEach((frame, index) => {
-				addLayer(frame, index);
-			});
-			/**/
+			// Pre-load next radar layers:
+			addLayer(nsWeatherData.radar.frames[0], 0, true);
 		});
 
 		///---------------------------------------------------------------------------------------///

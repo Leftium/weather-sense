@@ -176,7 +176,7 @@
 
 		// Insert div.leaflet-footer element into leaflet map.
 		// Add to list of Leaflet control corners as 'footer'.
-		map._controlCorners.footer = DomUtil.create('div', 'leaflet-footer', map._container);
+		map._controlCorners.footer = DomUtil.create('div', 'leaflet-footer', map.getContainer());
 
 		// Define a simple control class that positions itself into newly created footer control corner:
 		const RadarControl = Control.extend({

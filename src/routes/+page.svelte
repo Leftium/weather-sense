@@ -43,7 +43,7 @@
 
 		let map = new Map(mapElement, {
 			center: [lat, lon],
-			zoom: 6,
+			zoom: 5,
 			zoomControl: false,
 			attributionControl: false,
 			gestureHandling: true,
@@ -262,13 +262,25 @@
 	});
 </script>
 
+<div class="pico container sticky-info">
+	<h1>Project: Zeus</h1>
+</div>
+
+<div class="pico container sticky-info">
+	<div class="name">
+		{nsWeatherData.name}
+		<span class="accuracy">({nsWeatherData.coords?.accuracy}m)</span>
+	</div>
+	<div class="time">
+		{tsToTime(nsWeatherData.time, 'ddd mmm d, h:MMtt')}
+	</div>
+</div>
+
 <div class="container">
 	<div class="scroll">
 		<div class="map" bind:this={mapElement}></div>
 
-		<div class="pico">
-			{tsToTime(nsWeatherData.time)}
-			{radarFrameIndex}
+		<div class="pico debug">
 			<pre>nsWeatherData = {JSON.stringify(nsWeatherData, null, 4)}</pre>
 			<pre>Object.keys(radarLayers) = {JSON.stringify(
 					Object.keys(radarLayers).map((key) => ({
@@ -291,6 +303,32 @@
 </div>
 
 <style>
+	.sticky-info {
+		position: sticky;
+		top: 0;
+		z-index: 10000;
+
+		background-color: white;
+	}
+
+	h1 {
+		margin-bottom: 0;
+	}
+
+	.name,
+	.time {
+		margin: auto;
+	}
+
+	.name {
+		font-size: xx-large;
+	}
+
+	.accuracy {
+		font-size: small;
+		opacity: 60%;
+	}
+
 	:global(.leaflet-footer) {
 		/* Stick to bottom of map: */
 		position: absolute;
@@ -323,12 +361,12 @@
 	}
 
 	.map {
-		height: 500px;
+		height: 250px;
 	}
 
 	.container {
-		height: 100vh;
-		height: 100dvh;
+		-height: 100vh;
+		-height: 100dvh;
 
 		display: grid;
 		grid-template-rows: 1fr auto;
@@ -336,5 +374,9 @@
 
 	.scroll {
 		overflow: auto;
+	}
+
+	.debug {
+		margin-top: 20em;
 	}
 </style>

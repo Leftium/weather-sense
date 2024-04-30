@@ -139,7 +139,7 @@
 				map
 					.addLayer(radarLayer.tileLayer)
 					.on('zoomstart', () => {
-						if (radarLayer.index < radarFrameIndex - 2 || radarLayer.index > radarFrameIndex + 2) {
+						if (radarLayer.index < radarFrameIndex - 1 || radarLayer.index > radarFrameIndex + 1) {
 							map.removeLayer(radarLayer.tileLayer);
 						}
 					})

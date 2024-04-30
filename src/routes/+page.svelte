@@ -45,6 +45,7 @@
 			center: [lat, lon],
 			zoom: 6,
 			zoomControl: false,
+			attributionControl: false,
 			gestureHandling: true,
 			fullscreenControl: true,
 			forceSeparateButton: true,
@@ -68,12 +69,13 @@
 
 		const accuracyCircle = new Circle([lat, lon], { radius: accuracy }).addTo(map);
 
-		new Control.Zoom({ position: 'topleft' }).addTo(map);
+		new Control.Attribution({ position: 'bottomleft' }).addTo(map);
 
-		const locateControl = new Locate({
-			position: 'bottomleft',
+		const locateControl = new Control.Locate({
+			position: 'bottomright',
 			initialZoomLevel: 11
 		}).addTo(map);
+		new Control.Zoom({ position: 'bottomright' }).addTo(map);
 
 		map.on('locationfound', function onLocationFound(e) {
 			accuracyCircle.setLatLng(e.latlng).setRadius(e.accuracy);
@@ -206,7 +208,7 @@
 
 						prevTimestamp = timeStamp;
 					} else {
-						radarFrameIndex--;
+						radarFrameIndex = Math.max(radarFrameIndex - 1, -1);
 					}
 				}
 			}

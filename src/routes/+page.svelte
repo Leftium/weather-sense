@@ -69,7 +69,7 @@
 
 		const accuracyCircle = new Circle([lat, lon], { radius: accuracy }).addTo(map);
 
-		new Control.Attribution({ position: 'bottomleft' }).addTo(map);
+		new Control.Attribution({ position: 'topleft' }).addTo(map);
 
 		const locateControl = new Control.Locate({
 			position: 'bottomright',

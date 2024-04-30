@@ -16,7 +16,7 @@
 	import { getEmitter } from '$lib/emitter.js';
 	import { makeNsWeatherData } from '$lib/ns-weather-data.svelte.js';
 	import RadarTimeline from '$lib/RadarTimeline.svelte';
-	import { tsToTime } from '$lib/util.js';
+	import { humanDistance, tsToTime } from '$lib/util.js';
 
 	let mapElement: HTMLDivElement;
 
@@ -269,7 +269,7 @@
 <div class="pico container sticky-info">
 	<div class="name">
 		{nsWeatherData.name}
-		<span class="accuracy">({nsWeatherData.coords?.accuracy}m)</span>
+		<span class="accuracy">({humanDistance(nsWeatherData.coords?.accuracy)})</span>
 	</div>
 	<div class="time">
 		{tsToTime(nsWeatherData.time, 'ddd mmm d, h:MMtt')}

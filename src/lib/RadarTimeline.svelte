@@ -122,7 +122,7 @@
 		}
 
 		.play-pause {
-			margin-left: 6px;
+			margin-left: 10px;
 		}
 	}
 </style>

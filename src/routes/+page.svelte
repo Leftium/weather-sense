@@ -262,7 +262,7 @@
 	});
 </script>
 
-<div class="pico container sticky-info">
+<div class="pico container">
 	<h1>Project: Zeus</h1>
 </div>
 
@@ -312,7 +312,7 @@
 	}
 
 	h1 {
-		margin-bottom: 0;
+		margin-bottom: 0.1em;
 	}
 
 	.name,
@@ -362,13 +362,10 @@
 	}
 
 	.map {
-		height: 250px;
+		height: 400px;
 	}
 
 	.container {
-		-height: 100vh;
-		-height: 100dvh;
-
 		display: grid;
 		grid-template-rows: 1fr auto;
 	}
@@ -379,5 +376,11 @@
 
 	.debug {
 		margin-top: 20em;
+	}
+
+	@media (max-width: 768px) {
+		.map {
+			height: 250px;
+		}
 	}
 </style>

@@ -285,7 +285,7 @@
 </script>
 
 <div class="pico container">
-	<h3>Geo-ip Location Accuracy Survey</h3>
+	<h3>Geolocation Accuracy Survey</h3>
 </div>
 
 <div class="pico container sticky-info">
@@ -325,8 +325,8 @@
 					location data is completely inaccurate, etc
 				</li>
 				<li>
-					<b> Thank you! </b> Data will only be used to determine a reasonable accuracy value (radius)
-					for the geo-ip location in my weather app.
+					<b> Thank you! </b> Your personal information will not be used. Data will only be used to determine
+					a generic accuracy value (radius) for the geo-ip location in my weather app.
 				</li>
 			</ol>
 			<h4>Location data:</h4>

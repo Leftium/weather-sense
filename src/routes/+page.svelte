@@ -313,8 +313,8 @@
 					> You will have a chance to edit the email before sending.
 				</li>
 				<li>
-					If the button above does not work, send an email to <a href="mailto:john@leftium.com"
-						>john@leftium.com</a
+					If the button above does not work, send an email with the data to <a
+						href="mailto:john@leftium.com">john@leftium.com</a
 					>. The button below will try to copy the data to your clipboard:<br />
 					<button onclick={handleCopyToClipboard} disabled={!nsWeatherData.accuracySurveyText}
 						>Copy accuracy data to clipboard</button

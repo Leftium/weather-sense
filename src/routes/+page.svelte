@@ -285,7 +285,7 @@
 </script>
 
 <div class="pico container">
-	<h1>Geo-ip Location Accuracy Survey</h1>
+	<h3>Geo-ip Location Accuracy Survey</h3>
 </div>
 
 <div class="pico container sticky-info">
@@ -351,7 +351,7 @@
 		background-color: var(--pico-background-color);
 	}
 
-	h1 {
+	h3 {
 		margin-bottom: 0.1em;
 	}
 

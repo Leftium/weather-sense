@@ -1,5 +1,7 @@
 // Defines nation-state for weather data.
 
+import haversine from 'haversine-distance';
+
 import { getEmitter } from '$lib/emitter';
 import { gg } from '$lib/gg';
 import type { Coordinates, Radar } from '$lib/types';
@@ -59,6 +61,15 @@ export function makeNsWeatherData() {
 		emit('weatherdata_updatedRadar', { nsWeatherData });
 	});
 
+	// Variables to collect geoip location accuracy data:
+	type Location = null | {
+		coords: Coordinates;
+		name: string;
+		source: string;
+	};
+	let locationGeoip: Location = $state(null);
+	let locationGeolocation: Location = $state(null);
+
 	on('weatherdata_requestedSetLocation', async function (params) {
 		gg('weatherdata_requestedSetLocation', params);
 
@@ -86,6 +97,23 @@ export function makeNsWeatherData() {
 			const result = json[0];
 
 			name = `${result.name}, ${result.country}`;
+		}
+
+		// Collect geoip location accuracy data:
+		if (coords && name) {
+			if (source === 'vercel-headers' || source === 'hard-coded') {
+				locationGeoip = {
+					coords,
+					name,
+					source
+				};
+			} else if (source === 'geolocation') {
+				locationGeolocation = {
+					coords,
+					name,
+					source
+				};
+			}
 		}
 
 		gg({ name, coords, params });
@@ -135,6 +163,28 @@ export function makeNsWeatherData() {
 
 		get radarPlaying() {
 			return radarPlaying;
+		},
+
+		get accuracySurveyText() {
+			if (locationGeoip && locationGeolocation) {
+				return (
+					`# Please share the following two pieces of data:\n\n` +
+					`Geo-ip location error estimate: ${Math.round(haversine(locationGeoip.coords, locationGeolocation.coords))}m\n` +
+					`Precise location accuracy: ${Math.round(locationGeolocation.coords.accuracy)}m\n\n\n\n` +
+					`# Data below is helpful, but may be omitted:\n\n` +
+					`# Geo-ip Location:\n` +
+					`source: ${locationGeoip.source}\n` +
+					`coords: ${locationGeoip.coords.latitude}, ${locationGeoip.coords.longitude}\n` +
+					`name: ${locationGeoip.name}\n\n` +
+					`# Precise Location:\n` +
+					`source: ${locationGeolocation.source}\n` +
+					`coords: ${locationGeolocation.coords.latitude}, ${locationGeolocation.coords.longitude}\n` +
+					`name: ${locationGeolocation.name}\n` +
+					``
+				);
+			}
+
+			return 'No precise location data, yet.';
 		}
 	};
 

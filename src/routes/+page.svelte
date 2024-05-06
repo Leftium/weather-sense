@@ -88,16 +88,18 @@
 				? haversine(nsWeatherData.coords, e.latlng)
 				: Number.MAX_VALUE;
 			gg({ distance });
-			if (distance > 1000) {
-				emit('weatherdata_requestedSetLocation', {
-					source: 'geolocation',
-					coords: {
-						latitude: e.latlng.lat,
-						longitude: e.latlng.lng,
-						accuracy: e.accuracy
-					}
-				});
-			}
+
+			// Uncomment to avoid calling weather API's again for very small changes in location.
+			//if (distance > 1000) {
+			emit('weatherdata_requestedSetLocation', {
+				source: 'geolocation',
+				coords: {
+					latitude: e.latlng.lat,
+					longitude: e.latlng.lng,
+					accuracy: e.accuracy
+				}
+			});
+			//}
 		});
 
 		///---------------------------------------------------------------------------------------///
@@ -263,7 +265,7 @@
 </script>
 
 <div class="pico container">
-	<h1>Project: Zeus</h1>
+	<h1>Geo-ip Location Accuracy Survey</h1>
 </div>
 
 <div class="pico container sticky-info">
@@ -281,20 +283,11 @@
 		<div class="map" bind:this={mapElement}></div>
 
 		<div class="pico debug">
-			<pre>nsWeatherData = {JSON.stringify(nsWeatherData, null, 4)}</pre>
-			<pre>Object.keys(radarLayers) = {JSON.stringify(
-					Object.keys(radarLayers).map((key) => ({
-						key,
-						loaded: radarLayers[key].loaded
-					})),
-					null,
-					4
-				)}</pre>
-			<pre>data = {JSON.stringify(data, null, 4)}</pre>
+			<pre>{nsWeatherData.accuracySurveyText}</pre>
 		</div>
 	</div>
 
-	<div class="pico">
+	<div class="pico" hidden>
 		<div role="group">
 			<input type="text" value={`${nsWeatherData.name}`} />
 			<button>Search</button>
@@ -375,12 +368,12 @@
 	}
 
 	.debug {
-		margin-top: 20em;
+		margin-top: 1em;
 	}
 
 	@media (max-width: 768px) {
 		.map {
-			height: 250px;
+			height: 200px;
 		}
 	}
 </style>

@@ -313,20 +313,21 @@
 					> You will have a chance to edit the email before sending.
 				</li>
 				<li>
-					If the email button above does not work:<br />
+					If the button above does not work, send an email to <a href="mailto:john@leftium.com"
+						>john@leftium.com</a
+					>. The button below will try to copy the data to your clipboard:<br />
 					<button onclick={handleCopyToClipboard} disabled={!nsWeatherData.accuracySurveyText}
 						>Copy accuracy data to clipboard</button
 					>
-					<br />and send to
-					<a href="mailto:john@leftium.com">john@leftium.com</a>
+					<br />
 				</li>
 				<li>
 					Please add information that may help: cellular/wifi; device type (PC, mobile, etc); if the
 					location data is completely inaccurate, etc
 				</li>
 				<li>
-					<b> Thank you! </b> Your personal information will not be used. Data will only be used to determine
-					a generic accuracy value (radius) for the geo-ip location in my weather app.
+					<b> Thank you! </b> Your personal information will never be shared. Data will only be used
+					to determine a generic accuracy value (radius) for the geo-ip location in my weather app.
 				</li>
 			</ol>
 			<h4>Location data:</h4>

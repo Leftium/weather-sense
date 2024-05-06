@@ -308,7 +308,7 @@
 		top: 0;
 		z-index: 10000;
 
-		background-color: white;
+		background-color: var(--pico-background-color);
 	}
 
 	h1 {

@@ -28,6 +28,11 @@
 	let radarLayers: Record<string, RadarLayer> = $state({});
 	let radarFrameIndex = $state(12);
 
+	const locateControl = new Control.Locate({
+		position: 'bottomright',
+		initialZoomLevel: 11
+	});
+
 	emit('weatherdata_requestedSetLocation', {
 		source: data.source,
 		name: data.name,
@@ -71,10 +76,7 @@
 
 		new Control.Attribution({ position: 'topleft' }).addTo(map);
 
-		const locateControl = new Control.Locate({
-			position: 'bottomright',
-			initialZoomLevel: 11
-		}).addTo(map);
+		locateControl.addTo(map);
 		new Control.Zoom({ position: 'bottomright' }).addTo(map);
 
 		map.on('locationfound', function onLocationFound(e) {
@@ -262,6 +264,24 @@
 			// gg({ radarFrameIndex, fractionPlayed, 'nsWeatherData.time': nsWeatherData.time });
 		});
 	});
+
+	function handleEnablePreciseLocation() {
+		locateControl.start();
+	}
+
+	function handleComposeEmail() {
+		if (nsWeatherData.accuracySurveyText) {
+			const emailBody = `${nsWeatherData.accuracySurveyText.replaceAll('\n', '%0D%0A')}`;
+			const emailUrl = `mailto:john@leftium.com?subject=Geoip accuracy survey&body=${emailBody}`;
+			window.open(emailUrl, '_blank');
+		}
+	}
+
+	function handleCopyToClipboard() {
+		if (nsWeatherData.accuracySurveyText) {
+			navigator.clipboard.writeText(nsWeatherData.accuracySurveyText);
+		}
+	}
 </script>
 
 <div class="pico container">
@@ -283,7 +303,34 @@
 		<div class="map" bind:this={mapElement}></div>
 
 		<div class="pico debug">
-			<pre>{nsWeatherData.accuracySurveyText}</pre>
+			<ol>
+				<li>
+					<button onclick={handleEnablePreciseLocation}>Enable precise location</button>
+				</li>
+				<li>
+					<button onclick={handleComposeEmail} disabled={!nsWeatherData.accuracySurveyText}
+						>Compose email with accuracy data</button
+					> You will have a chance to edit the email before sending.
+				</li>
+				<li>
+					If the email button above does not work:<br />
+					<button onclick={handleCopyToClipboard} disabled={!nsWeatherData.accuracySurveyText}
+						>Copy accuracy data to clipboard</button
+					>
+					<br />and send to
+					<a href="mailto:john@leftium.com">john@leftium.com</a>
+				</li>
+				<li>
+					Please add information that may help: cellular/wifi; device type (PC, mobile, etc); if the
+					location data is completely inaccurate, etc
+				</li>
+				<li>
+					<b> Thank you! </b> Data will only be used to determine a reasonable accuracy value (radius)
+					for the geo-ip location in my weather app.
+				</li>
+			</ol>
+			<h4>Location data:</h4>
+			<pre>{nsWeatherData.accuracySurveyText || 'No precise location data, yet.'}</pre>
 		</div>
 	</div>
 
@@ -373,7 +420,7 @@
 
 	@media (max-width: 768px) {
 		.map {
-			height: 200px;
+			height: 220px;
 		}
 	}
 </style>

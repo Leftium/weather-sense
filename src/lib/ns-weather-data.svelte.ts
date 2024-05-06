@@ -184,7 +184,7 @@ export function makeNsWeatherData() {
 				);
 			}
 
-			return 'No precise location data, yet.';
+			return null;
 		}
 	};
 

@@ -29,6 +29,7 @@
 	let radarFrameIndex = $state(12);
 
 	const locateControl = new Control.Locate({
+		showCompass: false,
 		position: 'bottomright',
 		initialZoomLevel: 11
 	});

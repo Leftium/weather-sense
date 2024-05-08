@@ -19,24 +19,12 @@ export type WeatherDataEvents = {
 
 	weatherdata_requestedTogglePlay: undefined;
 
+	weatherdata_requestedFetchRainviewerData: undefined;
+
 	weatherdata_updatedRadar: {
 		nsWeatherData: NsWeatherData;
 	};
 };
-
-async function fetchRainviewerData() {
-	// Load all the available map frames from RainViewer API.
-	const fetched = await fetch('https://api.rainviewer.com/public/weather-maps.json');
-	const rainviewerData = await fetched.json();
-
-	const frames = (rainviewerData.radar.past || []).concat(rainviewerData.radar.nowcast || []);
-
-	return {
-		generated: rainviewerData.generated,
-		host: rainviewerData.host,
-		frames
-	};
-}
 
 const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 
@@ -56,10 +44,6 @@ export function makeNsWeatherData() {
 	let radarPlaying = $state(false);
 	let resetRadarOnPlay = $state(true);
 	let radar: Radar = $state({ generated: 0, host: '', frames: [] });
-	fetchRainviewerData().then((data) => {
-		radar = data;
-		emit('weatherdata_updatedRadar', { nsWeatherData });
-	});
 
 	// Variables to collect geoip location accuracy data:
 	type Location = null | {
@@ -69,6 +53,21 @@ export function makeNsWeatherData() {
 	};
 	let locationGeoip: Location = $state(null);
 	let locationGeolocation: Location = $state(null);
+
+	on('weatherdata_requestedFetchRainviewerData', async function () {
+		// Load all the available map frames from RainViewer API.
+		const fetched = await fetch('https://api.rainviewer.com/public/weather-maps.json');
+		const rainviewerData = await fetched.json();
+
+		const frames = (rainviewerData.radar.past || []).concat(rainviewerData.radar.nowcast || []);
+
+		radar = {
+			generated: rainviewerData.generated,
+			host: rainviewerData.host,
+			frames
+		};
+		emit('weatherdata_updatedRadar', { nsWeatherData });
+	});
 
 	on('weatherdata_requestedSetLocation', async function (params) {
 		gg('weatherdata_requestedSetLocation', params);

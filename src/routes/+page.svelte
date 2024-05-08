@@ -35,6 +35,8 @@
 
 	onMount(() => {
 		(async () => {
+			emit('weatherdata_requestedFetchRainviewerData');
+
 			const { Map, TileLayer, Circle, Control, DomUtil, DomEvent } = await import('leaflet');
 			const { GestureHandling } = await import('leaflet-gesture-handling');
 			await import('leaflet.locatecontrol');

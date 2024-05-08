@@ -51,6 +51,7 @@
 				zoom: 5,
 				zoomControl: false,
 				attributionControl: false,
+				// @ts-expect-error: added by leaflet-gesture-handling
 				gestureHandling: true,
 				fullscreenControl: true,
 				forceSeparateButton: true,
@@ -187,6 +188,7 @@
 
 			// Insert div.leaflet-footer element into leaflet map.
 			// Add to list of Leaflet control corners as 'footer'.
+			// @ts-expect-error: using undocumented _controlCorners
 			map._controlCorners.footer = DomUtil.create('div', 'leaflet-footer', map.getContainer());
 
 			// Define a simple control class that positions itself into newly created footer control corner:

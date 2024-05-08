@@ -34,6 +34,7 @@
 	});
 
 	onMount(() => {
+		let animationFrameId: number;
 		(async () => {
 			emit('weatherdata_requestedFetchRainviewerData');
 
@@ -254,16 +255,19 @@
 						}
 					}
 				}
-				requestAnimationFrame(step);
+				animationFrameId = requestAnimationFrame(step);
 			}
 
-			requestAnimationFrame(step);
+			animationFrameId = requestAnimationFrame(step);
 		})();
 
 		return () => {
 			if (map) {
 				gg('Unloading Leaflet map.');
 				map.remove();
+			}
+			if (animationFrameId) {
+				cancelAnimationFrame(animationFrameId);
 			}
 		};
 	});

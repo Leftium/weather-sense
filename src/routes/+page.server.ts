@@ -1,5 +1,3 @@
-export const ssr = false;
-
 export const load = async (loadEvent) => {
 	const ipAddress = loadEvent.getClientAddress();
 	const { headers } = loadEvent.request;

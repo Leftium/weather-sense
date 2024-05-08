@@ -5,10 +5,7 @@
 	import 'iconify-icon';
 	import haversine from 'haversine-distance';
 
-	import { Map, TileLayer, Circle, Control, DomUtil, DomEvent } from 'leaflet';
-	import 'leaflet.locatecontrol';
-	import GestureHandling from 'leaflet-gesture-handling';
-	import 'leaflet.fullscreen';
+	import type { Control, Map } from 'leaflet';
 
 	import { mount, onMount, untrack } from 'svelte';
 
@@ -19,6 +16,8 @@
 	import { humanDistance, tsToTime } from '$lib/util.js';
 
 	let mapElement: HTMLDivElement;
+	let map: Map;
+	let locateControl: Control.Locate;
 
 	let { data } = $props();
 
@@ -28,12 +27,6 @@
 	let radarLayers: Record<string, RadarLayer> = $state({});
 	let radarFrameIndex = $state(12);
 
-	const locateControl = new Control.Locate({
-		showCompass: false,
-		position: 'bottomright',
-		initialZoomLevel: 11
-	});
-
 	emit('weatherdata_requestedSetLocation', {
 		source: data.source,
 		name: data.name,
@@ -41,211 +34,227 @@
 	});
 
 	onMount(() => {
-		const lat = nsWeatherData.coords?.latitude || 0;
-		const lon = nsWeatherData.coords?.longitude || 0;
-		const accuracy = nsWeatherData.coords?.accuracy || 0;
+		(async () => {
+			const { Map, TileLayer, Circle, Control, DomUtil, DomEvent } = await import('leaflet');
+			const { GestureHandling } = await import('leaflet-gesture-handling');
+			await import('leaflet.locatecontrol');
+			await import('leaflet.fullscreen');
 
-		Map.addInitHook('addHandler', 'gestureHandling', GestureHandling);
+			const lat = nsWeatherData.coords?.latitude || 0;
+			const lon = nsWeatherData.coords?.longitude || 0;
+			const accuracy = nsWeatherData.coords?.accuracy || 0;
 
-		let map = new Map(mapElement, {
-			center: [lat, lon],
-			zoom: 5,
-			zoomControl: false,
-			attributionControl: false,
-			gestureHandling: true,
-			fullscreenControl: true,
-			forceSeparateButton: true,
-			fullscreenControlOptions: {
-				position: 'topright'
-			}
-		});
+			Map.addInitHook('addHandler', 'gestureHandling', GestureHandling);
 
-		/*
+			let map = new Map(mapElement, {
+				center: [lat, lon],
+				zoom: 5,
+				zoomControl: false,
+				attributionControl: false,
+				gestureHandling: true,
+				fullscreenControl: true,
+				forceSeparateButton: true,
+				fullscreenControlOptions: {
+					position: 'topright'
+				}
+			});
+
+			/*
 		new TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 			attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
 		}).addTo(map);
 		/**/
 
-		/**/
-		new TileLayer('https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg', {
-			attribution:
-				'<a href="https://www.rainviewer.com/api.html" target="_blank">Rainviewer</a> | <a target="_blank" href="http://stamen.com">Stamen</a> | <a href="https://stadiamaps.com/" target="_blank">Stadia</a> | &copy; <a href="https://www.openstreetmap.org/about" target="_blank">OpenStreetMap</a>'
-		}).addTo(map);
-		/**/
+			/**/
+			new TileLayer('https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg', {
+				attribution:
+					'<a href="https://www.rainviewer.com/api.html" target="_blank">Rainviewer</a> | <a target="_blank" href="http://stamen.com">Stamen</a> | <a href="https://stadiamaps.com/" target="_blank">Stadia</a> | &copy; <a href="https://www.openstreetmap.org/about" target="_blank">OpenStreetMap</a>'
+			}).addTo(map);
+			/**/
 
-		const accuracyCircle = new Circle([lat, lon], { radius: accuracy }).addTo(map);
+			const accuracyCircle = new Circle([lat, lon], { radius: accuracy }).addTo(map);
 
-		new Control.Attribution({ position: 'topleft' }).addTo(map);
+			new Control.Attribution({ position: 'topleft' }).addTo(map);
 
-		locateControl.addTo(map);
-		new Control.Zoom({ position: 'bottomright' }).addTo(map);
-
-		map.on('locationfound', function onLocationFound(e) {
-			accuracyCircle.setLatLng(e.latlng).setRadius(e.accuracy);
-
-			// locateControl.stop();
-
-			gg(e);
-
-			const distance = nsWeatherData.coords
-				? haversine(nsWeatherData.coords, e.latlng)
-				: Number.MAX_VALUE;
-			gg({ distance });
-
-			// Uncomment to avoid calling weather API's again for very small changes in location.
-			//if (distance > 1000) {
-			emit('weatherdata_requestedSetLocation', {
-				source: 'geolocation',
-				coords: {
-					latitude: e.latlng.lat,
-					longitude: e.latlng.lng,
-					accuracy: e.accuracy
-				}
+			locateControl = new Control.Locate({
+				showCompass: false,
+				position: 'bottomright',
+				initialZoomLevel: 11
 			});
-			//}
-		});
 
-		///---------------------------------------------------------------------------------------///
+			locateControl.addTo(map);
+			new Control.Zoom({ position: 'bottomright' }).addTo(map);
 
-		function addLayer(frame: RadarFrame, index: number, preload = false) {
-			if (!frame?.path) {
-				return null;
+			map.on('locationfound', function onLocationFound(e) {
+				accuracyCircle.setLatLng(e.latlng).setRadius(e.accuracy);
+
+				// locateControl.stop();
+
+				gg(e);
+
+				const distance = nsWeatherData.coords
+					? haversine(nsWeatherData.coords, e.latlng)
+					: Number.MAX_VALUE;
+				gg({ distance });
+
+				// Uncomment to avoid calling weather API's again for very small changes in location.
+				//if (distance > 1000) {
+				emit('weatherdata_requestedSetLocation', {
+					source: 'geolocation',
+					coords: {
+						latitude: e.latlng.lat,
+						longitude: e.latlng.lng,
+						accuracy: e.accuracy
+					}
+				});
+				//}
+			});
+
+			///---------------------------------------------------------------------------------------///
+
+			function addLayer(frame: RadarFrame, index: number, preload = false) {
+				if (!frame?.path) {
+					return null;
+				}
+				if (!radarLayers[frame.path]) {
+					const colorScheme = 4; // from 0 to 8. Check the https://rainviewer.com/api/color-schemes.html for additional information
+					const smooth = 1; // 0 - not smooth, 1 - smooth
+					const snow = 1; // 0 - do not show snow colors, 1 - show snow colors
+					const tileSize = 512; // can be 256 or 512.
+
+					const urlTemplate = `${nsWeatherData.radar.host}/${frame.path}/${tileSize}/{z}/{x}/{y}/${colorScheme}/${smooth}_${snow}.png`;
+
+					const tileLayer = new TileLayer(urlTemplate, {
+						tileSize: 256,
+						opacity: 0,
+						zIndex: frame.time
+					});
+
+					radarLayers[frame.path] = {
+						index,
+						time: frame.time,
+						loaded: false,
+						tileLayer
+					};
+
+					//tileLayer.on('loading', startLoadingTile);
+					tileLayer.on('load', () => {
+						radarLayers[frame.path].loaded = true;
+					});
+					//tileLayer.on('remove', finishLoadingTile);
+				}
+
+				const radarLayer = radarLayers[frame.path];
+				if (!map.hasLayer(radarLayer.tileLayer)) {
+					map
+						.addLayer(radarLayer.tileLayer)
+						.on('zoomstart', () => {
+							if (
+								radarLayer.index < radarFrameIndex - 1 ||
+								radarLayer.index > radarFrameIndex + 1
+							) {
+								map.removeLayer(radarLayer.tileLayer);
+							}
+						})
+						.on('zoomend', () => {
+							if (!map.hasLayer(radarLayer.tileLayer)) {
+								map.addLayer(radarLayer.tileLayer);
+							}
+						});
+				}
+
+				const nextIndex = index + 1;
+				if (preload && nextIndex < nsWeatherData.radar.frames.length) {
+					addLayer(nsWeatherData.radar.frames[nextIndex], nextIndex, true);
+				}
+				return radarLayer;
 			}
-			if (!radarLayers[frame.path]) {
-				const colorScheme = 4; // from 0 to 8. Check the https://rainviewer.com/api/color-schemes.html for additional information
-				const smooth = 1; // 0 - not smooth, 1 - smooth
-				const snow = 1; // 0 - do not show snow colors, 1 - show snow colors
-				const tileSize = 512; // can be 256 or 512.
 
-				const urlTemplate = `${nsWeatherData.radar.host}/${frame.path}/${tileSize}/{z}/{x}/{y}/${colorScheme}/${smooth}_${snow}.png`;
+			on('weatherdata_updatedRadar', function () {
+				gg('Initialize Radar layers.');
+				const radarFrame = nsWeatherData.radar.frames[radarFrameIndex];
 
-				const tileLayer = new TileLayer(urlTemplate, {
-					tileSize: 256,
-					opacity: 0,
-					zIndex: frame.time
+				// Load and display current radar layer.
+				addLayer(radarFrame, radarFrameIndex)?.tileLayer.on('load', ({ target }) => {
+					target.setOpacity(0.6);
 				});
 
-				radarLayers[frame.path] = {
-					index,
-					time: frame.time,
-					loaded: false,
-					tileLayer
-				};
+				// Pre-load next radar layers:
+				addLayer(nsWeatherData.radar.frames[0], 0, true);
+			});
 
-				//tileLayer.on('loading', startLoadingTile);
-				tileLayer.on('load', () => {
-					radarLayers[frame.path].loaded = true;
-				});
-				//tileLayer.on('remove', finishLoadingTile);
-			}
+			///---------------------------------------------------------------------------------------///
 
-			const radarLayer = radarLayers[frame.path];
-			if (!map.hasLayer(radarLayer.tileLayer)) {
-				map
-					.addLayer(radarLayer.tileLayer)
-					.on('zoomstart', () => {
-						if (radarLayer.index < radarFrameIndex - 1 || radarLayer.index > radarFrameIndex + 1) {
-							map.removeLayer(radarLayer.tileLayer);
-						}
-					})
-					.on('zoomend', () => {
-						if (!map.hasLayer(radarLayer.tileLayer)) {
-							map.addLayer(radarLayer.tileLayer);
+			// Insert div.leaflet-footer element into leaflet map.
+			// Add to list of Leaflet control corners as 'footer'.
+			map._controlCorners.footer = DomUtil.create('div', 'leaflet-footer', map.getContainer());
+
+			// Define a simple control class that positions itself into newly created footer control corner:
+			const RadarControl = Control.extend({
+				options: {
+					position: 'footer'
+				},
+				onAdd: function () {
+					const container = DomUtil.create('div', 'full-width');
+					DomEvent.disableClickPropagation(container);
+
+					const radarTimelineControl = mount(RadarTimeline, {
+						target: container,
+						props: {
+							radarLayers,
+							nsWeatherData
 						}
 					});
-			}
 
-			const nextIndex = index + 1;
-			if (preload && nextIndex < nsWeatherData.radar.frames.length) {
-				addLayer(nsWeatherData.radar.frames[nextIndex], nextIndex, true);
-			}
-			return radarLayer;
-		}
+					DomEvent.disableClickPropagation(container);
 
-		on('weatherdata_updatedRadar', function () {
-			gg('Initialize Radar layers.');
-			const radarFrame = nsWeatherData.radar.frames[radarFrameIndex];
-
-			// Load and display current radar layer.
-			addLayer(radarFrame, radarFrameIndex)?.tileLayer.on('load', ({ target }) => {
-				target.setOpacity(0.6);
+					return container;
+				}
 			});
 
-			// Pre-load next radar layers:
-			addLayer(nsWeatherData.radar.frames[0], 0, true);
-		});
+			// Add simple control defined above to map:
+			new RadarControl().addTo(map);
 
-		///---------------------------------------------------------------------------------------///
+			///---------------------------------------------------------------------------------------///
 
-		// Insert div.leaflet-footer element into leaflet map.
-		// Add to list of Leaflet control corners as 'footer'.
-		map._controlCorners.footer = DomUtil.create('div', 'leaflet-footer', map.getContainer());
+			let prevTimestamp = 0;
+			function step(timeStamp: number) {
+				if (nsWeatherData.radar.generated) {
+					const deltaTime = timeStamp - prevTimestamp;
 
-		// Define a simple control class that positions itself into newly created footer control corner:
-		const RadarControl = Control.extend({
-			options: {
-				position: 'footer'
-			},
-			onAdd: function () {
-				const container = DomUtil.create('div', 'full-width');
-				DomEvent.disableClickPropagation(container);
+					if (deltaTime > 20) {
+						if (nsWeatherData.radarPlaying) {
+							emit('weatherdata_requestedSetTime', { time: nsWeatherData.time + 40 });
+						}
 
-				const radarTimelineControl = mount(RadarTimeline, {
-					target: container,
-					props: {
-						radarLayers,
-						nsWeatherData
-					}
-				});
+						const path = nsWeatherData.radar.frames[radarFrameIndex]?.path;
 
-				DomEvent.disableClickPropagation(container);
+						if (radarLayers[path]?.loaded) {
+							Object.values(radarLayers).forEach((layer) => layer?.tileLayer.setOpacity(0));
+							radarLayers[path].tileLayer.setOpacity(0.6);
 
-				return container;
-			}
-		});
+							prevTimestamp = timeStamp;
+						} else {
+							const radarFrame = nsWeatherData.radar.frames[radarFrameIndex];
 
-		// Add simple control defined above to map:
-		new RadarControl().addTo(map);
+							// Load and display current radar layer.
+							addLayer(radarFrame, radarFrameIndex)?.tileLayer.on('load', ({ target }) => {
+								target.setOpacity(0.6);
+							});
 
-		///---------------------------------------------------------------------------------------///
-
-		let prevTimestamp = 0;
-		function step(timeStamp: number) {
-			if (nsWeatherData.radar.generated) {
-				const deltaTime = timeStamp - prevTimestamp;
-
-				if (deltaTime > 20) {
-					if (nsWeatherData.radarPlaying) {
-						emit('weatherdata_requestedSetTime', { time: nsWeatherData.time + 40 });
-					}
-
-					const path = nsWeatherData.radar.frames[radarFrameIndex]?.path;
-
-					if (radarLayers[path]?.loaded) {
-						Object.values(radarLayers).forEach((layer) => layer?.tileLayer.setOpacity(0));
-						radarLayers[path].tileLayer.setOpacity(0.6);
-
-						prevTimestamp = timeStamp;
-					} else {
-						const radarFrame = nsWeatherData.radar.frames[radarFrameIndex];
-
-						// Load and display current radar layer.
-						addLayer(radarFrame, radarFrameIndex)?.tileLayer.on('load', ({ target }) => {
-							target.setOpacity(0.6);
-						});
-
-						// Pre-load next radar layer:
-						const nextFrameIndex = radarFrameIndex + 1;
-						if (radarFrameIndex < 16) {
-							addLayer(nsWeatherData.radar.frames[nextFrameIndex], nextFrameIndex);
+							// Pre-load next radar layer:
+							const nextFrameIndex = radarFrameIndex + 1;
+							if (radarFrameIndex < 16) {
+								addLayer(nsWeatherData.radar.frames[nextFrameIndex], nextFrameIndex);
+							}
 						}
 					}
 				}
+				requestAnimationFrame(step);
 			}
-			requestAnimationFrame(step);
-		}
 
-		requestAnimationFrame(step);
+			requestAnimationFrame(step);
+		})();
 
 		return () => {
 			if (map) {

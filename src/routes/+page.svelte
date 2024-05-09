@@ -7,7 +7,7 @@
 
 	import type { Control, Map } from 'leaflet';
 
-	import { mount, onDestroy, onMount, untrack } from 'svelte';
+	import { mount, onDestroy, onMount, unmount, untrack } from 'svelte';
 
 	import { gg } from '$lib/gg.js';
 	import { getEmitter } from '$lib/emitter.js';
@@ -19,6 +19,7 @@
 	let map: Map;
 	let locateControl: Control.Locate;
 	let animationFrameId: number;
+	let radarTimelineControl: RadarTimeline;
 
 	let { data } = $props();
 
@@ -199,7 +200,7 @@
 				const container = DomUtil.create('div', 'full-width');
 				DomEvent.disableClickPropagation(container);
 
-				const radarTimelineControl = mount(RadarTimeline, {
+				radarTimelineControl = mount(RadarTimeline, {
 					target: container,
 					props: {
 						radarLayers,
@@ -261,6 +262,9 @@
 		if (map) {
 			gg('Unloading Leaflet map.');
 			map.remove();
+		}
+		if (radarTimelineControl) {
+			unmount(radarTimelineControl);
 		}
 		if (animationFrameId) {
 			cancelAnimationFrame(animationFrameId);

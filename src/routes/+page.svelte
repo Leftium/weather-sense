@@ -27,7 +27,14 @@
 	const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 
 	let radarLayers: Record<string, RadarLayer> = $state({});
-	let radarFrameIndex = $state(12);
+
+	let radarFrameIndex = $derived.by(() => {
+		const fractionPlayed =
+			(nsWeatherData.time - nsWeatherData.radar.frames[0]?.time) /
+			(nsWeatherData.radar.frames[15]?.time - nsWeatherData.radar.frames[0]?.time);
+
+		return Math.floor(15 * fractionPlayed) || 12;
+	});
 
 	emit('weatherdata_requestedSetLocation', {
 		source: data.source,
@@ -269,17 +276,6 @@
 		if (animationFrameId) {
 			cancelAnimationFrame(animationFrameId);
 		}
-	});
-
-	$effect(() => {
-		const fractionPlayed =
-			(nsWeatherData.time - nsWeatherData.radar.frames[0]?.time) /
-			(nsWeatherData.radar.frames[15]?.time - nsWeatherData.radar.frames[0]?.time);
-
-		radarFrameIndex = Math.floor(15 * fractionPlayed) || 12;
-		untrack(() => {
-			// gg({ radarFrameIndex, fractionPlayed, 'nsWeatherData.time': nsWeatherData.time });
-		});
 	});
 
 	function handleEnablePreciseLocation() {

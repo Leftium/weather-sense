@@ -18,8 +18,8 @@
 	let mapElement: HTMLDivElement;
 	let map: Map;
 	let locateControl: Control.Locate;
-	let animationFrameId: number;
 	let radarTimelineControl: RadarTimeline;
+	let animationFrameId: number;
 
 	let { data } = $props();
 

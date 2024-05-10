@@ -3,7 +3,7 @@
 </script>
 
 <svelte:head>
-	<title>Geolocation Accuracy Survey</title>
+	<title>WeatherSense</title>
 </svelte:head>
 
 <slot></slot>

@@ -90,7 +90,7 @@
 		map.on('locationfound', function onLocationFound(e) {
 			accuracyCircle.setLatLng(e.latlng).setRadius(e.accuracy);
 
-			locateControl.stop();
+			// locateControl.stop();
 
 			gg(e);
 

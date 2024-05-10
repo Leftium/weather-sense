@@ -270,7 +270,7 @@
 	});
 </script>
 
-<div class="map" bind:this={mapElement}></div>
+<div bind:this={mapElement} style:height="100%"></div>
 
 <style>
 	:global(.leaflet-footer) {
@@ -302,9 +302,5 @@
 
 	:global(.full-width) {
 		width: 100%;
-	}
-
-	.map {
-		height: 400px;
 	}
 </style>

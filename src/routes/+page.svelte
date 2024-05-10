@@ -95,6 +95,7 @@
 
 	.debug {
 		margin-top: 1em;
+		overflow-x: scroll;
 	}
 
 	@media (max-width: 768px) {

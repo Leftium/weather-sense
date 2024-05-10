@@ -7,7 +7,7 @@
 
 	import type { Control, Map } from 'leaflet';
 
-	import { mount, onDestroy, onMount, unmount, untrack } from 'svelte';
+	import { mount, onDestroy, onMount, tick, unmount, untrack } from 'svelte';
 
 	import { gg } from '$lib/gg.js';
 	import { getEmitter } from '$lib/emitter.js';
@@ -87,11 +87,8 @@
 		locateControl.addTo(map);
 		new Control.Zoom({ position: 'bottomright' }).addTo(map);
 
-		map.on('locationfound', function onLocationFound(e) {
+		map.on('locationfound', async function onLocationFound(e) {
 			accuracyCircle.setLatLng(e.latlng).setRadius(e.accuracy);
-
-			// locateControl.stop();
-
 			gg(e);
 
 			const distance = nsWeatherData.coords
@@ -100,16 +97,19 @@
 			gg({ distance });
 
 			// Uncomment to avoid calling weather API's again for very small changes in location.
-			//if (distance > 1000) {
-			emit('weatherdata_requestedSetLocation', {
-				source: 'geolocation',
-				coords: {
-					latitude: e.latlng.lat,
-					longitude: e.latlng.lng,
-					accuracy: e.accuracy
-				}
-			});
-			//}
+			if (distance > 1000) {
+				emit('weatherdata_requestedSetLocation', {
+					source: 'geolocation',
+					coords: {
+						latitude: e.latlng.lat,
+						longitude: e.latlng.lng,
+						accuracy: e.accuracy
+					}
+				});
+			}
+
+			await tick();
+			locateControl.stop();
 		});
 
 		///---------------------------------------------------------------------------------------///

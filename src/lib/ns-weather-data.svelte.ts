@@ -114,7 +114,7 @@ export function makeNsWeatherData() {
 
 	async function fetchOpenMeteo() {
 		const url =
-			`https://api.open-meteo.com/v1/forecast?latitude=37.6472&longitude=126.668` +
+			`https://api.open-meteo.com/v1/forecast?latitude=${coords?.latitude}&longitude=${coords?.longitude}` +
 			`&current=temperature_2m,relative_humidity_2m,is_day,precipitation,rain,showers,snowfall,weather_code` +
 			`&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,weather_code` +
 			`&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,rain_sum,showers_sum,snowfall_sum,precipitation_hours,precipitation_probability_max` +

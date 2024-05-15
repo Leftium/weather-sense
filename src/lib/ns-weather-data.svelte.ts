@@ -28,6 +28,19 @@ export type WeatherDataEvents = {
 
 const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 
+type CurrentWeather = {
+	time: number;
+	isDay: boolean;
+	weatherCode: number;
+	temperature: number;
+
+	precipitation: number;
+	rain: number;
+	humidity: number;
+	showers: number;
+	snowfall: number;
+};
+
 export type NsWeatherData = ReturnType<typeof makeNsWeatherData>;
 
 export function makeNsWeatherData() {
@@ -44,6 +57,30 @@ export function makeNsWeatherData() {
 	let radarPlaying = $state(false);
 	let resetRadarOnPlay = $state(true);
 	let radar: Radar = $state({ generated: 0, host: '', frames: [] });
+
+	let current: CurrentWeather | null = $state(null);
+
+	async function fetchOpenMeteo() {
+		const url = `https://api.open-meteo.com/v1/forecast?latitude=${coords?.latitude}&longitude=${coords?.longitude}&current=temperature_2m,relative_humidity_2m,is_day,precipitation,rain,showers,snowfall,weather_code&temperature_unit=fahrenheit&timeformat=unixtime&timezone=auto&past_days=2`;
+		const fetched = await fetch(url);
+
+		const json = await fetched.json();
+
+		current = {
+			time: json.current.time,
+			isDay: json.current.is_day === 1,
+			weatherCode: json.current.weather_code,
+			temperature: json.current.temperature_2m,
+
+			precipitation: json.current.precipitation,
+			rain: json.current.rain,
+			humidity: json.current.relative_humidity_2m,
+			showers: json.current.showers,
+			snowfall: json.current.snowfall
+		};
+
+		gg({ json });
+	}
 
 	on('weatherdata_requestedFetchRainviewerData', async function () {
 		// Load all the available map frames from RainViewer API.
@@ -90,6 +127,7 @@ export function makeNsWeatherData() {
 		}
 
 		gg({ name, coords, params });
+		fetchOpenMeteo();
 	});
 
 	on('weatherdata_requestedSetTime', function (params) {
@@ -136,6 +174,10 @@ export function makeNsWeatherData() {
 
 		get radarPlaying() {
 			return radarPlaying;
+		},
+
+		get current() {
+			return current;
 		}
 	};
 

@@ -1,7 +1,7 @@
 <script lang="ts">
 	import type { WeatherDataEvents } from '$lib/ns-weather-data.svelte.js';
 
-	import { humanDistance, tsToTime } from '$lib/util.js';
+	import { humanDistance, tsToTime, wmoCode } from '$lib/util.js';
 	import RadarMap from './RadarMap.svelte';
 
 	import { makeNsWeatherData } from '$lib/ns-weather-data.svelte.js';
@@ -31,6 +31,19 @@
 	<div class="time">
 		{tsToTime(nsWeatherData.time, 'ddd mmm d, h:MMtt')}
 	</div>
+	<div class="current">
+		<img class="icon" src="/icons/{wmoCode(nsWeatherData.current?.weatherCode).icon}" alt="" />
+		<div>
+			<div class="condition">
+				<span>{nsWeatherData.current?.temperature}&deg;F</span>
+				<span>{wmoCode(nsWeatherData.current?.weatherCode).description}</span>
+			</div>
+			<div>
+				<span><b>Humidity:</b> {nsWeatherData.current?.humidity}%</span>
+				<span><b>Precipitation:</b> {nsWeatherData.current?.precipitation}mm</span>
+			</div>
+		</div>
+	</div>
 </div>
 
 <div class="container">
@@ -41,6 +54,7 @@
 	</div>
 
 	<div class="pico debug">
+		<pre>nsWeatherData.current = {`${JSON.stringify(nsWeatherData.current, null, 4)}`}</pre>
 		<pre>nsWeatherData = {`${JSON.stringify(nsWeatherData, null, 4)}`}</pre>
 	</div>
 
@@ -66,9 +80,27 @@
 	}
 
 	.name,
-	.time {
+	.time,
+	.current {
 		margin: auto;
 		font-family: Lato, sans-serif;
+	}
+
+	.current {
+		display: flex;
+	}
+
+	.current .icon {
+		margin-right: 0.5em;
+	}
+
+	.current .condition {
+		font-size: x-large;
+		font-weight: bold;
+	}
+
+	.current .condition span {
+		padding-right: 0.3em;
 	}
 
 	.name {

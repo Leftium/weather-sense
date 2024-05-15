@@ -259,7 +259,7 @@ export function makeNsWeatherData() {
 		},
 
 		get current() {
-			return current;
+			return { ...current };
 		},
 
 		get daily() {
@@ -271,7 +271,7 @@ export function makeNsWeatherData() {
 		},
 
 		// Converts units, rounds to appropriate digits, and adds units label.
-		format(dataPath: string) {
+		format(dataPath: string, showUnits = true) {
 			const key = dataPath.replace(/.*\./, '') as keyof typeof unitsUsed;
 			const unit = units[unitsUsed[key]];
 			const n = _.get(nsWeatherData, dataPath);
@@ -280,10 +280,18 @@ export function makeNsWeatherData() {
 				return '...';
 			}
 			if (unit === 'F') {
-				return `${Math.round(n)}°F`;
+				let formatted = `${Math.round(n)}°`;
+				if (showUnits) {
+					formatted = formatted + 'F';
+				}
+				return formatted;
 			}
 			if (unit === 'C') {
-				return `${celcius(n)?.toFixed(1)}°C`;
+				let formatted = `${celcius(n)?.toFixed(1)}°`;
+				if (showUnits) {
+					formatted = formatted + 'C';
+				}
+				return formatted;
 			}
 			return `${n} unknown unit: ${unit}`;
 		}

@@ -49,25 +49,28 @@
 		{tsToTime(nsWeatherData.time, 'ddd mmm d, h:MMtt')}
 	</div>
 	<div class="current">
+		<div class="flex">
+			<div class="main-temperature" use:toggleUnits={{ temperature: true }}>
+				{nsWeatherData.format('current.temperature')}
+			</div>
+		</div>
 		<img class="icon" src="/icons/{wmoCode(nsWeatherData.current?.weatherCode).icon}" alt="" />
 		<div>
 			<div class="condition">
-				<span use:toggleUnits={{ temperature: true }}
-					>{nsWeatherData.format('current.temperature')}</span
-				>
 				<span>{wmoCode(nsWeatherData.current?.weatherCode).description}</span>
 			</div>
 			<div>
 				<span use:toggleUnits={{ temperature: true }}>
-					<b>Low:</b>{nsWeatherData.format('daily[2].temperatureMin')}</span
-				>
-				<span use:toggleUnits={{ temperature: true }}>
-					<b>High:</b>{nsWeatherData.format('daily[2].temperatureMax')}</span
-				>
-				<span><b>Humidity:</b>{nsWeatherData.current?.humidity}%</span>
-				<span><b>Precipitation:</b>{nsWeatherData.current?.precipitation}mm</span>
+					{nsWeatherData.format('daily[2].temperatureMin', false)}
+				</span>-<span use:toggleUnits={{ temperature: true }}>
+					{nsWeatherData.format('daily[2].temperatureMax', false)}
+				</span>
 			</div>
 		</div>
+	</div>
+	<div class="other-measurements">
+		<span><b>Humidity:</b>{nsWeatherData.current?.humidity}%</span>
+		<span><b>Precipitation:</b>{nsWeatherData.current?.precipitation}mm</span>
 	</div>
 </div>
 
@@ -93,6 +96,14 @@
 </div>
 
 <style>
+	.flex {
+		display: flex;
+	}
+
+	.flex-column {
+		flex-direction: column;
+	}
+
 	.sticky-info {
 		position: sticky;
 		top: 0;
@@ -118,6 +129,12 @@
 
 	.current .icon {
 		margin-right: 0.5em;
+		height: 64px;
+	}
+
+	.main-temperature {
+		font-size: 2.3em;
+		margin-right: 0.2em;
 	}
 
 	.current .condition {
@@ -127,6 +144,10 @@
 
 	.current .condition span {
 		padding-right: 0.3em;
+	}
+
+	.other-measurements {
+		margin: auto;
 	}
 
 	.name {

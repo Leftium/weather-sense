@@ -51,6 +51,19 @@ type CurrentWeather = {
 	snowfall: number;
 };
 
+type HourlyWeather = {
+	time: number;
+	timeFormatted: string;
+	fromNow: number;
+
+	weatherCode: number;
+	temperature: number;
+	relativeHumidity: number;
+
+	precipitationProbability: number;
+	precipitation: number;
+};
+
 type DailyWeather = {
 	time: number;
 	timeFormatted: string;
@@ -86,6 +99,7 @@ export function makeNsWeatherData() {
 	let radar: Radar = $state({ generated: 0, host: '', frames: [] });
 
 	let current: CurrentWeather | null = $state(null);
+	let hourly: HourlyWeather[] | null = $state(null);
 	let daily: DailyWeather[] | null = $state(null);
 
 	let units = $state({
@@ -102,8 +116,10 @@ export function makeNsWeatherData() {
 		const url =
 			`https://api.open-meteo.com/v1/forecast?latitude=37.6472&longitude=126.668` +
 			`&current=temperature_2m,relative_humidity_2m,is_day,precipitation,rain,showers,snowfall,weather_code` +
+			`&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,weather_code` +
 			`&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,rain_sum,showers_sum,snowfall_sum,precipitation_hours,precipitation_probability_max` +
 			`&temperature_unit=fahrenheit&timeformat=unixtime&timezone=auto&past_days=2`;
+
 		const fetched = await fetch(url);
 
 		const json = await fetched.json();
@@ -122,6 +138,14 @@ export function makeNsWeatherData() {
 			snowfall: json.current.snowfall
 		};
 
+		const hourlyKeys = {
+			weather_code: 'weatherCode',
+			temperature_2m: 'temperature',
+			relative_humidity_2m: 'relativeHumidity',
+			precipitation_probability: 'precipitationProbability',
+			precipitation: 'precipitation'
+		};
+
 		const dailyKeys = {
 			weather_code: 'weatherCode',
 			temperature_2m_max: 'temperatureMax',
@@ -135,6 +159,22 @@ export function makeNsWeatherData() {
 			precipitation_hours: 'precipitationHours',
 			precipitation_probability_max: 'precipitationProbabilityMax'
 		};
+
+		const now = +new Date() / 1000;
+		hourly = _.map(json.hourly.time, (time, index: number) => {
+			const fromNow = Math.floor((time - now) / 60 / 60) + 1;
+			const object: Partial<HourlyWeather> = {
+				timeFormatted: dateFormat(time * 1000, DATEFORMAT_MASK),
+				time,
+				fromNow
+			};
+
+			_.forEach(hourlyKeys, (newKey, openMeteoKey) => {
+				object[newKey as keyof HourlyWeather] = json.hourly[openMeteoKey][index];
+			});
+
+			return object as HourlyWeather;
+		});
 
 		daily = _.map(json.daily.time, (time, index: number) => {
 			const timeCompact = compactDate(time);
@@ -267,6 +307,10 @@ export function makeNsWeatherData() {
 
 		get current() {
 			return { ...current };
+		},
+
+		get hourly() {
+			return hourly;
 		},
 
 		get daily() {

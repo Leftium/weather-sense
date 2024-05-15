@@ -102,6 +102,7 @@
 
 	<div class="pico debug">
 		<pre>nsWeatherData.current = {`${JSON.stringify(nsWeatherData.current, null, 4)}`}</pre>
+		<pre>nsWeatherData.hourly = {`${JSON.stringify(nsWeatherData.hourly, null, 4)}`}</pre>
 		<pre>nsWeatherData.daily = {`${JSON.stringify(nsWeatherData.daily, null, 4)}`}</pre>
 		<pre>nsWeatherData = {`${JSON.stringify(nsWeatherData, null, 4)}`}</pre>
 	</div>

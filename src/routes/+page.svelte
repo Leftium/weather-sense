@@ -53,13 +53,19 @@
 		<div>
 			<div class="condition">
 				<span use:toggleUnits={{ temperature: true }}
-					>{nsWeatherData.format('current', 'temperature')}</span
+					>{nsWeatherData.format('current.temperature')}</span
 				>
 				<span>{wmoCode(nsWeatherData.current?.weatherCode).description}</span>
 			</div>
 			<div>
-				<span><b>Humidity:</b> {nsWeatherData.current?.humidity}%</span>
-				<span><b>Precipitation:</b> {nsWeatherData.current?.precipitation}mm</span>
+				<span use:toggleUnits={{ temperature: true }}>
+					<b>Low:</b>{nsWeatherData.format('daily[2].temperatureMin')}</span
+				>
+				<span use:toggleUnits={{ temperature: true }}>
+					<b>High:</b>{nsWeatherData.format('daily[2].temperatureMax')}</span
+				>
+				<span><b>Humidity:</b>{nsWeatherData.current?.humidity}%</span>
+				<span><b>Precipitation:</b>{nsWeatherData.current?.precipitation}mm</span>
 			</div>
 		</div>
 	</div>
@@ -74,6 +80,7 @@
 
 	<div class="pico debug">
 		<pre>nsWeatherData.current = {`${JSON.stringify(nsWeatherData.current, null, 4)}`}</pre>
+		<pre>nsWeatherData.daily = {`${JSON.stringify(nsWeatherData.daily, null, 4)}`}</pre>
 		<pre>nsWeatherData = {`${JSON.stringify(nsWeatherData, null, 4)}`}</pre>
 	</div>
 

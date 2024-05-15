@@ -17,6 +17,23 @@
 		name: data.name,
 		coords: data.coords
 	});
+
+	function toggleUnits(node: HTMLElement, options: { temperature: boolean | string }) {
+		function handleClick() {
+			emit('weatherdata_requestedToggleUnits', options);
+		}
+
+		const abortController = new AbortController();
+		const { signal } = abortController;
+
+		node.addEventListener('click', handleClick, { signal });
+
+		return {
+			destroy() {
+				abortController.abort();
+			}
+		};
+	}
 </script>
 
 <div class="pico container">
@@ -35,7 +52,9 @@
 		<img class="icon" src="/icons/{wmoCode(nsWeatherData.current?.weatherCode).icon}" alt="" />
 		<div>
 			<div class="condition">
-				<span>{nsWeatherData.current?.temperature}&deg;F</span>
+				<span use:toggleUnits={{ temperature: true }}
+					>{nsWeatherData.format('current', 'temperature')}</span
+				>
 				<span>{wmoCode(nsWeatherData.current?.weatherCode).description}</span>
 			</div>
 			<div>

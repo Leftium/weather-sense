@@ -77,3 +77,10 @@ export function wmoCode(code: number | undefined) {
 		icon: ''
 	};
 }
+
+export function celcius(f: number | undefined) {
+	if (typeof f !== 'number') {
+		return undefined;
+	}
+	return (f - 32) * (5 / 9);
+}

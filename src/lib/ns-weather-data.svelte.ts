@@ -5,6 +5,7 @@ import haversine from 'haversine-distance';
 import { getEmitter } from '$lib/emitter';
 import { gg } from '$lib/gg';
 import type { Coordinates, Radar } from '$lib/types';
+import { celcius } from './util';
 
 export type WeatherDataEvents = {
 	weatherdata_requestedSetLocation: {
@@ -15,6 +16,10 @@ export type WeatherDataEvents = {
 
 	weatherdata_requestedSetTime: {
 		time: number;
+	};
+
+	weatherdata_requestedToggleUnits: {
+		temperature: boolean | string;
 	};
 
 	weatherdata_requestedTogglePlay: undefined;
@@ -59,6 +64,10 @@ export function makeNsWeatherData() {
 	let radar: Radar = $state({ generated: 0, host: '', frames: [] });
 
 	let current: CurrentWeather | null = $state(null);
+
+	let units = $state({
+		temperature: 'F'
+	});
 
 	async function fetchOpenMeteo() {
 		const url = `https://api.open-meteo.com/v1/forecast?latitude=${coords?.latitude}&longitude=${coords?.longitude}&current=temperature_2m,relative_humidity_2m,is_day,precipitation,rain,showers,snowfall,weather_code&temperature_unit=fahrenheit&timeformat=unixtime&timezone=auto&past_days=2`;
@@ -151,6 +160,16 @@ export function makeNsWeatherData() {
 		resetRadarOnPlay = false;
 	});
 
+	on('weatherdata_requestedToggleUnits', function (params) {
+		if (params.temperature) {
+			if (typeof params.temperature === 'string' && ['C', 'F'].includes(params.temperature)) {
+				units.temperature = params.temperature;
+			} else {
+				units.temperature = units.temperature === 'F' ? 'C' : 'F';
+			}
+		}
+	});
+
 	const nsWeatherData = {
 		get source() {
 			return source;
@@ -178,6 +197,27 @@ export function makeNsWeatherData() {
 
 		get current() {
 			return current;
+		},
+
+		get units() {
+			return units;
+		},
+
+		// Converts units, rounds to appropriate digits, and adds units label.
+		format(dataKey: 'current', unitKey: 'temperature') {
+			const unit = units[unitKey];
+			const n = nsWeatherData[dataKey]?.[unitKey];
+
+			if (n === undefined) {
+				return '...';
+			}
+			if (unit === 'F') {
+				return `${Math.round(n)}°F`;
+			}
+			if (unit === 'C') {
+				return `${celcius(n)?.toFixed(1)}°C`;
+			}
+			return `unknown unit: ${unit}`;
 		}
 	};
 

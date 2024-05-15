@@ -6,7 +6,7 @@ import haversine from 'haversine-distance';
 import { getEmitter } from '$lib/emitter';
 import { gg } from '$lib/gg';
 import type { Coordinates, Radar } from '$lib/types';
-import { celcius } from './util';
+import { celcius, compactDate } from './util';
 import dateFormat from 'dateformat';
 
 export type WeatherDataEvents = {
@@ -54,6 +54,9 @@ type CurrentWeather = {
 type DailyWeather = {
 	time: number;
 	timeFormatted: string;
+	timeCompact: string;
+	fromToday: number;
+
 	isDay: boolean;
 	weatherCode: number;
 	temperature: number;
@@ -133,10 +136,14 @@ export function makeNsWeatherData() {
 			precipitation_probability_max: 'precipitationProbabilityMax'
 		};
 
-		daily = _.map(json.daily.time, (time, index) => {
+		daily = _.map(json.daily.time, (time, index: number) => {
+			const timeCompact = compactDate(time);
+
 			const object: Partial<DailyWeather> = {
 				timeFormatted: dateFormat(time * 1000, DATEFORMAT_MASK),
-				time
+				timeCompact: index === 2 ? 'Today' : timeCompact,
+				time,
+				fromToday: index - 2
 			};
 
 			_.forEach(dailyKeys, (newKey, openMeteoKey) => {

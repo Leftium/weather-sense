@@ -79,6 +79,25 @@
 		<div class="map">
 			<RadarMap {nsWeatherData} />
 		</div>
+
+		<div class="daily pico">
+			{#each nsWeatherData.daily || [] as day, index}
+				<article class="flex" class:today={day.fromToday === 0} class:past={day.fromToday < 0}>
+					<div>
+						<img
+							class="icon small"
+							src="/icons/{wmoCode(day.weatherCode).icon}"
+							title={wmoCode(day.weatherCode).description}
+							alt=""
+						/>
+					</div>
+					<div>{day.timeCompact}</div>
+					<div class="condition">
+						<span></span>
+					</div>
+				</article>
+			{/each}
+		</div>
 	</div>
 
 	<div class="pico debug">
@@ -148,6 +167,28 @@
 
 	.other-measurements {
 		margin: auto;
+	}
+
+	.daily {
+		font-family: Lato, sans-serif;
+		margin: 1em;
+	}
+
+	.daily article > div {
+		margin: 0 0.1em;
+	}
+
+	.daily .icon.small {
+		height: 32px;
+		width: 32px;
+	}
+
+	.daily .today {
+		font-weight: bold;
+	}
+
+	.daily .past {
+		opacity: 0.4;
 	}
 
 	.name {

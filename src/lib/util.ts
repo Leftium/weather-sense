@@ -84,3 +84,8 @@ export function celcius(f: number | undefined) {
 	}
 	return (f - 32) * (5 / 9);
 }
+
+export function compactDate(time?: number) {
+	const ms = time ? time * 1000 : +new Date();
+	return dateFormat(ms, 'ddd-dd').replace(/^(..)./, '$1');
+}

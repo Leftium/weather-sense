@@ -39,6 +39,7 @@
 
 	let merryTimelinePrev24Div: HTMLDivElement;
 	let merryTimelineNext24Div: HTMLDivElement;
+	let merryTimeline48Div: HTMLDivElement;
 
 	function makeMerryData(hour: { time: any; weatherCode: number | undefined }) {
 		return {
@@ -52,10 +53,12 @@
 	$effect(function () {
 		const merryDataPrev24 = nsWeatherData.prev24?.map(makeMerryData) || [];
 		const merryDataNext24 = nsWeatherData.next24?.map(makeMerryData) || [];
+		const merryData48 = [].concat(merryDataPrev24, merryDataNext24);
 		const options = { _timezone: 'America/Chicago' };
 
 		timeline(merryTimelinePrev24Div, merryDataPrev24, options);
 		timeline(merryTimelineNext24Div, merryDataNext24, options);
+		timeline(merryTimeline48Div, merryData48, options);
 	});
 </script>
 
@@ -106,9 +109,8 @@
 		<div class="hourly pico">
 			<article>
 				<div bind:this={merryTimelinePrev24Div} class="past"></div>
-			</article>
-			<article>
 				<div bind:this={merryTimelineNext24Div}></div>
+				<div bind:this={merryTimeline48Div}></div>
 			</article>
 		</div>
 

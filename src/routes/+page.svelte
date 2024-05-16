@@ -74,7 +74,7 @@
 				{nsWeatherData.format('current.temperature')}
 			</div>
 		</div>
-		<img class="icon" src="/icons/{wmoCode(nsWeatherData.current?.weatherCode).icon}" alt="" />
+		<img class="icon" src={wmoCode(nsWeatherData.current?.weatherCode).icon} alt="" />
 		<div>
 			<div class="condition">
 				<span>{wmoCode(nsWeatherData.current?.weatherCode).description}</span>
@@ -112,7 +112,7 @@
 					<div>
 						<img
 							class="icon small"
-							src="/icons/{wmoCode(day.weatherCode).icon}"
+							src={wmoCode(day.weatherCode).icon}
 							title={wmoCode(day.weatherCode).description}
 							alt=""
 						/>

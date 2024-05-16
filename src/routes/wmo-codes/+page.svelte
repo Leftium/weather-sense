@@ -25,7 +25,7 @@
 						<span class="code transparent" hidden={numericCode > 9}>0</span><span class="code"
 							>{code}</span
 						>
-						<img src="/icons/{data.icon}" alt="" />
+						<img src={data.icon} alt="" />
 					</div>
 					<div class="description">{data.description}</div>
 				</div>

@@ -8,6 +8,7 @@ import { gg } from '$lib/gg';
 import type { Coordinates, Radar } from '$lib/types';
 import { celcius, compactDate } from './util';
 import dateFormat from 'dateformat';
+import { browser } from '$app/environment';
 
 export type WeatherDataEvents = {
 	weatherdata_requestedSetLocation: {
@@ -196,89 +197,92 @@ export function makeNsWeatherData() {
 		gg({ json, daily });
 	}
 
-	on('weatherdata_requestedFetchRainviewerData', async function () {
-		// Load all the available map frames from RainViewer API.
-		const fetched = await fetch('https://api.rainviewer.com/public/weather-maps.json');
-		const rainviewerData = await fetched.json();
+	if (browser) {
+		on('weatherdata_requestedFetchRainviewerData', async function () {
+			// Load all the available map frames from RainViewer API.
+			const fetched = await fetch('https://api.rainviewer.com/public/weather-maps.json');
+			const rainviewerData = await fetched.json();
 
-		const frames = (rainviewerData.radar.past || [])
-			.concat(rainviewerData.radar.nowcast || [])
-			.map((frame: { time: number }) => ({
-				timeFormatted: dateFormat(frame.time * 1000, DATEFORMAT_MASK),
-				...frame
-			}));
+			const frames = (rainviewerData.radar.past || [])
+				.concat(rainviewerData.radar.nowcast || [])
+				.map((frame: { time: number }) => ({
+					timeFormatted: dateFormat(frame.time * 1000, DATEFORMAT_MASK),
+					...frame
+				}));
 
-		radar = {
-			generated: rainviewerData.generated,
-			host: rainviewerData.host,
-			frames
-		};
-		emit('weatherdata_updatedRadar', { nsWeatherData });
-	});
-
-	on('weatherdata_requestedSetLocation', async function (params) {
-		gg('weatherdata_requestedSetLocation', params);
-
-		source = params.source;
-
-		if (params.coords) {
-			coords = {
-				latitude: params.coords.latitude,
-				longitude: params.coords.longitude,
-				accuracy: params.coords.accuracy
+			radar = {
+				generated: rainviewerData.generated,
+				host: rainviewerData.host,
+				frames
 			};
-		} else if (params.name) {
-			// coords = GEOCODE(params.name)
-		}
+			emit('weatherdata_updatedRadar', { nsWeatherData });
+		});
 
-		if (params.name) {
-			name = params.name;
-		} else if (params.coords) {
-			name = '...';
-			// name = REVERSE_GEOCODE(params.coords)
-			const resp = await fetch(
-				`/api/geo/reverse?lat=${params.coords.latitude}&lon=${params.coords.longitude}`
-			);
-			const json = await resp.json();
-			const result = json[0];
+		on('weatherdata_requestedSetLocation', async function (params) {
+			gg('weatherdata_requestedSetLocation', params);
 
-			name = `${result.name}, ${result.country}`;
-		}
+			source = params.source;
 
-		gg({ name, coords, params });
-		fetchOpenMeteo();
-	});
-
-	on('weatherdata_requestedSetTime', function (params) {
-		// gg('weatherdata_requestedSetTime', params);
-
-		time = params.time;
-		const maxRadarTime = (radar.frames.at(-1)?.time || 0) + 10 * 60;
-		if (time > maxRadarTime) {
-			radarPlaying = false;
-			time = +new Date() / 1000;
-			resetRadarOnPlay = true;
-		}
-	});
-
-	on('weatherdata_requestedTogglePlay', function () {
-		radarPlaying = !radarPlaying;
-
-		if (resetRadarOnPlay) {
-			time = radar.frames[0].time;
-		}
-		resetRadarOnPlay = false;
-	});
-
-	on('weatherdata_requestedToggleUnits', function (params) {
-		if (params.temperature) {
-			if (typeof params.temperature === 'string' && ['C', 'F'].includes(params.temperature)) {
-				units.temperature = params.temperature;
-			} else {
-				units.temperature = units.temperature === 'F' ? 'C' : 'F';
+			if (params.coords) {
+				coords = {
+					latitude: params.coords.latitude,
+					longitude: params.coords.longitude,
+					accuracy: params.coords.accuracy
+				};
+			} else if (params.name) {
+				// coords = GEOCODE(params.name)
 			}
-		}
-	});
+
+			if (params.name) {
+				name = params.name;
+			} else if (params.coords) {
+				name = '...';
+				// name = REVERSE_GEOCODE(params.coords)
+				const resp = await fetch(
+					`/api/geo/reverse?lat=${params.coords.latitude}&lon=${params.coords.longitude}`
+				);
+				const json = await resp.json();
+				const result = json[0];
+
+				name = `${result.name}, ${result.country}`;
+			}
+
+			gg({ name, coords, params });
+
+			fetchOpenMeteo();
+		});
+
+		on('weatherdata_requestedSetTime', function (params) {
+			// gg('weatherdata_requestedSetTime', params);
+
+			time = params.time;
+			const maxRadarTime = (radar.frames.at(-1)?.time || 0) + 10 * 60;
+			if (time > maxRadarTime) {
+				radarPlaying = false;
+				time = +new Date() / 1000;
+				resetRadarOnPlay = true;
+			}
+		});
+
+		on('weatherdata_requestedTogglePlay', function () {
+			radarPlaying = !radarPlaying;
+
+			if (resetRadarOnPlay) {
+				time = radar.frames[0].time;
+			}
+			resetRadarOnPlay = false;
+		});
+
+		on('weatherdata_requestedToggleUnits', function (params) {
+			if (params.temperature) {
+				if (typeof params.temperature === 'string' && ['C', 'F'].includes(params.temperature)) {
+					units.temperature = params.temperature;
+				} else {
+					units.temperature = units.temperature === 'F' ? 'C' : 'F';
+				}
+			}
+		});
+	}
 
 	const nsWeatherData = {
 		get source() {

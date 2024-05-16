@@ -317,6 +317,16 @@ export function makeNsWeatherData() {
 			return hourly;
 		},
 
+		get prev24() {
+			const indexNow = _.findIndex(hourly, { fromNow: 0 });
+			return hourly?.slice(indexNow - 24, indexNow);
+		},
+
+		get next24() {
+			const indexNow = _.findIndex(hourly, { fromNow: 0 });
+			return hourly?.slice(indexNow, indexNow + 24);
+		},
+
 		get daily() {
 			return daily;
 		},

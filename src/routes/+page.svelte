@@ -37,22 +37,25 @@
 		};
 	}
 
-	let merryTimelineDiv: HTMLDivElement;
+	let merryTimelinePrev24Div: HTMLDivElement;
+	let merryTimelineNext24Div: HTMLDivElement;
+
+	function makeMerryData(hour: { time: any; weatherCode: number | undefined }) {
+		return {
+			time: hour.time,
+			color: wmoCode(hour.weatherCode).color,
+			text: wmoCode(hour.weatherCode).description
+			//annotation: String(hour.weatherCode)
+		};
+	}
 
 	$effect(function () {
-		const merryData =
-			nsWeatherData.hourly?.slice(48, 48 + 24)?.map((hour) => {
-				return {
-					time: hour.time,
-					color: wmoCode(hour.weatherCode).color,
-					text: wmoCode(hour.weatherCode).description,
-					annotation: String(hour.weatherCode)
-				};
-			}) || [];
-
+		const merryDataPrev24 = nsWeatherData.prev24?.map(makeMerryData) || [];
+		const merryDataNext24 = nsWeatherData.next24?.map(makeMerryData) || [];
 		const options = { _timezone: 'America/Chicago' };
 
-		timeline(merryTimelineDiv, merryData, options);
+		timeline(merryTimelinePrev24Div, merryDataPrev24, options);
+		timeline(merryTimelineNext24Div, merryDataNext24, options);
 	});
 </script>
 
@@ -102,7 +105,10 @@
 
 		<div class="hourly pico">
 			<article>
-				<div bind:this={merryTimelineDiv}></div>
+				<div bind:this={merryTimelinePrev24Div} class="past"></div>
+			</article>
+			<article>
+				<div bind:this={merryTimelineNext24Div}></div>
 			</article>
 		</div>
 
@@ -215,7 +221,7 @@
 		font-weight: bold;
 	}
 
-	.daily .past {
+	.past {
 		opacity: 0.4;
 	}
 

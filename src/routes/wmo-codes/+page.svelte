@@ -27,7 +27,11 @@
 						>
 						<img src={data.icon} alt="" />
 					</div>
-					<div class="description">{data.description}</div>
+					<div class="description">
+						<span class:is-dark-text={data.isDarkText} style:background-color={data.color}
+							>{data.description}</span
+						>
+					</div>
 				</div>
 			{/each}
 		</article>
@@ -56,6 +60,22 @@
 
 	.description {
 		font-size: small;
+	}
+
+	.description span {
+		padding: 0.3em;
+		border-radius: 0.3em;
+		line-height: 40px;
+		font-size: 13px;
+		font-weight: 400;
+
+		color: #fff;
+		text-shadow: 1px 0 rgb(0 0 0 / 50%);
+	}
+
+	.description .is-dark-text {
+		color: #333;
+		text-shadow: 1px 0 rgb(255 255 255 / 50%);
 	}
 
 	article > div {

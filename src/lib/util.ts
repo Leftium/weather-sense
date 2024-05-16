@@ -1,4 +1,5 @@
 import dateFormat from 'dateformat';
+import { isDarkText } from './merry-timeline';
 
 export function tsToTime(ts: number, format = 'h:MMt') {
 	const date = new Date(ts * 1000);
@@ -23,6 +24,7 @@ function wmoInterpretation(color: string, description: string, icon: string) {
 	return {
 		description,
 		color,
+		isDarkText: isDarkText(color),
 		icon
 	};
 }

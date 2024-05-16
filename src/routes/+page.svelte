@@ -1,6 +1,8 @@
 <script lang="ts">
 	import type { WeatherDataEvents } from '$lib/ns-weather-data.svelte.js';
 
+	import timeline from '$lib/merry-timeline';
+
 	import { humanDistance, tsToTime, wmoCode } from '$lib/util.js';
 	import RadarMap from './RadarMap.svelte';
 
@@ -34,6 +36,24 @@
 			}
 		};
 	}
+
+	let merryTimelineDiv: HTMLDivElement;
+
+	$effect(function () {
+		const merryData =
+			nsWeatherData.hourly?.slice(48, 48 + 24)?.map((hour) => {
+				return {
+					time: hour.time,
+					color: wmoCode(hour.weatherCode).color,
+					text: wmoCode(hour.weatherCode).description,
+					annotation: String(hour.weatherCode)
+				};
+			}) || [];
+
+		const options = { _timezone: 'America/Chicago' };
+
+		timeline(merryTimelineDiv, merryData, options);
+	});
 </script>
 
 <div class="pico container">
@@ -78,6 +98,12 @@
 	<div class="scroll">
 		<div class="map">
 			<RadarMap {nsWeatherData} />
+		</div>
+
+		<div class="hourly pico">
+			<article>
+				<div bind:this={merryTimelineDiv}></div>
+			</article>
 		</div>
 
 		<div class="daily pico">
@@ -170,6 +196,7 @@
 		margin: auto;
 	}
 
+	.hourly,
 	.daily {
 		font-family: Lato, sans-serif;
 		margin: 1em;

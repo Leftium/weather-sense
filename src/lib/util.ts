@@ -1,5 +1,4 @@
 import dateFormat from 'dateformat';
-import { isDarkText } from './merry-timeline';
 
 import Color from 'colorjs.io';
 

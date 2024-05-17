@@ -53,7 +53,7 @@
 	$effect(function () {
 		const merryDataPrev24 = nsWeatherData.prev24?.map(makeMerryData) || [];
 		const merryDataNext24 = nsWeatherData.next24?.map(makeMerryData) || [];
-		const merryData48 = [].concat(merryDataPrev24, merryDataNext24);
+		const merryData48 = [...merryDataPrev24, ...merryDataNext24];
 		const options = { _timezone: 'America/Chicago' };
 
 		timeline(merryTimelinePrev24Div, merryDataPrev24, options);
@@ -152,10 +152,6 @@
 <style>
 	.flex {
 		display: flex;
-	}
-
-	.flex-column {
-		flex-direction: column;
 	}
 
 	.sticky-info {

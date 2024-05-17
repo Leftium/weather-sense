@@ -3,27 +3,42 @@
 
 	import { WMO_CODES } from '$lib/util';
 
-	const wmoCodesByType = _.groupBy(Object.entries(WMO_CODES), ([key, value]) => {
-		let type = Number(key);
+	const wmoCodeGroups = {
+		clear: [0, 0],
+		cloud: [1, 3],
+		fog: [45, 48],
+		drizzle: [51, 55],
+		showers: [80, 82],
+		rain: [61, 65],
+		freezingDrizzle: [56, 57],
+		freezingRain: [66, 67],
+		snowGrains: [77, 77],
+		snowShowers: [85, 86],
+		snow: [71, 75],
+		thunderstorm: [95, 99]
+	};
 
-		// Adjust so logically grouped by type.
-		if ([45, 80, 85, 95].includes(type)) {
-			type++;
-		}
+	// Convert Object to array, adding key as `.code` prop.
+	const wmoCodes = _.map(WMO_CODES, (value, code) => ({
+		code: Number(code),
+		...value
+	}));
 
-		return Math.floor((type + 9) / 5);
-	});
+	const wmoCodesByType = _.map(wmoCodeGroups, ([firstIndex, lastIndex]) =>
+		_.filter(wmoCodes, (value) => {
+			return value.code >= firstIndex && value.code <= lastIndex;
+		})
+	);
 </script>
 
 <div class="pico container">
-	{#each Object.entries(wmoCodesByType) as [type, wmoCodeType]}
+	{#each wmoCodesByType as wmoCodeType}
 		<article class="flex space-between">
-			{#each wmoCodeType as [code, data]}
-				{@const numericCode = Number(code)}
+			{#each wmoCodeType as data}
 				<div class="flex flex-column">
 					<div>
-						<span class="code transparent" hidden={numericCode > 9}>0</span><span class="code"
-							>{code}</span
+						<span class="code transparent" hidden={data.code > 9}>0</span><span class="code"
+							>{data.code}</span
 						>
 						<img src={data.icon} alt="" />
 					</div>

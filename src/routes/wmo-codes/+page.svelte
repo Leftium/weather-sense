@@ -17,7 +17,7 @@
 
 <div class="pico container">
 	{#each Object.entries(wmoCodesByType) as [type, wmoCodeType]}
-		<article class="flex">
+		<article class="flex space-between">
 			{#each wmoCodeType as [code, data]}
 				{@const numericCode = Number(code)}
 				<div class="flex flex-column">
@@ -42,6 +42,10 @@
 	.flex {
 		display: flex;
 		flex-wrap: wrap;
+	}
+
+	.space-between {
+		justify-content: space-between;
 	}
 
 	.flex-column {

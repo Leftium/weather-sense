@@ -33,9 +33,9 @@
 
 <div class="pico container">
 	{#each wmoCodesByType as wmoCodeType}
-		<article class="flex space-between">
+		<div class="code-group flex space-between">
 			{#each wmoCodeType as data}
-				<div class="flex flex-column">
+				<article class="code flex flex-column align-center">
 					<div>
 						<span class="code transparent" hidden={data.code > 9}>0</span><span class="code"
 							>{data.code}</span
@@ -47,13 +47,17 @@
 							>{data.description}</span
 						>
 					</div>
-				</div>
+				</article>
 			{/each}
-		</article>
+		</div>
 	{/each}
 </div>
 
 <style>
+	.container {
+		padding: 0.1em;
+	}
+
 	.flex {
 		display: flex;
 		flex-wrap: wrap;
@@ -61,6 +65,10 @@
 
 	.space-between {
 		justify-content: space-between;
+	}
+
+	.align-center {
+		align-items: center;
 	}
 
 	.flex-column {
@@ -97,7 +105,9 @@
 		text-shadow: 1px 0 rgb(255 255 255 / 50%);
 	}
 
-	article > div {
-		width: calc(100% / 3);
+	.code-group > .code {
+		width: calc(97% / 3);
+		margin: 0.5%;
+		padding: 0.2em;
 	}
 </style>

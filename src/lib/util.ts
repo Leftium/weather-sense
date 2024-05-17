@@ -81,8 +81,8 @@ export const WMO_CODES: Record<number, any> = {
 
 	95: wmoInterpretation('#525F7A', 'Thunderstorm', 'thunderstorm'),
 
-	96: wmoInterpretation('#3D475C', 'Light Thunderstorm w/ Hail', 'thunderstorm-with-hail'),
-	99: wmoInterpretation('#2A3140', 'Thunderstorm w/ Hail', 'thunderstorm-with-hail')
+	96: wmoInterpretation('#3D475C', 'Light T-storm w/ Hail', 'thunderstorm-with-hail'),
+	99: wmoInterpretation('#2A3140', 'T-storm w/ Hail', 'thunderstorm-with-hail')
 };
 
 export function wmoCode(code: number | undefined) {

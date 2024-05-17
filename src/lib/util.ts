@@ -63,11 +63,11 @@ export const WMO_CODES: Record<number, any> = {
 	63: wmoInterpretation('#9CA7FA', 'Rain', 'moderate-rain'),
 	65: wmoInterpretation('#748BF8', 'Heavy Rain', 'heavy-rain'),
 
-	56: wmoInterpretation('#D3BFE8', 'Light Freezing Drizzle', 'light-freezing-drizzle'),
-	57: wmoInterpretation('#A780D4', 'Freezing Drizzle', 'dense-freezing-drizzle'),
+	56: wmoInterpretation('#CAC1EE', 'Light Freezing Drizzle', 'light-freezing-drizzle'),
+	57: wmoInterpretation('#9486E1', 'Freezing Drizzle', 'dense-freezing-drizzle'),
 
-	66: wmoInterpretation('#CAC1EE', 'Light Freezing Rain', 'light-freezing-rain'),
-	67: wmoInterpretation('#9486E1', 'Freezing Rain', 'heavy-freezing-rain'),
+	66: wmoInterpretation('#D3BFE8', 'Light Freezing Rain', 'light-freezing-rain'),
+	67: wmoInterpretation('#A780D4', 'Freezing Rain', 'heavy-freezing-rain'),
 
 	71: wmoInterpretation('#F9B1D8', 'Light Snow', 'slight-snowfall'),
 	73: wmoInterpretation('#F983C7', 'Snow', 'moderate-snowfall'),

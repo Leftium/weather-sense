@@ -56,12 +56,16 @@ export const WMO_CODES: Record<number, any> = {
 	53: wmoInterpretation('#0CCECE', 'Drizzle', 'moderate-drizzle'),
 	55: wmoInterpretation('#0AB1B1', 'Heavy Drizzle', 'dense-drizzle'),
 
-	56: wmoInterpretation('#D3BFE8', 'Light Freezing Drizzle', 'light-freezing-drizzle'),
-	57: wmoInterpretation('#A780D4', 'Freezing Drizzle', 'dense-freezing-drizzle'),
+	80: wmoInterpretation('#9BCCFD', 'Light Showers', 'light-rain'),
+	81: wmoInterpretation('#51B4FF', 'Showers', 'moderate-rain'),
+	82: wmoInterpretation('#029AE8', 'Heavy Showers', 'heavy-rain'),
 
 	61: wmoInterpretation('#BFC3FA', 'Light Rain', 'light-rain'),
 	63: wmoInterpretation('#9CA7FA', 'Rain', 'moderate-rain'),
 	65: wmoInterpretation('#748BF8', 'Heavy Rain', 'heavy-rain'),
+
+	56: wmoInterpretation('#D3BFE8', 'Light Freezing Drizzle', 'light-freezing-drizzle'),
+	57: wmoInterpretation('#A780D4', 'Freezing Drizzle', 'dense-freezing-drizzle'),
 
 	66: wmoInterpretation('#CAC1EE', 'Light Freezing Rain', 'light-freezing-rain'),
 	67: wmoInterpretation('#9486E1', 'Freezing Rain', 'heavy-freezing-rain'),
@@ -71,10 +75,6 @@ export const WMO_CODES: Record<number, any> = {
 	75: wmoInterpretation('#F748B7', 'Heavy Snow', 'heavy-snowfall'),
 
 	77: wmoInterpretation('#E7B6EE', 'Snow Grains', 'snowflake'),
-
-	80: wmoInterpretation('#9BCCFD', 'Light Showers', 'light-rain'),
-	81: wmoInterpretation('#51B4FF', 'Showers', 'moderate-rain'),
-	82: wmoInterpretation('#029AE8', 'Heavy Showers', 'heavy-rain'),
 
 	85: wmoInterpretation('#E7B6EE', 'Light Snow Showers', 'slight-snowfall'),
 	86: wmoInterpretation('#CD68E0', 'Snow Showers', 'heavy-snowfall'),

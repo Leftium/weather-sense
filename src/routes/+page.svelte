@@ -3,6 +3,8 @@
 
 	import timeline from '$lib/merry-timeline';
 
+	import TimeLine from './TimeLine.svelte';
+
 	import { humanDistance, tsToTime, wmoCode } from '$lib/util.js';
 	import RadarMap from './RadarMap.svelte';
 
@@ -108,6 +110,7 @@
 
 		<div class="hourly pico">
 			<article>
+				<TimeLine />
 				<div bind:this={merryTimelinePrev24Div} class="past"></div>
 				<div bind:this={merryTimelineNext24Div}></div>
 				<div bind:this={merryTimeline48Div}></div>

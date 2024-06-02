@@ -2,6 +2,7 @@
   "name": "zeus",
   "version": "0.0.1",
   "devDependencies": {
+    "@observablehq/plot": "^0.6.14",
     "@picocss/pico": "^2.0.6",
     "@sveltejs/adapter-auto": "^3.2.1",
     "@sveltejs/kit": "^2.5.10",

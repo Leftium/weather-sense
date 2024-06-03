@@ -16,8 +16,9 @@
 	const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 
 	const step = 1;
-	let min = $state(0);
-	let max = $state(0);
+	const TEN_MINUTES = 10 * 60; // Seconds in 10 minutes.
+	let min = $state(TEN_MINUTES * (Math.floor(nsWeatherData.time / TEN_MINUTES) - 12));
+	let max = $state(TEN_MINUTES * (Math.floor(nsWeatherData.time / TEN_MINUTES) + 4));
 
 	function makeRange(min: number, max: number) {
 		const range = [];

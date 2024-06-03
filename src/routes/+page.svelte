@@ -110,7 +110,7 @@
 
 		<div class="hourly pico">
 			<article>
-				<TimeLine />
+				<TimeLine {nsWeatherData} />
 				<div bind:this={merryTimelinePrev24Div} class="past"></div>
 				<div bind:this={merryTimelineNext24Div}></div>
 				<div bind:this={merryTimeline48Div}></div>

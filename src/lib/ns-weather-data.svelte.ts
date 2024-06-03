@@ -1,7 +1,6 @@
 // Defines nation-state for weather data.
 
 import _ from 'lodash-es';
-import haversine from 'haversine-distance';
 
 import { getEmitter } from '$lib/emitter';
 import { gg } from '$lib/gg';

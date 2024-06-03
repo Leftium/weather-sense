@@ -32,6 +32,7 @@
 
 		const plot = Plot.plot({
 			width: clientWidth,
+			height: 160,
 			x: {
 				type: 'time',
 				transform: (t) => t * 1000

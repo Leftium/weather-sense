@@ -236,7 +236,7 @@
 	}
 
 	.map {
-		height: 400px;
+		height: 240px;
 	}
 
 	.container {

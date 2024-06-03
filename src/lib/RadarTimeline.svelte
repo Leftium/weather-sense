@@ -47,7 +47,9 @@
 
 <div class="pico">
 	<div class="range-wrapper">
-		<input type="range" name="" id="" {min} {max} value={nsWeatherData.time} {step} {oninput} />
+		{#key [min, max]}
+			<input type="range" name="" id="" {min} {max} value={nsWeatherData.time} {step} {oninput} />
+		{/key}
 		<datalist id="radar-markers">
 			{#each makeRange(min, max) as value, index}
 				{@const isMinorIndex = index % 4}

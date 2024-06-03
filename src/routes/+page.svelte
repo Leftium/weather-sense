@@ -227,7 +227,7 @@
 	}
 
 	.name {
-		font-size: xx-large;
+		font-weight: bold;
 	}
 
 	.accuracy {

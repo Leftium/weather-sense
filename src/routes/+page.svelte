@@ -110,38 +110,15 @@
 
 		<div class="hourly pico">
 			<article>
+				<b>Next 24 hours</b>
 				<TimeLine {nsWeatherData} />
-				<div bind:this={merryTimelinePrev24Div} class="past"></div>
-				<div bind:this={merryTimelineNext24Div}></div>
-				<div bind:this={merryTimeline48Div}></div>
 			</article>
-		</div>
-
-		<div class="daily pico">
-			{#each nsWeatherData.daily || [] as day, index}
-				<article class="flex" class:today={day.fromToday === 0} class:past={day.fromToday < 0}>
-					<div>
-						<img
-							class="icon small"
-							src={wmoCode(day.weatherCode).icon}
-							title={wmoCode(day.weatherCode).description}
-							alt=""
-						/>
-					</div>
-					<div>{day.timeCompact}</div>
-					<div class="condition">
-						<span></span>
-					</div>
-				</article>
-			{/each}
 		</div>
 	</div>
 
 	<div class="pico debug">
-		<pre>nsWeatherData.current = {`${JSON.stringify(nsWeatherData.current, null, 4)}`}</pre>
-		<pre>nsWeatherData.hourly = {`${JSON.stringify(nsWeatherData.hourly, null, 4)}`}</pre>
-		<pre>nsWeatherData.daily = {`${JSON.stringify(nsWeatherData.daily, null, 4)}`}</pre>
-		<pre>nsWeatherData = {`${JSON.stringify(nsWeatherData, null, 4)}`}</pre>
+		<pre>nsWeatherData.time = {`${JSON.stringify(nsWeatherData.time, null, 4)}`}</pre>
+		<pre>nsWeatherData.next24 = {`${JSON.stringify(nsWeatherData.next24, null, 4)}`}</pre>
 	</div>
 
 	<div class="pico" hidden>

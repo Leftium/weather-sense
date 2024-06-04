@@ -52,6 +52,7 @@
 		};
 	}
 
+	/*
 	$effect(function () {
 		const merryDataPrev24 = nsWeatherData.prev24?.map(makeMerryData) || [];
 		const merryDataNext24 = nsWeatherData.next24?.map(makeMerryData) || [];
@@ -62,6 +63,7 @@
 		timeline(merryTimelineNext24Div, merryDataNext24, options);
 		timeline(merryTimeline48Div, merryData48, options);
 	});
+    */
 </script>
 
 <div class="pico container">
@@ -117,7 +119,11 @@
 	</div>
 
 	<div class="pico debug">
-		<pre>nsWeatherData.time = {`${JSON.stringify(nsWeatherData.time, null, 4)}`}</pre>
+		<pre>nsWeatherData.time = {`${JSON.stringify(nsWeatherData.time, null, 4)}`} ({tsToTime(
+				nsWeatherData.time,
+				'ddd mmm d, h:MMtt'
+			)})</pre>
+		<pre>nsWeatherData.current = {`${JSON.stringify(nsWeatherData.current, null, 4)}`}</pre>
 		<pre>nsWeatherData.next24 = {`${JSON.stringify(nsWeatherData.next24, null, 4)}`}</pre>
 	</div>
 

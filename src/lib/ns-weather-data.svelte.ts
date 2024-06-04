@@ -51,7 +51,7 @@ type CurrentWeather = {
 	snowfall: number;
 };
 
-type HourlyWeather = {
+export type HourlyWeather = {
 	time: number;
 	timeFormatted: string;
 	fromNow: number;
@@ -258,7 +258,7 @@ export function makeNsWeatherData() {
 			const maxRadarTime = (radar.frames.at(-1)?.time || 0) + 10 * 60;
 			if (time > maxRadarTime) {
 				radarPlaying = false;
-				time = +new Date() / 1000;
+				// time = +new Date() / 1000;
 				resetRadarOnPlay = true;
 			}
 		});

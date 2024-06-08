@@ -162,7 +162,12 @@
 	}
 
 	.current {
-		display: flex;
+		display: grid;
+		grid-template-columns: 1fr auto 1fr;
+	}
+
+	.current > div:first-child {
+		justify-self: end;
 	}
 
 	.current .icon {

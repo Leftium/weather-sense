@@ -73,24 +73,30 @@
 				// A custom ruleX than can be updated from the outside by calling .updateRuleX(value).
 				Plot.ruleX([data[0].time], {
 					render: (i, s, v, d, c, next) => {
-						//gg('render', { i, s, v, d, c, next });
+						const [timeStart, timeEnd] = Array.from(s.scales.x?.domain || []);
+
+						gg('render', { timeStart, timeEnd, i, s, v, d, c, next });
 
 						// @ts-expect-error: add custom property: .updateRuleX
 						c.ownerSVGElement.updateRuleX = (value: number) => {
+							const timestamp = value * 1000;
+
 							const pg = d3.select(div).select('g');
 							pg.select('.custom-rule').remove();
 
-							const ig = pg.append('g').attr('class', 'custom-rule');
+							if (timestamp > timeStart && timestamp < timeEnd) {
+								const ig = pg.append('g').attr('class', 'custom-rule');
 
-							if (s?.x && s?.y) {
-								ig.append('line')
-									.attr('x1', s.x(value * 1000))
-									.attr('x2', s.x(value * 1000))
-									// @ts-expect-error: use undocumented internal: .range
-									.attr('y1', s.y.range()[0])
-									// @ts-expect-error: use undocumented internal: .range
-									.attr('y2', s.y.range()[1])
-									.attr('stroke', 'red');
+								if (s?.x && s?.y) {
+									ig.append('line')
+										.attr('x1', s.x(timestamp))
+										.attr('x2', s.x(timestamp))
+										// @ts-expect-error: use undocumented internal: .range
+										.attr('y1', s.y.range()[0])
+										// @ts-expect-error: use undocumented internal: .range
+										.attr('y2', s.y.range()[1])
+										.attr('stroke', 'red');
+								}
 							}
 						};
 

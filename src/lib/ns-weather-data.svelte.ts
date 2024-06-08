@@ -31,6 +31,8 @@ export type WeatherDataEvents = {
 	weatherdata_updatedRadar: {
 		nsWeatherData: NsWeatherData;
 	};
+
+	weatherdata_updatedData: undefined;
 };
 
 const DATEFORMAT_MASK = 'mm-dd HH:MM';
@@ -192,6 +194,8 @@ export function makeNsWeatherData() {
 
 			return object as DailyWeather;
 		});
+
+		emit('weatherdata_updatedData');
 
 		gg({ json, daily });
 	}

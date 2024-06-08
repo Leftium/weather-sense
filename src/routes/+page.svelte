@@ -5,7 +5,7 @@
 
 	import TimeLine from './TimeLine.svelte';
 
-	import { humanDistance, tsToTime, wmoCode } from '$lib/util.js';
+	import { headAndTail, humanDistance, tsToTime, wmoCode } from '$lib/util.js';
 	import RadarMap from './RadarMap.svelte';
 
 	import { makeNsWeatherData } from '$lib/ns-weather-data.svelte.js';
@@ -84,10 +84,10 @@
 				{nsWeatherData.format('displayTemperature')}
 			</div>
 		</div>
-		<img class="icon" src={wmoCode(nsWeatherData.current?.weatherCode).icon} alt="" />
+		<img class="icon" src={wmoCode(nsWeatherData.displayWeatherCode).icon} alt="" />
 		<div>
 			<div class="condition">
-				<span>{wmoCode(nsWeatherData.current?.weatherCode).description}</span>
+				<span>{wmoCode(nsWeatherData.displayWeatherCode).description}</span>
 			</div>
 			<div>
 				<span use:toggleUnits={{ temperature: true }}>
@@ -99,8 +99,8 @@
 		</div>
 	</div>
 	<div class="other-measurements">
-		<span><b>Humidity:</b>{nsWeatherData.current?.humidity}%</span>
-		<span><b>Precipitation:</b>{nsWeatherData.current?.precipitation}mm</span>
+		<span><b>Humidity:</b>{nsWeatherData.displayHumidity}%</span>
+		<span><b>Precipitation:</b>{nsWeatherData.displayPrecipitation}mm</span>
 	</div>
 </div>
 
@@ -123,9 +123,10 @@
 				nsWeatherData.time,
 				'ddd mmm d, h:MMtt'
 			)})</pre>
-		<pre>nsWeatherData.tracker = {`${JSON.stringify(nsWeatherData.tracker, null, 4)}`}</pre>
 		<pre>nsWeatherData.current = {`${JSON.stringify(nsWeatherData.current, null, 4)}`}</pre>
-		<pre>nsWeatherData.next24 = {`${JSON.stringify(nsWeatherData.next24, null, 4)}`}</pre>
+		<pre>nsWeatherData.minutely = {`${JSON.stringify(headAndTail(nsWeatherData.minutely), null, 4)}`}</pre>
+		<pre>nsWeatherData.hourly = {`${JSON.stringify(headAndTail(nsWeatherData.hourly), null, 4)}`}</pre>
+		<pre>nsWeatherData.daily = {`${JSON.stringify(headAndTail(nsWeatherData.daily), null, 4)}`}</pre>
 	</div>
 
 	<div class="pico" hidden>

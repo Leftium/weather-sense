@@ -34,10 +34,6 @@ export type WeatherDataEvents = {
 
 	weatherdata_updatedData: undefined;
 
-	weatherdata_requestedSetTracker: {
-		value: TrackerValue;
-	};
-
 	weatherdata_requestedTrackingStart: undefined;
 
 	weatherdata_requestedTrackingEnd: undefined;
@@ -59,6 +55,16 @@ type CurrentWeather = {
 	humidity: number;
 	showers: number;
 	snowfall: number;
+};
+
+export type MinutelyWeather = {
+	time: number;
+	timeFormatted: string;
+
+	temperature: number;
+
+	hourly?: HourlyWeather;
+	daily?: DailyWeather;
 };
 
 export type HourlyWeather = {
@@ -114,6 +120,8 @@ export function makeNsWeatherData() {
 	let radar: Radar = $state({ generated: 0, host: '', frames: [] });
 
 	let current: CurrentWeather | null = $state(null);
+	let byMinute: Record<number, MinutelyWeather> = $state({});
+	let minutely: MinutelyWeather[] | null = $state(null);
 	let hourly: HourlyWeather[] | null = $state(null);
 	let daily: DailyWeather[] | null = $state(null);
 
@@ -122,7 +130,6 @@ export function makeNsWeatherData() {
 	});
 
 	let tracking = $state(false);
-	let tracker: null | TrackerValue = $state(null);
 
 	const unitsUsed: Record<string, keyof typeof units> = {
 		temperature: 'temperature',
@@ -180,6 +187,9 @@ export function makeNsWeatherData() {
 		};
 
 		const now = +new Date() / 1000;
+
+		minutely = [] as MinutelyWeather[];
+
 		hourly = _.map(json.hourly.time, (time, index: number) => {
 			const fromNow = Math.floor((time - now) / 60 / 60) + 1;
 			const object: Partial<HourlyWeather> = {
@@ -193,6 +203,26 @@ export function makeNsWeatherData() {
 			});
 
 			return object as HourlyWeather;
+		});
+
+		hourly.forEach((item, index) => {
+			if (hourly && minutely && byMinute) {
+				if (index < hourly.length - 1) {
+					const nextTemperature = hourly[index + 1].temperature;
+
+					for (let x = 0; x < 60; x += 1) {
+						const time = item.time + x * 60;
+						const minuteData = {
+							time,
+							timeFormatted: dateFormat(time * 1000, DATEFORMAT_MASK),
+							temperature: (item.temperature * (60 - x)) / 60 + (nextTemperature * x) / 60,
+							hourly: item
+						};
+						minutely.push(minuteData);
+						byMinute[time] = minuteData;
+					}
+				}
+			}
 		});
 
 		daily = _.map(json.daily.time, (time, index: number) => {
@@ -286,17 +316,6 @@ export function makeNsWeatherData() {
 			}
 		});
 
-		on('weatherdata_requestedSetTracker', function ({ value }) {
-			//gg('weatherdata_requestedSetTracker', params.value);
-
-			if (value) {
-				tracker = value;
-			} else {
-				tracker = null;
-				time = +new Date() / 1000;
-			}
-		});
-
 		on('weatherdata_requestedTrackingStart', function () {
 			//gg('weatherdata_requestedTrackingStart', params.value);
 			tracking = true;
@@ -304,7 +323,6 @@ export function makeNsWeatherData() {
 
 		on('weatherdata_requestedTrackingEnd', function () {
 			//gg('weatherdata_requestedTrackingEnd', params.value);
-			tracker = null;
 			tracking = false;
 			time = +new Date() / 1000;
 		});
@@ -358,6 +376,10 @@ export function makeNsWeatherData() {
 			return { ...current };
 		},
 
+		get minutely() {
+			return minutely;
+		},
+
 		get hourly() {
 			return hourly;
 		},
@@ -380,12 +402,24 @@ export function makeNsWeatherData() {
 			return units;
 		},
 
-		get tracker() {
-			return tracker;
+		get displayTemperature() {
+			const nearestMinute = Math.floor(time / 60) * 60;
+			return byMinute[nearestMinute]?.temperature ?? current?.temperature;
 		},
 
-		get displayTemperature() {
-			return tracker?.temperature ?? current?.temperature;
+		get displayWeatherCode() {
+			const nearestMinute = Math.floor(time / 60) * 60;
+			return byMinute[nearestMinute]?.hourly?.weatherCode ?? current?.weatherCode;
+		},
+
+		get displayHumidity() {
+			const nearestMinute = Math.floor(time / 60) * 60;
+			return byMinute[nearestMinute]?.hourly?.relativeHumidity ?? current?.humidity;
+		},
+
+		get displayPrecipitation() {
+			const nearestMinute = Math.floor(time / 60) * 60;
+			return byMinute[nearestMinute]?.hourly?.precipitation ?? current?.precipitation;
 		},
 
 		// Converts units, rounds to appropriate digits, and adds units label.

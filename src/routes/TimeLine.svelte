@@ -1,9 +1,5 @@
 <script lang="ts">
-	import type {
-		HourlyWeather,
-		NsWeatherData,
-		WeatherDataEvents
-	} from '$lib/ns-weather-data.svelte';
+	import type { NsWeatherData, WeatherDataEvents } from '$lib/ns-weather-data.svelte';
 
 	import * as d3 from 'd3';
 
@@ -20,31 +16,14 @@
 	let clientWidth: number = $state(0);
 	let plot: undefined | ReturnType<typeof Plot.plot> = $state();
 
-	// Convert hourly data into minutely data with linear interpolation.
-	// So ruleX can be incremented by minutes.
 	let data = $derived.by(() => {
-		let theData: Partial<HourlyWeather>[] = [];
-
-		if (nsWeatherData.next24) {
-			nsWeatherData.next24.forEach((item, index) => {
-				theData.push(item);
-
-				if (nsWeatherData.next24) {
-					if (index < nsWeatherData.next24.length - 1) {
-						const nextTemperature = nsWeatherData.next24[index + 1].temperature;
-
-						for (let x = 1; x < 60; x++) {
-							theData.push({
-								time: item.time + x * 60,
-								temperature: (item.temperature * (60 - x)) / 60 + (nextTemperature * x) / 60
-							});
-						}
-					}
-				}
+		if (nsWeatherData.minutely) {
+			return nsWeatherData.minutely.filter((item) => {
+				const hoursFromNow = item.hourly?.fromNow || -99;
+				return hoursFromNow >= -2 && hoursFromNow < 22;
 			});
 		}
-
-		return theData;
+		return null;
 	});
 
 	// Generate and place Obervable.Plot from data.
@@ -56,7 +35,7 @@
 			height: 160
 		};
 
-		if (!data.length) {
+		if (!data?.length) {
 			// Draw simple placeholder for plot.
 			plot = Plot.plot(plotOptions);
 		} else {
@@ -66,7 +45,12 @@
 				// The temperature plotted as line:
 				Plot.lineY(data, { x: 'time', y: 'temperature' }),
 				// Dot that marks value at mouse (hover) position:
+
 				Plot.dot(data, Plot.pointerX({ x: 'time', y: 'temperature', stroke: 'red' }))
+
+				/*
+				Plot.ruleX(data, Plot.pointerX({ x: 'time', py: 'temperature', stroke: 'blue' }))
+				/**/
 			];
 
 			marks.push(
@@ -75,7 +59,7 @@
 					render: (i, s, v, d, c, next) => {
 						const [timeStart, timeEnd] = Array.from(s.scales.x?.domain || []);
 
-						gg('render', { timeStart, timeEnd, i, s, v, d, c, next });
+						//gg('render', { timeStart, timeEnd, i, s, v, d, c, next });
 
 						// @ts-expect-error: add custom property: .updateRuleX
 						c.ownerSVGElement.updateRuleX = (value: number) => {
@@ -131,16 +115,12 @@
 			if (time) {
 				emit('weatherdata_requestedSetTime', { time });
 			}
-
-			if (value) {
-				//gg('plot@input', value);
-				emit('weatherdata_requestedSetTracker', { value });
-			}
 		});
 	}
 
 	// Update rule location only (leaving rest of plot intact).
 	// Runs every time nsWeatherData.time changes value.
+
 	$effect(() => {
 		//gg('EFFECT');
 

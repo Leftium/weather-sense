@@ -2,7 +2,10 @@ import dateFormat from 'dateformat';
 
 import Color from 'colorjs.io';
 
-export function tsToTime(ts: number, format = 'h:MMt') {
+export function tsToTime(ts: number | null, format = 'h:MMt') {
+	if (!ts) {
+		return '';
+	}
 	const date = new Date(ts * 1000);
 	return dateFormat(date, format);
 }
@@ -104,4 +107,12 @@ export function celcius(f: number | undefined) {
 export function compactDate(time?: number) {
 	const ms = time ? time * 1000 : +new Date();
 	return dateFormat(ms, 'ddd-dd').replace(/^(..)./, '$1');
+}
+
+export function headAndTail(array: unknown[] | undefined | null) {
+	if (array) {
+		return [array[0], array.at(-1)];
+	}
+
+	return [];
 }

@@ -81,7 +81,7 @@
 	<div class="current">
 		<div class="flex">
 			<div class="main-temperature" use:toggleUnits={{ temperature: true }}>
-				{nsWeatherData.format('current.temperature')}
+				{nsWeatherData.format('displayTemperature')}
 			</div>
 		</div>
 		<img class="icon" src={wmoCode(nsWeatherData.current?.weatherCode).icon} alt="" />
@@ -123,6 +123,7 @@
 				nsWeatherData.time,
 				'ddd mmm d, h:MMtt'
 			)})</pre>
+		<pre>nsWeatherData.tracker = {`${JSON.stringify(nsWeatherData.tracker, null, 4)}`}</pre>
 		<pre>nsWeatherData.current = {`${JSON.stringify(nsWeatherData.current, null, 4)}`}</pre>
 		<pre>nsWeatherData.next24 = {`${JSON.stringify(nsWeatherData.next24, null, 4)}`}</pre>
 	</div>

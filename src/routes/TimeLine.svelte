@@ -125,10 +125,16 @@
 		plot.addEventListener('input', (event) => {
 			//gg($state.snapshot(plot.value));
 
-			const time = plot?.value?.time;
+			const value = plot?.value;
+			const time = value?.time;
 
 			if (time) {
 				emit('weatherdata_requestedSetTime', { time });
+			}
+
+			if (value) {
+				//gg('plot@input', value);
+				emit('weatherdata_requestedSetTracker', { value });
 			}
 		});
 	}
@@ -158,6 +164,14 @@
 			plotData();
 		});
 		resizeObserver.observe(div);
+
+		div.addEventListener('mouseenter', function () {
+			emit('weatherdata_requestedTrackingStart');
+		});
+
+		div.addEventListener('mouseleave', async function () {
+			emit('weatherdata_requestedTrackingEnd');
+		});
 
 		// TODO: cleanup with resizeObserver.unobserve()?
 	});

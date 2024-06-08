@@ -33,6 +33,14 @@ export type WeatherDataEvents = {
 	};
 
 	weatherdata_updatedData: undefined;
+
+	weatherdata_requestedSetTracker: {
+		value: TrackerValue;
+	};
+
+	weatherdata_requestedTrackingStart: undefined;
+
+	weatherdata_requestedTrackingEnd: undefined;
 };
 
 const DATEFORMAT_MASK = 'mm-dd HH:MM';
@@ -85,6 +93,11 @@ type DailyWeather = {
 
 export type NsWeatherData = ReturnType<typeof makeNsWeatherData>;
 
+type TrackerValue = {
+	time: number;
+	temperature: number;
+};
+
 export function makeNsWeatherData() {
 	gg('makeNsWeatherData');
 
@@ -108,10 +121,14 @@ export function makeNsWeatherData() {
 		temperature: 'F'
 	});
 
+	let tracking = $state(false);
+	let tracker: null | TrackerValue = $state(null);
+
 	const unitsUsed: Record<string, keyof typeof units> = {
 		temperature: 'temperature',
 		temperatureMax: 'temperature',
-		temperatureMin: 'temperature'
+		temperatureMin: 'temperature',
+		displayTemperature: 'temperature'
 	};
 
 	async function fetchOpenMeteo() {
@@ -262,9 +279,34 @@ export function makeNsWeatherData() {
 			const maxRadarTime = (radar.frames.at(-1)?.time || 0) + 10 * 60;
 			if (time > maxRadarTime) {
 				radarPlaying = false;
-				// time = +new Date() / 1000;
-				resetRadarOnPlay = true;
+				if (!tracking) {
+					time = +new Date() / 1000;
+					resetRadarOnPlay = true;
+				}
 			}
+		});
+
+		on('weatherdata_requestedSetTracker', function ({ value }) {
+			//gg('weatherdata_requestedSetTracker', params.value);
+
+			if (value) {
+				tracker = value;
+			} else {
+				tracker = null;
+				time = +new Date() / 1000;
+			}
+		});
+
+		on('weatherdata_requestedTrackingStart', function () {
+			//gg('weatherdata_requestedTrackingStart', params.value);
+			tracking = true;
+		});
+
+		on('weatherdata_requestedTrackingEnd', function () {
+			//gg('weatherdata_requestedTrackingEnd', params.value);
+			tracker = null;
+			tracking = false;
+			time = +new Date() / 1000;
 		});
 
 		on('weatherdata_requestedTogglePlay', function () {
@@ -336,6 +378,14 @@ export function makeNsWeatherData() {
 
 		get units() {
 			return units;
+		},
+
+		get tracker() {
+			return tracker;
+		},
+
+		get displayTemperature() {
+			return tracker?.temperature ?? current?.temperature;
 		},
 
 		// Converts units, rounds to appropriate digits, and adds units label.

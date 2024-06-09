@@ -1,12 +1,14 @@
 <script lang="ts">
 	import type { NsWeatherData, WeatherDataEvents } from '$lib/ns-weather-data.svelte';
 
+	import _ from 'lodash-es';
 	import * as d3 from 'd3';
 
 	import { gg } from '$lib/gg';
 	import * as Plot from '@observablehq/plot';
 	import { getEmitter } from '$lib/emitter';
 	import { onMount } from 'svelte';
+	import { WMO_CODES } from '$lib/util';
 
 	let { nsWeatherData }: { nsWeatherData: NsWeatherData } = $props();
 
@@ -18,10 +20,34 @@
 
 	let data = $derived.by(() => {
 		if (nsWeatherData.minutely) {
-			return nsWeatherData.minutely.filter((item) => {
+			const filtered = nsWeatherData.minutely.filter((item) => {
 				const hoursFromNow = item.hourly?.fromNow || -99;
 				return hoursFromNow >= -2 && hoursFromNow < 22;
 			});
+
+			// Normalize temperatures to scale: [0, 1].
+			const minTemperature = _.minBy(filtered, 'temperature')?.temperature ?? 0;
+			const maxTemperature = _.maxBy(filtered, 'temperature')?.temperature ?? 0;
+			const temperatureRange = maxTemperature - minTemperature;
+
+			let previousWeatherCode: undefined | number = undefined;
+			const normalized = _.map(filtered, (item) => {
+				const temperature = ((item.temperature - minTemperature) / temperatureRange) * 0.7;
+
+				// Mark if weather code is different from previous code:
+				const isNewWeatherCode = item.hourly?.weatherCode !== previousWeatherCode;
+				previousWeatherCode = item.hourly?.weatherCode;
+
+				return {
+					...item,
+					temperature,
+					isNewWeatherCode
+				};
+			});
+
+			//gg({ minTemperature, maxTemperature });
+
+			return normalized;
 		}
 		return null;
 	});
@@ -32,7 +58,7 @@
 
 		const plotOptions = {
 			width: clientWidth,
-			height: 160
+			height: 100
 		};
 
 		if (!data?.length) {
@@ -42,10 +68,30 @@
 			const marks = [
 				// Rectangular frame around plot:
 				Plot.frame(),
+				Plot.areaY(data, {
+					x: 'time',
+					y: 1,
+					fill: function (d) {
+						return WMO_CODES[d.hourly.weatherCode].color;
+					}
+				}),
+				Plot.text(data, {
+					x: 'time',
+					y: 0.8,
+					textAnchor: 'start',
+					filter: (d) => {
+						gg(d);
+						return d.isNewWeatherCode;
+					},
+					text: function (d) {
+						return WMO_CODES[d.hourly.weatherCode].description;
+					}
+				}),
+
 				// The temperature plotted as line:
 				Plot.lineY(data, { x: 'time', y: 'temperature' }),
-				// Dot that marks value at mouse (hover) position:
 
+				// Dot that marks value at mouse (hover) position:
 				Plot.dot(data, Plot.pointerX({ x: 'time', y: 'temperature', stroke: 'red' }))
 
 				/*
@@ -65,7 +111,7 @@
 						c.ownerSVGElement.updateRuleX = (value: number) => {
 							const timestamp = value * 1000;
 
-							const pg = d3.select(div).select('g');
+							const pg = d3.select(div).select('svg');
 							pg.select('.custom-rule').remove();
 
 							if (timestamp > timeStart && timestamp < timeEnd) {

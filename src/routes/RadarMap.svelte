@@ -53,7 +53,7 @@
 			zoomControl: false,
 			attributionControl: false,
 			// @ts-expect-error: added by leaflet-gesture-handling
-			gestureHandling: true,
+			gestureHandling: false,
 			fullscreenControl: true,
 			forceSeparateButton: true,
 			fullscreenControlOptions: {

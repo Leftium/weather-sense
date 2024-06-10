@@ -9,17 +9,47 @@
 	import { getEmitter } from '$lib/emitter';
 	import { onMount, tick } from 'svelte';
 	import { WMO_CODES, celcius } from '$lib/util';
+	import dateFormat from 'dateformat';
 
 	let {
 		nsWeatherData,
-		data
-	}: { nsWeatherData: NsWeatherData; data: typeof nsWeatherData.next24Minutely } = $props();
+		startTime = +new Date() / 1000,
+		hours = 24,
+		xAxis = true
+	}: {
+		nsWeatherData: NsWeatherData;
+		startTime?: number;
+		hours?: number;
+		xAxis?: boolean;
+	} = $props();
 
 	const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 
 	let div: HTMLDivElement;
 	let clientWidth: number = $state(0);
 	let plot: undefined | ReturnType<typeof Plot.plot> = $state();
+
+	let data = $derived.by(() => {
+		gg('data');
+
+		const startDate = startTime || +new Date() / 1000;
+		const timeHourStart = Math.floor(startDate / 60 / 60) * 60 * 60;
+		const timeHourEnd = timeHourStart + hours * 60 * 60;
+
+		console.time('data');
+		if (nsWeatherData.minutely) {
+			const filtered = nsWeatherData.minutely.filter((item) => {
+				return item.time >= timeHourStart && item.time <= timeHourEnd;
+			});
+
+			console.timeEnd('data');
+			return filtered;
+		}
+		console.timeEnd('data');
+		return null;
+	});
+
+	let dataWithoutLast = $derived(data?.toSpliced(-1, 1));
 
 	let low = $state({
 		time: 0,
@@ -107,17 +137,36 @@
 		}
 	}
 
+	function addGap(ts: number, leadingEdge = true, delta = 4) {
+		const date = new Date(ts * 1000);
+		const minutes = date.getMinutes();
+
+		if (leadingEdge) {
+			if (minutes == 0) {
+				return ts + 60 * delta;
+			}
+		} else {
+			ts = ts + 11 * 60;
+			if (minutes == 50) {
+				return ts - 60 * delta;
+			}
+		}
+
+		return ts;
+	}
+
 	// Generate and place Obervable.Plot from data.
 	function plotData() {
 		//gg('plotData');
 
 		const plotOptions = {
 			width: clientWidth,
-			height: 80,
+			height: 35,
 			marginRight: 0,
 			marginLeft: 0,
-			y: { axis: null },
-			x: { axis: null }
+			marginTop: 0,
+			marginBottom: 0,
+			y: { axis: null }
 		};
 
 		if (!data?.length) {
@@ -125,33 +174,31 @@
 			plot = Plot.plot(plotOptions);
 		} else {
 			const marks = [
-				Plot.areaY(data, {
+				Plot.rectY(dataWithoutLast, {
 					strokeOpacity: fadePastValues,
-					x: 'time',
+					x1: (d) => d.time,
+					x2: (d) => d.time + 11 * 60,
 					y: 1,
 					fill: (d) => WMO_CODES[d.hourly.weatherCode].color
 				}),
 
-				Plot.areaY(data, {
+				Plot.rectY(dataWithoutLast, {
 					strokeOpacity: fadePastValues,
-					x: 'time',
-					y: (d) => {
-						const date = new Date(d.time * 1000);
-						const minutes = date.getMinutes();
-						return minutes < 4 || minutes > 56 ? NaN : d.precipitationNormalized;
-					},
+					x1: (d) => addGap(d.time),
+					x2: (d) => addGap(d.time, false),
+					y: 'precipitationNormalized',
 					fill: 'lightblue'
 				}),
 
-				Plot.lineY(data, {
+				Plot.rectY(dataWithoutLast, {
 					strokeOpacity: fadePastValues,
-					x: 'time',
-					y: (d) => {
-						const date = new Date(d.time * 1000);
-						const minutes = date.getMinutes();
-						return minutes < 5 || minutes > 55 ? NaN : d.precipitationNormalized;
+					x1: (d) => addGap(d.time, true, 5),
+					x2: (d) => addGap(d.time, false, 5),
+					y1: 'precipitationNormalized',
+					y2: (d) => {
+						return d.precipitationNormalized - 0.01;
 					},
-					stroke: 'darkcyan'
+					stroke: (d) => (d.precipitation ? 'darkcyan' : 'rgba(0,0,0,0)')
 				}),
 
 				/*
@@ -173,11 +220,22 @@
 				Plot.lineY(data, { strokeOpacity: fadePastValues, x: 'time', y: 'temperatureNormalized' }),
 
 				// High/low temp marks:
-				Plot.dot([low], { x: 'time', y: 'temperatureNormalized', fill: 'blue' }),
-				Plot.dot([high], { x: 'time', y: 'temperatureNormalized', fill: 'red' }),
+				Plot.dot([low], {
+					fillOpacity: fadePastValues,
+					x: 'time',
+					y: 'temperatureNormalized',
+					fill: 'blue'
+				}),
+				Plot.dot([high], {
+					fillOpacity: fadePastValues,
+					x: 'time',
+					y: 'temperatureNormalized',
+					fill: 'red'
+				}),
 
 				// High/low temp labels:
 				Plot.text([formatTemperature(low.temperature, nsWeatherData.units.temperature)], {
+					fillOpacity: fadePastValues,
 					x: low.time,
 					y: low.temperatureNormalized,
 					fill: 'blue',
@@ -185,6 +243,7 @@
 					dx: low.dx
 				}),
 				Plot.text([formatTemperature(high.temperature, nsWeatherData.units.temperature)], {
+					fillOpacity: fadePastValues,
 					x: high.time,
 					y: high.temperatureNormalized,
 					fill: 'red',
@@ -242,10 +301,16 @@
 				})
 			);
 
+			// Add to hide automatic x axis:
+			if (!xAxis) {
+				marks.push(Plot.axisX({ ticks: [] }));
+			}
+
 			plot = Plot.plot({
 				...plotOptions,
 				x: {
 					type: 'time',
+					tickFormat: (d) => dateFormat(d, 'htt'),
 					transform: (t) => t * 1000
 				},
 				marks

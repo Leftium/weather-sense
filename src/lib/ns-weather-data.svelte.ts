@@ -128,46 +128,6 @@ export function makeNsWeatherData() {
 	let hourly: HourlyWeather[] | null = $state(null);
 	let daily: DailyWeather[] | null = $state(null);
 
-	let next24Minutely = $derived.by(() => {
-		gg('next24Minutely');
-		if (minutely) {
-			const filtered = minutely.filter((item) => {
-				const hoursFromNow = item.hourly?.fromNow ?? -99;
-				return hoursFromNow >= -2 && hoursFromNow < 22;
-			});
-
-			// Normalize temperatures to scale: [0, 1].
-			const minTemperature = _.minBy(filtered, 'temperature')?.temperature ?? 0;
-			const maxTemperature = _.maxBy(filtered, 'temperature')?.temperature ?? 0;
-			const temperatureRange = maxTemperature - minTemperature;
-
-			let previousWeatherCode: undefined | number = undefined;
-			const normalized = _.map(filtered, (item, index) => {
-				const temperatureNormalized =
-					((item.temperature - minTemperature) / temperatureRange) * 0.8 + 0.1;
-
-				const precipitation = item.precipitation;
-				const precipitationNormalized = 1 - Math.exp(-precipitation / 2);
-
-				// Mark if weather code is different from previous code:
-				const isNewWeatherCode = item.hourly?.weatherCode !== previousWeatherCode;
-				previousWeatherCode = item.hourly?.weatherCode;
-
-				return {
-					...item,
-					temperatureNormalized,
-					precipitationNormalized,
-					precipitation,
-					isNewWeatherCode
-				};
-			});
-
-			//gg({ minTemperature, maxTemperature });
-			return normalized;
-		}
-		return null;
-	});
-
 	let units = $state({
 		temperature: 'F'
 	});
@@ -182,6 +142,7 @@ export function makeNsWeatherData() {
 	};
 
 	async function fetchOpenMeteo() {
+		console.time('fetchOpenMeteo');
 		const url =
 			`https://api.open-meteo.com/v1/forecast?latitude=${coords?.latitude}&longitude=${coords?.longitude}` +
 			`&current=temperature_2m,relative_humidity_2m,is_day,precipitation,rain,showers,snowfall,weather_code` +
@@ -231,7 +192,9 @@ export function makeNsWeatherData() {
 
 		const now = +new Date() / 1000;
 
+		console.time('fetchOpenMeteo');
 		minutely = [] as MinutelyWeather[];
+		console.time('generate minutely');
 
 		hourly = _.map(json.hourly.time, (time, index: number) => {
 			const fromNow = Math.floor((time - now) / 60 / 60) + 1;
@@ -248,31 +211,62 @@ export function makeNsWeatherData() {
 			return object as HourlyWeather;
 		});
 
+		// Normalize temperatures to scale: [0, 1].
+		const minTemperature = _.minBy(hourly, 'temperature')?.temperature ?? 0;
+		const maxTemperature = _.maxBy(hourly, 'temperature')?.temperature ?? 0;
+		const temperatureRange = maxTemperature - minTemperature;
+
 		hourly.forEach((item, index) => {
 			if (hourly && minutely && byMinute) {
+				// Fake precipitation:
+				const date = new Date(item.time * 1000);
+				//const precipitation = date.getHours() / 10;
+
+				const precipitation = item.precipitation;
+
 				if (index < hourly.length - 1) {
 					const nextTemperature = hourly[index + 1].temperature;
 
-					// Fake precipitation:
-					const date = new Date(item.time * 1000);
-					const precipitation = date.getHours() / 10;
-
-					for (let x = 0; x < 60; x += 1) {
+					for (let x = 0; x < 60; x += 10) {
 						const time = item.time + x * 60;
+						const temperature = (item.temperature * (60 - x)) / 60 + (nextTemperature * x) / 60;
+						const timeFormatted = dateFormat(time * 1000, DATEFORMAT_MASK);
+						const temperatureNormalized =
+							((temperature - minTemperature) / temperatureRange) * 0.8 + 0.1;
+						const precipitationNormalized = 1 - Math.exp(-precipitation / 2);
 
 						const minuteData = {
 							time,
-							timeFormatted: dateFormat(time * 1000, DATEFORMAT_MASK),
-							temperature: (item.temperature * (60 - x)) / 60 + (nextTemperature * x) / 60,
+							timeFormatted,
+							temperature,
+							temperatureNormalized,
 							hourly: item,
-							precipitation
+							precipitation,
+							precipitationNormalized
 						};
 						minutely.push(minuteData);
 						byMinute[time] = minuteData;
 					}
 				}
+
+				if (index == hourly.length - 1) {
+					const x = 60;
+					const time = item.time + x * 60;
+					const nextTemperature = hourly[index].temperature;
+					const minuteData = {
+						time,
+						timeFormatted: dateFormat(time * 1000, DATEFORMAT_MASK),
+						temperature: (item.temperature * (60 - x)) / 60 + (nextTemperature * x) / 60,
+						hourly: item,
+						precipitation
+					};
+					gg('minuteData', $state.snapshot(minuteData));
+					minutely.push(minuteData);
+					byMinute[time] = minuteData;
+				}
 			}
 		});
+		console.timeEnd('generate minutely');
 
 		daily = _.map(json.daily.time, (time, index: number) => {
 			const timeCompact = compactDate(time);
@@ -294,6 +288,7 @@ export function makeNsWeatherData() {
 		emit('weatherdata_updatedData');
 
 		gg({ json, daily });
+		console.timeEnd('fetchOpenMeteo');
 	}
 
 	if (browser) {
@@ -442,10 +437,6 @@ export function makeNsWeatherData() {
 		get next24() {
 			const indexNow = _.findIndex(hourly, { fromNow: 0 });
 			return hourly?.slice(indexNow, indexNow + 24);
-		},
-
-		get next24Minutely() {
-			return next24Minutely;
 		},
 
 		get daily() {

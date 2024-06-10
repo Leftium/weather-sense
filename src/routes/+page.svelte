@@ -108,11 +108,28 @@
 	<div class="scroll">
 		<div class="hourly pico">
 			<b>Next 24 hours</b>
-			<TimeLine {nsWeatherData} data={nsWeatherData.next24Minutely} />
+			<TimeLine {nsWeatherData} startTime={+new Date() / 1000 - 2 * 60 * 60} />
 		</div>
 
 		<div class="map">
 			<RadarMap {nsWeatherData} />
+		</div>
+
+		<div class="daily grid pico">
+			{#each nsWeatherData.daily || [] as day, index}
+				<img
+					class="icon small"
+					src={wmoCode(day.weatherCode).icon}
+					title={wmoCode(day.weatherCode).description}
+					alt=""
+				/>
+				<div class="day" class:today={day.fromToday === 0} class:past={day.fromToday < 0}>
+					{day.timeCompact}
+				</div>
+				<div class="timeline">
+					<TimeLine {nsWeatherData} startTime={day.time} xAxis={day.timeCompact == 'Today'} />
+				</div>
+			{/each}
 		</div>
 	</div>
 
@@ -121,7 +138,6 @@
 				nsWeatherData.time,
 				'ddd mmm d, h:MMtt'
 			)})</pre>
-		<pre>nsWeatherData.next24Minutely = {`${JSON.stringify(headAndTail(nsWeatherData.next24Minutely), null, 4)}`}</pre>
 		<pre>nsWeatherData.current = {`${JSON.stringify(nsWeatherData.current, null, 4)}`}</pre>
 		<pre>nsWeatherData.minutely = {`${JSON.stringify(headAndTail(nsWeatherData.minutely), null, 4)}`}</pre>
 		<pre>nsWeatherData.hourly = {`${JSON.stringify(headAndTail(nsWeatherData.hourly), null, 4)}`}</pre>
@@ -204,8 +220,13 @@
 		margin: 1em 0;
 	}
 
-	.daily article > div {
+	.daily {
+		grid-template-columns: auto auto 1fr;
+	}
+
+	.daily div.day {
 		margin: 0 0.1em;
+		text-align: right;
 	}
 
 	.daily .icon.small {
@@ -219,6 +240,11 @@
 
 	.past {
 		opacity: 0.4;
+	}
+
+	.timeline {
+		flex-grow: 1;
+		height: 55px;
 	}
 
 	.name {
@@ -252,5 +278,10 @@
 		.map {
 			height: 220px;
 		}
+	}
+
+	.grid {
+		grid-row-gap: 0.1em;
+		grid-column-gap: 0.2em;
 	}
 </style>

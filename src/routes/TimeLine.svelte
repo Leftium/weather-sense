@@ -21,7 +21,7 @@
 	let data = $derived.by(() => {
 		if (nsWeatherData.minutely) {
 			const filtered = nsWeatherData.minutely.filter((item) => {
-				const hoursFromNow = item.hourly?.fromNow || -99;
+				const hoursFromNow = item.hourly?.fromNow ?? -99;
 				return hoursFromNow >= -2 && hoursFromNow < 22;
 			});
 
@@ -32,7 +32,10 @@
 
 			let previousWeatherCode: undefined | number = undefined;
 			const normalized = _.map(filtered, (item) => {
-				const temperature = ((item.temperature - minTemperature) / temperatureRange) * 0.7;
+				const temperature = (item.temperature - minTemperature) / temperatureRange;
+
+				const mmPrecipitation = item.precipitation;
+				const precipitation = 1 - Math.exp(-mmPrecipitation / 2);
 
 				// Mark if weather code is different from previous code:
 				const isNewWeatherCode = item.hourly?.weatherCode !== previousWeatherCode;
@@ -41,6 +44,8 @@
 				return {
 					...item,
 					temperature,
+					precipitation,
+					mmPrecipitation,
 					isNewWeatherCode
 				};
 			});
@@ -51,6 +56,22 @@
 		}
 		return null;
 	});
+
+	function fill(d: { time: number; mmPrecipitation: number }) {
+		if (!d?.time) {
+			return 'red';
+		}
+
+		let fill = '#B21E4F';
+		if (d.mmPrecipitation < 2.5) {
+			fill = '#9BCCFD'; //'light-rain';
+		} else if (d.mmPrecipitation < 7.5) {
+			fill = '#51B4FF'; //'moderate-rain';
+		} else if (d.mmPrecipitation < 50) {
+			fill = '#029AE8'; //'heavy-rain';
+		}
+		return fill;
+	}
 
 	// Generate and place Obervable.Plot from data.
 	function plotData() {
@@ -71,22 +92,43 @@
 				Plot.areaY(data, {
 					x: 'time',
 					y: 1,
-					fill: function (d) {
-						return WMO_CODES[d.hourly.weatherCode].color;
-					}
+					fill: (d) => WMO_CODES[d.hourly.weatherCode].color
 				}),
+
+				Plot.areaY(data, {
+					x: 'time',
+					y: (d) => {
+						const date = new Date(d.time * 1000);
+						const minutes = date.getMinutes();
+						return minutes < 4 || minutes > 56 ? NaN : d.precipitation;
+					},
+					fill: 'lightblue'
+				}),
+
+				Plot.lineY(data, {
+					x: 'time',
+					y: (d) => {
+						const date = new Date(d.time * 1000);
+						const minutes = date.getMinutes();
+						return minutes < 5 || minutes > 55 ? NaN : d.precipitation;
+					},
+					stroke: 'darkcyan'
+				}),
+
+				/*
 				Plot.text(data, {
 					x: 'time',
 					y: 0.8,
 					textAnchor: 'start',
 					filter: (d) => {
-						gg(d);
+						//gg(d);
 						return d.isNewWeatherCode;
 					},
 					text: function (d) {
 						return WMO_CODES[d.hourly.weatherCode].description;
 					}
 				}),
+                */
 
 				// The temperature plotted as line:
 				Plot.lineY(data, { x: 'time', y: 'temperature' }),

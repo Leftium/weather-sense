@@ -62,6 +62,7 @@ export type MinutelyWeather = {
 	timeFormatted: string;
 
 	temperature: number;
+	precipitation: number;
 
 	hourly?: HourlyWeather;
 	daily?: DailyWeather;
@@ -210,13 +211,19 @@ export function makeNsWeatherData() {
 				if (index < hourly.length - 1) {
 					const nextTemperature = hourly[index + 1].temperature;
 
+					// Fake precipitation:
+					const date = new Date(item.time * 1000);
+					const precipitation = date.getHours() / 10;
+
 					for (let x = 0; x < 60; x += 1) {
 						const time = item.time + x * 60;
+
 						const minuteData = {
 							time,
 							timeFormatted: dateFormat(time * 1000, DATEFORMAT_MASK),
 							temperature: (item.temperature * (60 - x)) / 60 + (nextTemperature * x) / 60,
-							hourly: item
+							hourly: item,
+							precipitation
 						};
 						minutely.push(minuteData);
 						byMinute[time] = minuteData;
@@ -419,7 +426,7 @@ export function makeNsWeatherData() {
 
 		get displayPrecipitation() {
 			const nearestMinute = Math.floor(time / 60) * 60;
-			return byMinute[nearestMinute]?.hourly?.precipitation ?? current?.precipitation;
+			return byMinute[nearestMinute]?.precipitation ?? current?.precipitation;
 		},
 
 		// Converts units, rounds to appropriate digits, and adds units label.

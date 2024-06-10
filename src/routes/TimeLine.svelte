@@ -8,7 +8,7 @@
 	import * as Plot from '@observablehq/plot';
 	import { getEmitter } from '$lib/emitter';
 	import { onMount } from 'svelte';
-	import { WMO_CODES } from '$lib/util';
+	import { WMO_CODES, celcius } from '$lib/util';
 
 	let { nsWeatherData }: { nsWeatherData: NsWeatherData } = $props();
 
@@ -17,6 +17,18 @@
 	let div: HTMLDivElement;
 	let clientWidth: number = $state(0);
 	let plot: undefined | ReturnType<typeof Plot.plot> = $state();
+
+	let low = $state({
+		time: 0,
+		temperature: Number.MAX_VALUE,
+		degreesTemperature: 0
+	});
+
+	let high = $state({
+		time: 0,
+		temperature: 0,
+		degreesTemperature: 0
+	});
 
 	let data = $derived.by(() => {
 		if (nsWeatherData.minutely) {
@@ -32,10 +44,26 @@
 
 			let previousWeatherCode: undefined | number = undefined;
 			const normalized = _.map(filtered, (item) => {
-				const temperature = (item.temperature - minTemperature) / temperatureRange;
+				const temperature = ((item.temperature - minTemperature) / temperatureRange) * 0.8 + 0.1;
 
 				const mmPrecipitation = item.precipitation;
 				const precipitation = 1 - Math.exp(-mmPrecipitation / 2);
+
+				if (temperature < low.temperature) {
+					low = {
+						time: item.time,
+						temperature,
+						degreesTemperature: item.temperature
+					};
+				}
+
+				if (temperature > high.temperature) {
+					high = {
+						time: item.time,
+						temperature,
+						degreesTemperature: item.temperature
+					};
+				}
 
 				// Mark if weather code is different from previous code:
 				const isNewWeatherCode = item.hourly?.weatherCode !== previousWeatherCode;
@@ -73,6 +101,17 @@
 		return fill;
 	}
 
+	function formatTemperature(n: number, unit: string) {
+		if (unit === 'F') {
+			let formatted = `${Math.round(n)}°`;
+			return formatted;
+		}
+		if (unit === 'C') {
+			let formatted = `${celcius(n)?.toFixed(1)}°`;
+			return formatted;
+		}
+	}
+
 	// Generate and place Obervable.Plot from data.
 	function plotData() {
 		//gg('plotData');
@@ -89,6 +128,7 @@
 			const marks = [
 				// Rectangular frame around plot:
 				Plot.frame(),
+
 				Plot.areaY(data, {
 					x: 'time',
 					y: 1,
@@ -133,8 +173,26 @@
 				// The temperature plotted as line:
 				Plot.lineY(data, { x: 'time', y: 'temperature' }),
 
+				Plot.dot(data, { x: low.time, y: low.temperature, stroke: 'blue' }),
+
+				Plot.text([formatTemperature(low.degreesTemperature, nsWeatherData.units.temperature)], {
+					x: low.time,
+					y: low.temperature + 0.2,
+					fill: 'blue',
+					strokeWidth: 1
+				}),
+
+				Plot.text([formatTemperature(high.degreesTemperature, nsWeatherData.units.temperature)], {
+					x: high.time,
+					y: high.temperature - 0.2,
+					fill: 'red',
+					strokeWidth: 1
+				}),
+
+				Plot.dot(data, { x: high.time, y: high.temperature, stroke: 'red' }),
+
 				// Dot that marks value at mouse (hover) position:
-				Plot.dot(data, Plot.pointerX({ x: 'time', y: 'temperature', stroke: 'red' }))
+				Plot.dot(data, Plot.pointerX({ x: 'time', y: 'temperature', stroke: 'purple' }))
 
 				/*
 				Plot.ruleX(data, Plot.pointerX({ x: 'time', py: 'temperature', stroke: 'blue' }))
@@ -167,7 +225,7 @@
 										.attr('y1', s.y.range()[0])
 										// @ts-expect-error: use undocumented internal: .range
 										.attr('y2', s.y.range()[1])
-										.attr('stroke', 'red');
+										.attr('stroke', 'purple');
 								}
 							}
 						};
@@ -222,6 +280,10 @@
 	// Update entire plot.
 	// Runs on weatherdata_updatedData event from nsWeatherData.
 	on('weatherdata_updatedData', function () {
+		plotData();
+	});
+
+	on('weatherData_ToggledUnits', function () {
 		plotData();
 	});
 

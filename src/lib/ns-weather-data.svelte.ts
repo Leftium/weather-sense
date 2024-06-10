@@ -24,6 +24,8 @@ export type WeatherDataEvents = {
 		temperature: boolean | string;
 	};
 
+	weatherData_ToggledUnits: undefined;
+
 	weatherdata_requestedTogglePlay: undefined;
 
 	weatherdata_requestedFetchRainviewerData: undefined;
@@ -350,6 +352,7 @@ export function makeNsWeatherData() {
 				} else {
 					units.temperature = units.temperature === 'F' ? 'C' : 'F';
 				}
+				emit('weatherData_ToggledUnits');
 			}
 		});
 	}

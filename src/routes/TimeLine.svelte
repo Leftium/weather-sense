@@ -113,10 +113,9 @@
 
 		const plotOptions = {
 			width: clientWidth,
-			height: 60,
+			height: 80,
 			marginRight: 0,
 			marginLeft: 0,
-			marginBottom: 20,
 			y: { axis: null },
 			x: { axis: null }
 		};

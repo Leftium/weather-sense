@@ -144,7 +144,10 @@
 
 		const plotOptions = {
 			width: clientWidth,
-			height: 80,
+			height: 60,
+			marginRight: 0,
+			marginLeft: 0,
+			marginBottom: 20,
 			y: { axis: null },
 			x: { axis: null }
 		};
@@ -154,9 +157,6 @@
 			plot = Plot.plot(plotOptions);
 		} else {
 			const marks = [
-				// Rectangular frame around plot:
-				// Plot.frame(),
-
 				Plot.areaY(data, {
 					strokeOpacity: fadePastValues,
 					x: 'time',
@@ -342,3 +342,10 @@
 </script>
 
 <div bind:this={div} bind:clientWidth role="img"></div>
+
+<style>
+	div,
+	div > :global(svg) {
+		overflow: visible !important;
+	}
+</style>

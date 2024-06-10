@@ -20,14 +20,14 @@
 
 	let low = $state({
 		time: 0,
-		temperature: Number.MAX_VALUE,
-		degreesTemperature: 0
+		temperatureNormalized: Number.MAX_VALUE,
+		temperature: 0
 	});
 
 	let high = $state({
 		time: 0,
-		temperature: 0,
-		degreesTemperature: 0
+		temperatureNormalized: 0,
+		temperature: 0
 	});
 
 	let data = $derived.by(() => {
@@ -44,24 +44,25 @@
 
 			let previousWeatherCode: undefined | number = undefined;
 			const normalized = _.map(filtered, (item) => {
-				const temperature = ((item.temperature - minTemperature) / temperatureRange) * 0.8 + 0.1;
+				const temperatureNormalized =
+					((item.temperature - minTemperature) / temperatureRange) * 0.8 + 0.1;
 
-				const mmPrecipitation = item.precipitation;
-				const precipitation = 1 - Math.exp(-mmPrecipitation / 2);
+				const precipitation = item.precipitation;
+				const precipitationNormalized = 1 - Math.exp(-precipitation / 2);
 
-				if (temperature < low.temperature) {
+				if (temperatureNormalized < low.temperatureNormalized) {
 					low = {
 						time: item.time,
-						temperature,
-						degreesTemperature: item.temperature
+						temperatureNormalized: temperatureNormalized,
+						temperature: item.temperature
 					};
 				}
 
-				if (temperature > high.temperature) {
+				if (temperatureNormalized > high.temperatureNormalized) {
 					high = {
 						time: item.time,
-						temperature,
-						degreesTemperature: item.temperature
+						temperatureNormalized: temperatureNormalized,
+						temperature: item.temperature
 					};
 				}
 
@@ -71,9 +72,9 @@
 
 				return {
 					...item,
-					temperature,
+					temperatureNormalized,
+					precipitationNormalized,
 					precipitation,
-					mmPrecipitation,
 					isNewWeatherCode
 				};
 			});
@@ -85,17 +86,17 @@
 		return null;
 	});
 
-	function fill(d: { time: number; mmPrecipitation: number }) {
+	function fill(d: { time: number; precipitation: number }) {
 		if (!d?.time) {
 			return 'red';
 		}
 
 		let fill = '#B21E4F';
-		if (d.mmPrecipitation < 2.5) {
+		if (d.precipitation < 2.5) {
 			fill = '#9BCCFD'; //'light-rain';
-		} else if (d.mmPrecipitation < 7.5) {
+		} else if (d.precipitation < 7.5) {
 			fill = '#51B4FF'; //'moderate-rain';
-		} else if (d.mmPrecipitation < 50) {
+		} else if (d.precipitation < 50) {
 			fill = '#029AE8'; //'heavy-rain';
 		}
 		return fill;
@@ -140,7 +141,7 @@
 					y: (d) => {
 						const date = new Date(d.time * 1000);
 						const minutes = date.getMinutes();
-						return minutes < 4 || minutes > 56 ? NaN : d.precipitation;
+						return minutes < 4 || minutes > 56 ? NaN : d.precipitationNormalized;
 					},
 					fill: 'lightblue'
 				}),
@@ -150,7 +151,7 @@
 					y: (d) => {
 						const date = new Date(d.time * 1000);
 						const minutes = date.getMinutes();
-						return minutes < 5 || minutes > 55 ? NaN : d.precipitation;
+						return minutes < 5 || minutes > 55 ? NaN : d.precipitationNormalized;
 					},
 					stroke: 'darkcyan'
 				}),
@@ -171,31 +172,31 @@
                 */
 
 				// The temperature plotted as line:
-				Plot.lineY(data, { x: 'time', y: 'temperature' }),
+				Plot.lineY(data, { x: 'time', y: 'temperatureNormalized' }),
 
-				Plot.dot(data, { x: low.time, y: low.temperature, fill: 'blue' }),
+				Plot.dot(data, { x: low.time, y: low.temperatureNormalized, fill: 'blue' }),
 
-				Plot.text([formatTemperature(low.degreesTemperature, nsWeatherData.units.temperature)], {
+				Plot.text([formatTemperature(low.temperature, nsWeatherData.units.temperature)], {
 					x: low.time,
-					y: low.temperature + 0.2,
+					y: low.temperatureNormalized + 0.2,
 					fill: 'blue',
 					strokeWidth: 1
 				}),
 
-				Plot.text([formatTemperature(high.degreesTemperature, nsWeatherData.units.temperature)], {
+				Plot.text([formatTemperature(high.temperature, nsWeatherData.units.temperature)], {
 					x: high.time,
-					y: high.temperature - 0.2,
+					y: high.temperatureNormalized - 0.2,
 					fill: 'red',
 					strokeWidth: 1
 				}),
 
-				Plot.dot(data, { x: high.time, y: high.temperature, fill: 'red' }),
+				Plot.dot(data, { x: high.time, y: high.temperatureNormalized, fill: 'red' }),
 
 				// Dot that marks value at mouse (hover) position:
-				Plot.dot(data, Plot.pointerX({ x: 'time', y: 'temperature', fill: 'purple' }))
+				Plot.dot(data, Plot.pointerX({ x: 'time', y: 'temperatureNormalized', fill: 'purple' }))
 
 				/*
-				Plot.ruleX(data, Plot.pointerX({ x: 'time', py: 'temperature', fill: 'blue' }))
+				Plot.ruleX(data, Plot.pointerX({ x: 'time', py: 'temperatureNormalized', fill: 'blue' }))
 				/**/
 			];
 

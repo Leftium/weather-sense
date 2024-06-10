@@ -249,7 +249,7 @@
 
 	.timeline {
 		flex-grow: 1;
-		height: 55px;
+		height: 70px;
 	}
 
 	.name {

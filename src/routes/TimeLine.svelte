@@ -164,7 +164,7 @@
 
 		const plotOptions = {
 			width: clientWidth,
-			height: 35,
+			height: 50,
 			marginRight: 0,
 			marginLeft: 0,
 			marginTop: 0,

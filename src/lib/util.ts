@@ -111,8 +111,14 @@ export function compactDate(time?: number) {
 
 export function headAndTail(array: unknown[] | undefined | null) {
 	if (array) {
-		return [array[0], array.at(-1)];
+		const length = array.length;
+
+		return {
+			length,
+			head: array[0],
+			tail: array[length - 1]
+		};
 	}
 
-	return [];
+	return array;
 }

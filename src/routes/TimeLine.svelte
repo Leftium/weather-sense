@@ -173,7 +173,7 @@
 				// The temperature plotted as line:
 				Plot.lineY(data, { x: 'time', y: 'temperature' }),
 
-				Plot.dot(data, { x: low.time, y: low.temperature, stroke: 'blue' }),
+				Plot.dot(data, { x: low.time, y: low.temperature, fill: 'blue' }),
 
 				Plot.text([formatTemperature(low.degreesTemperature, nsWeatherData.units.temperature)], {
 					x: low.time,
@@ -189,13 +189,13 @@
 					strokeWidth: 1
 				}),
 
-				Plot.dot(data, { x: high.time, y: high.temperature, stroke: 'red' }),
+				Plot.dot(data, { x: high.time, y: high.temperature, fill: 'red' }),
 
 				// Dot that marks value at mouse (hover) position:
-				Plot.dot(data, Plot.pointerX({ x: 'time', y: 'temperature', stroke: 'purple' }))
+				Plot.dot(data, Plot.pointerX({ x: 'time', y: 'temperature', fill: 'purple' }))
 
 				/*
-				Plot.ruleX(data, Plot.pointerX({ x: 'time', py: 'temperature', stroke: 'blue' }))
+				Plot.ruleX(data, Plot.pointerX({ x: 'time', py: 'temperature', fill: 'blue' }))
 				/**/
 			];
 

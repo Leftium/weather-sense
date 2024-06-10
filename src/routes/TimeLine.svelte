@@ -21,13 +21,17 @@
 	let low = $state({
 		time: 0,
 		temperatureNormalized: Number.MAX_VALUE,
-		temperature: 0
+		temperature: 0,
+		dx: 0,
+		dy: 0
 	});
 
 	let high = $state({
 		time: 0,
 		temperatureNormalized: 0,
-		temperature: 0
+		temperature: 0,
+		dx: 0,
+		dy: 0
 	});
 
 	let data = $derived.by(() => {
@@ -43,26 +47,39 @@
 			const temperatureRange = maxTemperature - minTemperature;
 
 			let previousWeatherCode: undefined | number = undefined;
-			const normalized = _.map(filtered, (item) => {
+			const normalized = _.map(filtered, (item, index) => {
 				const temperatureNormalized =
 					((item.temperature - minTemperature) / temperatureRange) * 0.8 + 0.1;
 
 				const precipitation = item.precipitation;
 				const precipitationNormalized = 1 - Math.exp(-precipitation / 2);
 
+				let dx = 0;
+				if (index < 5) {
+					dx = 10 - index;
+				} else if (index >= filtered.length - 6) {
+					dx = -10 + (filtered.length - index);
+				}
+
+				const dy = temperatureNormalized < 0.5 ? -10 : 10;
+
 				if (temperatureNormalized < low.temperatureNormalized) {
 					low = {
 						time: item.time,
-						temperatureNormalized: temperatureNormalized,
-						temperature: item.temperature
+						temperatureNormalized,
+						temperature: item.temperature,
+						dx,
+						dy
 					};
 				}
 
 				if (temperatureNormalized > high.temperatureNormalized) {
 					high = {
 						time: item.time,
-						temperatureNormalized: temperatureNormalized,
-						temperature: item.temperature
+						temperatureNormalized,
+						temperature: item.temperature,
+						dx,
+						dy
 					};
 				}
 
@@ -194,13 +211,15 @@
 					x: low.time,
 					y: low.temperatureNormalized,
 					fill: 'blue',
-					dy: -10
+					dy: low.dy,
+					dx: low.dx
 				}),
 				Plot.text([formatTemperature(high.temperature, nsWeatherData.units.temperature)], {
 					x: high.time,
 					y: high.temperatureNormalized,
 					fill: 'red',
-					dy: 10
+					dy: high.dy,
+					dx: high.dx
 				}),
 
 				// Dot that marks value at mouse (hover) position:

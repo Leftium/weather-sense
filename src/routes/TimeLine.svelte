@@ -10,6 +10,7 @@
 	import { onMount, tick } from 'svelte';
 	import { WMO_CODES, celcius } from '$lib/util';
 	import dateFormat from 'dateformat';
+	import type { Markish } from '@observablehq/plot';
 
 	let {
 		nsWeatherData,
@@ -175,7 +176,7 @@
 			// Draw simple placeholder for plot.
 			plot = Plot.plot(plotOptions);
 		} else {
-			const marks = [
+			const marks: Markish[] = [
 				Plot.rectY(dataWithoutLast, {
 					strokeOpacity: fadePastValues,
 					x1: (d) => d.time,

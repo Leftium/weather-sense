@@ -64,6 +64,7 @@ export type MinutelyWeather = {
 	timeFormatted: string;
 
 	temperature: number;
+	temperatureNormalized: number;
 	precipitation: number;
 
 	hourly?: HourlyWeather;
@@ -252,15 +253,22 @@ export function makeNsWeatherData() {
 				if (index == hourly.length - 1) {
 					const x = 60;
 					const time = item.time + x * 60;
-					const nextTemperature = hourly[index].temperature;
+					const temperature =
+						(item.temperature * (60 - x)) / 60 + (hourly[index].temperature * x) / 60;
+					const timeFormatted = dateFormat(time * 1000, DATEFORMAT_MASK);
+					const temperatureNormalized =
+						((temperature - minTemperature) / temperatureRange) * 0.8 + 0.1;
+					const precipitationNormalized = 1 - Math.exp(-precipitation / 2);
+
 					const minuteData = {
 						time,
-						timeFormatted: dateFormat(time * 1000, DATEFORMAT_MASK),
-						temperature: (item.temperature * (60 - x)) / 60 + (nextTemperature * x) / 60,
+						timeFormatted,
+						temperature,
+						temperatureNormalized,
 						hourly: item,
-						precipitation
+						precipitation,
+						precipitationNormalized
 					};
-					gg('minuteData', $state.snapshot(minuteData));
 					minutely.push(minuteData);
 					byMinute[time] = minuteData;
 				}

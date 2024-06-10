@@ -88,7 +88,7 @@
 		return fill;
 	}
 
-	function fadePastValues(d) {
+	function fadePastValues(d: { time: number }) {
 		const now = +new Date() / 1000;
 		if (d.time < now) {
 			return 0.2;
@@ -204,6 +204,7 @@
 			marks.push(
 				// A custom ruleX than can be updated from the outside by calling .updateRuleX(value).
 				Plot.ruleX([data[0].time], {
+					// @ts-expect-error: needed to hide y-axis:
 					y: { axis: null },
 					render: (i, s, v, d, c, next) => {
 						const [timeStart, timeEnd] = Array.from(s.scales.x?.domain || []);

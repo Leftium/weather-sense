@@ -108,7 +108,7 @@
 	<div class="scroll">
 		<div class="hourly pico">
 			<b>Next 24 hours</b>
-			<TimeLine {nsWeatherData} />
+			<TimeLine {nsWeatherData} data={nsWeatherData.next24Minutely} />
 		</div>
 
 		<div class="map">
@@ -121,6 +121,7 @@
 				nsWeatherData.time,
 				'ddd mmm d, h:MMtt'
 			)})</pre>
+		<pre>nsWeatherData.next24Minutely = {`${JSON.stringify(headAndTail(nsWeatherData.next24Minutely), null, 4)}`}</pre>
 		<pre>nsWeatherData.current = {`${JSON.stringify(nsWeatherData.current, null, 4)}`}</pre>
 		<pre>nsWeatherData.minutely = {`${JSON.stringify(headAndTail(nsWeatherData.minutely), null, 4)}`}</pre>
 		<pre>nsWeatherData.hourly = {`${JSON.stringify(headAndTail(nsWeatherData.hourly), null, 4)}`}</pre>

@@ -7,10 +7,13 @@
 	import { gg } from '$lib/gg';
 	import * as Plot from '@observablehq/plot';
 	import { getEmitter } from '$lib/emitter';
-	import { onMount } from 'svelte';
+	import { onMount, tick } from 'svelte';
 	import { WMO_CODES, celcius } from '$lib/util';
 
-	let { nsWeatherData }: { nsWeatherData: NsWeatherData } = $props();
+	let {
+		nsWeatherData,
+		data
+	}: { nsWeatherData: NsWeatherData; data: typeof nsWeatherData.next24Minutely } = $props();
 
 	const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 
@@ -34,73 +37,39 @@
 		dy: 0
 	});
 
-	let data = $derived.by(() => {
-		if (nsWeatherData.minutely) {
-			const filtered = nsWeatherData.minutely.filter((item) => {
-				const hoursFromNow = item.hourly?.fromNow ?? -99;
-				return hoursFromNow >= -2 && hoursFromNow < 22;
-			});
+	$effect(() => {
+		_.forEach(data, (item, index) => {
+			let dx = 0;
+			if (index < 5) {
+				dx = 10 - index;
+			} else if (index >= (data?.length || 0) - 6) {
+				dx = -10 + ((data?.length || 0) - index);
+			}
 
-			// Normalize temperatures to scale: [0, 1].
-			const minTemperature = _.minBy(filtered, 'temperature')?.temperature ?? 0;
-			const maxTemperature = _.maxBy(filtered, 'temperature')?.temperature ?? 0;
-			const temperatureRange = maxTemperature - minTemperature;
+			const temperatureNormalized = item.temperatureNormalized;
 
-			let previousWeatherCode: undefined | number = undefined;
-			const normalized = _.map(filtered, (item, index) => {
-				const temperatureNormalized =
-					((item.temperature - minTemperature) / temperatureRange) * 0.8 + 0.1;
+			const dy = item.temperatureNormalized < 0.5 ? -10 : 10;
 
-				const precipitation = item.precipitation;
-				const precipitationNormalized = 1 - Math.exp(-precipitation / 2);
-
-				let dx = 0;
-				if (index < 5) {
-					dx = 10 - index;
-				} else if (index >= filtered.length - 6) {
-					dx = -10 + (filtered.length - index);
-				}
-
-				const dy = temperatureNormalized < 0.5 ? -10 : 10;
-
-				if (temperatureNormalized < low.temperatureNormalized) {
-					low = {
-						time: item.time,
-						temperatureNormalized,
-						temperature: item.temperature,
-						dx,
-						dy
-					};
-				}
-
-				if (temperatureNormalized > high.temperatureNormalized) {
-					high = {
-						time: item.time,
-						temperatureNormalized,
-						temperature: item.temperature,
-						dx,
-						dy
-					};
-				}
-
-				// Mark if weather code is different from previous code:
-				const isNewWeatherCode = item.hourly?.weatherCode !== previousWeatherCode;
-				previousWeatherCode = item.hourly?.weatherCode;
-
-				return {
-					...item,
+			if (temperatureNormalized < low.temperatureNormalized) {
+				low = {
+					time: item.time,
 					temperatureNormalized,
-					precipitationNormalized,
-					precipitation,
-					isNewWeatherCode
+					temperature: item.temperature,
+					dx,
+					dy
 				};
-			});
+			}
 
-			//gg({ minTemperature, maxTemperature });
-
-			return normalized;
-		}
-		return null;
+			if (temperatureNormalized > high.temperatureNormalized) {
+				high = {
+					time: item.time,
+					temperatureNormalized,
+					temperature: item.temperature,
+					dx,
+					dy
+				};
+			}
+		});
 	});
 
 	function fill(d: { time: number; precipitation: number }) {
@@ -313,7 +282,9 @@
 
 	// Update entire plot.
 	// Runs on weatherdata_updatedData event from nsWeatherData.
-	on('weatherdata_updatedData', function () {
+	on('weatherdata_updatedData', async function () {
+		gg('on:weatherdata_updatedData');
+		await tick();
 		plotData();
 	});
 

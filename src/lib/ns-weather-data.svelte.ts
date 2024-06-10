@@ -128,6 +128,46 @@ export function makeNsWeatherData() {
 	let hourly: HourlyWeather[] | null = $state(null);
 	let daily: DailyWeather[] | null = $state(null);
 
+	let next24Minutely = $derived.by(() => {
+		gg('next24Minutely');
+		if (minutely) {
+			const filtered = minutely.filter((item) => {
+				const hoursFromNow = item.hourly?.fromNow ?? -99;
+				return hoursFromNow >= -2 && hoursFromNow < 22;
+			});
+
+			// Normalize temperatures to scale: [0, 1].
+			const minTemperature = _.minBy(filtered, 'temperature')?.temperature ?? 0;
+			const maxTemperature = _.maxBy(filtered, 'temperature')?.temperature ?? 0;
+			const temperatureRange = maxTemperature - minTemperature;
+
+			let previousWeatherCode: undefined | number = undefined;
+			const normalized = _.map(filtered, (item, index) => {
+				const temperatureNormalized =
+					((item.temperature - minTemperature) / temperatureRange) * 0.8 + 0.1;
+
+				const precipitation = item.precipitation;
+				const precipitationNormalized = 1 - Math.exp(-precipitation / 2);
+
+				// Mark if weather code is different from previous code:
+				const isNewWeatherCode = item.hourly?.weatherCode !== previousWeatherCode;
+				previousWeatherCode = item.hourly?.weatherCode;
+
+				return {
+					...item,
+					temperatureNormalized,
+					precipitationNormalized,
+					precipitation,
+					isNewWeatherCode
+				};
+			});
+
+			//gg({ minTemperature, maxTemperature });
+			return normalized;
+		}
+		return null;
+	});
+
 	let units = $state({
 		temperature: 'F'
 	});
@@ -402,6 +442,10 @@ export function makeNsWeatherData() {
 		get next24() {
 			const indexNow = _.findIndex(hourly, { fromNow: 0 });
 			return hourly?.slice(indexNow, indexNow + 24);
+		},
+
+		get next24Minutely() {
+			return next24Minutely;
 		},
 
 		get daily() {

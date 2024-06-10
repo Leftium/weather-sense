@@ -185,23 +185,23 @@
 				// The temperature plotted as line:
 				Plot.lineY(data, { strokeOpacity: fadePastValues, x: 'time', y: 'temperatureNormalized' }),
 
-				Plot.dot(data, { x: low.time, y: low.temperatureNormalized, fill: 'blue' }),
+				// High/low temp marks:
+				Plot.dot([low], { x: 'time', y: 'temperatureNormalized', fill: 'blue' }),
+				Plot.dot([high], { x: 'time', y: 'temperatureNormalized', fill: 'red' }),
 
+				// High/low temp labels:
 				Plot.text([formatTemperature(low.temperature, nsWeatherData.units.temperature)], {
 					x: low.time,
-					y: low.temperatureNormalized + 0.2,
+					y: low.temperatureNormalized,
 					fill: 'blue',
-					strokeWidth: 1
+					dy: -10
 				}),
-
 				Plot.text([formatTemperature(high.temperature, nsWeatherData.units.temperature)], {
 					x: high.time,
-					y: high.temperatureNormalized - 0.2,
+					y: high.temperatureNormalized,
 					fill: 'red',
-					strokeWidth: 1
+					dy: 10
 				}),
-
-				Plot.dot(data, { x: high.time, y: high.temperatureNormalized, fill: 'red' }),
 
 				// Dot that marks value at mouse (hover) position:
 				Plot.dot(data, Plot.pointerX({ x: 'time', y: 'temperatureNormalized', fill: 'purple' }))

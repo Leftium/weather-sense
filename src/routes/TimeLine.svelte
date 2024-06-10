@@ -144,7 +144,9 @@
 
 		const plotOptions = {
 			width: clientWidth,
-			height: 100
+			height: 80,
+			y: { axis: null },
+			x: { axis: null }
 		};
 
 		if (!data?.length) {
@@ -153,7 +155,7 @@
 		} else {
 			const marks = [
 				// Rectangular frame around plot:
-				Plot.frame(),
+				// Plot.frame(),
 
 				Plot.areaY(data, {
 					strokeOpacity: fadePastValues,
@@ -233,6 +235,7 @@
 			marks.push(
 				// A custom ruleX than can be updated from the outside by calling .updateRuleX(value).
 				Plot.ruleX([data[0].time], {
+					y: { axis: null },
 					render: (i, s, v, d, c, next) => {
 						const [timeStart, timeEnd] = Array.from(s.scales.x?.domain || []);
 

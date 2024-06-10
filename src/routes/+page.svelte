@@ -106,15 +106,13 @@
 
 <div class="container">
 	<div class="scroll">
-		<div class="map">
-			<RadarMap {nsWeatherData} />
+		<div class="hourly pico">
+			<b>Next 24 hours</b>
+			<TimeLine {nsWeatherData} />
 		</div>
 
-		<div class="hourly pico">
-			<article>
-				<b>Next 24 hours</b>
-				<TimeLine {nsWeatherData} />
-			</article>
+		<div class="map">
+			<RadarMap {nsWeatherData} />
 		</div>
 	</div>
 
@@ -196,7 +194,7 @@
 	.hourly,
 	.daily {
 		font-family: Lato, sans-serif;
-		margin: 1em;
+		margin: 1em 0;
 	}
 
 	.daily article > div {

@@ -127,7 +127,12 @@
 					{day.timeCompact}
 				</div>
 				<div class="timeline">
-					<TimeLine {nsWeatherData} startTime={day.time} xAxis={day.timeCompact == 'Today'} />
+					<TimeLine
+						{nsWeatherData}
+						startTime={day.time}
+						xAxis={day.timeCompact == 'Today'}
+						ghostTracker={true}
+					/>
 				</div>
 			{/each}
 		</div>

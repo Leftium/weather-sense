@@ -15,12 +15,14 @@
 		nsWeatherData,
 		startTime = +new Date() / 1000,
 		hours = 24,
-		xAxis = true
+		xAxis = true,
+		ghostTracker = false
 	}: {
 		nsWeatherData: NsWeatherData;
 		startTime?: number;
 		hours?: number;
 		xAxis?: boolean;
+		ghostTracker?: boolean;
 	} = $props();
 
 	const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
@@ -30,7 +32,7 @@
 	let plot: undefined | ReturnType<typeof Plot.plot> = $state();
 
 	let data = $derived.by(() => {
-		gg('data');
+		//gg('data');
 
 		const startDate = startTime || +new Date() / 1000;
 		const timeHourStart = Math.floor(startDate / 60 / 60) * 60 * 60;
@@ -267,8 +269,6 @@
 					render: (i, s, v, d, c, next) => {
 						const [timeStart, timeEnd] = Array.from(s.scales.x?.domain || []);
 
-						//gg('render', { timeStart, timeEnd, i, s, v, d, c, next });
-
 						// @ts-expect-error: add custom property: .updateRuleX
 						c.ownerSVGElement.updateRuleX = (value: number) => {
 							const timestamp = value * 1000;
@@ -276,19 +276,30 @@
 							const pg = d3.select(div).select('svg');
 							pg.select('.custom-rule').remove();
 
-							if (timestamp > timeStart && timestamp < timeEnd) {
+							function drawTracker(x: number, color: string) {
 								const ig = pg.append('g').attr('class', 'custom-rule');
-
 								if (s?.x && s?.y) {
 									ig.append('line')
-										.attr('x1', s.x(timestamp))
-										.attr('x2', s.x(timestamp))
+										.attr('x1', s.x(x))
+										.attr('x2', s.x(x))
 										// @ts-expect-error: use undocumented internal: .range
 										.attr('y1', s.y.range()[0])
 										// @ts-expect-error: use undocumented internal: .range
 										.attr('y2', s.y.range()[1])
-										.attr('stroke', 'purple');
+										.attr('stroke', color);
 								}
+							}
+
+							if (timestamp > timeStart && timestamp < timeEnd) {
+								drawTracker(timestamp, 'purple');
+							} else if (ghostTracker) {
+								const date = new Date(timestamp);
+								const tzOffset = date.getTimezoneOffset() * 60 * 1000;
+
+								const zRemainder = (timestamp - tzOffset) % (24 * 60 * 60 * 1000);
+								const ghostTime = Number(timeStart) + zRemainder;
+
+								drawTracker(ghostTime, 'rgba(128,0,128,.2)');
 							}
 						};
 

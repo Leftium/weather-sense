@@ -102,6 +102,14 @@
 		return fill;
 	}
 
+	function fadePastValues(d) {
+		const now = +new Date() / 1000;
+		if (d.time < now) {
+			return 0.2;
+		}
+		return 1;
+	}
+
 	function formatTemperature(n: number, unit: string) {
 		if (unit === 'F') {
 			let formatted = `${Math.round(n)}°`;
@@ -131,12 +139,14 @@
 				Plot.frame(),
 
 				Plot.areaY(data, {
+					strokeOpacity: fadePastValues,
 					x: 'time',
 					y: 1,
 					fill: (d) => WMO_CODES[d.hourly.weatherCode].color
 				}),
 
 				Plot.areaY(data, {
+					strokeOpacity: fadePastValues,
 					x: 'time',
 					y: (d) => {
 						const date = new Date(d.time * 1000);
@@ -147,6 +157,7 @@
 				}),
 
 				Plot.lineY(data, {
+					strokeOpacity: fadePastValues,
 					x: 'time',
 					y: (d) => {
 						const date = new Date(d.time * 1000);
@@ -172,7 +183,7 @@
                 */
 
 				// The temperature plotted as line:
-				Plot.lineY(data, { x: 'time', y: 'temperatureNormalized' }),
+				Plot.lineY(data, { strokeOpacity: fadePastValues, x: 'time', y: 'temperatureNormalized' }),
 
 				Plot.dot(data, { x: low.time, y: low.temperatureNormalized, fill: 'blue' }),
 

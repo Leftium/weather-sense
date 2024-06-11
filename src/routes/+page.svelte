@@ -92,10 +92,9 @@
 			</div>
 		</div>
 		<img class="icon" src={wmoCode(nsWeatherData.displayWeatherCode).icon} alt="" />
-		<div>
-			<div class="condition">
-				<span>{wmoCode(nsWeatherData.displayWeatherCode).description}</span>
-			</div>
+
+		<div class="condition">
+			<span>{wmoCode(nsWeatherData.displayWeatherCode).description}</span>
 		</div>
 	</div>
 	<div class="other-measurements">
@@ -204,6 +203,7 @@
 	.main-temperature {
 		font-size: 2.3em;
 		margin-right: 0.2em;
+		line-height: 1.1;
 	}
 
 	.temperature-range {
@@ -211,8 +211,12 @@
 	}
 
 	.current .condition {
+		display: flex;
+		flex-direction: column;
+		justify-content: center;
 		font-size: x-large;
 		font-weight: bold;
+		line-height: 1.2;
 	}
 
 	.current .condition span {

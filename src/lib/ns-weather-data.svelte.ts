@@ -235,6 +235,7 @@ export function makeNsWeatherData() {
 						const temperatureNormalized =
 							((temperature - minTemperature) / temperatureRange) * 0.8 + 0.1;
 						const precipitationNormalized = 1 - Math.exp(-precipitation / 2);
+						const isMinute0 = x == 0;
 
 						const minuteData = {
 							time,
@@ -243,7 +244,8 @@ export function makeNsWeatherData() {
 							temperatureNormalized,
 							hourly: item,
 							precipitation,
-							precipitationNormalized
+							precipitationNormalized,
+							isMinute0
 						};
 						minutely.push(minuteData);
 						byMinute[time] = minuteData;
@@ -267,7 +269,8 @@ export function makeNsWeatherData() {
 						temperatureNormalized,
 						hourly: item,
 						precipitation,
-						precipitationNormalized
+						precipitationNormalized,
+						isMinute0: true
 					};
 					minutely.push(minuteData);
 					byMinute[time] = minuteData;

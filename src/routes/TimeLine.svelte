@@ -32,12 +32,12 @@
 	let clientWidth: number = $state(0);
 	let plot: undefined | ReturnType<typeof Plot.plot> = $state();
 
+	const startDate = startTime || +new Date() / 1000;
+	const timeHourStart = Math.floor(startDate / 60 / 60) * 60 * 60;
+	const timeHourEnd = timeHourStart + hours * 60 * 60;
+
 	let data = $derived.by(() => {
 		//gg('data');
-
-		const startDate = startTime || +new Date() / 1000;
-		const timeHourStart = Math.floor(startDate / 60 / 60) * 60 * 60;
-		const timeHourEnd = timeHourStart + hours * 60 * 60;
 
 		console.time('data');
 		if (nsWeatherData.minutely) {
@@ -140,22 +140,8 @@
 		}
 	}
 
-	function addGap(ts: number, leadingEdge = true, delta = 4) {
-		const date = new Date(ts * 1000);
-		const minutes = date.getMinutes();
-
-		if (leadingEdge) {
-			if (minutes == 0) {
-				return ts + 60 * delta;
-			}
-		} else {
-			ts = ts + 11 * 60;
-			if (minutes == 50) {
-				return ts - 60 * delta;
-			}
-		}
-
-		return ts;
+	function ifMinute0(valueFunction: (d: any) => number) {
+		return (d: { isMinute0: any }) => (d.isMinute0 ? valueFunction(d) : null);
 	}
 
 	// Generate and place Obervable.Plot from data.
@@ -177,30 +163,30 @@
 			plot = Plot.plot(plotOptions);
 		} else {
 			const marks: Markish[] = [
+				//Plot.frame(),
+
 				Plot.rectY(dataWithoutLast, {
 					strokeOpacity: fadePastValues,
-					x1: (d) => d.time,
-					x2: (d) => d.time + 11 * 60,
-					y: 1,
+					x1: (d) => d.time + 0 * 60,
+					x2: (d) => Math.min(d.time + 61 * 60, timeHourEnd),
+					y: ifMinute0((d) => 1),
 					fill: (d) => WMO_CODES[d.hourly.weatherCode].color
 				}),
 
 				Plot.rectY(dataWithoutLast, {
 					strokeOpacity: fadePastValues,
-					x1: (d) => addGap(d.time),
-					x2: (d) => addGap(d.time, false),
-					y: 'precipitationNormalized',
+					x1: (d) => d.time + 5 * 60,
+					x2: (d) => Math.min(d.time + 55 * 60, timeHourEnd),
+					y: ifMinute0((d) => d.precipitationNormalized),
 					fill: 'lightblue'
 				}),
 
-				Plot.rectY(dataWithoutLast, {
+				Plot.rect(dataWithoutLast, {
 					strokeOpacity: fadePastValues,
-					x1: (d) => addGap(d.time, true, 5),
-					x2: (d) => addGap(d.time, false, 5),
-					y1: 'precipitationNormalized',
-					y2: (d) => {
-						return d.precipitationNormalized - 0.01;
-					},
+					x1: (d) => d.time + 6 * 60,
+					x2: (d) => Math.min(d.time + 54 * 60, timeHourEnd),
+					y1: ifMinute0((d) => d.precipitationNormalized),
+					y2: ifMinute0((d) => d.precipitationNormalized + 0.01),
 					stroke: (d) => (d.precipitation ? 'darkcyan' : 'rgba(0,0,0,0)')
 				}),
 
@@ -220,7 +206,11 @@
                 */
 
 				// The temperature plotted as line:
-				Plot.lineY(data, { strokeOpacity: fadePastValues, x: 'time', y: 'temperatureNormalized' }),
+				Plot.lineY(data, {
+					strokeOpacity: fadePastValues,
+					x: 'time',
+					y: 'temperatureNormalized'
+				}),
 
 				// High/low temp marks:
 				Plot.dot([low], {

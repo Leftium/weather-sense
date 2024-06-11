@@ -79,17 +79,11 @@
 		{tsToTime(nsWeatherData.time, 'ddd mmm d, h:MMtt')}
 	</div>
 	<div class="current">
-		<div class="flex">
+		<div>
 			<div class="main-temperature" use:toggleUnits={{ temperature: true }}>
 				{nsWeatherData.format('displayTemperature')}
 			</div>
-		</div>
-		<img class="icon" src={wmoCode(nsWeatherData.displayWeatherCode).icon} alt="" />
-		<div>
-			<div class="condition">
-				<span>{wmoCode(nsWeatherData.displayWeatherCode).description}</span>
-			</div>
-			<div>
+			<div class="temperature-range">
 				<span use:toggleUnits={{ temperature: true }}>
 					{nsWeatherData.format('daily[2].temperatureMin', false)}
 				</span>-<span use:toggleUnits={{ temperature: true }}>
@@ -97,10 +91,16 @@
 				</span>
 			</div>
 		</div>
+		<img class="icon" src={wmoCode(nsWeatherData.displayWeatherCode).icon} alt="" />
+		<div>
+			<div class="condition">
+				<span>{wmoCode(nsWeatherData.displayWeatherCode).description}</span>
+			</div>
+		</div>
 	</div>
 	<div class="other-measurements">
-		<span><b>Humidity:</b>{nsWeatherData.displayHumidity}%</span>
-		<span><b>Precipitation:</b>{nsWeatherData.displayPrecipitation}mm</span>
+		<span><b>Humidity:</b> {nsWeatherData.displayHumidity}%</span>
+		<span><b>Precipitation:</b> {nsWeatherData.displayPrecipitation}mm</span>
 	</div>
 </div>
 
@@ -204,6 +204,10 @@
 	.main-temperature {
 		font-size: 2.3em;
 		margin-right: 0.2em;
+	}
+
+	.temperature-range {
+		text-align: center;
 	}
 
 	.current .condition {

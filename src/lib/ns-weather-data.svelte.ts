@@ -254,7 +254,9 @@ export function makeNsWeatherData() {
 				if (index < array.length - 1) {
 					const nextTemperature = array[index + 1].temperature;
 
-					for (let minute = 0; minute < 60; minute += 10) {
+					const step = item.fromNow >= -3 && item.fromNow <= 2 ? 10 : 30;
+
+					for (let minute = 0; minute < 60; minute += step) {
 						const minuteData = makeMinuteData(minute, nextTemperature, precipitation, item);
 						minutely.push(minuteData);
 						byMinute[minuteData.time] = minuteData;
@@ -453,22 +455,22 @@ export function makeNsWeatherData() {
 		},
 
 		get displayTemperature() {
-			const nearestMinute = Math.floor(time / 60) * 60;
+			const nearestMinute = Math.floor(time / 600) * 600;
 			return byMinute[nearestMinute]?.temperature ?? current?.temperature;
 		},
 
 		get displayWeatherCode() {
-			const nearestMinute = Math.floor(time / 60) * 60;
+			const nearestMinute = Math.floor(time / 600) * 600;
 			return byMinute[nearestMinute]?.hourly?.weatherCode ?? current?.weatherCode;
 		},
 
 		get displayHumidity() {
-			const nearestMinute = Math.floor(time / 60) * 60;
+			const nearestMinute = Math.floor(time / 600) * 600;
 			return byMinute[nearestMinute]?.hourly?.relativeHumidity ?? current?.humidity;
 		},
 
 		get displayPrecipitation() {
-			const nearestMinute = Math.floor(time / 60) * 60;
+			const nearestMinute = Math.floor(time / 600) * 600;
 			return byMinute[nearestMinute]?.precipitation ?? current?.precipitation;
 		},
 

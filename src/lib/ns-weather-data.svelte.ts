@@ -111,7 +111,7 @@ type TrackerValue = {
 };
 
 export function makeNsWeatherData() {
-	gg('makeNsWeatherData');
+	//gg('makeNsWeatherData');
 
 	// Inputs:
 	let coords: Coordinates | null = $state(null);
@@ -280,8 +280,6 @@ export function makeNsWeatherData() {
 
 		const now = +new Date() / 1000;
 
-		console.time('fetchOpenMeteo');
-
 		hourly = _.map(json.hourly.time, (time, index: number) => {
 			const fromNow = Math.floor((time - now) / 60 / 60) + 1;
 			const object: Partial<HourlyWeather> = {
@@ -316,7 +314,7 @@ export function makeNsWeatherData() {
 
 		emit('weatherdata_updatedData');
 
-		gg({ json, daily });
+		gg('fetchOpenMeteo', { json: $state.snapshot(json), daily: $state.snapshot(daily) });
 		console.timeEnd('fetchOpenMeteo');
 	}
 
@@ -348,7 +346,7 @@ export function makeNsWeatherData() {
 		});
 
 		on('weatherdata_requestedSetLocation', async function (params) {
-			gg('weatherdata_requestedSetLocation', params);
+			//gg('weatherdata_requestedSetLocation', params);
 
 			source = params.source;
 
@@ -376,7 +374,7 @@ export function makeNsWeatherData() {
 				name = `${result.name}, ${result.country}`;
 			}
 
-			gg({ name, coords, params });
+			//gg({ name, coords, params });
 
 			fetchOpenMeteo();
 		});

@@ -26,12 +26,11 @@
 		for (let x = min; x <= max; x += step * 10 * 60) {
 			range.push(x);
 		}
-		gg('range', range);
 		return range;
 	}
 
 	on('weatherdata_updatedRadar', function ({ nsWeatherData }) {
-		gg('nsWeatherData.radar', $state.snapshot(nsWeatherData.radar));
+		//gg('nsWeatherData.radar', $state.snapshot(nsWeatherData.radar));
 
 		min = nsWeatherData.radar.timeStart ?? min;
 		max = nsWeatherData.radar.timeEnd ?? max;

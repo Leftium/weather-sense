@@ -170,7 +170,7 @@
 		}
 
 		on('weatherdata_updatedRadar', function () {
-			gg('Initialize Radar layers.');
+			//gg('Initialize Radar layers.');
 			const radarFrame = nsWeatherData.radar.frames[radarFrameIndex];
 
 			// Load and display current radar layer.

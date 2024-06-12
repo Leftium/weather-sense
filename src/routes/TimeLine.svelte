@@ -229,7 +229,7 @@
 					strokeOpacity: 'opacity',
 					x1: 'x1',
 					x2: 'x2',
-					y: 1,
+					y: 1.6,
 					fill: 'fill'
 				}),
 
@@ -251,8 +251,25 @@
 				}),
 
 				Plot.text(data.codes, {
+					fontSize: 14,
 					x: 'xMiddle',
-					y: 0.8,
+					y: 1.2,
+					dx: 1,
+					dy: 1,
+					textAnchor: 'middle',
+					text: (d) => {
+						const ox1 = plot?.scale('x')?.apply(d.x1 * 1000);
+						const ox2 = plot?.scale('x')?.apply(d.x2 * 1000);
+						const text = ox2 - ox1 > 80 ? d.text : null;
+						return text;
+					},
+					fill: 'rgba(255,255,255,0.5)'
+				}),
+
+				Plot.text(data.codes, {
+					fontSize: 14,
+					x: 'xMiddle',
+					y: 1.2,
 					textAnchor: 'middle',
 					text: (d) => {
 						const ox1 = plot?.scale('x')?.apply(d.x1 * 1000);

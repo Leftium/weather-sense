@@ -55,6 +55,7 @@
 				text: string;
 				x1: number;
 				x2: number;
+				xMiddle: number;
 				fill: string;
 				opacity: number;
 			};
@@ -62,19 +63,24 @@
 			const now = +new Date() / 1000;
 
 			const codes = minute0.reduce((accumulator: CodesItem[], current: MinutelyWeather) => {
-				const lastItem = accumulator.at(-1);
-				const prevCode = lastItem?.weatherCode;
+				const prevItem = accumulator.at(-1);
+				const prevCode = prevItem?.weatherCode;
 				const nextCode = current.hourly?.weatherCode;
 
-				if (lastItem && prevCode == nextCode && prevCode != undefined) {
-					lastItem.x2 = Math.min(current.time + 60 * 60, timeEnd);
+				const x1 = current.time;
+				const x2 = Math.min(current.time + 60 * 60, timeEnd);
+
+				if (prevItem && prevCode == nextCode && prevCode != undefined) {
+					prevItem.x2 = x2;
+					prevItem.xMiddle = (Number(prevItem.x1) + x2) / 2;
 				} else {
 					if (nextCode != undefined) {
 						accumulator.push({
 							weatherCode: nextCode,
 							text: WMO_CODES[nextCode].description,
-							x1: current.time,
-							x2: Math.min(current.time + 60 * 60, timeEnd),
+							x1,
+							x2,
+							xMiddle: (Number(x1) + Number(x2)) / 2,
 							fill: WMO_CODES[nextCode].color,
 							opacity: current.time < now ? 0.2 : 1
 						});
@@ -82,8 +88,6 @@
 				}
 				return accumulator;
 			}, [] as CodesItem[]);
-
-			const descriptions = codes.filter((item) => Number(item.x2) - Number(item.x1) > 60 * 60);
 
 			const rain = minute0
 				.filter((d) => d.precipitation > 0)
@@ -159,8 +163,7 @@
 				low,
 				high,
 				rain,
-				codes,
-				descriptions
+				codes
 			};
 		}
 		return null;
@@ -247,11 +250,16 @@
 					stroke: 'darkcyan'
 				}),
 
-				Plot.text(data.descriptions, {
-					x: (d) => (Number(d.x1) + Number(d.x2)) / 2,
+				Plot.text(data.codes, {
+					x: 'xMiddle',
 					y: 0.8,
 					textAnchor: 'middle',
-					text: 'text'
+					text: (d) => {
+						const ox1 = plot?.scale('x')?.apply(d.x1 * 1000);
+						const ox2 = plot?.scale('x')?.apply(d.x2 * 1000);
+						const text = ox2 - ox1 > 80 ? d.text : null;
+						return text;
+					}
 				}),
 
 				// The temperature plotted as line:

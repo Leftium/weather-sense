@@ -219,9 +219,32 @@ export function makeNsWeatherData() {
 		const maxTemperature = _.maxBy(hourly, 'temperature')?.temperature ?? 0;
 		const temperatureRange = maxTemperature - minTemperature;
 
+		function makeMinuteData(
+			minute: number,
+			nextTemperature: number,
+			precipitation: number,
+			item: HourlyWeather
+		) {
+			const time = item.time + minute * 60;
+			const temperature = (item.temperature * (60 - minute)) / 60 + (nextTemperature * minute) / 60;
+			const timeFormatted = dateFormat(time * 1000, DATEFORMAT_MASK);
+			const temperatureNormalized = ((temperature - minTemperature) / temperatureRange) * 0.8 + 0.1;
+			const precipitationNormalized = 1 - Math.exp(-precipitation / 2);
+
+			return {
+				time,
+				timeFormatted,
+				temperature,
+				temperatureNormalized,
+				hourly: item,
+				precipitation,
+				precipitationNormalized,
+				minute
+			};
+		}
+
 		const lastHourlyWeather = hourly.at(-1) as HourlyWeather;
 		// lastHourlyWeather.time += 60 * 60;
-
 		[...hourly, lastHourlyWeather, lastHourlyWeather].forEach((item, index, array) => {
 			if (hourly && minutely && byMinute) {
 				// Fake precipitation:
@@ -234,24 +257,7 @@ export function makeNsWeatherData() {
 					const nextTemperature = array[index + 1].temperature;
 
 					for (let minute = 0; minute < 60; minute += 10) {
-						const time = item.time + minute * 60;
-						const temperature =
-							(item.temperature * (60 - minute)) / 60 + (nextTemperature * minute) / 60;
-						const timeFormatted = dateFormat(time * 1000, DATEFORMAT_MASK);
-						const temperatureNormalized =
-							((temperature - minTemperature) / temperatureRange) * 0.8 + 0.1;
-						const precipitationNormalized = 1 - Math.exp(-precipitation / 2);
-
-						const minuteData = {
-							time,
-							timeFormatted,
-							temperature,
-							temperatureNormalized,
-							hourly: item,
-							precipitation,
-							precipitationNormalized,
-							minute
-						};
+						const minuteData = makeMinuteData(minute, nextTemperature, precipitation, item);
 						minutely.push(minuteData);
 						byMinute[time] = minuteData;
 					}
@@ -259,24 +265,9 @@ export function makeNsWeatherData() {
 
 				if (index == array.length - 1) {
 					const minute = 60;
-					const time = item.time + minute * 60;
-					const temperature =
-						(item.temperature * (60 - minute)) / 60 + (array[index].temperature * minute) / 60;
-					const timeFormatted = dateFormat(time * 1000, DATEFORMAT_MASK);
-					const temperatureNormalized =
-						((temperature - minTemperature) / temperatureRange) * 0.8 + 0.1;
-					const precipitationNormalized = 1 - Math.exp(-precipitation / 2);
+					const nextTemperature = array[index].temperature;
+					const minuteData = makeMinuteData(minute, nextTemperature, precipitation, item);
 
-					const minuteData = {
-						time,
-						timeFormatted,
-						temperature,
-						temperatureNormalized,
-						hourly: item,
-						precipitation,
-						precipitationNormalized,
-						minute
-					};
 					minutely.push(minuteData);
 					byMinute[time] = minuteData;
 				}

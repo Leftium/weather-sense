@@ -15,6 +15,9 @@ export type Radar = {
 	generated: number;
 	host: string;
 	frames: RadarFrame[];
+
+	timeStart?: number;
+	timeEnd?: number;
 };
 
 export type RadarLayer = {

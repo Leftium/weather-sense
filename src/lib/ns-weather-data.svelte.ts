@@ -254,7 +254,13 @@ export function makeNsWeatherData() {
 				if (index < array.length - 1) {
 					const nextTemperature = array[index + 1].temperature;
 
-					const step = item.fromNow >= -3 && item.fromNow <= 2 ? 10 : 30;
+					const step =
+						radar.timeStart &&
+						radar.timeEnd &&
+						item.time >= radar.timeStart &&
+						item.time <= radar.timeEnd
+							? 10
+							: 30;
 
 					for (let minute = 0; minute < 60; minute += step) {
 						const minuteData = makeMinuteData(minute, nextTemperature, precipitation, item);
@@ -311,10 +317,16 @@ export function makeNsWeatherData() {
 					...frame
 				}));
 
+			const timeStart = frames[0]?.time;
+			const timeLast = frames.at(-1)?.time;
+			const timeEnd = timeLast ? timeLast + 10 * 60 : undefined;
+
 			radar = {
 				generated: rainviewerData.generated,
 				host: rainviewerData.host,
-				frames
+				frames,
+				timeStart,
+				timeEnd
 			};
 			emit('weatherdata_updatedRadar', { nsWeatherData });
 		});

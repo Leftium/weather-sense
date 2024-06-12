@@ -32,8 +32,8 @@
 	on('weatherdata_updatedRadar', function ({ nsWeatherData }) {
 		gg('nsWeatherData.radar', $state.snapshot(nsWeatherData.radar));
 
-		min = nsWeatherData.radar.frames[0].time;
-		max = (nsWeatherData.radar.frames.at(-1)?.time || 0) + 10 * 60;
+		min = nsWeatherData.radar.timeStart ?? min;
+		max = nsWeatherData.radar.timeEnd ?? max;
 	});
 
 	function oninput(this: HTMLInputElement) {

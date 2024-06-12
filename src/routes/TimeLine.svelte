@@ -32,78 +32,79 @@
 	let clientWidth: number = $state(0);
 	let plot: undefined | ReturnType<typeof Plot.plot> = $state();
 
-	const startDate = startTime || +new Date() / 1000;
-	const timeHourStart = Math.floor(startDate / 60 / 60) * 60 * 60;
-	const timeHourEnd = timeHourStart + hours * 60 * 60;
-
 	let data = $derived.by(() => {
 		//gg('data');
 
-		console.time('data');
+		const startDate = startTime || +new Date() / 1000;
+		const timeStart = Math.floor(startDate / 60 / 60) * 60 * 60;
+		const timeEnd = timeStart + hours * 60 * 60;
+
 		if (nsWeatherData.minutely) {
 			const filtered = nsWeatherData.minutely.filter((item) => {
-				return item.time >= timeHourStart && item.time <= timeHourEnd;
+				return item.time >= timeStart && item.time <= timeEnd;
 			});
 
-			console.timeEnd('data');
-			return filtered;
+			let low = {
+				time: 0,
+				temperatureNormalized: Number.MAX_VALUE,
+				temperature: 0,
+				dx: 0,
+				dy: 0
+			};
+
+			let high = {
+				time: 0,
+				temperatureNormalized: 0,
+				temperature: 0,
+				dx: 0,
+				dy: 0
+			};
+
+			_.forEach(filtered, (item, index) => {
+				let dx = 0;
+				if (index < 5) {
+					dx = 10 - index;
+				} else if (index >= (filtered.length || 0) - 6) {
+					dx = -10 + ((filtered.length || 0) - index);
+				}
+
+				const temperatureNormalized = item.temperatureNormalized;
+
+				const dy = item.temperatureNormalized < 0.5 ? -10 : 10;
+
+				if (temperatureNormalized < low.temperatureNormalized) {
+					low = {
+						time: item.time,
+						temperatureNormalized,
+						temperature: item.temperature,
+						dx,
+						dy
+					};
+				}
+
+				if (temperatureNormalized > high.temperatureNormalized) {
+					high = {
+						time: item.time,
+						temperatureNormalized,
+						temperature: item.temperature,
+						dx,
+						dy
+					};
+				}
+			});
+
+			return {
+				oldData: filtered,
+				timeStart,
+				timeEnd,
+				low,
+				high
+			};
 		}
-		console.timeEnd('data');
 		return null;
 	});
 
-	let dataWithoutLast = $derived(data?.toSpliced(-1, 1));
-
-	let low = $state({
-		time: 0,
-		temperatureNormalized: Number.MAX_VALUE,
-		temperature: 0,
-		dx: 0,
-		dy: 0
-	});
-
-	let high = $state({
-		time: 0,
-		temperatureNormalized: 0,
-		temperature: 0,
-		dx: 0,
-		dy: 0
-	});
-
-	$effect(() => {
-		_.forEach(data, (item, index) => {
-			let dx = 0;
-			if (index < 5) {
-				dx = 10 - index;
-			} else if (index >= (data?.length || 0) - 6) {
-				dx = -10 + ((data?.length || 0) - index);
-			}
-
-			const temperatureNormalized = item.temperatureNormalized;
-
-			const dy = item.temperatureNormalized < 0.5 ? -10 : 10;
-
-			if (temperatureNormalized < low.temperatureNormalized) {
-				low = {
-					time: item.time,
-					temperatureNormalized,
-					temperature: item.temperature,
-					dx,
-					dy
-				};
-			}
-
-			if (temperatureNormalized > high.temperatureNormalized) {
-				high = {
-					time: item.time,
-					temperatureNormalized,
-					temperature: item.temperature,
-					dx,
-					dy
-				};
-			}
-		});
-	});
+	let dataWithoutLast = $derived(data?.oldData?.toSpliced(-1, 1));
 
 	function fill(d: { time: number; precipitation: number }) {
 		if (!d?.time) {
@@ -158,7 +159,7 @@
 			y: { axis: null }
 		};
 
-		if (!data?.length) {
+		if (!data?.oldData?.length) {
 			// Draw simple placeholder for plot.
 			plot = Plot.plot(plotOptions);
 		} else {
@@ -168,7 +169,7 @@
 				Plot.rectY(dataWithoutLast, {
 					strokeOpacity: fadePastValues,
 					x1: (d) => d.time + 0 * 60,
-					x2: (d) => Math.min(d.time + 61 * 60, timeHourEnd),
+					x2: (d) => Math.min(d.time + 61 * 60, data.timeEnd),
 					y: ifMinute0((d) => 1),
 					fill: (d) => WMO_CODES[d.hourly.weatherCode].color
 				}),
@@ -176,7 +177,7 @@
 				Plot.rectY(dataWithoutLast, {
 					strokeOpacity: fadePastValues,
 					x1: (d) => d.time + 5 * 60,
-					x2: (d) => Math.min(d.time + 55 * 60, timeHourEnd),
+					x2: (d) => Math.min(d.time + 55 * 60, data.timeEnd),
 					y: ifMinute0((d) => d.precipitationNormalized),
 					fill: 'lightblue'
 				}),
@@ -184,7 +185,7 @@
 				Plot.rect(dataWithoutLast, {
 					strokeOpacity: fadePastValues,
 					x1: (d) => d.time + 6 * 60,
-					x2: (d) => Math.min(d.time + 54 * 60, timeHourEnd),
+					x2: (d) => Math.min(d.time + 54 * 60, data.timeEnd),
 					y1: ifMinute0((d) => d.precipitationNormalized),
 					y2: ifMinute0((d) => d.precipitationNormalized + 0.01),
 					stroke: (d) => (d.precipitation ? 'darkcyan' : 'rgba(0,0,0,0)')
@@ -206,20 +207,20 @@
                 */
 
 				// The temperature plotted as line:
-				Plot.lineY(data, {
+				Plot.lineY(data?.oldData, {
 					strokeOpacity: fadePastValues,
 					x: 'time',
 					y: 'temperatureNormalized'
 				}),
 
 				// High/low temp marks:
-				Plot.dot([low], {
+				Plot.dot([data.low], {
 					fillOpacity: fadePastValues,
 					x: 'time',
 					y: 'temperatureNormalized',
 					fill: 'blue'
 				}),
-				Plot.dot([high], {
+				Plot.dot([data.high], {
 					fillOpacity: fadePastValues,
 					x: 'time',
 					y: 'temperatureNormalized',
@@ -227,25 +228,28 @@
 				}),
 
 				// High/low temp labels:
-				Plot.text([formatTemperature(low.temperature, nsWeatherData.units.temperature)], {
+				Plot.text([formatTemperature(data.low.temperature, nsWeatherData.units.temperature)], {
 					fillOpacity: fadePastValues,
-					x: low.time,
-					y: low.temperatureNormalized,
+					x: data.low.time,
+					y: data.low.temperatureNormalized,
 					fill: 'blue',
-					dy: low.dy,
-					dx: low.dx
+					dy: data.low.dy,
+					dx: data.low.dx
 				}),
-				Plot.text([formatTemperature(high.temperature, nsWeatherData.units.temperature)], {
+				Plot.text([formatTemperature(data.high.temperature, nsWeatherData.units.temperature)], {
 					fillOpacity: fadePastValues,
-					x: high.time,
-					y: high.temperatureNormalized,
+					x: data.high.time,
+					y: data.high.temperatureNormalized,
 					fill: 'red',
-					dy: high.dy,
-					dx: high.dx
+					dy: data.high.dy,
+					dx: data.high.dx
 				}),
 
 				// Dot that marks value at mouse (hover) position:
-				Plot.dot(data, Plot.pointerX({ x: 'time', y: 'temperatureNormalized', fill: 'purple' }))
+				Plot.dot(
+					data?.oldData,
+					Plot.pointerX({ x: 'time', y: 'temperatureNormalized', fill: 'purple' })
+				)
 
 				/*
 				Plot.ruleX(data, Plot.pointerX({ x: 'time', py: 'temperatureNormalized', fill: 'blue' }))
@@ -254,7 +258,7 @@
 
 			marks.push(
 				// A custom ruleX than can be updated from the outside by calling .updateRuleX(value).
-				Plot.ruleX([data[0].time], {
+				Plot.ruleX([data?.oldData[0].time], {
 					// @ts-expect-error: needed to hide y-axis:
 					y: { axis: null },
 					render: (i, s, v, d, c, next) => {

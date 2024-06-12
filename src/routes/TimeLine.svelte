@@ -411,7 +411,6 @@
 	}
 	on('weatherdata_updatedData', callPlotData);
 	on('weatherdata_updatedRadar', callPlotData);
-	on('weatherData_ToggledUnits', callPlotData);
 
 	onMount(() => {
 		// Update entire plot.

@@ -130,7 +130,9 @@ export function makeNsWeatherData() {
 	let daily: DailyWeather[] | null = $state(null);
 
 	let byMinute: Record<number, MinutelyWeather> = $state({});
+
 	let minutely: MinutelyWeather[] = $derived.by(() => {
+		console.time('minutely');
 		if (!hourly) {
 			return [];
 		}
@@ -212,7 +214,7 @@ export function makeNsWeatherData() {
 				}
 			}
 		});
-
+		console.timeEnd('minutely');
 		return minutely;
 	});
 

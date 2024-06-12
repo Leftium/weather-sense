@@ -1,5 +1,9 @@
 <script lang="ts">
-	import type { NsWeatherData, WeatherDataEvents } from '$lib/ns-weather-data.svelte';
+	import type {
+		MinutelyWeather,
+		NsWeatherData,
+		WeatherDataEvents
+	} from '$lib/ns-weather-data.svelte';
 
 	import _ from 'lodash-es';
 	import * as d3 from 'd3';
@@ -44,11 +48,45 @@
 				return item.time >= timeStart && item.time <= timeEnd;
 			});
 
-			const withoutLast = filtered.toSpliced(-1, 1);
+			const minute0 = filtered.filter((d) => d.minute == 0);
+
+			type CodesItem = {
+				weatherCode: number;
+				text: string;
+				x1: number;
+				x2: number;
+				fill: string;
+				opacity: number;
+			};
 
 			const now = +new Date() / 1000;
-			const rain = filtered
-				.filter((d) => d.minute == 0 && d.precipitation > 0)
+
+			const codes = minute0.reduce((accumulator: CodesItem[], current: MinutelyWeather) => {
+				const lastItem = accumulator.at(-1);
+				const prevCode = lastItem?.weatherCode;
+				const nextCode = current.hourly?.weatherCode;
+
+				if (lastItem && prevCode == nextCode && prevCode != undefined) {
+					lastItem.x2 = Math.min(current.time + 60 * 60, timeEnd);
+				} else {
+					if (nextCode != undefined) {
+						accumulator.push({
+							weatherCode: nextCode,
+							text: WMO_CODES[nextCode].description,
+							x1: current.time,
+							x2: Math.min(current.time + 60 * 60, timeEnd),
+							fill: WMO_CODES[nextCode].color,
+							opacity: current.time < now ? 0.2 : 1
+						});
+					}
+				}
+				return accumulator;
+			}, [] as CodesItem[]);
+
+			const descriptions = codes.filter((item) => Number(item.x2) - Number(item.x1) > 60 * 60);
+
+			const rain = minute0
+				.filter((d) => d.precipitation > 0)
 				.map((d) => {
 					const x1bar = d.time + 5 * 60;
 					const x2bar = Math.min(d.time + 55 * 60, timeEnd);
@@ -116,12 +154,13 @@
 
 			return {
 				all: filtered,
-				withoutLast,
 				timeStart,
 				timeEnd,
 				low,
 				high,
-				rain
+				rain,
+				codes,
+				descriptions
 			};
 		}
 		return null;
@@ -187,12 +226,12 @@
 			const marks: Markish[] = [
 				//Plot.frame(),
 
-				Plot.rectY(data.withoutLast, {
-					strokeOpacity: fadePastValues,
-					x1: (d) => d.time + 0 * 60,
-					x2: (d) => Math.min(d.time + 61 * 60, data.timeEnd),
-					y: ifMinute0((d) => 1),
-					fill: (d) => WMO_CODES[d.hourly.weatherCode].color
+				Plot.rectY(data.codes, {
+					strokeOpacity: 'opacity',
+					x1: 'x1',
+					x2: 'x2',
+					y: 1,
+					fill: 'fill'
 				}),
 
 				Plot.rectY(data.rain, {
@@ -212,20 +251,12 @@
 					stroke: 'darkcyan'
 				}),
 
-				/*
-				Plot.text(data, {
-					x: 'time',
+				Plot.text(data.descriptions, {
+					x: (d) => (Number(d.x1) + Number(d.x2)) / 2,
 					y: 0.8,
-					textAnchor: 'start',
-					filter: (d) => {
-						//gg(d);
-						return d.isNewWeatherCode;
-					},
-					text: function (d) {
-						return WMO_CODES[d.hourly.weatherCode].description;
-					}
+					textAnchor: 'middle',
+					text: 'text'
 				}),
-                */
 
 				// The temperature plotted as line:
 				Plot.lineY(data?.all, {

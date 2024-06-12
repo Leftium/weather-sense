@@ -62,34 +62,39 @@
 
 			const now = +new Date() / 1000;
 
-			const codes = minute0.reduce((accumulator: CodesItem[], current: MinutelyWeather) => {
-				const prevItem = accumulator.at(-1);
-				const prevCode = prevItem?.weatherCode;
-				const nextCode = current.hourly?.weatherCode;
+			const minute0withoutLast = minute0.toSpliced(-1, 1);
 
-				const x1 = current.time;
-				const x2 = Math.min(current.time + 60 * 60, timeEnd);
+			const codes = minute0withoutLast.reduce(
+				(accumulator: CodesItem[], current: MinutelyWeather) => {
+					const prevItem = accumulator.at(-1);
+					const prevCode = prevItem?.weatherCode;
+					const nextCode = current.hourly?.weatherCode;
 
-				if (prevItem && prevCode == nextCode && prevCode != undefined) {
-					prevItem.x2 = x2;
-					prevItem.xMiddle = (Number(prevItem.x1) + x2) / 2;
-				} else {
-					if (nextCode != undefined) {
-						accumulator.push({
-							weatherCode: nextCode,
-							text: WMO_CODES[nextCode].description,
-							x1,
-							x2,
-							xMiddle: (Number(x1) + Number(x2)) / 2,
-							fill: WMO_CODES[nextCode].color,
-							opacity: current.time < now ? 0.2 : 1
-						});
+					const x1 = current.time;
+					const x2 = Math.min(current.time + 60 * 60, timeEnd);
+
+					if (prevItem && prevCode == nextCode && prevCode != undefined) {
+						prevItem.x2 = x2;
+						prevItem.xMiddle = (Number(prevItem.x1) + x2) / 2;
+					} else {
+						if (nextCode != undefined) {
+							accumulator.push({
+								weatherCode: nextCode,
+								text: WMO_CODES[nextCode].description,
+								x1,
+								x2,
+								xMiddle: (Number(x1) + Number(x2)) / 2,
+								fill: WMO_CODES[nextCode].color,
+								opacity: current.time < now ? 0.2 : 1
+							});
+						}
 					}
-				}
-				return accumulator;
-			}, [] as CodesItem[]);
+					return accumulator;
+				},
+				[] as CodesItem[]
+			);
 
-			const rain = minute0
+			const rain = minute0withoutLast
 				.filter((d) => d.precipitation > 0)
 				.map((d) => {
 					const x1bar = d.time + 5 * 60;
@@ -219,9 +224,19 @@
 		};
 
 		if (!data?.all?.length) {
-			// Draw simple placeholder for plot.
-			plot = Plot.plot(plotOptions);
+			plot = undefined;
 		} else {
+			if (!plot) {
+				// Ensure plot exists so we can use its scale.
+				plot = Plot.lineY(data?.all).plot({
+					...plotOptions,
+					x: {
+						type: 'time',
+						tickFormat: (d) => dateFormat(d, 'htt'),
+						transform: (t) => t * 1000
+					}
+				});
+			}
 			const marks: Markish[] = [
 				//Plot.frame(),
 
@@ -396,19 +411,22 @@
 			});
 		}
 
+		const backupPlot = Plot.plot(plotOptions);
 		div?.firstChild?.remove(); // remove old chart, if any
-		div?.append(plot); // add the new chart
+		div?.append(plot || backupPlot); // add the new chart
 
-		plot.addEventListener('input', (event) => {
-			//gg($state.snapshot(plot.value));
+		if (plot) {
+			plot.addEventListener('input', (event) => {
+				//gg($state.snapshot(plot.value));
 
-			const value = plot?.value;
-			const time = value?.time;
+				const value = plot?.value;
+				const time = value?.time;
 
-			if (time) {
-				emit('weatherdata_requestedSetTime', { time });
-			}
-		});
+				if (time) {
+					emit('weatherdata_requestedSetTime', { time });
+				}
+			});
+		}
 	}
 
 	// Update rule location only (leaving rest of plot intact).

@@ -226,17 +226,6 @@
 		if (!data?.all?.length) {
 			plot = undefined;
 		} else {
-			if (!plot) {
-				// Ensure plot exists so we can use its scale.
-				plot = Plot.lineY(data?.all).plot({
-					...plotOptions,
-					x: {
-						type: 'time',
-						tickFormat: (d) => dateFormat(d, 'htt'),
-						transform: (t) => t * 1000
-					}
-				});
-			}
 			const marks: Markish[] = [
 				//Plot.frame(),
 
@@ -447,6 +436,10 @@
 	on('weatherdata_updatedData', async function () {
 		gg('on:weatherdata_updatedData');
 		await tick();
+		if (!plot) {
+			// Hack: force extra render so plot.scale() is available.
+			plotData();
+		}
 		plotData();
 	});
 

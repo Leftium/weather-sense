@@ -19,6 +19,7 @@
 	const TEN_MINUTES = 10 * 60; // Seconds in 10 minutes.
 	let min = $state(TEN_MINUTES * (Math.floor(nsWeatherData.time / TEN_MINUTES) - 12));
 	let max = $state(TEN_MINUTES * (Math.floor(nsWeatherData.time / TEN_MINUTES) + 4));
+	let range = $derived(makeRange(min, max));
 
 	function makeRange(min: number, max: number) {
 		const range = [];
@@ -52,11 +53,11 @@
 			<input type="range" name="" id="" {min} {max} value={nsWeatherData.time} {step} {oninput} />
 		{/key}
 		<datalist id="radar-markers">
-			{#each makeRange(min, max) as value, index}
+			{#each range as value, index}
 				{@const isMinorIndex = index % 4}
 				<div
 					class="tick"
-					class:loaded={index === 16 || _.find(radarLayers, ['index', index])?.loaded}
+					class:loaded={index === range.length - 1 || _.find(radarLayers, ['index', index])?.loaded}
 					class:minor-time={isMinorIndex}
 				>
 					{tsToTime(value, isMinorIndex ? 'MM' : 'h:MMt')}

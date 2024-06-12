@@ -94,7 +94,8 @@
 			});
 
 			return {
-				oldData: filtered,
+				all: filtered,
+				withoutLast: filtered.toSpliced(-1, 1),
 				timeStart,
 				timeEnd,
 				low,
@@ -103,8 +104,6 @@
 		}
 		return null;
 	});
-
-	let dataWithoutLast = $derived(data?.oldData?.toSpliced(-1, 1));
 
 	function fill(d: { time: number; precipitation: number }) {
 		if (!d?.time) {
@@ -142,7 +141,7 @@
 	}
 
 	function ifMinute0(valueFunction: (d: any) => number) {
-		return (d: { isMinute0: any }) => (d.isMinute0 ? valueFunction(d) : null);
+		return (d: { minute: number }) => (d.minute == 0 ? valueFunction(d) : null);
 	}
 
 	// Generate and place Obervable.Plot from data.
@@ -159,14 +158,14 @@
 			y: { axis: null }
 		};
 
-		if (!data?.oldData?.length) {
+		if (!data?.all?.length) {
 			// Draw simple placeholder for plot.
 			plot = Plot.plot(plotOptions);
 		} else {
 			const marks: Markish[] = [
 				//Plot.frame(),
 
-				Plot.rectY(dataWithoutLast, {
+				Plot.rectY(data.withoutLast, {
 					strokeOpacity: fadePastValues,
 					x1: (d) => d.time + 0 * 60,
 					x2: (d) => Math.min(d.time + 61 * 60, data.timeEnd),
@@ -174,7 +173,7 @@
 					fill: (d) => WMO_CODES[d.hourly.weatherCode].color
 				}),
 
-				Plot.rectY(dataWithoutLast, {
+				Plot.rectY(data.withoutLast, {
 					strokeOpacity: fadePastValues,
 					x1: (d) => d.time + 5 * 60,
 					x2: (d) => Math.min(d.time + 55 * 60, data.timeEnd),
@@ -182,7 +181,7 @@
 					fill: 'lightblue'
 				}),
 
-				Plot.rect(dataWithoutLast, {
+				Plot.rect(data.withoutLast, {
 					strokeOpacity: fadePastValues,
 					x1: (d) => d.time + 6 * 60,
 					x2: (d) => Math.min(d.time + 54 * 60, data.timeEnd),
@@ -207,7 +206,7 @@
                 */
 
 				// The temperature plotted as line:
-				Plot.lineY(data?.oldData, {
+				Plot.lineY(data?.all, {
 					strokeOpacity: fadePastValues,
 					x: 'time',
 					y: 'temperatureNormalized'
@@ -247,7 +246,7 @@
 
 				// Dot that marks value at mouse (hover) position:
 				Plot.dot(
-					data?.oldData,
+					data?.all,
 					Plot.pointerX({ x: 'time', y: 'temperatureNormalized', fill: 'purple' })
 				)
 
@@ -258,7 +257,7 @@
 
 			marks.push(
 				// A custom ruleX than can be updated from the outside by calling .updateRuleX(value).
-				Plot.ruleX([data?.oldData[0].time], {
+				Plot.ruleX([data?.all[0].time], {
 					// @ts-expect-error: needed to hide y-axis:
 					y: { axis: null },
 					render: (i, s, v, d, c, next) => {

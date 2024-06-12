@@ -228,14 +228,14 @@ export function makeNsWeatherData() {
 				if (index < hourly.length - 1) {
 					const nextTemperature = hourly[index + 1].temperature;
 
-					for (let x = 0; x < 60; x += 10) {
-						const time = item.time + x * 60;
-						const temperature = (item.temperature * (60 - x)) / 60 + (nextTemperature * x) / 60;
+					for (let minute = 0; minute < 60; minute += 10) {
+						const time = item.time + minute * 60;
+						const temperature =
+							(item.temperature * (60 - minute)) / 60 + (nextTemperature * minute) / 60;
 						const timeFormatted = dateFormat(time * 1000, DATEFORMAT_MASK);
 						const temperatureNormalized =
 							((temperature - minTemperature) / temperatureRange) * 0.8 + 0.1;
 						const precipitationNormalized = 1 - Math.exp(-precipitation / 2);
-						const isMinute0 = x == 0;
 
 						const minuteData = {
 							time,
@@ -245,7 +245,7 @@ export function makeNsWeatherData() {
 							hourly: item,
 							precipitation,
 							precipitationNormalized,
-							isMinute0
+							minute
 						};
 						minutely.push(minuteData);
 						byMinute[time] = minuteData;
@@ -253,10 +253,10 @@ export function makeNsWeatherData() {
 				}
 
 				if (index == hourly.length - 1) {
-					const x = 60;
-					const time = item.time + x * 60;
+					const minute = 60;
+					const time = item.time + minute * 60;
 					const temperature =
-						(item.temperature * (60 - x)) / 60 + (hourly[index].temperature * x) / 60;
+						(item.temperature * (60 - minute)) / 60 + (hourly[index].temperature * minute) / 60;
 					const timeFormatted = dateFormat(time * 1000, DATEFORMAT_MASK);
 					const temperatureNormalized =
 						((temperature - minTemperature) / temperatureRange) * 0.8 + 0.1;
@@ -270,7 +270,7 @@ export function makeNsWeatherData() {
 						hourly: item,
 						precipitation,
 						precipitationNormalized,
-						isMinute0: true
+						minute
 					};
 					minutely.push(minuteData);
 					byMinute[time] = minuteData;

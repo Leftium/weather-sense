@@ -62,10 +62,12 @@ type CurrentWeather = {
 export type MinutelyWeather = {
 	time: number;
 	timeFormatted: string;
+	minute: number;
 
 	temperature: number;
 	temperatureNormalized: number;
 	precipitation: number;
+	precipitationNormalized: number;
 
 	hourly?: HourlyWeather;
 	daily?: DailyWeather;
@@ -221,9 +223,9 @@ export function makeNsWeatherData() {
 			if (hourly && minutely && byMinute) {
 				// Fake precipitation:
 				const date = new Date(item.time * 1000);
-				//const precipitation = date.getHours() / 10;
+				const precipitation = date.getHours() / 10;
 
-				const precipitation = item.precipitation;
+				//const precipitation = item.precipitation;
 
 				if (index < hourly.length - 1) {
 					const nextTemperature = hourly[index + 1].temperature;

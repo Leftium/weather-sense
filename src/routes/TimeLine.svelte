@@ -44,6 +44,27 @@
 				return item.time >= timeStart && item.time <= timeEnd;
 			});
 
+			const withoutLast = filtered.toSpliced(-1, 1);
+
+			const now = +new Date() / 1000;
+			const rain = filtered
+				.filter((d) => d.minute == 0 && d.precipitation > 0)
+				.map((d) => {
+					const x1bar = d.time + 5 * 60;
+					const x2bar = Math.min(d.time + 55 * 60, timeEnd);
+					const y = d.precipitationNormalized;
+
+					return {
+						x1bar,
+						x2bar,
+						x1line: x1bar + 60,
+						x2line: x2bar - 60,
+						y,
+						y2: y + 0.01,
+						opacity: d.time < now ? 0.2 : 1
+					};
+				});
+
 			let low = {
 				time: 0,
 				temperatureNormalized: Number.MAX_VALUE,
@@ -95,11 +116,12 @@
 
 			return {
 				all: filtered,
-				withoutLast: filtered.toSpliced(-1, 1),
+				withoutLast,
 				timeStart,
 				timeEnd,
 				low,
-				high
+				high,
+				rain
 			};
 		}
 		return null;
@@ -173,21 +195,21 @@
 					fill: (d) => WMO_CODES[d.hourly.weatherCode].color
 				}),
 
-				Plot.rectY(data.withoutLast, {
-					strokeOpacity: fadePastValues,
-					x1: (d) => d.time + 5 * 60,
-					x2: (d) => Math.min(d.time + 55 * 60, data.timeEnd),
-					y: ifMinute0((d) => d.precipitationNormalized),
+				Plot.rectY(data.rain, {
+					strokeOpacity: 'opacity',
+					x1: 'x1bar',
+					x2: 'x2bar',
+					y: 'y',
 					fill: 'lightblue'
 				}),
 
-				Plot.rect(data.withoutLast, {
-					strokeOpacity: fadePastValues,
-					x1: (d) => d.time + 6 * 60,
-					x2: (d) => Math.min(d.time + 54 * 60, data.timeEnd),
-					y1: ifMinute0((d) => d.precipitationNormalized),
-					y2: ifMinute0((d) => d.precipitationNormalized + 0.01),
-					stroke: (d) => (d.precipitation ? 'darkcyan' : 'rgba(0,0,0,0)')
+				Plot.rect(data.rain, {
+					strokeOpacity: 'opacity',
+					x1: 'x1line',
+					x2: 'x2line',
+					y1: 'y',
+					y2: 'y2',
+					stroke: 'darkcyan'
 				}),
 
 				/*

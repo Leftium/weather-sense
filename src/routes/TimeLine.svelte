@@ -327,10 +327,6 @@
 					data?.all,
 					Plot.pointerX({ x: 'time', y: 'temperatureNormalized', fill: 'purple' })
 				)
-
-				/*
-				Plot.ruleX(data, Plot.pointerX({ x: 'time', py: 'temperatureNormalized', fill: 'blue' }))
-				/**/
 			];
 
 			marks.push(

@@ -7,7 +7,7 @@ import { gg } from '$lib/gg';
 import type { Coordinates, Radar } from '$lib/types';
 import { celcius, compactDate } from './util';
 import dateFormat from 'dateformat';
-import { browser } from '$app/environment';
+import { browser, dev } from '$app/environment';
 
 export type WeatherDataEvents = {
 	weatherdata_requestedSetLocation: {
@@ -249,9 +249,7 @@ export function makeNsWeatherData() {
 			if (hourly && minutely && byMinute) {
 				// Fake precipitation:
 				const date = new Date(item.time * 1000);
-				const precipitation = date.getHours() / 10;
-
-				//const precipitation = item.precipitation;
+				const precipitation = dev ? date.getHours() / 10 : item.precipitation;
 
 				if (index < array.length - 1) {
 					const nextTemperature = array[index + 1].temperature;

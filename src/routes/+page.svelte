@@ -14,6 +14,7 @@
 	let { data } = $props();
 
 	import { getEmitter } from '$lib/emitter.js';
+	import { dev } from '$app/environment';
 	const { emit } = getEmitter<WeatherDataEvents>(import.meta);
 
 	emit('weatherdata_requestedSetLocation', {
@@ -137,16 +138,18 @@
 		</div>
 	</div>
 
-	<div class="pico debug">
-		<pre>nsWeatherData.time = {`${JSON.stringify(nsWeatherData.time, null, 4)}`} ({tsToTime(
-				nsWeatherData.time,
-				'ddd mmm d, h:MMtt'
-			)})</pre>
-		<pre>nsWeatherData.current = {`${JSON.stringify(nsWeatherData.current, null, 4)}`}</pre>
-		<pre>nsWeatherData.minutely = {`${JSON.stringify(headAndTail(nsWeatherData.minutely), null, 4)}`}</pre>
-		<pre>nsWeatherData.hourly = {`${JSON.stringify(headAndTail(nsWeatherData.hourly), null, 4)}`}</pre>
-		<pre>nsWeatherData.daily = {`${JSON.stringify(headAndTail(nsWeatherData.daily), null, 4)}`}</pre>
-	</div>
+	{#if dev}
+		<div class="pico debug">
+			<pre>nsWeatherData.time = {`${JSON.stringify(nsWeatherData.time, null, 4)}`} ({tsToTime(
+					nsWeatherData.time,
+					'ddd mmm d, h:MMtt'
+				)})</pre>
+			<pre>nsWeatherData.current = {`${JSON.stringify(nsWeatherData.current, null, 4)}`}</pre>
+			<pre>nsWeatherData.minutely = {`${JSON.stringify(headAndTail(nsWeatherData.minutely), null, 4)}`}</pre>
+			<pre>nsWeatherData.hourly = {`${JSON.stringify(headAndTail(nsWeatherData.hourly), null, 4)}`}</pre>
+			<pre>nsWeatherData.daily = {`${JSON.stringify(headAndTail(nsWeatherData.daily), null, 4)}`}</pre>
+		</div>
+	{/if}
 
 	<div class="pico" hidden>
 		<div role="group">

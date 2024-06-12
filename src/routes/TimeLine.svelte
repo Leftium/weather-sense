@@ -12,7 +12,7 @@
 	import * as Plot from '@observablehq/plot';
 	import { getEmitter } from '$lib/emitter';
 	import { onMount, tick } from 'svelte';
-	import { WMO_CODES, celcius } from '$lib/util';
+	import { WMO_CODES } from '$lib/util';
 	import dateFormat from 'dateformat';
 	import type { Markish } from '@observablehq/plot';
 
@@ -198,17 +198,6 @@
 		return 1;
 	}
 
-	function formatTemperature(n: number, unit: string) {
-		if (unit === 'F') {
-			let formatted = `${Math.round(n)}°`;
-			return formatted;
-		}
-		if (unit === 'C') {
-			let formatted = `${celcius(n)?.toFixed(1)}°`;
-			return formatted;
-		}
-	}
-
 	// Generate and place Obervable.Plot from data.
 	function plotData() {
 		//gg('plotData');
@@ -302,24 +291,6 @@
 					x: 'time',
 					y: 'temperatureNormalized',
 					fill: 'red'
-				}),
-
-				// High/low temp labels:
-				Plot.text([formatTemperature(data.low.temperature, nsWeatherData.units.temperature)], {
-					fillOpacity: fadePastValues,
-					x: data.low.time,
-					y: data.low.temperatureNormalized,
-					fill: 'blue',
-					dy: data.low.dy,
-					dx: data.low.dx
-				}),
-				Plot.text([formatTemperature(data.high.temperature, nsWeatherData.units.temperature)], {
-					fillOpacity: fadePastValues,
-					x: data.high.time,
-					y: data.high.temperatureNormalized,
-					fill: 'red',
-					dy: data.high.dy,
-					dx: data.high.dx
 				}),
 
 				// Dot that marks value at mouse (hover) position:

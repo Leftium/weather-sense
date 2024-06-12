@@ -257,7 +257,7 @@ export function makeNsWeatherData() {
 					for (let minute = 0; minute < 60; minute += 10) {
 						const minuteData = makeMinuteData(minute, nextTemperature, precipitation, item);
 						minutely.push(minuteData);
-						byMinute[time] = minuteData;
+						byMinute[minuteData.time] = minuteData;
 					}
 				}
 
@@ -267,7 +267,7 @@ export function makeNsWeatherData() {
 					const minuteData = makeMinuteData(minute, nextTemperature, precipitation, item);
 
 					minutely.push(minuteData);
-					byMinute[time] = minuteData;
+					byMinute[minuteData.time] = minuteData;
 				}
 			}
 		});

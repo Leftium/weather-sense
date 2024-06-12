@@ -219,7 +219,10 @@ export function makeNsWeatherData() {
 		const maxTemperature = _.maxBy(hourly, 'temperature')?.temperature ?? 0;
 		const temperatureRange = maxTemperature - minTemperature;
 
-		hourly.forEach((item, index) => {
+		const lastHourlyWeather = hourly.at(-1) as HourlyWeather;
+		// lastHourlyWeather.time += 60 * 60;
+
+		[...hourly, lastHourlyWeather, lastHourlyWeather].forEach((item, index, array) => {
 			if (hourly && minutely && byMinute) {
 				// Fake precipitation:
 				const date = new Date(item.time * 1000);
@@ -227,8 +230,8 @@ export function makeNsWeatherData() {
 
 				//const precipitation = item.precipitation;
 
-				if (index < hourly.length - 1) {
-					const nextTemperature = hourly[index + 1].temperature;
+				if (index < array.length - 1) {
+					const nextTemperature = array[index + 1].temperature;
 
 					for (let minute = 0; minute < 60; minute += 10) {
 						const time = item.time + minute * 60;
@@ -254,11 +257,11 @@ export function makeNsWeatherData() {
 					}
 				}
 
-				if (index == hourly.length - 1) {
+				if (index == array.length - 1) {
 					const minute = 60;
 					const time = item.time + minute * 60;
 					const temperature =
-						(item.temperature * (60 - minute)) / 60 + (hourly[index].temperature * minute) / 60;
+						(item.temperature * (60 - minute)) / 60 + (array[index].temperature * minute) / 60;
 					const timeFormatted = dateFormat(time * 1000, DATEFORMAT_MASK);
 					const temperatureNormalized =
 						((temperature - minTemperature) / temperatureRange) * 0.8 + 0.1;

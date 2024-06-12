@@ -201,10 +201,6 @@
 		}
 	}
 
-	function ifMinute0(valueFunction: (d: any) => number) {
-		return (d: { minute: number }) => (d.minute == 0 ? valueFunction(d) : null);
-	}
-
 	// Generate and place Obervable.Plot from data.
 	function plotData() {
 		//gg('plotData');

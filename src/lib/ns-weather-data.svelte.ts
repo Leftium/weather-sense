@@ -5,7 +5,7 @@ import _ from 'lodash-es';
 import { getEmitter } from '$lib/emitter';
 import { gg } from '$lib/gg';
 import type { Coordinates, Radar } from '$lib/types';
-import { celcius, compactDate } from './util';
+import { celcius, compactDate, tsToTime } from './util';
 import dateFormat from 'dateformat';
 import { browser, dev } from '$app/environment';
 
@@ -126,10 +126,95 @@ export function makeNsWeatherData() {
 	let radar: Radar = $state({ generated: 0, host: '', frames: [] });
 
 	let current: CurrentWeather | null = $state(null);
-	let byMinute: Record<number, MinutelyWeather> = $state({});
-	let minutely: MinutelyWeather[] | null = $state(null);
 	let hourly: HourlyWeather[] | null = $state(null);
 	let daily: DailyWeather[] | null = $state(null);
+
+	let byMinute: Record<number, MinutelyWeather> = $state({});
+	let minutely: MinutelyWeather[] = $derived.by(() => {
+		if (!hourly) {
+			return [];
+		}
+
+		const minutely: MinutelyWeather[] = [];
+		byMinute = {};
+
+		// Normalize temperatures to scale: [0, 1].
+		const minTemperature = _.minBy(hourly, 'temperature')?.temperature ?? 0;
+		const maxTemperature = _.maxBy(hourly, 'temperature')?.temperature ?? 0;
+		const temperatureRange = maxTemperature - minTemperature;
+
+		function makeMinuteData(
+			minute: number,
+			nextTemperature: number,
+			precipitation: number,
+			item: HourlyWeather
+		) {
+			const time = item.time + minute * 60;
+			const temperature = (item.temperature * (60 - minute)) / 60 + (nextTemperature * minute) / 60;
+			const timeFormatted = dateFormat(time * 1000, DATEFORMAT_MASK);
+			const temperatureNormalized = ((temperature - minTemperature) / temperatureRange) * 0.8 + 0.1;
+			const precipitationNormalized = 1 - Math.exp(-precipitation / 2);
+
+			return {
+				time,
+				timeFormatted,
+				temperature,
+				temperatureNormalized,
+				hourly: item,
+				precipitation,
+				precipitationNormalized,
+				minute
+			};
+		}
+
+		const lastHourlyWeather = hourly.at(-1) as HourlyWeather;
+		// lastHourlyWeather.time += 60 * 60;
+		[...hourly, lastHourlyWeather, lastHourlyWeather].forEach((item, index, array) => {
+			if (hourly && minutely && byMinute) {
+				// Fake precipitation:
+				const date = new Date(item.time * 1000);
+				const precipitation = dev ? date.getHours() / 10 : item.precipitation;
+
+				if (index < array.length - 1) {
+					const nextTemperature = array[index + 1].temperature;
+
+					function next(minute: number) {
+						const currentTime = item.time + minute * 60;
+						let step = 10;
+
+						if (
+							radar.timeStart &&
+							radar.timeEnd &&
+							(currentTime < radar.timeStart || currentTime >= radar.timeEnd)
+						) {
+							step = 30;
+							while (step != 10 && !(minute + step == 30) && !(minute + step == 60)) {
+								step -= 10;
+							}
+						}
+						return minute + step;
+					}
+
+					for (let minute = 0; minute < 60; minute = next(minute)) {
+						const minuteData = makeMinuteData(minute, nextTemperature, precipitation, item);
+						minutely.push(minuteData);
+						byMinute[minuteData.time] = minuteData;
+					}
+				}
+
+				if (index == array.length - 1) {
+					const minute = 60;
+					const nextTemperature = array[index].temperature;
+					const minuteData = makeMinuteData(minute, nextTemperature, precipitation, item);
+
+					minutely.push(minuteData);
+					byMinute[minuteData.time] = minuteData;
+				}
+			}
+		});
+
+		return minutely;
+	});
 
 	let units = $state({
 		temperature: 'F'
@@ -196,8 +281,6 @@ export function makeNsWeatherData() {
 		const now = +new Date() / 1000;
 
 		console.time('fetchOpenMeteo');
-		minutely = [] as MinutelyWeather[];
-		console.time('generate minutely');
 
 		hourly = _.map(json.hourly.time, (time, index: number) => {
 			const fromNow = Math.floor((time - now) / 60 / 60) + 1;
@@ -213,73 +296,6 @@ export function makeNsWeatherData() {
 
 			return object as HourlyWeather;
 		});
-
-		// Normalize temperatures to scale: [0, 1].
-		const minTemperature = _.minBy(hourly, 'temperature')?.temperature ?? 0;
-		const maxTemperature = _.maxBy(hourly, 'temperature')?.temperature ?? 0;
-		const temperatureRange = maxTemperature - minTemperature;
-
-		function makeMinuteData(
-			minute: number,
-			nextTemperature: number,
-			precipitation: number,
-			item: HourlyWeather
-		) {
-			const time = item.time + minute * 60;
-			const temperature = (item.temperature * (60 - minute)) / 60 + (nextTemperature * minute) / 60;
-			const timeFormatted = dateFormat(time * 1000, DATEFORMAT_MASK);
-			const temperatureNormalized = ((temperature - minTemperature) / temperatureRange) * 0.8 + 0.1;
-			const precipitationNormalized = 1 - Math.exp(-precipitation / 2);
-
-			return {
-				time,
-				timeFormatted,
-				temperature,
-				temperatureNormalized,
-				hourly: item,
-				precipitation,
-				precipitationNormalized,
-				minute
-			};
-		}
-
-		const lastHourlyWeather = hourly.at(-1) as HourlyWeather;
-		// lastHourlyWeather.time += 60 * 60;
-		[...hourly, lastHourlyWeather, lastHourlyWeather].forEach((item, index, array) => {
-			if (hourly && minutely && byMinute) {
-				// Fake precipitation:
-				const date = new Date(item.time * 1000);
-				const precipitation = dev ? date.getHours() / 10 : item.precipitation;
-
-				if (index < array.length - 1) {
-					const nextTemperature = array[index + 1].temperature;
-
-					const step =
-						radar.timeStart &&
-						radar.timeEnd &&
-						item.time >= radar.timeStart &&
-						item.time <= radar.timeEnd
-							? 10
-							: 30;
-
-					for (let minute = 0; minute < 60; minute += step) {
-						const minuteData = makeMinuteData(minute, nextTemperature, precipitation, item);
-						minutely.push(minuteData);
-						byMinute[minuteData.time] = minuteData;
-					}
-				}
-
-				if (index == array.length - 1) {
-					const minute = 60;
-					const nextTemperature = array[index].temperature;
-					const minuteData = makeMinuteData(minute, nextTemperature, precipitation, item);
-
-					minutely.push(minuteData);
-					byMinute[minuteData.time] = minuteData;
-				}
-			}
-		});
-		console.timeEnd('generate minutely');
 
 		daily = _.map(json.daily.time, (time, index: number) => {
 			const timeCompact = compactDate(time);

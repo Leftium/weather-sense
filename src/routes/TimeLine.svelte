@@ -400,19 +400,18 @@
 
 	// Update entire plot.
 	// Runs on weatherdata_updatedData event from nsWeatherData.
-	on('weatherdata_updatedData', async function () {
-		gg('on:weatherdata_updatedData');
+
+	async function callPlotData() {
 		await tick();
 		if (!plot) {
 			// Hack: force extra render so plot.scale() is available.
 			plotData();
 		}
 		plotData();
-	});
-
-	on('weatherData_ToggledUnits', function () {
-		plotData();
-	});
+	}
+	on('weatherdata_updatedData', callPlotData);
+	on('weatherdata_updatedRadar', callPlotData);
+	on('weatherData_ToggledUnits', callPlotData);
 
 	onMount(() => {
 		// Update entire plot.

@@ -115,7 +115,7 @@
 			let low = {
 				time: 0,
 				temperatureNormalized: Number.MAX_VALUE,
-				temperature: 0,
+				temperature: Number.MAX_VALUE,
 				dx: 0,
 				dy: 0
 			};
@@ -128,7 +128,7 @@
 				dy: 0
 			};
 
-			_.forEach(filtered, (item, index) => {
+			_.forEachRight(filtered, (item, index) => {
 				let dx = 0;
 				if (index < 5) {
 					dx = 10 - index;
@@ -140,8 +140,8 @@
 
 				const dy = item.temperatureNormalized < 0.5 ? -10 : 10;
 
-				if (temperatureNormalized < low.temperatureNormalized) {
-					low = {
+				if (Math.floor(item.temperature) > Math.floor(high.temperature)) {
+					high = {
 						time: item.time,
 						temperatureNormalized,
 						temperature: item.temperature,
@@ -150,8 +150,11 @@
 					};
 				}
 
-				if (temperatureNormalized > high.temperatureNormalized) {
-					high = {
+				if (
+					Math.floor(item.temperature) < Math.floor(low.temperature) ||
+					(ghostTracker && low.time >= high.time)
+				) {
+					low = {
 						time: item.time,
 						temperatureNormalized,
 						temperature: item.temperature,

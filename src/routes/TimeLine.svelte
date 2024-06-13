@@ -174,22 +174,6 @@
 		return null;
 	});
 
-	function fill(d: { time: number; precipitation: number }) {
-		if (!d?.time) {
-			return 'red';
-		}
-
-		let fill = '#B21E4F';
-		if (d.precipitation < 2.5) {
-			fill = '#9BCCFD'; //'light-rain';
-		} else if (d.precipitation < 7.5) {
-			fill = '#51B4FF'; //'moderate-rain';
-		} else if (d.precipitation < 50) {
-			fill = '#029AE8'; //'heavy-rain';
-		}
-		return fill;
-	}
-
 	function fadePastValues(d: { time: number }) {
 		const now = +new Date() / 1000;
 		if (d.time < now) {
@@ -218,6 +202,7 @@
 			const marks: Markish[] = [
 				//Plot.frame(),
 
+				// Weather code colored bands:
 				Plot.rectY(data.codes, {
 					strokeOpacity: 'opacity',
 					x1: 'x1',
@@ -226,6 +211,7 @@
 					fill: 'fill'
 				}),
 
+				// Rain bar:
 				Plot.rectY(data.rain, {
 					strokeOpacity: 'opacity',
 					x1: 'x1bar',
@@ -234,6 +220,7 @@
 					fill: 'lightblue'
 				}),
 
+				// Rain bar 'cap':
 				Plot.rect(data.rain, {
 					strokeOpacity: 'opacity',
 					x1: 'x1line',
@@ -243,6 +230,7 @@
 					stroke: 'darkcyan'
 				}),
 
+				// Weather code label shadow text:
 				Plot.text(data.codes, {
 					fontSize: 14,
 					x: 'xMiddle',
@@ -259,6 +247,7 @@
 					fill: 'rgba(255,255,255,0.5)'
 				}),
 
+				// Weather code label text:
 				Plot.text(data.codes, {
 					fontSize: 14,
 					x: 'xMiddle',
@@ -367,9 +356,9 @@
 			});
 		}
 
-		const backupPlot = Plot.plot(plotOptions);
+		const placeholderPlot = Plot.plot(plotOptions);
 		div?.firstChild?.remove(); // remove old chart, if any
-		div?.append(plot || backupPlot); // add the new chart
+		div?.append(plot || placeholderPlot); // add the new chart
 
 		if (plot) {
 			plot.addEventListener('input', (event) => {
@@ -387,7 +376,6 @@
 
 	// Update rule location only (leaving rest of plot intact).
 	// Runs every time nsWeatherData.time changes value.
-
 	$effect(() => {
 		//gg('EFFECT');
 
@@ -400,7 +388,6 @@
 
 	// Update entire plot.
 	// Runs on weatherdata_updatedData event from nsWeatherData.
-
 	async function callPlotData() {
 		await tick();
 		if (!plot) {

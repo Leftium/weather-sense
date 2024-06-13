@@ -5,7 +5,7 @@ import _ from 'lodash-es';
 import { getEmitter } from '$lib/emitter';
 import { gg } from '$lib/gg';
 import type { Coordinates, Radar } from '$lib/types';
-import { celcius, compactDate, tsToTime } from './util';
+import { celcius, compactDate } from './util';
 import dateFormat from 'dateformat';
 import { browser, dev } from '$app/environment';
 
@@ -102,11 +102,6 @@ type DailyWeather = {
 };
 
 export type NsWeatherData = ReturnType<typeof makeNsWeatherData>;
-
-type TrackerValue = {
-	time: number;
-	temperature: number;
-};
 
 export function makeNsWeatherData() {
 	//gg('makeNsWeatherData');
@@ -311,11 +306,10 @@ export function makeNsWeatherData() {
 
 			return object as DailyWeather;
 		});
+		console.timeEnd('fetchOpenMeteo');
 
 		emit('weatherdata_updatedData');
-
 		gg('fetchOpenMeteo', { json: $state.snapshot(json), daily: $state.snapshot(daily) });
-		console.timeEnd('fetchOpenMeteo');
 	}
 
 	if (browser) {
@@ -459,16 +453,6 @@ export function makeNsWeatherData() {
 
 		get hourly() {
 			return hourly;
-		},
-
-		get prev24() {
-			const indexNow = _.findIndex(hourly, { fromNow: 0 });
-			return hourly?.slice(indexNow - 24, indexNow);
-		},
-
-		get next24() {
-			const indexNow = _.findIndex(hourly, { fromNow: 0 });
-			return hourly?.slice(indexNow, indexNow + 24);
 		},
 
 		get daily() {

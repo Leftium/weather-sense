@@ -1,8 +1,6 @@
 <script lang="ts">
 	import type { WeatherDataEvents } from '$lib/ns-weather-data.svelte.js';
 
-	import timeline from '$lib/merry-timeline';
-
 	import TimeLine from './TimeLine.svelte';
 
 	import { headAndTail, humanDistance, tsToTime, wmoCode } from '$lib/util.js';
@@ -39,32 +37,6 @@
 			}
 		};
 	}
-
-	let merryTimelinePrev24Div: HTMLDivElement;
-	let merryTimelineNext24Div: HTMLDivElement;
-	let merryTimeline48Div: HTMLDivElement;
-
-	function makeMerryData(hour: { time: any; weatherCode: number | undefined }) {
-		return {
-			time: hour.time,
-			color: wmoCode(hour.weatherCode).color,
-			text: wmoCode(hour.weatherCode).description
-			//annotation: String(hour.weatherCode)
-		};
-	}
-
-	/*
-	$effect(function () {
-		const merryDataPrev24 = nsWeatherData.prev24?.map(makeMerryData) || [];
-		const merryDataNext24 = nsWeatherData.next24?.map(makeMerryData) || [];
-		const merryData48 = [...merryDataPrev24, ...merryDataNext24];
-		const options = { _timezone: 'America/Chicago' };
-
-		timeline(merryTimelinePrev24Div, merryDataPrev24, options);
-		timeline(merryTimelineNext24Div, merryDataNext24, options);
-		timeline(merryTimeline48Div, merryData48, options);
-	});
-    */
 </script>
 
 <div class="pico container">
@@ -160,10 +132,6 @@
 </div>
 
 <style>
-	.flex {
-		display: flex;
-	}
-
 	.sticky-info {
 		position: sticky;
 		top: 0;

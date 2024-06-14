@@ -340,7 +340,7 @@ export function makeNsWeatherData() {
 		});
 
 		on('weatherdata_requestedSetLocation', async function (params) {
-			//gg('weatherdata_requestedSetLocation', params);
+			gg('weatherdata_requestedSetLocation', params);
 
 			source = params.source;
 

@@ -57,6 +57,7 @@
 				x2: number;
 				xMiddle: number;
 				fill: string;
+				isDarkText: boolean;
 				opacity: number;
 			};
 
@@ -85,6 +86,7 @@
 								x2,
 								xMiddle: (Number(x1) + Number(x2)) / 2,
 								fill: WMO_CODES[nextCode].color,
+								isDarkText: WMO_CODES[nextCode].isDarkText,
 								opacity: current.time < now ? 0.2 : 1
 							});
 						}
@@ -247,7 +249,7 @@
 						const text = ox2 - ox1 > 80 ? d.text : null;
 						return text;
 					},
-					fill: 'rgba(255,255,255,0.5)'
+					fill: (d) => (d.isDarkText ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)')
 				}),
 
 				// Weather code label text:
@@ -261,7 +263,8 @@
 						const ox2 = plot?.scale('x')?.apply(d.x2 * 1000);
 						const text = ox2 - ox1 > 80 ? d.text : null;
 						return text;
-					}
+					},
+					fill: (d) => (d.isDarkText ? 'black' : 'white')
 				}),
 
 				// The temperature plotted as line:

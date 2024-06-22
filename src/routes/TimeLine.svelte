@@ -12,7 +12,7 @@
 	import * as Plot from '@observablehq/plot';
 	import { getEmitter } from '$lib/emitter';
 	import { onMount, tick } from 'svelte';
-	import { WMO_CODES } from '$lib/util';
+	import { SOLARIZED_BLUE, SOLARIZED_RED, WMO_CODES } from '$lib/util';
 	import dateFormat from 'dateformat';
 	import type { Markish } from '@observablehq/plot';
 
@@ -279,13 +279,13 @@
 					fillOpacity: fadePastValues,
 					x: 'time',
 					y: 'temperatureNormalized',
-					fill: 'blue'
+					fill: SOLARIZED_BLUE
 				}),
 				Plot.dot([data.high], {
 					fillOpacity: fadePastValues,
 					x: 'time',
 					y: 'temperatureNormalized',
-					fill: 'red'
+					fill: SOLARIZED_RED
 				}),
 
 				// Dot that marks value at mouse (hover) position:

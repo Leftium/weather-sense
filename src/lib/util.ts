@@ -2,6 +2,9 @@ import dateFormat from 'dateformat';
 
 import Color from 'colorjs.io';
 
+export const SOLARIZED_RED = '#dc322f';
+export const SOLARIZED_BLUE = '#268bd2';
+
 export function tsToTime(ts: number | null, format = 'h:MMt') {
 	if (!ts) {
 		return '';

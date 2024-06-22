@@ -18,8 +18,9 @@
 
 	let { data } = $props();
 
-	import { getEmitter } from '$lib/emitter.js';
+	import { clearEvents, getEmitter } from '$lib/emitter.js';
 	import { dev } from '$app/environment';
+	import { onDestroy } from 'svelte';
 	const { emit } = getEmitter<WeatherDataEvents>(import.meta);
 
 	emit('weatherdata_requestedSetLocation', {
@@ -44,6 +45,10 @@
 			}
 		};
 	}
+
+	onDestroy(() => {
+		clearEvents();
+	});
 </script>
 
 <div class="pico container">
@@ -258,6 +263,7 @@
 
 	.daily .icon-date {
 		align-items: end;
+		line-height: normal;
 	}
 
 	.daily .high-low {

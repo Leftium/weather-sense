@@ -77,6 +77,10 @@ const singletonEmitter = mitt();
 
 const isLoggedEvent = makeNamespace('debugEvents');
 
+export function clearEvents() {
+	singletonEmitter.all.clear();
+}
+
 export interface Emitter<Events extends Record<EventType, unknown>> {
 	on<Key extends keyof Events>(type: Key, handler: Handler<Events[Key]>): void;
 

@@ -3,7 +3,14 @@
 
 	import TimeLine from './TimeLine.svelte';
 
-	import { headAndTail, humanDistance, tsToTime, wmoCode } from '$lib/util.js';
+	import {
+		SOLARIZED_BLUE,
+		SOLARIZED_RED,
+		headAndTail,
+		humanDistance,
+		tsToTime,
+		wmoCode
+	} from '$lib/util.js';
 	import RadarMap from './RadarMap.svelte';
 
 	import { makeNsWeatherData } from '$lib/ns-weather-data.svelte.js';
@@ -89,14 +96,22 @@
 
 		<div class="daily grid pico">
 			{#each nsWeatherData.daily || [] as day, index}
+				{@const past = day.fromToday < 0}
 				<img
 					class="icon small"
 					src={wmoCode(day.weatherCode).icon}
 					title={wmoCode(day.weatherCode).description}
 					alt=""
+					class:past
 				/>
-				<div class="day" class:today={day.fromToday === 0} class:past={day.fromToday < 0}>
+				<div class="day" class:today={day.fromToday === 0} class:past>
 					{day.timeCompact}
+				</div>
+				<div style:color={SOLARIZED_RED} class:past use:toggleUnits={{ temperature: true }}>
+					{nsWeatherData.format(`daily[${index}].temperatureMax`, false)}
+				</div>
+				<div style:color={SOLARIZED_BLUE} class:past use:toggleUnits={{ temperature: true }}>
+					{nsWeatherData.format(`daily[${index}].temperatureMin`, false)}
 				</div>
 				<div class="timeline">
 					<TimeLine
@@ -205,7 +220,7 @@
 	}
 
 	.daily {
-		grid-template-columns: auto auto 1fr;
+		grid-template-columns: auto auto auto auto 1fr;
 	}
 
 	.daily div.day {

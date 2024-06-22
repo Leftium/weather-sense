@@ -97,21 +97,27 @@
 		<div class="daily grid pico">
 			{#each nsWeatherData.daily || [] as day, index}
 				{@const past = day.fromToday < 0}
-				<img
-					class="icon small"
-					src={wmoCode(day.weatherCode).icon}
-					title={wmoCode(day.weatherCode).description}
-					alt=""
-					class:past
-				/>
-				<div class="day" class:today={day.fromToday === 0} class:past>
-					{day.timeCompact}
-				</div>
-				<div style:color={SOLARIZED_RED} class:past use:toggleUnits={{ temperature: true }}>
-					{nsWeatherData.format(`daily[${index}].temperatureMax`, false)}
-				</div>
-				<div style:color={SOLARIZED_BLUE} class:past use:toggleUnits={{ temperature: true }}>
-					{nsWeatherData.format(`daily[${index}].temperatureMin`, false)}
+				<div class="grid day-label">
+					<div class="grid icon-date">
+						<img
+							class="icon small"
+							src={wmoCode(day.weatherCode).icon}
+							title={wmoCode(day.weatherCode).description}
+							alt=""
+							class:past
+						/>
+						<div class="day" class:today={day.fromToday === 0} class:past>
+							{day.timeCompact}
+						</div>
+					</div>
+					<div class="grid high-low">
+						<div style:color={SOLARIZED_RED} class:past use:toggleUnits={{ temperature: true }}>
+							{nsWeatherData.format(`daily[${index}].temperatureMax`, false)}
+						</div>
+						<div style:color={SOLARIZED_BLUE} class:past use:toggleUnits={{ temperature: true }}>
+							{nsWeatherData.format(`daily[${index}].temperatureMin`, false)}
+						</div>
+					</div>
 				</div>
 				<div class="timeline">
 					<TimeLine
@@ -220,7 +226,7 @@
 	}
 
 	.daily {
-		grid-template-columns: auto auto auto auto 1fr;
+		grid-template-columns: auto 1fr;
 	}
 
 	.daily div.day {
@@ -239,6 +245,25 @@
 
 	.past {
 		opacity: 0.4;
+	}
+
+	.daily .grid {
+		grid-template-columns: auto;
+		grid-template-rows: auto;
+	}
+
+	.daily .grid .grid {
+		grid-template-columns: auto auto;
+	}
+
+	.daily .icon-date {
+		align-items: end;
+	}
+
+	.daily .high-low {
+		font-size: smaller;
+		align-items: start;
+		justify-content: center;
 	}
 
 	.timeline {

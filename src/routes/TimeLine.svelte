@@ -432,4 +432,8 @@
 	div > :global(svg) {
 		overflow: visible !important;
 	}
+
+	div {
+		user-select: none;
+	}
 </style>

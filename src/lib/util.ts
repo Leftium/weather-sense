@@ -15,7 +15,7 @@ export function tsToTime(ts: number | null, format = 'h:MMt') {
 
 export function humanDistance(n: number | undefined) {
 	if (!n) {
-		return '??m';
+		return null;
 	}
 	let units = 'm';
 

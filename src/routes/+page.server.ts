@@ -9,7 +9,7 @@ export const load = async (loadEvent) => {
 	let coords = {
 		latitude: 37.5087,
 		longitude: 126.7219,
-		accuracy: 1_000
+		accuracy: 0
 	};
 
 	const searchParams = loadEvent.url.searchParams;
@@ -26,12 +26,12 @@ export const load = async (loadEvent) => {
 		//gg(jsoned);
 
 		if (jsoned.results.length) {
-			source = `geocoded (open-meteo)`;
+			source = `geocoded: ${paramName}`;
 			name = jsoned.results[0].name;
 			coords = {
 				latitude: jsoned.results[0].latitude,
 				longitude: jsoned.results[0].longitude,
-				accuracy: 1
+				accuracy: 0
 			};
 		}
 	}
@@ -43,12 +43,12 @@ export const load = async (loadEvent) => {
 		const longitude = Number(headers.get('x-vercel-ip-longitude'));
 
 		if (city && country && latitude && longitude) {
-			source = 'vercel-headers';
+			source = 'headers';
 			name = `${city}, ${country}`;
 			coords = {
 				latitude,
 				longitude,
-				accuracy: 25_000
+				accuracy: 0
 			};
 		}
 	}

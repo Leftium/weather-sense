@@ -58,7 +58,9 @@
 <div class="pico container sticky-info">
 	<div class="name">
 		{nsWeatherData.name}
-		<span class="accuracy">({humanDistance(nsWeatherData.coords?.accuracy)})</span>
+		<span class="accuracy"
+			>({humanDistance(nsWeatherData.coords?.accuracy) || nsWeatherData.source})</span
+		>
 	</div>
 	<div class="time">
 		{tsToTime(nsWeatherData.time, 'ddd mmm d, h:MMtt')}

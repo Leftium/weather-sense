@@ -12,7 +12,7 @@
 	import * as Plot from '@observablehq/plot';
 	import { getEmitter } from '$lib/emitter';
 	import { onMount, tick } from 'svelte';
-	import { SOLARIZED_BLUE, SOLARIZED_RED, WMO_CODES } from '$lib/util';
+	import { MS_PER_DAY, SOLARIZED_BLUE, SOLARIZED_RED, WMO_CODES } from '$lib/util';
 	import dateFormat from 'dateformat';
 	import type { Markish } from '@observablehq/plot';
 
@@ -330,7 +330,7 @@
 								const date = new Date(timestamp);
 								const tzOffset = date.getTimezoneOffset() * 60 * 1000;
 
-								const zRemainder = (timestamp - tzOffset) % (24 * 60 * 60 * 1000);
+								const zRemainder = (timestamp - tzOffset) % MS_PER_DAY;
 								const ghostTime = Number(timeStart) + zRemainder;
 
 								drawTracker(ghostTime, 'rgba(128,0,128,.2)');

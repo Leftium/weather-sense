@@ -5,6 +5,8 @@ import Color from 'colorjs.io';
 export const SOLARIZED_RED = '#dc322f';
 export const SOLARIZED_BLUE = '#268bd2';
 
+export const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
 export function tsToTime(ts: number | null, format = 'h:MMt') {
 	if (!ts) {
 		return '';
@@ -107,9 +109,12 @@ export function celcius(f: number | undefined) {
 	return (f - 32) * (5 / 9);
 }
 
-export function compactDate(time?: number) {
+export function compactDate(time?: number, now: number = +new Date()) {
 	const ms = time ? time * 1000 : +new Date();
-	return dateFormat(ms, 'ddd-dd').replace(/^(..)./, '$1');
+	if (Math.abs(ms - now) < 7 * MS_PER_DAY) {
+		return dateFormat(ms, 'ddd-dd').replace(/^(..)./, '$1');
+	}
+	return dateFormat(ms, 'mmm-dd');
 }
 
 export function headAndTail(array: unknown[] | undefined | null) {

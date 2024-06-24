@@ -40,6 +40,8 @@ export type WeatherDataEvents = {
 };
 
 const DATEFORMAT_MASK = 'mm-dd HH:MM';
+const PAST_DAYS = dev ? 2 : 2; // 0 to 92
+const FORECAST_DAYS = dev ? 4 : 8; // 0 to 16
 
 const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 
@@ -222,7 +224,7 @@ export function makeNsWeatherData() {
 			`&current=temperature_2m,relative_humidity_2m,is_day,precipitation,rain,showers,snowfall,weather_code` +
 			`&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,weather_code,dew_point_2m` +
 			`&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,rain_sum,showers_sum,snowfall_sum,precipitation_hours,precipitation_probability_max` +
-			`&temperature_unit=fahrenheit&timeformat=unixtime&timezone=auto&past_days=2`;
+			`&temperature_unit=fahrenheit&timeformat=unixtime&timezone=auto&past_days=${PAST_DAYS}&forecast_days=${FORECAST_DAYS}`;
 
 		const fetched = await fetch(url);
 
@@ -287,9 +289,9 @@ export function makeNsWeatherData() {
 
 			const object: Partial<DailyWeather> = {
 				timeFormatted: dateFormat(time * 1000, DATEFORMAT_MASK),
-				timeCompact: index === 2 ? 'Today' : timeCompact,
+				timeCompact: index === PAST_DAYS ? 'Today' : timeCompact,
 				time,
-				fromToday: index - 2
+				fromToday: index - PAST_DAYS
 			};
 
 			_.forEach(dailyKeys, (newKey, openMeteoKey) => {

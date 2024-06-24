@@ -164,13 +164,11 @@ export function makeNsWeatherData() {
 			};
 		}
 
-		const lastHourlyWeather = hourly.at(-1) as HourlyWeather;
-		// lastHourlyWeather.time += 60 * 60;
-		[...hourly, lastHourlyWeather, lastHourlyWeather].forEach((item, index, array) => {
+		hourly.forEach((item, index, array) => {
 			if (hourly && minutely && byMinute) {
 				// Fake precipitation:
 				const date = new Date(item.time * 1000);
-				const precipitation = dev ? date.getHours() / 10 : item.precipitation;
+				const precipitation = false && dev ? date.getHours() / 10 : item.precipitation;
 
 				if (index < array.length - 1) {
 					const nextTemperature = array[index + 1].temperature;
@@ -197,15 +195,6 @@ export function makeNsWeatherData() {
 						minutely.push(minuteData);
 						byMinute[minuteData.time] = minuteData;
 					}
-				}
-
-				if (index == array.length - 1) {
-					const minute = 60;
-					const nextTemperature = array[index].temperature;
-					const minuteData = makeMinuteData(minute, nextTemperature, precipitation, item);
-
-					minutely.push(minuteData);
-					byMinute[minuteData.time] = minuteData;
 				}
 			}
 		});
@@ -477,7 +466,7 @@ export function makeNsWeatherData() {
 		},
 
 		get daily() {
-			return daily;
+			return daily?.toSpliced(-1, 1);
 		},
 
 		get units() {

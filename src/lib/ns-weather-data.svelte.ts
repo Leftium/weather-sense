@@ -78,7 +78,9 @@ export type HourlyWeather = {
 
 	weatherCode: number;
 	temperature: number;
+
 	relativeHumidity: number;
+	dewPoint: number;
 
 	precipitationProbability: number;
 	precipitation: number;
@@ -229,7 +231,7 @@ export function makeNsWeatherData() {
 		const url =
 			`https://api.open-meteo.com/v1/forecast?latitude=${coords?.latitude}&longitude=${coords?.longitude}` +
 			`&current=temperature_2m,relative_humidity_2m,is_day,precipitation,rain,showers,snowfall,weather_code` +
-			`&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,weather_code` +
+			`&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,weather_code,dew_point_2m` +
 			`&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,rain_sum,showers_sum,snowfall_sum,precipitation_hours,precipitation_probability_max` +
 			`&temperature_unit=fahrenheit&timeformat=unixtime&timezone=auto&past_days=2`;
 
@@ -255,6 +257,7 @@ export function makeNsWeatherData() {
 			weather_code: 'weatherCode',
 			temperature_2m: 'temperature',
 			relative_humidity_2m: 'relativeHumidity',
+			dew_point_2m: 'dewPoint',
 			precipitation_probability: 'precipitationProbability',
 			precipitation: 'precipitation'
 		};
@@ -418,6 +421,24 @@ export function makeNsWeatherData() {
 		});
 	}
 
+	function formatTemperature(n: number, { unit, showUnits }: { unit: string; showUnits: boolean }) {
+		if (unit === 'F') {
+			let formatted = `${Math.round(n)}°`;
+			if (showUnits) {
+				formatted = formatted + 'F';
+			}
+			return formatted;
+		}
+		if (unit === 'C') {
+			let formatted = `${celcius(n)?.toFixed(1)}°`;
+			if (showUnits) {
+				formatted = formatted + 'C';
+			}
+			return formatted;
+		}
+		return null;
+	}
+
 	const nsWeatherData = {
 		get source() {
 			return source;
@@ -478,6 +499,15 @@ export function makeNsWeatherData() {
 			return byMinute[nearestMinute]?.hourly?.relativeHumidity ?? current?.humidity;
 		},
 
+		get displayDewPoint() {
+			const nearestMinute = Math.floor(time / 600) * 600;
+			const dewPoint = byMinute[nearestMinute]?.hourly?.dewPoint;
+
+			return dewPoint
+				? formatTemperature(dewPoint, { unit: units['temperature'], showUnits: false })
+				: '...';
+		},
+
 		get displayPrecipitation() {
 			const nearestMinute = Math.floor(time / 600) * 600;
 			return byMinute[nearestMinute]?.precipitation ?? current?.precipitation;
@@ -492,21 +522,7 @@ export function makeNsWeatherData() {
 			if (n === undefined) {
 				return '...';
 			}
-			if (unit === 'F') {
-				let formatted = `${Math.round(n)}°`;
-				if (showUnits) {
-					formatted = formatted + 'F';
-				}
-				return formatted;
-			}
-			if (unit === 'C') {
-				let formatted = `${celcius(n)?.toFixed(1)}°`;
-				if (showUnits) {
-					formatted = formatted + 'C';
-				}
-				return formatted;
-			}
-			return `${n} unknown unit: ${unit}`;
+			return formatTemperature(n, { unit, showUnits }) || `${n} unknown unit: ${unit}`;
 		}
 	};
 

@@ -86,6 +86,7 @@
 	</div>
 	<div class="other-measurements">
 		<span><b>Humidity:</b> {nsWeatherData.displayHumidity}%</span>
+		<span><b>Dew Point:</b> {nsWeatherData.displayDewPoint}</span>
 		<span><b>Precipitation:</b> {nsWeatherData.displayPrecipitation}mm</span>
 	</div>
 </div>

@@ -4,7 +4,7 @@ export const load = async (loadEvent) => {
 	const ipAddress = loadEvent.getClientAddress();
 	const { headers } = loadEvent.request;
 
-	let source = 'hard-coded';
+	let source = 'hardcoded';
 	let name = 'Bupyeong-gu, KR';
 	let coords = {
 		latitude: 37.5087,
@@ -26,7 +26,7 @@ export const load = async (loadEvent) => {
 		//gg(jsoned);
 
 		if (jsoned.results.length) {
-			source = `geocoded: ${paramName}`;
+			source = `geocoded`;
 			name = jsoned.results[0].name;
 			coords = {
 				latitude: jsoned.results[0].latitude,
@@ -36,14 +36,14 @@ export const load = async (loadEvent) => {
 		}
 	}
 
-	if (source === 'hard-coded') {
+	if (source === 'hardcoded') {
 		const city = headers.get('x-vercel-ip-city');
 		const country = headers.get('x-vercel-ip-country');
 		const latitude = Number(headers.get('x-vercel-ip-latitude'));
 		const longitude = Number(headers.get('x-vercel-ip-longitude'));
 
 		if (city && country && latitude && longitude) {
-			source = 'headers';
+			source = 'geo-ip';
 			name = `${city}, ${country}`;
 			coords = {
 				latitude,

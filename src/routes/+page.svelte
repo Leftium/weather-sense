@@ -3,14 +3,7 @@
 
 	import TimeLine from './TimeLine.svelte';
 
-	import {
-		SOLARIZED_BLUE,
-		SOLARIZED_RED,
-		headAndTail,
-		humanDistance,
-		tsToTime,
-		wmoCode
-	} from '$lib/util.js';
+	import { SOLARIZED_BLUE, SOLARIZED_RED, headAndTail, humanDistance, wmoCode } from '$lib/util.js';
 	import RadarMap from './RadarMap.svelte';
 
 	import { makeNsWeatherData } from '$lib/ns-weather-data.svelte.js';
@@ -63,7 +56,7 @@
 		>
 	</div>
 	<div class="time">
-		{tsToTime(nsWeatherData.time, 'ddd mmm d, h:MMtt')}
+		{nsWeatherData.tzFormat(nsWeatherData.time, 'ddd MMM D, h:mm z')}
 	</div>
 	<div class="current">
 		<div>
@@ -141,9 +134,10 @@
 
 	{#if dev}
 		<div class="pico debug">
-			<pre>nsWeatherData.time = {`${JSON.stringify(nsWeatherData.time, null, 4)}`} ({tsToTime(
-					nsWeatherData.time,
-					'ddd mmm d, h:MMtt'
+			<pre>nsWeatherData.utcOffsetSeconds = {`${nsWeatherData.utcOffsetSeconds}`}</pre>
+			<pre>nsWeatherData.timezone = {`${nsWeatherData.timezone}`}</pre>
+			<pre>nsWeatherData.time = {`${JSON.stringify(nsWeatherData.time, null, 4)}`} ({nsWeatherData.tzFormat(
+					nsWeatherData.time
 				)})</pre>
 			<pre>nsWeatherData.current = {`${JSON.stringify(nsWeatherData.current, null, 4)}`}</pre>
 			<pre>nsWeatherData.minutely = {`${JSON.stringify(headAndTail(nsWeatherData.minutely), null, 4)}`}</pre>

@@ -1,19 +1,10 @@
-import dateFormat from 'dateformat';
-
 import Color from 'colorjs.io';
+import { gg } from './gg';
 
 export const SOLARIZED_RED = '#dc322f';
 export const SOLARIZED_BLUE = '#268bd2';
 
 export const MS_PER_DAY = 24 * 60 * 60 * 1000;
-
-export function tsToTime(ts: number | null, format = 'h:MMt') {
-	if (!ts) {
-		return '';
-	}
-	const date = new Date(ts * 1000);
-	return dateFormat(date, format);
-}
 
 export function humanDistance(n: number | undefined) {
 	if (!n) {
@@ -107,14 +98,6 @@ export function celcius(f: number | undefined) {
 		return undefined;
 	}
 	return (f - 32) * (5 / 9);
-}
-
-export function compactDate(time?: number, now: number = +new Date()) {
-	const ms = time ? time * 1000 : +new Date();
-	if (Math.abs(ms - now) < 7 * MS_PER_DAY) {
-		return dateFormat(ms, 'ddd-dd').replace(/^(..)./, '$1');
-	}
-	return dateFormat(ms, 'mmm-dd');
 }
 
 export function headAndTail(array: unknown[] | undefined | null) {

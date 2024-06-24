@@ -6,7 +6,6 @@
 
 	import { getEmitter } from '$lib/emitter';
 	import { gg } from '$lib/gg';
-	import { tsToTime } from '$lib/util';
 
 	let {
 		radarLayers,
@@ -59,7 +58,7 @@
 					class:loaded={index === range.length - 1 || _.find(radarLayers, ['index', index])?.loaded}
 					class:minor-time={isMinorIndex}
 				>
-					{tsToTime(value, isMinorIndex ? 'MM' : 'h:MMt')}
+					{nsWeatherData.tzFormat(value, isMinorIndex ? 'mm' : 'h:mma')}
 				</div>
 			{/each}
 		</datalist>

@@ -21,7 +21,7 @@
     "@typescript-eslint/parser": "^7.13.1",
     "colorjs.io": "^0.5.0",
     "d3": "^7.9.0",
-    "dateformat": "^5.0.3",
+    "dayjs": "^1.11.11",
     "debug": "^4.3.5",
     "eslint": "^9.5.0",
     "eslint-config-prettier": "^9.1.0",

@@ -5,8 +5,7 @@ import _ from 'lodash-es';
 import { getEmitter } from '$lib/emitter';
 import { gg } from '$lib/gg';
 import type { Coordinates, Radar } from '$lib/types';
-import { celcius, compactDate } from './util';
-import dateFormat from 'dateformat';
+import { celcius } from './util';
 import { browser, dev } from '$app/environment';
 
 export type WeatherDataEvents = {
@@ -39,7 +38,7 @@ export type WeatherDataEvents = {
 	weatherdata_requestedTrackingEnd: undefined;
 };
 
-const DATEFORMAT_MASK = 'mm-dd HH:MM';
+const DATEFORMAT_MASK = 'MM-DD hh:mma z';
 const PAST_DAYS = dev ? 2 : 2; // 0 to 92
 const FORECAST_DAYS = dev ? 4 : 8; // 0 to 16
 
@@ -107,6 +106,13 @@ type DailyWeather = {
 
 export type NsWeatherData = ReturnType<typeof makeNsWeatherData>;
 
+import dayjs from 'dayjs';
+import utc from 'dayjs/plugin/utc';
+import timezonePlugin from 'dayjs/plugin/timezone';
+
+dayjs.extend(utc);
+dayjs.extend(timezonePlugin);
+
 export function makeNsWeatherData() {
 	//gg('makeNsWeatherData');
 
@@ -117,6 +123,11 @@ export function makeNsWeatherData() {
 
 	// The time for which to render weather data:
 	let time = $state(+new Date() / 1000);
+
+	// The timezone for this data.
+	let timezone = $state('Greenwich'); // GMT
+	let timezoneAbbreviation = $state('GMT'); // GMT
+	let utcOffsetSeconds = $state(0);
 
 	let radarPlaying = $state(false);
 	let resetRadarOnPlay = $state(true);
@@ -150,7 +161,7 @@ export function makeNsWeatherData() {
 		) {
 			const time = item.time + minute * 60;
 			const temperature = (item.temperature * (60 - minute)) / 60 + (nextTemperature * minute) / 60;
-			const timeFormatted = dateFormat(time * 1000, DATEFORMAT_MASK);
+			const timeFormatted = nsWeatherData.tzFormat(time, DATEFORMAT_MASK);
 			const temperatureNormalized = ((temperature - minTemperature) / temperatureRange) * 0.8 + 0.1;
 			const precipitationNormalized = 1 - Math.exp(-precipitation / 2);
 
@@ -230,8 +241,12 @@ export function makeNsWeatherData() {
 
 		const json = await fetched.json();
 
+		timezone = json.timezone;
+		timezoneAbbreviation = json.timezone_abbreviation;
+		utcOffsetSeconds = json.utc_offset_seconds;
+
 		current = {
-			timeFormatted: dateFormat(json.current.time * 1000, DATEFORMAT_MASK),
+			timeFormatted: nsWeatherData.tzFormat(json.current.time, DATEFORMAT_MASK),
 			time: json.current.time,
 			isDay: json.current.is_day === 1,
 			weatherCode: json.current.weather_code,
@@ -270,9 +285,9 @@ export function makeNsWeatherData() {
 		const now = +new Date() / 1000;
 
 		hourly = _.map(json.hourly.time, (time, index: number) => {
-			const fromNow = Math.floor((time - now) / 60 / 60) + 1;
+			const fromNow = Math.floor((time - now) / 60 / 60) + 1; // Hours from now; no longer used...
 			const object: Partial<HourlyWeather> = {
-				timeFormatted: dateFormat(time * 1000, DATEFORMAT_MASK),
+				timeFormatted: nsWeatherData.tzFormat(time, DATEFORMAT_MASK),
 				time,
 				fromNow
 			};
@@ -283,12 +298,11 @@ export function makeNsWeatherData() {
 
 			return object as HourlyWeather;
 		});
-
 		daily = _.map(json.daily.time, (time, index: number) => {
-			const timeCompact = compactDate(time);
+			const timeCompact = nsWeatherData.tzFormat(time, 'dd-DD');
 
 			const object: Partial<DailyWeather> = {
-				timeFormatted: dateFormat(time * 1000, DATEFORMAT_MASK),
+				timeFormatted: nsWeatherData.tzFormat(time, DATEFORMAT_MASK),
 				timeCompact: index === PAST_DAYS ? 'Today' : timeCompact,
 				time,
 				fromToday: index - PAST_DAYS
@@ -300,6 +314,7 @@ export function makeNsWeatherData() {
 
 			return object as DailyWeather;
 		});
+
 		console.timeEnd('fetchOpenMeteo');
 
 		emit('weatherdata_updatedData');
@@ -315,7 +330,7 @@ export function makeNsWeatherData() {
 			const frames = (rainviewerData.radar.past || [])
 				.concat(rainviewerData.radar.nowcast || [])
 				.map((frame: { time: number }) => ({
-					timeFormatted: dateFormat(frame.time * 1000, DATEFORMAT_MASK),
+					timeFormatted: nsWeatherData.tzFormat(frame.time, DATEFORMAT_MASK),
 					...frame
 				}));
 
@@ -504,6 +519,18 @@ export function makeNsWeatherData() {
 			return byMinute[nearestMinute]?.precipitation ?? current?.precipitation;
 		},
 
+		get timezone() {
+			return timezone;
+		},
+
+		get timezoneAbbreviation() {
+			return timezoneAbbreviation;
+		},
+
+		get utcOffsetSeconds() {
+			return utcOffsetSeconds;
+		},
+
 		// Converts units, rounds to appropriate digits, and adds units label.
 		format(dataPath: string, showUnits = true) {
 			const key = dataPath.replace(/.*\./, '') as keyof typeof unitsUsed;
@@ -514,6 +541,15 @@ export function makeNsWeatherData() {
 				return '...';
 			}
 			return formatTemperature(n, { unit, showUnits }) || `${n} unknown unit: ${unit}`;
+		},
+
+		tzFormat(time: number, format = 'ddd MMM D, h:mma z') {
+			let day = dayjs.unix(time);
+			if (timezone) {
+				day = day;
+			}
+
+			return dayjs.unix(time).tz(timezone).format(format).replace('z', timezoneAbbreviation);
 		}
 	};
 

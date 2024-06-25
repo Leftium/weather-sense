@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type {
+		DailyWeather,
 		MinutelyWeather,
 		NsWeatherData,
 		WeatherDataEvents
@@ -41,6 +42,31 @@
 		const startDate = startTime || +new Date() / 1000;
 		const timeStart = Math.floor(startDate / 60 / 60) * 60 * 60;
 		const timeEnd = timeStart + hours * 60 * 60;
+
+		type SolarEventItem = {
+			x: number;
+			type: string;
+		};
+
+		const solarEvents = nsWeatherData.daily?.reduce(
+			(accumulator: SolarEventItem[], current: DailyWeather) => {
+				if (current.sunrise > timeStart && current.sunrise < timeEnd) {
+					accumulator.push({
+						x: current.sunrise,
+						type: 'sunrise'
+					});
+				}
+				if (current.sunset > timeStart && current.sunset < timeEnd) {
+					accumulator.push({
+						x: current.sunset,
+						type: 'sunset'
+					});
+				}
+				return accumulator;
+			},
+			[] as SolarEventItem[]
+		);
+		gg('solarEvents', solarEvents);
 
 		if (nsWeatherData.minutely) {
 			const filtered = nsWeatherData.minutely.filter((item) => {
@@ -172,7 +198,8 @@
 				low,
 				high,
 				rain,
-				codes
+				codes,
+				solarEvents
 			};
 		}
 		return null;
@@ -318,6 +345,14 @@
 					x: 'time',
 					y: 'temperatureNormalized',
 					fill: SOLARIZED_RED
+				}),
+
+				// Plot sunrise as yellow rule and sunset as orange rule:
+				Plot.ruleX(data?.solarEvents, {
+					x: 'x',
+					y1: 0,
+					y2: 1.5,
+					stroke: (d) => (d.type === 'sunrise' ? 'yellow' : 'orange')
 				}),
 
 				// Dot that marks value at mouse (hover) position:

@@ -87,11 +87,14 @@ export type HourlyWeather = {
 	precipitation: number;
 };
 
-type DailyWeather = {
+export type DailyWeather = {
 	time: number;
 	timeFormatted: string;
 	timeCompact: string;
 	fromToday: number;
+
+	sunrise: number;
+	sunset: number;
 
 	isDay: boolean;
 	weatherCode: number;

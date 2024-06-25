@@ -215,6 +215,7 @@
 					fill: 'fill'
 				}),
 
+				/*
 				// The humidity plotted as area:
 				Plot.areaY(data?.all, {
 					strokeOpacity: fadePastValues,
@@ -224,6 +225,7 @@
 					strokeWidth: 1.5,
 					fill: 'rgba(42, 161, 152, .3)'
 				}),
+                */
 
 				// The precipitation probability plotted as area:
 				Plot.areaY(data?.all, {

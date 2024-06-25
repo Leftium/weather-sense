@@ -174,12 +174,6 @@
 		font-family: Lato, sans-serif;
 	}
 
-	.container,
-	.scroll,
-	.hourly {
-		overflow: visible !important;
-	}
-
 	.current {
 		display: grid;
 		grid-template-columns: 1fr auto 1fr;

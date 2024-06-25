@@ -271,7 +271,7 @@
 
 	.timeline {
 		flex-grow: 1;
-		height: 70px;
+		height: 90px;
 	}
 
 	.name {

@@ -5,7 +5,7 @@ import _ from 'lodash-es';
 import { getEmitter } from '$lib/emitter';
 import { gg } from '$lib/gg';
 import type { Coordinates, Radar } from '$lib/types';
-import { celcius } from './util';
+import { celcius, lerp } from './util';
 import { browser, dev } from '$app/environment';
 
 export type WeatherDataEvents = {
@@ -149,43 +149,59 @@ export function makeNsWeatherData() {
 		byMinute = {};
 
 		// Normalize temperatures to scale: [0, 1].
-		const minTemperature = _.minBy(hourly, 'temperature')?.temperature ?? 0;
+		const minTemperature =
+			Math.min(
+				_.minBy(hourly, 'temperature')?.temperature ?? 0,
+				_.minBy(hourly, 'dewPoint')?.dewPoint ?? 0
+			) ?? 0;
 		const maxTemperature = _.maxBy(hourly, 'temperature')?.temperature ?? 0;
 		const temperatureRange = maxTemperature - minTemperature;
 
-		function makeMinuteData(
-			minute: number,
-			nextTemperature: number,
-			precipitation: number,
-			item: HourlyWeather
-		) {
+		function makeMinuteData(minute: number, item: HourlyWeather, nextItem: HourlyWeather) {
 			const time = item.time + minute * 60;
-			const temperature = (item.temperature * (60 - minute)) / 60 + (nextTemperature * minute) / 60;
+
+			// Fake precipitation:
+			const date = new Date(item.time * 1000);
+			const precipitation = false && dev ? date.getHours() / 10 : item.precipitation;
+
+			const t = minute / 60;
+			const temperature = lerp(item.temperature, nextItem.temperature, t);
+			const humidity = lerp(item.relativeHumidity, nextItem.relativeHumidity, t);
+			const dewPoint = lerp(item.dewPoint, nextItem.dewPoint, t);
+			const precipitationProbability = lerp(
+				item.precipitationProbability,
+				nextItem.precipitationProbability,
+				t
+			);
 			const timeFormatted = nsWeatherData.tzFormat(time, DATEFORMAT_MASK);
-			const temperatureNormalized = ((temperature - minTemperature) / temperatureRange) * 0.8 + 0.1;
+
+			const temperatureNormalized = (temperature - minTemperature) / temperatureRange;
+			const dewPointNormalized = (dewPoint - minTemperature) / temperatureRange;
 			const precipitationNormalized = 1 - Math.exp(-precipitation / 2);
+			const precipitationProbabilityNormalized = precipitationProbability / 100;
+			const humidityNormalized = humidity / 100;
 
 			return {
 				time,
 				timeFormatted,
 				temperature,
 				temperatureNormalized,
+				dewPoint,
+				dewPointNormalized,
 				hourly: item,
 				precipitation,
 				precipitationNormalized,
+				precipitationProbability,
+				precipitationProbabilityNormalized,
+				humidity,
+				humidityNormalized,
 				minute
 			};
 		}
 
 		hourly.forEach((item, index, array) => {
 			if (hourly && minutely && byMinute) {
-				// Fake precipitation:
-				const date = new Date(item.time * 1000);
-				const precipitation = false && dev ? date.getHours() / 10 : item.precipitation;
-
 				if (index < array.length - 1) {
-					const nextTemperature = array[index + 1].temperature;
-
 					function next(minute: number) {
 						const currentTime = item.time + minute * 60;
 						let step = 10;
@@ -204,7 +220,7 @@ export function makeNsWeatherData() {
 					}
 
 					for (let minute = 0; minute < 60; minute = next(minute)) {
-						const minuteData = makeMinuteData(minute, nextTemperature, precipitation, item);
+						const minuteData = makeMinuteData(minute, item, array[index + 1]);
 						minutely.push(minuteData);
 						byMinute[minuteData.time] = minuteData;
 					}
@@ -299,7 +315,10 @@ export function makeNsWeatherData() {
 			return object as HourlyWeather;
 		});
 		daily = _.map(json.daily.time, (time, index: number) => {
-			const timeCompact = nsWeatherData.tzFormat(time, 'dd-DD');
+			const timeCompact = nsWeatherData.tzFormat(
+				time,
+				index < PAST_DAYS - 7 || index > PAST_DAYS + 7 ? 'MMM-DD' : 'dd-DD'
+			);
 
 			const object: Partial<DailyWeather> = {
 				timeFormatted: nsWeatherData.tzFormat(time, DATEFORMAT_MASK),

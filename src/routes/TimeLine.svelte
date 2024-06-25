@@ -181,7 +181,7 @@
 	function fadePastValues(d: { time: number }) {
 		const now = +new Date() / 1000;
 		if (d.time < now) {
-			return 0.2;
+			return 0.5;
 		}
 		return 1;
 	}
@@ -192,7 +192,7 @@
 
 		const plotOptions = {
 			width: clientWidth,
-			height: 50,
+			height: 70,
 			marginRight: 0,
 			marginLeft: 0,
 			marginTop: 0,
@@ -211,8 +211,28 @@
 					strokeOpacity: 'opacity',
 					x1: 'x1',
 					x2: 'x2',
-					y: 1.6,
+					y: 1.45,
 					fill: 'fill'
+				}),
+
+				// The humidity plotted as area:
+				Plot.areaY(data?.all, {
+					strokeOpacity: fadePastValues,
+					x: 'time',
+					y: 'humidityNormalized',
+					stroke: '#2aa198',
+					strokeWidth: 1.5,
+					fill: 'rgba(42, 161, 152, .3)'
+				}),
+
+				// The precipitation probability plotted as area:
+				Plot.areaY(data?.all, {
+					strokeOpacity: fadePastValues,
+					x: 'time',
+					y: 'precipitationProbabilityNormalized',
+					stroke: 'blue',
+					strokeWidth: 1.5,
+					fill: 'rgba(0, 0, 255, .3)'
 				}),
 
 				// Rain bar:
@@ -266,11 +286,22 @@
 					fill: (d) => (d.isDarkText ? 'black' : 'white')
 				}),
 
+				// The dew point plotted as line:
+				Plot.lineY(data?.all, {
+					x: 'time',
+					y: 'dewPointNormalized',
+					stroke: '#268bd2',
+					strokeWidth: 2,
+					strokeOpacity: fadePastValues
+				}),
+
 				// The temperature plotted as line:
 				Plot.lineY(data?.all, {
-					strokeOpacity: fadePastValues,
 					x: 'time',
-					y: 'temperatureNormalized'
+					y: 'temperatureNormalized',
+					stroke: 'black',
+					strokeWidth: 2,
+					strokeOpacity: fadePastValues
 				}),
 
 				// High/low temp marks:

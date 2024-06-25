@@ -19,6 +19,10 @@ export function humanDistance(n: number | undefined) {
 	return `${Math.floor(n)}${units}`;
 }
 
+export function lerp(v0: number, v1: number, t: number) {
+	return (1 - t) * v0 + t * v1;
+}
+
 const colorWhite = new Color('#fff');
 const colorBlack = new Color('#000');
 

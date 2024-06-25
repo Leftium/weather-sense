@@ -58,7 +58,7 @@
 					class:loaded={index === range.length - 1 || _.find(radarLayers, ['index', index])?.loaded}
 					class:minor-time={isMinorIndex}
 				>
-					{nsWeatherData.tzFormat(value, isMinorIndex ? 'mm' : 'h:mma')}
+					{nsWeatherData.tzFormat(value, isMinorIndex ? 'mm' : 'h:mm')}
 				</div>
 			{/each}
 		</datalist>
@@ -128,7 +128,7 @@
 		}
 
 		.play-pause {
-			margin-left: 16px;
+			margin-left: 8px;
 		}
 	}
 </style>

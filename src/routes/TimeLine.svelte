@@ -256,7 +256,7 @@
 
 				// The precipitation probability plotted as area:
 				Plot.areaY(data?.all, {
-					strokeOpacity: fadePastValues,
+					strokeOpacity: (d) => (d.precipitationProbabilityNormalized <= 0 ? 0 : fadePastValues(d)),
 					x: 'time',
 					y: 'precipitationProbabilityNormalized',
 					stroke: 'blue',
@@ -360,8 +360,8 @@
 				// Plot sunrise as yellow rule and sunset as orange rule:
 				Plot.image(data?.solarEvents, {
 					x: 'x',
-					y: 1.5,
-					dy: -2,
+					y: 0,
+					dy: -6,
 					width: 32,
 					height: 32,
 					src: (d) => `/icons/meteocons/${d.type}.png`

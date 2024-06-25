@@ -360,7 +360,8 @@
 				// Plot sunrise as yellow rule and sunset as orange rule:
 				Plot.image(data?.solarEvents, {
 					x: 'x',
-					y: 1.55,
+					y: 1.5,
+					dy: -2,
 					width: 32,
 					height: 32,
 					src: (d) => `/icons/meteocons/${d.type}.png`

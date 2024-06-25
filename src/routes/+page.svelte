@@ -66,7 +66,9 @@
 			<div class="temperature-range">
 				<span use:toggleUnits={{ temperature: true }}>
 					{nsWeatherData.format('daily[2].temperatureMin', false)}
-				</span>-<span use:toggleUnits={{ temperature: true }}>
+				</span>
+				to
+				<span use:toggleUnits={{ temperature: true }}>
 					{nsWeatherData.format('daily[2].temperatureMax', false)}
 				</span>
 			</div>

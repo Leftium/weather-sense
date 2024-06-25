@@ -347,12 +347,23 @@
 					fill: SOLARIZED_RED
 				}),
 
+				/*
 				// Plot sunrise as yellow rule and sunset as orange rule:
 				Plot.ruleX(data?.solarEvents, {
 					x: 'x',
 					y1: 0,
 					y2: 1.5,
 					stroke: (d) => (d.type === 'sunrise' ? 'yellow' : 'orange')
+				}),
+                */
+
+				// Plot sunrise as yellow rule and sunset as orange rule:
+				Plot.image(data?.solarEvents, {
+					x: 'x',
+					y: 1.55,
+					width: 32,
+					height: 32,
+					src: (d) => `/icons/meteocons/${d.type}.png`
 				}),
 
 				// Dot that marks value at mouse (hover) position:

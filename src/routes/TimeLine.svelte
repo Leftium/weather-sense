@@ -219,8 +219,8 @@
 		const plotOptions = {
 			width: clientWidth,
 			height: 70,
-			marginRight: 0,
-			marginLeft: 0,
+			marginRight: 12,
+			marginLeft: 12,
 			marginTop: 0,
 			marginBottom: 0,
 			y: { axis: null }

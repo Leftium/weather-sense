@@ -66,7 +66,6 @@
 			},
 			[] as SolarEventItem[]
 		);
-		gg('solarEvents', solarEvents);
 
 		if (nsWeatherData.minutely) {
 			const filtered = nsWeatherData.minutely.filter((item) => {

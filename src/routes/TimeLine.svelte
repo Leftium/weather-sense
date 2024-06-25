@@ -504,6 +504,11 @@
 <div bind:this={div} bind:clientWidth role="img"></div>
 
 <style>
+	div,
+	div > :global(svg) {
+		overflow: visible !important;
+	}
+
 	div {
 		user-select: none;
 	}

@@ -56,7 +56,7 @@
 		>
 	</div>
 	<div class="time">
-		{nsWeatherData.tzFormat(nsWeatherData.time, 'ddd MMM D, h:mm')}
+		{nsWeatherData.tzFormat(nsWeatherData.time, 'ddd MMM D, h:mma')}
 		<span class="timezone">{nsWeatherData.timezoneAbbreviation}</span>
 	</div>
 	<div class="current">

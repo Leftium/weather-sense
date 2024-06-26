@@ -203,27 +203,26 @@ export function makeNsWeatherData() {
 			};
 		}
 
+		function next(minute: number, currentTime: number) {
+			let step = 10;
+
+			if (
+				radar.timeStart &&
+				radar.timeEnd &&
+				(currentTime < radar.timeStart || currentTime >= radar.timeEnd)
+			) {
+				step = 30;
+				while (step != 10 && !(minute + step == 30) && !(minute + step == 60)) {
+					step -= 10;
+				}
+			}
+			return minute + step;
+		}
+
 		hourly.forEach((item, index, array) => {
 			if (hourly && minutely && byMinute) {
 				if (index < array.length - 1) {
-					function next(minute: number) {
-						const currentTime = item.time + minute * 60;
-						let step = 10;
-
-						if (
-							radar.timeStart &&
-							radar.timeEnd &&
-							(currentTime < radar.timeStart || currentTime >= radar.timeEnd)
-						) {
-							step = 30;
-							while (step != 10 && !(minute + step == 30) && !(minute + step == 60)) {
-								step -= 10;
-							}
-						}
-						return minute + step;
-					}
-
-					for (let minute = 0; minute < 60; minute = next(minute)) {
+					for (let minute = 0; minute < 60; minute = next(minute, item.time + minute * 60)) {
 						const minuteData = makeMinuteData(minute, item, array[index + 1]);
 						minutely.push(minuteData);
 						byMinute[minuteData.time] = minuteData;
@@ -232,6 +231,7 @@ export function makeNsWeatherData() {
 			}
 		});
 		console.timeEnd('minutely');
+		gg('minutely.length', minutely.length);
 		return minutely;
 	});
 

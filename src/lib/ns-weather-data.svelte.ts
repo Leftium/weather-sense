@@ -143,10 +143,11 @@ export function makeNsWeatherData() {
 	let byMinute: Record<number, MinutelyWeather> = $state({});
 
 	let minutely: MinutelyWeather[] = $derived.by(() => {
-		console.time('minutely');
-		if (!hourly) {
+		if (!browser || !hourly) {
 			return [];
 		}
+		gg('minutely:start');
+		console.time('minutely');
 
 		const minutely: MinutelyWeather[] = [];
 		byMinute = {};
@@ -248,6 +249,7 @@ export function makeNsWeatherData() {
 	};
 
 	async function fetchOpenMeteo() {
+		gg('fetchOpenMeteo:start');
 		console.time('fetchOpenMeteo');
 		const url =
 			`https://api.open-meteo.com/v1/forecast?latitude=${coords?.latitude}&longitude=${coords?.longitude}` +

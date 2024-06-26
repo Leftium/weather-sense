@@ -166,7 +166,7 @@
 
 				const dy = item.temperatureNormalized < 0.5 ? -10 : 10;
 
-				if (Math.floor(item.temperature) > Math.floor(high.temperature)) {
+				if (item.temperature > high.temperature) {
 					high = {
 						time: item.time,
 						temperatureNormalized,
@@ -176,10 +176,7 @@
 					};
 				}
 
-				if (
-					Math.floor(item.temperature) < Math.floor(low.temperature) ||
-					(ghostTracker && low.time >= high.time)
-				) {
+				if (item.temperature < low.temperature || (ghostTracker && low.time >= high.time)) {
 					low = {
 						time: item.time,
 						temperatureNormalized,

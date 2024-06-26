@@ -209,6 +209,8 @@
 		return 1;
 	}
 
+	const curve = 'catmull-rom';
+
 	// Generate and place Obervable.Plot from data.
 	function plotData() {
 		//gg('plotData');
@@ -238,23 +240,23 @@
 					fill: 'fill'
 				}),
 
-				/*
 				// The humidity plotted as area:
 				Plot.areaY(data?.all, {
 					strokeOpacity: fadePastValues,
 					x: 'time',
 					y: 'humidityNormalized',
+					curve,
 					stroke: '#2aa198',
 					strokeWidth: 1.5,
 					fill: 'rgba(42, 161, 152, .3)'
 				}),
-                */
 
 				// The precipitation probability plotted as area:
 				Plot.areaY(data?.all, {
 					strokeOpacity: (d) => (d.precipitationProbabilityNormalized <= 0 ? 0 : fadePastValues(d)),
 					x: 'time',
 					y: 'precipitationProbabilityNormalized',
+					curve,
 					stroke: 'blue',
 					strokeWidth: 1.5,
 					fill: 'rgba(0, 0, 255, .3)'
@@ -315,6 +317,7 @@
 				Plot.lineY(data?.all, {
 					x: 'time',
 					y: 'dewPointNormalized',
+					curve,
 					stroke: '#268bd2',
 					strokeWidth: 2,
 					strokeOpacity: fadePastValues
@@ -324,6 +327,7 @@
 				Plot.lineY(data?.all, {
 					x: 'time',
 					y: 'temperatureNormalized',
+					curve,
 					stroke: 'black',
 					strokeWidth: 2,
 					strokeOpacity: fadePastValues

@@ -211,8 +211,8 @@ export function makeNsWeatherData() {
 				radar.timeEnd &&
 				(currentTime < radar.timeStart || currentTime >= radar.timeEnd)
 			) {
-				step = 30;
-				while (step != 10 && !(minute + step == 30) && !(minute + step == 60)) {
+				step = 60;
+				while (step != 10 && !(minute + step == 60)) {
 					step -= 10;
 				}
 			}

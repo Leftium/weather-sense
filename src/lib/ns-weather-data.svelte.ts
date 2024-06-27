@@ -46,7 +46,7 @@ const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 
 type CurrentWeather = {
 	ms: number;
-	msFormatted: string;
+	msPretty: string;
 	isDay: boolean;
 	weatherCode: number;
 	temperature: number;
@@ -60,7 +60,7 @@ type CurrentWeather = {
 
 export type MinutelyWeather = {
 	ms: number;
-	msFormatted: string;
+	msPretty: string;
 	minute: number;
 
 	temperature: number;
@@ -74,7 +74,7 @@ export type MinutelyWeather = {
 
 export type HourlyWeather = {
 	ms: number;
-	msFormatted: string;
+	msPretty: string;
 
 	weatherCode: number;
 	temperature: number;
@@ -88,7 +88,7 @@ export type HourlyWeather = {
 
 export type DailyWeather = {
 	ms: number;
-	msFormatted: string;
+	msPretty: string;
 	compactDate: string;
 	fromToday: number;
 
@@ -177,7 +177,7 @@ export function makeNsWeatherData() {
 				nextItem.precipitationProbability,
 				t
 			);
-			const msFormatted = nsWeatherData.tzFormat(ms, DATEFORMAT_MASK);
+			const msPretty = nsWeatherData.tzFormat(ms, DATEFORMAT_MASK);
 
 			const temperatureNormalized = (temperature - minTemperature) / temperatureRange;
 			const dewPointNormalized = (dewPoint - minTemperature) / temperatureRange;
@@ -186,7 +186,7 @@ export function makeNsWeatherData() {
 			const humidityNormalized = humidity / 100;
 
 			return {
-				msFormatted,
+				msPretty,
 				ms,
 				temperature,
 				temperatureNormalized,
@@ -267,7 +267,7 @@ export function makeNsWeatherData() {
 		utcOffsetSeconds = json.utc_offset_seconds;
 
 		current = {
-			msFormatted: nsWeatherData.tzFormat(json.current.time * MS_IN_SECOND, DATEFORMAT_MASK),
+			msPretty: nsWeatherData.tzFormat(json.current.time * MS_IN_SECOND, DATEFORMAT_MASK),
 			ms: json.current.time * MS_IN_SECOND,
 			isDay: json.current.is_day === 1,
 			weatherCode: json.current.weather_code,
@@ -304,7 +304,7 @@ export function makeNsWeatherData() {
 		hourly = _.map(json.hourly.time, (unixtime, index: number) => {
 			const ms = unixtime * MS_IN_SECOND;
 			const object: Partial<HourlyWeather> = {
-				msFormatted: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),
+				msPretty: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),
 				ms
 			};
 
@@ -329,7 +329,7 @@ export function makeNsWeatherData() {
 			const sunset = json.daily.sunrise[index] * MS_IN_SECOND;
 
 			const object: Partial<DailyWeather> = {
-				msFormatted: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),
+				msPretty: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),
 				compactDate,
 				ms,
 				fromToday: index - PAST_DAYS,

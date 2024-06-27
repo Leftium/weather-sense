@@ -75,7 +75,6 @@ export type MinutelyWeather = {
 export type HourlyWeather = {
 	ms: number;
 	msFormatted: string;
-	fromNow: number;
 
 	weatherCode: number;
 	temperature: number;

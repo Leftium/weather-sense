@@ -23,6 +23,7 @@
 		WMO_CODES
 	} from '$lib/util';
 	import type { Markish } from '@observablehq/plot';
+	import dayjs from 'dayjs';
 
 	let {
 		nsWeatherData,
@@ -47,6 +48,7 @@
 	let data = $derived.by(() => {
 		//gg('data');
 
+		// const msStart = +dayjs(start).startOf('hour');
 		const msStart = Math.floor(start / MS_IN_HOUR) * MS_IN_HOUR;
 		const msEnd = msStart + hours * MS_IN_HOUR;
 

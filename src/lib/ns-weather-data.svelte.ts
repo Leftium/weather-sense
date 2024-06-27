@@ -164,8 +164,8 @@ export function makeNsWeatherData() {
 			const ms = item.ms + minute * MS_IN_MINUTE;
 
 			// Fake precipitation:
-			const date = new Date(item.ms);
-			const precipitation = false && dev ? date.getHours() / 10 : item.precipitation;
+			const day = dayjs(item.ms);
+			const precipitation = false && dev ? day.get('hour') / 10 : item.precipitation;
 
 			const t = minute / 60;
 			const temperature = lerp(item.temperature, nextItem.temperature, t);

@@ -102,7 +102,7 @@ export function getEmitter<Events extends Record<EventType, unknown>>(
 	// - transforms params into full XState style event object.
 	function emit<Key extends keyof Events>(eventType: Key, params?: Events[Key]) {
 		const meta = {
-			// ts: new Date(),
+			// ts: Date.now(),
 			target: '*',
 			source,
 			memo: []

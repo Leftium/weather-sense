@@ -5,7 +5,7 @@ import _ from 'lodash-es';
 import { getEmitter } from '$lib/emitter';
 import { gg } from '$lib/gg';
 import type { Coordinates, Radar } from '$lib/types';
-import { celcius, lerp } from './util';
+import { MS_IN_MINUTE, MS_IN_SECOND, celcius, lerp } from './util';
 import { browser, dev } from '$app/environment';
 
 export type WeatherDataEvents = {
@@ -16,7 +16,7 @@ export type WeatherDataEvents = {
 	};
 
 	weatherdata_requestedSetTime: {
-		time: number;
+		ms: number;
 	};
 
 	weatherdata_requestedToggleUnits: {
@@ -45,8 +45,8 @@ const FORECAST_DAYS = dev ? 4 : 8; // 0 to 16
 const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 
 type CurrentWeather = {
-	time: number;
-	timeFormatted: string;
+	ms: number;
+	msFormatted: string;
 	isDay: boolean;
 	weatherCode: number;
 	temperature: number;
@@ -59,8 +59,8 @@ type CurrentWeather = {
 };
 
 export type MinutelyWeather = {
-	time: number;
-	timeFormatted: string;
+	ms: number;
+	msFormatted: string;
 	minute: number;
 
 	temperature: number;
@@ -73,8 +73,8 @@ export type MinutelyWeather = {
 };
 
 export type HourlyWeather = {
-	time: number;
-	timeFormatted: string;
+	ms: number;
+	msFormatted: string;
 	fromNow: number;
 
 	weatherCode: number;
@@ -88,9 +88,9 @@ export type HourlyWeather = {
 };
 
 export type DailyWeather = {
-	time: number;
-	timeFormatted: string;
-	timeCompact: string;
+	ms: number;
+	msFormatted: string;
+	compactDate: string;
 	fromToday: number;
 
 	sunrise: number;
@@ -124,8 +124,8 @@ export function makeNsWeatherData() {
 	let name: string | null = $state(null);
 	let source: string = $state('???');
 
-	// The time for which to render weather data:
-	let time = $state(+new Date() / 1000);
+	// The time (in ms) for which to render weather data:
+	let msTracker = $state(Date.now());
 
 	// The timezone for this data.
 	let timezone = $state('Greenwich'); // GMT
@@ -162,10 +162,10 @@ export function makeNsWeatherData() {
 		const temperatureRange = maxTemperature - minTemperature;
 
 		function makeMinuteData(minute: number, item: HourlyWeather, nextItem: HourlyWeather) {
-			const time = item.time + minute * 60;
+			const ms = item.ms + minute * MS_IN_MINUTE;
 
 			// Fake precipitation:
-			const date = new Date(item.time * 1000);
+			const date = new Date(item.ms);
 			const precipitation = false && dev ? date.getHours() / 10 : item.precipitation;
 
 			const t = minute / 60;
@@ -177,7 +177,7 @@ export function makeNsWeatherData() {
 				nextItem.precipitationProbability,
 				t
 			);
-			const timeFormatted = nsWeatherData.tzFormat(time, DATEFORMAT_MASK);
+			const msFormatted = nsWeatherData.tzFormat(ms, DATEFORMAT_MASK);
 
 			const temperatureNormalized = (temperature - minTemperature) / temperatureRange;
 			const dewPointNormalized = (dewPoint - minTemperature) / temperatureRange;
@@ -186,8 +186,8 @@ export function makeNsWeatherData() {
 			const humidityNormalized = humidity / 100;
 
 			return {
-				time,
-				timeFormatted,
+				msFormatted,
+				ms,
 				temperature,
 				temperatureNormalized,
 				dewPoint,
@@ -203,14 +203,10 @@ export function makeNsWeatherData() {
 			};
 		}
 
-		function next(minute: number, currentTime: number) {
+		function next(minute: number, msCurrent: number) {
 			let step = 10;
 
-			if (
-				radar.timeStart &&
-				radar.timeEnd &&
-				(currentTime < radar.timeStart || currentTime >= radar.timeEnd)
-			) {
+			if (radar.msStart && radar.msEnd && (msCurrent < radar.msStart || msCurrent >= radar.msEnd)) {
 				step = 60;
 				while (step != 10 && !(minute + step == 60)) {
 					step -= 10;
@@ -222,10 +218,14 @@ export function makeNsWeatherData() {
 		hourly.forEach((item, index, array) => {
 			if (hourly && minutely && byMinute) {
 				if (index < array.length - 1) {
-					for (let minute = 0; minute < 60; minute = next(minute, item.time + minute * 60)) {
+					for (
+						let minute = 0;
+						minute < 60;
+						minute = next(minute, item.ms + minute * MS_IN_MINUTE)
+					) {
 						const minuteData = makeMinuteData(minute, item, array[index + 1]);
 						minutely.push(minuteData);
-						byMinute[minuteData.time] = minuteData;
+						byMinute[minuteData.ms * MS_IN_SECOND] = minuteData;
 					}
 				}
 			}
@@ -267,8 +267,8 @@ export function makeNsWeatherData() {
 		utcOffsetSeconds = json.utc_offset_seconds;
 
 		current = {
-			timeFormatted: nsWeatherData.tzFormat(json.current.time, DATEFORMAT_MASK),
-			time: json.current.time,
+			msFormatted: nsWeatherData.tzFormat(json.current.time * MS_IN_SECOND, DATEFORMAT_MASK),
+			ms: json.current.time * MS_IN_SECOND,
 			isDay: json.current.is_day === 1,
 			weatherCode: json.current.weather_code,
 			temperature: json.current.temperature_2m,
@@ -293,8 +293,6 @@ export function makeNsWeatherData() {
 			weather_code: 'weatherCode',
 			temperature_2m_max: 'temperatureMax',
 			temperature_2m_min: 'temperatureMin',
-			sunrise: 'sunrise',
-			sunset: 'sunset',
 			precipitation_sum: 'precipitation',
 			rain_sum: 'rain',
 			showers_sum: 'showers',
@@ -303,14 +301,11 @@ export function makeNsWeatherData() {
 			precipitation_probability_max: 'precipitationProbabilityMax'
 		};
 
-		const now = +new Date() / 1000;
-
-		hourly = _.map(json.hourly.time, (time, index: number) => {
-			const fromNow = Math.floor((time - now) / 60 / 60) + 1; // Hours from now; no longer used...
+		hourly = _.map(json.hourly.time, (unixtime, index: number) => {
+			const ms = unixtime * MS_IN_SECOND;
 			const object: Partial<HourlyWeather> = {
-				timeFormatted: nsWeatherData.tzFormat(time, DATEFORMAT_MASK),
-				time,
-				fromNow
+				msFormatted: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),
+				ms
 			};
 
 			_.forEach(hourlyKeys, (newKey, openMeteoKey) => {
@@ -319,17 +314,27 @@ export function makeNsWeatherData() {
 
 			return object as HourlyWeather;
 		});
-		daily = _.map(json.daily.time, (time, index: number) => {
-			const timeCompact = nsWeatherData.tzFormat(
-				time,
-				index < PAST_DAYS - 7 || index > PAST_DAYS + 7 ? 'MMM-DD' : 'dd-DD'
-			);
+
+		daily = _.map(json.daily.time, (unixtime, index: number) => {
+			const ms = unixtime * MS_IN_SECOND;
+			const compactDate =
+				index === PAST_DAYS
+					? 'Today'
+					: nsWeatherData.tzFormat(
+							ms,
+							index < PAST_DAYS - 7 || index > PAST_DAYS + 7 ? 'MMM-DD' : 'dd-DD'
+						);
+
+			const sunrise = json.daily.sunrise[index] * MS_IN_SECOND;
+			const sunset = json.daily.sunrise[index] * MS_IN_SECOND;
 
 			const object: Partial<DailyWeather> = {
-				timeFormatted: nsWeatherData.tzFormat(time, DATEFORMAT_MASK),
-				timeCompact: index === PAST_DAYS ? 'Today' : timeCompact,
-				time,
-				fromToday: index - PAST_DAYS
+				msFormatted: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),
+				compactDate,
+				ms,
+				fromToday: index - PAST_DAYS,
+				sunrise,
+				sunset
 			};
 
 			_.forEach(dailyKeys, (newKey, openMeteoKey) => {
@@ -353,21 +358,25 @@ export function makeNsWeatherData() {
 
 			const frames = (rainviewerData.radar.past || [])
 				.concat(rainviewerData.radar.nowcast || [])
-				.map((frame: { time: number }) => ({
-					timeFormatted: nsWeatherData.tzFormat(frame.time, DATEFORMAT_MASK),
-					...frame
-				}));
+				.map((frame: { time: number; path: string }) => {
+					const ms = frame.time * MS_IN_SECOND;
+					return {
+						msFormatted: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),
+						ms,
+						path: frame.path
+					};
+				});
 
-			const timeStart = frames[0]?.time;
-			const timeLast = frames.at(-1)?.time;
-			const timeEnd = timeLast ? timeLast + 10 * 60 : undefined;
+			const msStart = frames[0]?.ms;
+			const msLast = frames.at(-1)?.ms;
+			const msEnd = msLast ? msLast + 10 * MS_IN_MINUTE : undefined;
 
 			radar = {
 				generated: rainviewerData.generated,
 				host: rainviewerData.host,
 				frames,
-				timeStart,
-				timeEnd
+				msStart,
+				msEnd
 			};
 			emit('weatherdata_updatedRadar', { nsWeatherData });
 		});
@@ -409,12 +418,13 @@ export function makeNsWeatherData() {
 		on('weatherdata_requestedSetTime', function (params) {
 			// gg('weatherdata_requestedSetTime', params);
 
-			time = params.time;
-			const maxRadarTime = (radar.frames.at(-1)?.time || 0) + 10 * 60;
-			if (time > maxRadarTime) {
+			msTracker = params.ms;
+
+			const msMaxRadar = (radar.frames.at(-1)?.ms || 0) + 10 * MS_IN_MINUTE;
+			if (msTracker > msMaxRadar) {
 				radarPlaying = false;
 				if (!tracking) {
-					time = +new Date() / 1000;
+					msTracker = Date.now();
 					resetRadarOnPlay = true;
 				}
 			}
@@ -428,14 +438,14 @@ export function makeNsWeatherData() {
 		on('weatherdata_requestedTrackingEnd', function () {
 			//gg('weatherdata_requestedTrackingEnd', params.value);
 			tracking = false;
-			time = +new Date() / 1000;
+			msTracker = Date.now();
 		});
 
 		on('weatherdata_requestedTogglePlay', function () {
 			radarPlaying = !radarPlaying;
 
 			if (resetRadarOnPlay) {
-				time = radar.frames[0].time;
+				msTracker = radar.frames[0].ms;
 			}
 			resetRadarOnPlay = false;
 		});
@@ -482,8 +492,8 @@ export function makeNsWeatherData() {
 			return name;
 		},
 
-		get time() {
-			return time;
+		get ms() {
+			return msTracker;
 		},
 
 		get radar() {
@@ -515,22 +525,22 @@ export function makeNsWeatherData() {
 		},
 
 		get displayTemperature() {
-			const nearestMinute = Math.floor(time / 600) * 600;
+			const nearestMinute = Math.floor(msTracker / MS_IN_SECOND / 600) * 600;
 			return byMinute[nearestMinute]?.temperature ?? current?.temperature;
 		},
 
 		get displayWeatherCode() {
-			const nearestMinute = Math.floor(time / 600) * 600;
+			const nearestMinute = Math.floor(msTracker / MS_IN_SECOND / 600) * 600;
 			return byMinute[nearestMinute]?.hourly?.weatherCode ?? current?.weatherCode;
 		},
 
 		get displayHumidity() {
-			const nearestMinute = Math.floor(time / 600) * 600;
+			const nearestMinute = Math.floor(msTracker / MS_IN_SECOND / 600) * 600;
 			return byMinute[nearestMinute]?.hourly?.relativeHumidity ?? current?.humidity;
 		},
 
 		get displayDewPoint() {
-			const nearestMinute = Math.floor(time / 600) * 600;
+			const nearestMinute = Math.floor(msTracker / MS_IN_SECOND / 600) * 600;
 			const dewPoint = byMinute[nearestMinute]?.hourly?.dewPoint;
 
 			return dewPoint
@@ -539,7 +549,7 @@ export function makeNsWeatherData() {
 		},
 
 		get displayPrecipitation() {
-			const nearestMinute = Math.floor(time / 600) * 600;
+			const nearestMinute = Math.floor(msTracker / MS_IN_SECOND / 600) * 600;
 			return byMinute[nearestMinute]?.precipitation ?? current?.precipitation;
 		},
 
@@ -567,13 +577,8 @@ export function makeNsWeatherData() {
 			return formatTemperature(n, { unit, showUnits }) || `${n} unknown unit: ${unit}`;
 		},
 
-		tzFormat(time: number, format = 'ddd MMM D, h:mma z') {
-			let day = dayjs.unix(time);
-			if (timezone) {
-				day = day;
-			}
-
-			return dayjs.unix(time).tz(timezone).format(format).replace('z', timezoneAbbreviation);
+		tzFormat(ms: number, format = 'ddd MMM D, h:mma z') {
+			return dayjs(ms).tz(timezone).format(format).replace('z', timezoneAbbreviation);
 		}
 	};
 

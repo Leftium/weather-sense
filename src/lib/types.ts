@@ -7,7 +7,7 @@ export type Coordinates = {
 };
 
 export type RadarFrame = {
-	time: number;
+	ms: number;
 	path: string;
 };
 
@@ -16,13 +16,13 @@ export type Radar = {
 	host: string;
 	frames: RadarFrame[];
 
-	timeStart?: number;
-	timeEnd?: number;
+	msStart?: number;
+	msEnd?: number;
 };
 
 export type RadarLayer = {
 	index: number;
-	time: number;
+	ms: number;
 	loaded: boolean;
 	tileLayer: TileLayer;
 };

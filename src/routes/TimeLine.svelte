@@ -13,18 +13,26 @@
 	import * as Plot from '@observablehq/plot';
 	import { getEmitter } from '$lib/emitter';
 	import { onMount, tick } from 'svelte';
-	import { MS_PER_DAY, SOLARIZED_BLUE, SOLARIZED_RED, WMO_CODES } from '$lib/util';
+	import {
+		MS_IN_DAY,
+		MS_IN_HOUR,
+		MS_IN_MINUTE,
+		MS_IN_SECOND,
+		SOLARIZED_BLUE,
+		SOLARIZED_RED,
+		WMO_CODES
+	} from '$lib/util';
 	import type { Markish } from '@observablehq/plot';
 
 	let {
 		nsWeatherData,
-		startTime = +new Date() / 1000,
+		start = Date.now(),
 		hours = 24,
 		xAxis = true,
 		ghostTracker = false
 	}: {
 		nsWeatherData: NsWeatherData;
-		startTime?: number;
+		start?: number;
 		hours?: number;
 		xAxis?: boolean;
 		ghostTracker?: boolean;
@@ -39,9 +47,8 @@
 	let data = $derived.by(() => {
 		//gg('data');
 
-		const startDate = startTime || +new Date() / 1000;
-		const timeStart = Math.floor(startDate / 60 / 60) * 60 * 60;
-		const timeEnd = timeStart + hours * 60 * 60;
+		const msStart = Math.floor(start / MS_IN_HOUR) * MS_IN_HOUR;
+		const msEnd = msStart + hours * MS_IN_HOUR;
 
 		type SolarEventItem = {
 			x: number;
@@ -50,13 +57,13 @@
 
 		const solarEvents = nsWeatherData.daily?.reduce(
 			(accumulator: SolarEventItem[], current: DailyWeather) => {
-				if (current.sunrise > timeStart && current.sunrise < timeEnd) {
+				if (current.sunrise > msStart && current.sunrise < msEnd) {
 					accumulator.push({
 						x: current.sunrise,
 						type: 'sunrise'
 					});
 				}
-				if (current.sunset > timeStart && current.sunset < timeEnd) {
+				if (current.sunset > msStart && current.sunset < msEnd) {
 					accumulator.push({
 						x: current.sunset,
 						type: 'sunset'
@@ -69,7 +76,7 @@
 
 		if (nsWeatherData.minutely) {
 			const filtered = nsWeatherData.minutely.filter((item) => {
-				return item.time >= timeStart && item.time <= timeEnd;
+				return item.ms >= msStart && item.ms <= msEnd;
 			});
 
 			const minute0 = filtered.filter((d) => d.minute == 0);
@@ -85,7 +92,7 @@
 				opacity: number;
 			};
 
-			const now = +new Date() / 1000;
+			const now = Date.now();
 
 			const minute0withoutLast = minute0.toSpliced(-1, 1);
 
@@ -95,8 +102,8 @@
 					const prevCode = prevItem?.weatherCode;
 					const nextCode = current.hourly?.weatherCode;
 
-					const x1 = current.time;
-					const x2 = Math.min(current.time + 60 * 60, timeEnd);
+					const x1 = current.ms;
+					const x2 = Math.min(current.ms + MS_IN_HOUR, msEnd);
 
 					if (prevItem && prevCode == nextCode && prevCode != undefined) {
 						prevItem.x2 = x2;
@@ -111,7 +118,7 @@
 								xMiddle: (Number(x1) + Number(x2)) / 2,
 								fill: WMO_CODES[nextCode].color,
 								isDarkText: WMO_CODES[nextCode].isDarkText,
-								opacity: current.time < now ? 0.2 : 1
+								opacity: current.ms < now ? 0.2 : 1
 							});
 						}
 					}
@@ -123,8 +130,8 @@
 			const rain = minute0withoutLast
 				.filter((d) => d.precipitation > 0)
 				.map((d) => {
-					const x1bar = d.time + 5 * 60;
-					const x2bar = Math.min(d.time + 55 * 60, timeEnd);
+					const x1bar = d.ms + 5 * MS_IN_MINUTE;
+					const x2bar = Math.min(d.ms + 55 * MS_IN_MINUTE, msEnd);
 					const y = d.precipitationNormalized;
 
 					return {
@@ -134,12 +141,12 @@
 						x2line: x2bar - 60,
 						y,
 						y2: y + 0.01,
-						opacity: d.time < now ? 0.2 : 1
+						opacity: d.ms < now ? 0.2 : 1
 					};
 				});
 
 			let low = {
-				time: 0,
+				ms: 0,
 				temperatureNormalized: Number.MAX_VALUE,
 				temperature: Number.MAX_VALUE,
 				dx: 0,
@@ -147,7 +154,7 @@
 			};
 
 			let high = {
-				time: 0,
+				ms: 0,
 				temperatureNormalized: 0,
 				temperature: 0,
 				dx: 0,
@@ -168,7 +175,7 @@
 
 				if (item.temperature > high.temperature) {
 					high = {
-						time: item.time,
+						ms: item.ms,
 						temperatureNormalized,
 						temperature: item.temperature,
 						dx,
@@ -176,9 +183,9 @@
 					};
 				}
 
-				if (item.temperature < low.temperature || (ghostTracker && low.time >= high.time)) {
+				if (item.temperature < low.temperature || (ghostTracker && low.ms >= high.ms)) {
 					low = {
-						time: item.time,
+						ms: item.ms,
 						temperatureNormalized,
 						temperature: item.temperature,
 						dx,
@@ -189,8 +196,6 @@
 
 			return {
 				all: filtered,
-				timeStart,
-				timeEnd,
 				low,
 				high,
 				rain,
@@ -201,9 +206,9 @@
 		return null;
 	});
 
-	function fadePastValues(d: { time: number }) {
-		const now = +new Date() / 1000;
-		if (d.time < now) {
+	function fadePastValues(d: { ms: number }) {
+		const now = Date.now();
+		if (d.ms < now) {
 			return 0.5;
 		}
 		return 1;
@@ -243,7 +248,7 @@
 				// The humidity plotted as area:
 				Plot.areaY(data?.all, {
 					strokeOpacity: fadePastValues,
-					x: 'time',
+					x: 'ms',
 					y: 'humidityNormalized',
 					curve,
 					stroke: '#2aa198',
@@ -254,7 +259,7 @@
 				// The precipitation probability plotted as area:
 				Plot.areaY(data?.all, {
 					strokeOpacity: (d) => (d.precipitationProbabilityNormalized <= 0 ? 0 : fadePastValues(d)),
-					x: 'time',
+					x: 'ms',
 					y: 'precipitationProbabilityNormalized',
 					curve,
 					stroke: 'blue',
@@ -290,8 +295,8 @@
 					dy: 1,
 					textAnchor: 'middle',
 					text: (d) => {
-						const ox1 = plot?.scale('x')?.apply(d.x1 * 1000);
-						const ox2 = plot?.scale('x')?.apply(d.x2 * 1000);
+						const ox1 = plot?.scale('x')?.apply(d.x1);
+						const ox2 = plot?.scale('x')?.apply(d.x2);
 						const text = ox2 - ox1 > 80 ? d.text : null;
 						return text;
 					},
@@ -305,8 +310,8 @@
 					y: 1.2,
 					textAnchor: 'middle',
 					text: (d) => {
-						const ox1 = plot?.scale('x')?.apply(d.x1 * 1000);
-						const ox2 = plot?.scale('x')?.apply(d.x2 * 1000);
+						const ox1 = plot?.scale('x')?.apply(d.x1);
+						const ox2 = plot?.scale('x')?.apply(d.x2);
 						const text = ox2 - ox1 > 80 ? d.text : null;
 						return text;
 					},
@@ -315,7 +320,7 @@
 
 				// The dew point plotted as line:
 				Plot.lineY(data?.all, {
-					x: 'time',
+					x: 'ms',
 					y: 'dewPointNormalized',
 					curve,
 					stroke: '#268bd2',
@@ -325,7 +330,7 @@
 
 				// The temperature plotted as line:
 				Plot.lineY(data?.all, {
-					x: 'time',
+					x: 'ms',
 					y: 'temperatureNormalized',
 					curve,
 					stroke: 'black',
@@ -336,13 +341,13 @@
 				// High/low temp marks:
 				Plot.dot([data.low], {
 					fillOpacity: fadePastValues,
-					x: 'time',
+					x: 'ms',
 					y: 'temperatureNormalized',
 					fill: SOLARIZED_BLUE
 				}),
 				Plot.dot([data.high], {
 					fillOpacity: fadePastValues,
-					x: 'time',
+					x: 'ms',
 					y: 'temperatureNormalized',
 					fill: SOLARIZED_RED
 				}),
@@ -368,23 +373,20 @@
 				}),
 
 				// Dot that marks value at mouse (hover) position:
-				Plot.dot(
-					data?.all,
-					Plot.pointerX({ x: 'time', y: 'temperatureNormalized', fill: 'purple' })
-				)
+				Plot.dot(data?.all, Plot.pointerX({ x: 'ms', y: 'temperatureNormalized', fill: 'purple' }))
 			];
 
 			marks.push(
 				// A custom ruleX than can be updated from the outside by calling .updateRuleX(value).
-				Plot.ruleX([data?.all[0].time], {
+				Plot.ruleX([data?.all[0].ms], {
 					// @ts-expect-error: needed to hide y-axis:
 					y: { axis: null },
 					render: (i, s, v, d, c, next) => {
-						const [timeStart, timeEnd] = Array.from(s.scales.x?.domain || []);
+						const [msStart, msEnd] = Array.from(s.scales.x?.domain || []);
 
 						// @ts-expect-error: add custom property: .updateRuleX
 						c.ownerSVGElement.updateRuleX = (value: number) => {
-							const timestamp = value * 1000;
+							const msValue = Number(value);
 
 							const pg = d3.select(div).select('svg');
 							pg.select('.custom-rule').remove();
@@ -403,12 +405,11 @@
 								}
 							}
 
-							if (timestamp > timeStart && timestamp < timeEnd) {
-								drawTracker(timestamp, 'purple');
+							if (msValue > msStart && msValue < msEnd) {
+								drawTracker(msValue, 'purple');
 							} else if (ghostTracker) {
-								let offset =
-									(Number(timestamp) + nsWeatherData.utcOffsetSeconds * 1000) % MS_PER_DAY;
-								const ghostTime = Number(timeStart) + offset;
+								let offset = (msValue + nsWeatherData.utcOffsetSeconds * MS_IN_SECOND) % MS_IN_DAY;
+								const ghostTime = Number(msStart) + offset;
 
 								drawTracker(ghostTime, 'rgba(128,0,128,.2)');
 							}
@@ -432,8 +433,7 @@
 				...plotOptions,
 				x: {
 					type: 'utc',
-					tickFormat: (d) => nsWeatherData.tzFormat(d / 1000, 'ha'),
-					transform: (t) => t * 1000
+					tickFormat: (ms) => nsWeatherData.tzFormat(ms, 'ha')
 				},
 				marks
 			});
@@ -447,25 +447,22 @@
 			plot.addEventListener('input', (event) => {
 				//gg($state.snapshot(plot.value));
 
-				const value = plot?.value;
-				const time = value?.time;
-
-				if (time) {
-					emit('weatherdata_requestedSetTime', { time });
+				if (plot?.value?.ms) {
+					emit('weatherdata_requestedSetTime', { ms: plot?.value?.ms });
 				}
 			});
 		}
 	}
 
 	// Update rule location only (leaving rest of plot intact).
-	// Runs every time nsWeatherData.time changes value.
+	// Runs every time nsWeatherData.ms changes value.
 	$effect(() => {
 		//gg('EFFECT');
 
 		// @ts-expect-error: use custom property: .updateRuleX
 		if (plot?.updateRuleX) {
 			// @ts-expect-error: use custom property: .updateRuleX
-			plot.updateRuleX(nsWeatherData.time);
+			plot.updateRuleX(nsWeatherData.ms);
 		}
 	});
 

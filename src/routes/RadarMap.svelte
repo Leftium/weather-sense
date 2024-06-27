@@ -12,6 +12,7 @@
 	import { gg } from '$lib/gg.js';
 	import { getEmitter } from '$lib/emitter.js';
 	import RadarTimeline from '$lib/RadarTimeline.svelte';
+	import { MS_IN_SECOND } from '$lib/util';
 
 	let mapElement: HTMLDivElement;
 	let map: Map;
@@ -27,8 +28,8 @@
 
 	let radarFrameIndex = $derived.by(() => {
 		const fractionPlayed =
-			(nsWeatherData.time - nsWeatherData.radar.frames[0]?.time) /
-			(nsWeatherData.radar.frames[15]?.time - nsWeatherData.radar.frames[0]?.time);
+			(nsWeatherData.ms - nsWeatherData.radar.frames[0]?.ms) /
+			(nsWeatherData.radar.frames[15]?.ms - nsWeatherData.radar.frames[0]?.ms);
 
 		return Math.floor(15 * fractionPlayed) || 12;
 	});
@@ -129,12 +130,12 @@
 				const tileLayer = new TileLayer(urlTemplate, {
 					tileSize: 256,
 					opacity: 0,
-					zIndex: frame.time
+					zIndex: frame.ms
 				});
 
 				radarLayers[frame.path] = {
 					index,
-					time: frame.time,
+					ms: frame.ms,
 					loaded: false,
 					tileLayer
 				};
@@ -224,7 +225,7 @@
 
 				if (deltaTime > 20) {
 					if (nsWeatherData.radarPlaying) {
-						emit('weatherdata_requestedSetTime', { time: nsWeatherData.time + 40 });
+						emit('weatherdata_requestedSetTime', { ms: nsWeatherData.ms + 40 * MS_IN_SECOND });
 					}
 
 					const path = nsWeatherData.radar.frames[radarFrameIndex]?.path;

@@ -6,6 +6,7 @@
 
 	import { getEmitter } from '$lib/emitter';
 	import { gg } from '$lib/gg';
+	import { MS_IN_MINUTE, MS_IN_SECOND } from './util';
 
 	let {
 		radarLayers,
@@ -14,10 +15,10 @@
 
 	const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 
-	const step = 1;
-	const TEN_MINUTES = 10 * 60; // Seconds in 10 minutes.
-	let min = $state(TEN_MINUTES * (Math.floor(nsWeatherData.time / TEN_MINUTES) - 12));
-	let max = $state(TEN_MINUTES * (Math.floor(nsWeatherData.time / TEN_MINUTES) + 4));
+	const step = MS_IN_SECOND;
+	const TEN_MINUTES = 10 * MS_IN_MINUTE; // Milliseconds in 10 minutes.
+	let min = $state(TEN_MINUTES * (Math.floor(nsWeatherData.ms / TEN_MINUTES) - 12));
+	let max = $state(TEN_MINUTES * (Math.floor(nsWeatherData.ms / TEN_MINUTES) + 4));
 	let range = $derived(makeRange(min, max));
 
 	function makeRange(min: number, max: number) {
@@ -31,13 +32,13 @@
 	on('weatherdata_updatedRadar', function ({ nsWeatherData }) {
 		//gg('nsWeatherData.radar', $state.snapshot(nsWeatherData.radar));
 
-		min = nsWeatherData.radar.timeStart ?? min;
-		max = nsWeatherData.radar.timeEnd ?? max;
+		min = nsWeatherData.radar.msStart ?? min;
+		max = nsWeatherData.radar.msEnd ?? max;
 	});
 
 	function oninput(this: HTMLInputElement) {
-		const time = Number(this.value);
-		emit('weatherdata_requestedSetTime', { time });
+		const ms = Number(this.value);
+		emit('weatherdata_requestedSetTime', { ms });
 	}
 
 	function onclick() {
@@ -48,17 +49,17 @@
 <div class="pico">
 	<div class="range-wrapper">
 		{#key [min, max]}
-			<input type="range" name="" id="" {min} {max} value={nsWeatherData.time} {step} {oninput} />
+			<input type="range" name="" id="" {min} {max} value={nsWeatherData.ms} {step} {oninput} />
 		{/key}
 		<datalist id="radar-markers">
-			{#each range as value, index}
+			{#each range as ms, index}
 				{@const isMinorIndex = index % 4}
 				<div
 					class="tick"
 					class:loaded={index === range.length - 1 || _.find(radarLayers, ['index', index])?.loaded}
 					class:minor-time={isMinorIndex}
 				>
-					{nsWeatherData.tzFormat(value, isMinorIndex ? 'mm' : 'h:mm')}
+					{nsWeatherData.tzFormat(ms, isMinorIndex ? 'mm' : 'h:mm')}
 				</div>
 			{/each}
 		</datalist>

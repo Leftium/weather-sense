@@ -3,7 +3,14 @@
 
 	import TimeLine from './TimeLine.svelte';
 
-	import { SOLARIZED_BLUE, SOLARIZED_RED, headAndTail, humanDistance, wmoCode } from '$lib/util.js';
+	import {
+		MS_IN_HOUR,
+		SOLARIZED_BLUE,
+		SOLARIZED_RED,
+		headAndTail,
+		humanDistance,
+		wmoCode
+	} from '$lib/util.js';
 	import RadarMap from './RadarMap.svelte';
 
 	import { makeNsWeatherData } from '$lib/ns-weather-data.svelte.js';
@@ -56,7 +63,7 @@
 		>
 	</div>
 	<div class="time">
-		{nsWeatherData.tzFormat(nsWeatherData.time, 'ddd MMM D, h:mma')}
+		{nsWeatherData.tzFormat(nsWeatherData.ms, 'ddd MMM D, h:mma')}
 		<span class="timezone">{nsWeatherData.timezoneAbbreviation}</span>
 	</div>
 	<div class="current">
@@ -91,7 +98,7 @@
 	<div class="scroll">
 		<div class="hourly pico">
 			<b>Next 24 hours</b>
-			<TimeLine {nsWeatherData} startTime={+new Date() / 1000 - 2 * 60 * 60} />
+			<TimeLine {nsWeatherData} start={Date.now() - 2 * MS_IN_HOUR} />
 		</div>
 
 		<div class="map">
@@ -111,7 +118,7 @@
 							class:past
 						/>
 						<div class="day" class:today={day.fromToday === 0} class:past>
-							{day.timeCompact}
+							{day.compactDate}
 						</div>
 					</div>
 					<div class="grid high-low">
@@ -126,8 +133,8 @@
 				<div class="timeline">
 					<TimeLine
 						{nsWeatherData}
-						startTime={day.time}
-						xAxis={day.timeCompact == 'Today'}
+						start={day.ms}
+						xAxis={day.compactDate == 'Today'}
 						ghostTracker={true}
 					/>
 				</div>
@@ -139,8 +146,8 @@
 		<div class="pico debug">
 			<pre>nsWeatherData.utcOffsetSeconds = {`${nsWeatherData.utcOffsetSeconds}`}</pre>
 			<pre>nsWeatherData.timezone = {`${nsWeatherData.timezone}`}</pre>
-			<pre>nsWeatherData.time = {`${JSON.stringify(nsWeatherData.time, null, 4)}`} ({nsWeatherData.tzFormat(
-					nsWeatherData.time
+			<pre>nsWeatherData.ms = {`${JSON.stringify(nsWeatherData.ms, null, 4)}`} ({nsWeatherData.tzFormat(
+					nsWeatherData.ms
 				)})</pre>
 			<pre>nsWeatherData.current = {`${JSON.stringify(nsWeatherData.current, null, 4)}`}</pre>
 			<pre>nsWeatherData.minutely = {`${JSON.stringify(headAndTail(nsWeatherData.minutely), null, 4)}`}</pre>

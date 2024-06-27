@@ -142,6 +142,49 @@ export function makeNsWeatherData() {
 
 	let byMinute: Record<number, MinutelyWeather> = $state({});
 
+	type IntervalItem = {
+		msPretty?: string;
+		x2Pretty?: string;
+		ms: number;
+		x2: number;
+	};
+
+	let intervals = $derived.by(() => {
+		if (!browser) {
+			return [];
+		}
+
+		const msIntervals: number[] = [];
+		const intervals: IntervalItem[] = [];
+
+		hourly?.forEach((item) => {
+			msIntervals.push(item.ms);
+		});
+
+		radar.frames.forEach((item) => {
+			msIntervals.push(item.ms);
+		});
+
+		const finalFrame = radar.frames.at(-1);
+		if (finalFrame) {
+			msIntervals.push(finalFrame.ms + 10 * MS_IN_MINUTE);
+		}
+
+		_.uniq(msIntervals)
+			.sort()
+			.forEach((ms, index, msIntervals) => {
+				const x2 = msIntervals[index + 1] - 1;
+				intervals.push({
+					msPretty: nsWeatherData.tzFormat(ms),
+					x2Pretty: nsWeatherData.tzFormat(x2),
+					ms,
+					x2
+				});
+			});
+
+		return intervals;
+	});
+
 	let minutely: MinutelyWeather[] = $derived.by(() => {
 		if (!browser || !hourly) {
 			return [];
@@ -444,12 +487,12 @@ export function makeNsWeatherData() {
 		});
 
 		on('weatherdata_requestedTrackingStart', function () {
-			//gg('weatherdata_requestedTrackingStart', params.value);
+			//gg('weatherdata_requestedTrackingStart');
 			tracking = true;
 		});
 
 		on('weatherdata_requestedTrackingEnd', function () {
-			//gg('weatherdata_requestedTrackingEnd', params.value);
+			//gg('weatherdata_requestedTrackingEnd');
 			tracking = false;
 			msTracker = Date.now();
 		});
@@ -537,6 +580,10 @@ export function makeNsWeatherData() {
 			return units;
 		},
 
+		get intervals() {
+			return intervals;
+		},
+
 		get displayTemperature() {
 			const nearestMinute = Math.floor(msTracker / MS_IN_SECOND / 600) * 600;
 			return byMinute[nearestMinute]?.temperature ?? current?.temperature;
@@ -590,7 +637,7 @@ export function makeNsWeatherData() {
 			return formatTemperature(n, { unit, showUnits }) || `${n} unknown unit: ${unit}`;
 		},
 
-		tzFormat(ms: number, format = 'ddd MMM D, h:mma z') {
+		tzFormat(ms: number, format = 'ddd MMM D, h:mm:ss.SSSa z') {
 			return dayjs(ms).tz(timezone).format(format).replace('z', timezoneAbbreviation);
 		}
 	};

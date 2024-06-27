@@ -388,32 +388,51 @@
 
 						// @ts-expect-error: add custom property: .updateRuleX
 						c.ownerSVGElement.updateRuleX = (value: number) => {
-							const msValue = Number(value);
+							const msValue = Math.floor(Number(value) / 10 / MS_IN_MINUTE) * 10 * MS_IN_MINUTE;
 
 							const pg = d3.select(div).select('svg');
-							pg.select('.custom-rule').remove();
+							pg.select('.tracker-rect').remove();
 
-							function drawTracker(x: number, color: string) {
-								const ig = pg.append('g').attr('class', 'custom-rule');
-								if (s?.x && s?.y) {
-									ig.append('line')
-										.attr('x1', s.x(x))
-										.attr('x2', s.x(x))
-										// @ts-expect-error: use undocumented internal: .range
-										.attr('y1', s.y.range()[0])
-										// @ts-expect-error: use undocumented internal: .range
-										.attr('y2', s.y.range()[1])
-										.attr('stroke', color);
+							function drawTracker(ms: number, length: number, color: string) {
+								const ig = pg.append('g').attr('class', 'tracker-rect');
+								if (s.scales.x && s.scales.y) {
+									const x = s.scales.x.apply(ms);
+									const y = s.scales.y?.apply(1.45);
+
+									const width = s.scales.x.apply(ms + length) - x;
+									const height = s.scales.y?.apply(0) - y;
+
+									ig.append('rect')
+										.attr('x', x)
+										.attr('width', width)
+										.attr('y', y)
+										.attr('height', height)
+										.attr('stroke', color)
+										.attr('fill', 'rgba(0,0,0,0)');
 								}
 							}
 
-							if (msValue > msStart && msValue < msEnd) {
-								drawTracker(msValue, 'purple');
+							const interval = nsWeatherData.intervals.find((item) => item.ms === msValue);
+							const length = interval ? interval.x2 - msValue : MS_IN_HOUR;
+
+							/*
+							gg(
+								'msValue',
+								msValue,
+								nsWeatherData.tzFormat(msValue),
+								length / MS_IN_MINUTE,
+								interval,
+								$state.snapshot(nsWeatherData.intervals)
+							);
+                            */
+
+							if (msValue >= msStart && msValue < msEnd) {
+								drawTracker(msValue, length, 'purple');
 							} else if (ghostTracker) {
 								let offset = (msValue + nsWeatherData.utcOffsetSeconds * MS_IN_SECOND) % MS_IN_DAY;
 								const ghostTime = Number(msStart) + offset;
 
-								drawTracker(ghostTime, 'rgba(128,0,128,.2)');
+								drawTracker(ghostTime, length, 'rgba(128,0,128,.2)');
 							}
 						};
 
@@ -447,7 +466,7 @@
 
 		if (plot) {
 			plot.addEventListener('input', (event) => {
-				//gg($state.snapshot(plot.value));
+				//gg($state.snapshot(plot.value), event);
 
 				if (plot?.value?.ms) {
 					emit('weatherdata_requestedSetTime', { ms: plot?.value?.ms });

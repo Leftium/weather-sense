@@ -144,6 +144,7 @@
 
 	{#if dev}
 		<div class="pico debug">
+			<pre>nsWeatherData.radar = {`${JSON.stringify(nsWeatherData.radar, null, 4)}`}</pre>
 			<pre>nsWeatherData.utcOffsetSeconds = {`${nsWeatherData.utcOffsetSeconds}`}</pre>
 			<pre>nsWeatherData.timezone = {`${nsWeatherData.timezone}`}</pre>
 			<pre>nsWeatherData.ms = {`${JSON.stringify(nsWeatherData.ms, null, 4)}`} ({nsWeatherData.tzFormat(

@@ -111,6 +111,7 @@ export type NsWeatherData = ReturnType<typeof makeNsWeatherData>;
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezonePlugin from 'dayjs/plugin/timezone';
+import { tick } from 'svelte';
 
 dayjs.extend(utc);
 dayjs.extend(timezonePlugin);
@@ -347,6 +348,17 @@ export function makeNsWeatherData() {
 
 		emit('weatherdata_updatedData');
 		gg('fetchOpenMeteo', { json: $state.snapshot(json), daily: $state.snapshot(daily) });
+
+		// Ensure pretty timestamps are in correct timezone:
+		await tick();
+		if (radar.generated) {
+			radar.generatedPretty = nsWeatherData.tzFormat(radar.generated);
+
+			radar.frames = radar.frames.map((frame) => ({
+				...frame,
+				msPretty: nsWeatherData.tzFormat(frame.ms)
+			}));
+		}
 	}
 
 	if (browser) {
@@ -360,7 +372,7 @@ export function makeNsWeatherData() {
 				.map((frame: { time: number; path: string }) => {
 					const ms = frame.time * MS_IN_SECOND;
 					return {
-						msFormatted: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),
+						msPretty: nsWeatherData.tzFormat(ms),
 						ms,
 						path: frame.path
 					};
@@ -370,12 +382,14 @@ export function makeNsWeatherData() {
 			const msLast = frames.at(-1)?.ms;
 			const msEnd = msLast ? msLast + 10 * MS_IN_MINUTE : undefined;
 
+			const generated = rainviewerData.generated * 1000;
 			radar = {
-				generated: rainviewerData.generated,
-				host: rainviewerData.host,
-				frames,
+				generatedPretty: nsWeatherData.tzFormat(generated),
+				generated: generated,
 				msStart,
-				msEnd
+				msEnd,
+				host: rainviewerData.host,
+				frames
 			};
 			emit('weatherdata_updatedRadar', { nsWeatherData });
 		});

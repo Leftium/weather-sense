@@ -12,6 +12,7 @@ export type RadarFrame = {
 };
 
 export type Radar = {
+	generatedPretty?: string;
 	generated: number;
 	host: string;
 	frames: RadarFrame[];

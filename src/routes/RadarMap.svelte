@@ -199,6 +199,7 @@
 				const container = DomUtil.create('div', 'full-width');
 				DomEvent.disableClickPropagation(container);
 
+				// @ts-expect-error
 				radarTimelineControl = mount(RadarTimeline, {
 					target: container,
 					props: {

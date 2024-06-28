@@ -1,4 +1,6 @@
 <script lang="ts">
+	import JSON5 from 'json5';
+
 	import type { WeatherDataEvents } from '$lib/ns-weather-data.svelte.js';
 
 	import TimeLine from './TimeLine.svelte';
@@ -7,8 +9,11 @@
 		MS_IN_HOUR,
 		SOLARIZED_BLUE,
 		SOLARIZED_RED,
-		headAndTail,
+		jsonPretty,
+		summarize,
 		humanDistance,
+		objectFromMap,
+		replacer,
 		wmoCode,
 	} from '$lib/util.js';
 	import RadarMap from './RadarMap.svelte';
@@ -88,9 +93,14 @@
 		</div>
 	</div>
 	<div class="other-measurements">
-		<span><b>Humidity:</b> {nsWeatherData.displayHumidity}%</span>
-		<span><b>Dew Point:</b> {nsWeatherData.displayDewPoint}</span>
-		<span><b>Precipitation:</b> {nsWeatherData.displayPrecipitation}mm</span>
+		<div>
+			<span><b>Dew Point:</b> {nsWeatherData.format('displayDewPoint')}</span>
+			<span><b>Humidity:</b> {nsWeatherData.displayHumidity}%</span>
+		</div>
+		<div>
+			<span><b>Precipitation:</b> {nsWeatherData.displayPrecipitation}mm</span>
+			({nsWeatherData.displayPrecipitationProbability}%)
+		</div>
 	</div>
 </div>
 
@@ -144,16 +154,13 @@
 
 	{#if dev}
 		<div class="pico debug">
-			<pre>nsWeatherData.radar = {`${JSON.stringify(nsWeatherData.radar, null, 4)}`}</pre>
-			<pre>nsWeatherData.utcOffsetSeconds = {`${nsWeatherData.utcOffsetSeconds}`}</pre>
-			<pre>nsWeatherData.timezone = {`${nsWeatherData.timezone}`}</pre>
-			<pre>nsWeatherData.ms = {`${JSON.stringify(nsWeatherData.ms, null, 4)}`} ({nsWeatherData.tzFormat(
-					nsWeatherData.ms,
-				)})</pre>
-			<pre>nsWeatherData.current = {`${JSON.stringify(nsWeatherData.current, null, 4)}`}</pre>
-			<pre>nsWeatherData.minutely = {`${JSON.stringify(headAndTail(nsWeatherData.minutely), null, 4)}`}</pre>
-			<pre>nsWeatherData.hourly = {`${JSON.stringify(headAndTail(nsWeatherData.hourly), null, 4)}`}</pre>
-			<pre>nsWeatherData.daily = {`${JSON.stringify(headAndTail(nsWeatherData.daily), null, 4)}`}</pre>
+			<pre>nsWeatherData.ms = {nsWeatherData.ms} ({nsWeatherData.tzFormat(nsWeatherData.ms)})</pre>
+			<pre>nsWeatherData.data = {`${jsonPretty(summarize(objectFromMap(nsWeatherData.data)))}`}</pre>
+
+			<pre>nsWeatherData.current = {`${jsonPretty(nsWeatherData.current)}`}</pre>
+			<pre>nsWeatherData.hourly = {`${jsonPretty(summarize(nsWeatherData.hourly))}`}</pre>
+			<pre>nsWeatherData.daily = {`${jsonPretty(summarize(nsWeatherData.daily))}`}</pre>
+			<pre>nsWeatherData.minutely = {`${jsonPretty(summarize(nsWeatherData.minutely))}`}</pre>
 		</div>
 	{/if}
 

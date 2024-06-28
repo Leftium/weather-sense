@@ -1,4 +1,6 @@
+import JSON5 from 'json5';
 import Color from 'colorjs.io';
+
 import { gg } from './gg';
 
 export const SOLARIZED_RED = '#dc322f';
@@ -8,6 +10,35 @@ export const MS_IN_SECOND = 1000;
 export const MS_IN_MINUTE = 60 * MS_IN_SECOND;
 export const MS_IN_HOUR = 60 * MS_IN_MINUTE;
 export const MS_IN_DAY = 24 * MS_IN_HOUR;
+
+export function jsonPretty(json: any) {
+	return JSON5.stringify(json, { space: 4, quote: '', replacer });
+}
+
+export function objectFromMap(value: any) {
+	if (value instanceof Map) {
+		return Array.from(value).reduce(
+			(obj, [key, value]) => {
+				// Prepend '_' to make numeric key valid unquoted object key:
+				key = isNaN(Number(key)) ? '' : '_' + key;
+				obj[key] = value;
+				return obj;
+			},
+			{} as Record<any, any>,
+		);
+	} else {
+		return value;
+	}
+}
+
+// Based on: https://stackoverflow.com/questions/29085197/how-do-you-json-stringify-an-es6-map
+export function replacer(_key: any, value: any) {
+	if (value instanceof Map) {
+		return objectFromMap(value);
+	} else {
+		return value;
+	}
+}
 
 export function humanDistance(n: number | undefined) {
 	if (!n) {
@@ -109,16 +140,57 @@ export function celcius(f: number | undefined) {
 	return (f - 32) * (5 / 9);
 }
 
-export function headAndTail(array: unknown[] | undefined | null) {
-	if (array) {
-		const length = array.length;
+export function summarize(arrayOrObject: unknown[] | undefined | null) {
+	if (arrayOrObject) {
+		if (Array.isArray(arrayOrObject)) {
+			const array = arrayOrObject;
+			const length = arrayOrObject.length;
 
-		return {
-			length,
-			head: array[0],
-			tail: array[length - 1],
-		};
+			const summary = [`length: ${length}`] as any[];
+			if (length > 0) {
+				summary.push(array[0]);
+			}
+			if (length > 1) {
+				summary.push(array[1]);
+			}
+			if (length > 2) {
+				summary.push('... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ...');
+				summary.push(array[length - 1]);
+			}
+			if (length > 3) {
+				summary.push(array[length - 2]);
+			}
+
+			return summary;
+		} else if (typeof arrayOrObject === 'object' && arrayOrObject !== null) {
+			const object = arrayOrObject;
+			const keys = Object.keys(object);
+			const numKeys = keys.length;
+			const summary = {} as Record<any, any>;
+
+			summary.numKeys = numKeys;
+
+			if (numKeys > 1) {
+				const key = keys[0];
+				summary[key] = object[key];
+			}
+			if (numKeys > 1) {
+				const key = keys[1];
+				summary[key] = object[key];
+			}
+			if (numKeys > 2) {
+				summary._ = '... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ...';
+				const key = keys[numKeys - 1];
+				summary[key] = object[key];
+			}
+			if (numKeys > 3) {
+				const key = keys[numKeys - 2];
+				summary[key] = object[key];
+			}
+
+			return summary;
+		}
 	}
 
-	return array;
+	return arrayOrObject;
 }

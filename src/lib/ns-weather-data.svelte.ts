@@ -5,7 +5,7 @@ import _ from 'lodash-es';
 import { getEmitter } from '$lib/emitter';
 import { gg } from '$lib/gg';
 import type { Coordinates, Radar } from '$lib/types';
-import { MS_IN_MINUTE, MS_IN_SECOND, celcius, lerp } from './util';
+import { MS_IN_HOUR, MS_IN_MINUTE, MS_IN_SECOND, celcius, lerp } from './util';
 import { browser, dev } from '$app/environment';
 
 export type WeatherDataEvents = {
@@ -112,9 +112,14 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezonePlugin from 'dayjs/plugin/timezone';
 import { tick } from 'svelte';
+import { Map } from 'svelte/reactivity';
 
 dayjs.extend(utc);
 dayjs.extend(timezonePlugin);
+
+function nearestHour(ms: number) {
+	return Math.floor(ms / MS_IN_HOUR) * MS_IN_HOUR;
+}
 
 export function makeNsWeatherData() {
 	//gg('makeNsWeatherData');
@@ -141,6 +146,50 @@ export function makeNsWeatherData() {
 	let daily: DailyWeather[] | null = $state(null);
 
 	let byMinute: Record<number, MinutelyWeather> = $state({});
+
+	type DataItem = {
+		msPretty?: string;
+		ms: number;
+
+		temperature: number;
+		weatherCode: number;
+		humidity: number;
+		dewPoint: number;
+		precipitation: number;
+		precipitationProbability: number;
+	};
+	let data: Map<number, DataItem> = $state(new Map());
+
+	$effect(() => {
+		if (!browser) {
+			return;
+		}
+		if (hourly) {
+			hourly.forEach((item) => {
+				const ms = item.ms;
+				const msPretty = nsWeatherData.tzFormat(ms, DATEFORMAT_MASK);
+
+				const temperature = item.temperature;
+				const weatherCode = item.weatherCode;
+				const humidity = item.relativeHumidity;
+				const dewPoint = item.dewPoint;
+				const precipitation = item.precipitation;
+				const precipitationProbability = item.precipitationProbability;
+
+				data.set(ms, {
+					msPretty,
+					ms,
+
+					temperature,
+					weatherCode,
+					humidity,
+					dewPoint,
+					precipitation,
+					precipitationProbability,
+				});
+			});
+		}
+	});
 
 	type IntervalItem = {
 		msPretty?: string;
@@ -289,6 +338,7 @@ export function makeNsWeatherData() {
 		temperatureMax: 'temperature',
 		temperatureMin: 'temperature',
 		displayTemperature: 'temperature',
+		displayDewPoint: 'temperature',
 	};
 
 	async function fetchOpenMeteo() {
@@ -576,6 +626,10 @@ export function makeNsWeatherData() {
 			return daily?.toSpliced(-1, 1);
 		},
 
+		get data() {
+			return data;
+		},
+
 		get units() {
 			return units;
 		},
@@ -585,32 +639,27 @@ export function makeNsWeatherData() {
 		},
 
 		get displayTemperature() {
-			const nearestMinute = Math.floor(msTracker / MS_IN_SECOND / 600) * 600;
-			return byMinute[nearestMinute]?.temperature ?? current?.temperature;
+			return data.get(nearestHour(msTracker))?.temperature;
 		},
 
 		get displayWeatherCode() {
-			const nearestMinute = Math.floor(msTracker / MS_IN_SECOND / 600) * 600;
-			return byMinute[nearestMinute]?.hourly?.weatherCode ?? current?.weatherCode;
+			return data.get(nearestHour(msTracker))?.weatherCode;
 		},
 
 		get displayHumidity() {
-			const nearestMinute = Math.floor(msTracker / MS_IN_SECOND / 600) * 600;
-			return byMinute[nearestMinute]?.hourly?.relativeHumidity ?? current?.humidity;
+			return data.get(nearestHour(msTracker))?.humidity;
 		},
 
 		get displayDewPoint() {
-			const nearestMinute = Math.floor(msTracker / MS_IN_SECOND / 600) * 600;
-			const dewPoint = byMinute[nearestMinute]?.hourly?.dewPoint;
-
-			return dewPoint
-				? formatTemperature(dewPoint, { unit: units['temperature'], showUnits: false })
-				: '...';
+			return data.get(nearestHour(msTracker))?.dewPoint;
 		},
 
 		get displayPrecipitation() {
-			const nearestMinute = Math.floor(msTracker / MS_IN_SECOND / 600) * 600;
-			return byMinute[nearestMinute]?.precipitation ?? current?.precipitation;
+			return data.get(nearestHour(msTracker))?.precipitation;
+		},
+
+		get displayPrecipitationProbability() {
+			return data.get(nearestHour(msTracker))?.precipitationProbability;
 		},
 
 		get timezone() {

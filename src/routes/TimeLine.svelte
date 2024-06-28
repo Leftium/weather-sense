@@ -53,6 +53,7 @@
 		const msEnd = msStart + hours * MS_IN_HOUR;
 
 		type SolarEventItem = {
+			ms: number;
 			x: number;
 			type: string;
 		};
@@ -60,14 +61,18 @@
 		const solarEvents = nsWeatherData.daily?.reduce(
 			(accumulator: SolarEventItem[], current: DailyWeather) => {
 				if (current.sunrise > msStart && current.sunrise < msEnd) {
+					const ms = current.sunrise;
 					accumulator.push({
-						x: current.sunrise,
+						ms,
+						x: ms,
 						type: 'sunrise'
 					});
 				}
 				if (current.sunset > msStart && current.sunset < msEnd) {
+					const ms = current.sunset;
 					accumulator.push({
-						x: current.sunset,
+						ms,
+						x: ms,
 						type: 'sunset'
 					});
 				}
@@ -84,8 +89,10 @@
 			const minute0 = filtered.filter((d) => d.minute == 0);
 
 			type CodesItem = {
+				ms: number;
 				weatherCode: number;
 				text: string;
+				icon: string;
 				x1: number;
 				x2: number;
 				xMiddle: number;
@@ -106,6 +113,7 @@
 
 					const x1 = current.ms;
 					const x2 = Math.min(current.ms + MS_IN_HOUR, msEnd);
+					const xMiddle = (Number(x1) + Number(x2)) / 2;
 
 					if (prevItem && prevCode == nextCode && prevCode != undefined) {
 						prevItem.x2 = x2;
@@ -113,12 +121,13 @@
 					} else {
 						if (nextCode != undefined) {
 							accumulator.push({
+								ms: xMiddle,
 								weatherCode: nextCode,
 								text: WMO_CODES[nextCode].description,
 								icon: WMO_CODES[nextCode].icon,
 								x1,
 								x2,
-								xMiddle: (Number(x1) + Number(x2)) / 2,
+								xMiddle,
 								fill: WMO_CODES[nextCode].color,
 								isDarkText: WMO_CODES[nextCode].isDarkText,
 								opacity: current.ms < now ? 0.2 : 1
@@ -250,24 +259,24 @@
 
 				// The humidity plotted as area:
 				Plot.areaY(data?.all, {
-					strokeOpacity: fadePastValues,
+					opacity: fadePastValues,
 					x: 'ms',
 					y: 'humidityNormalized',
 					curve,
-					stroke: '#2aa198',
-					strokeWidth: 1.5,
-					fill: 'rgba(42, 161, 152, .3)'
+					//stroke: '#2aa198',
+					//strokeWidth: 1.5,
+					fill: 'rgba(42, 161, 152, .4)'
 				}),
 
 				// The precipitation probability plotted as area:
 				Plot.areaY(data?.all, {
-					strokeOpacity: (d) => (d.precipitationProbabilityNormalized <= 0 ? 0 : fadePastValues(d)),
+					opacity: (d) => (d.precipitationProbabilityNormalized <= 0 ? 0 : fadePastValues(d)),
 					x: 'ms',
 					y: 'precipitationProbabilityNormalized',
 					curve,
-					stroke: 'blue',
-					strokeWidth: 1.5,
-					fill: 'rgba(0, 0, 255, .3)'
+					//stroke: 'blue',
+					//strokeWidth: 1.5,
+					fill: 'rgba(0, 0, 255, .4)'
 				}),
 
 				// Rain bar:
@@ -330,7 +339,8 @@
 					dy: -6,
 					width: 18,
 					height: 18,
-					src: 'icon'
+					src: 'icon',
+					opacity: fadePastValues
 				}),
 
 				// The dew point plotted as line:
@@ -384,7 +394,8 @@
 					dy: -6,
 					width: 32,
 					height: 32,
-					src: (d) => `/icons/meteocons/${d.type}.png`
+					src: (d) => `/icons/meteocons/${d.type}.png`,
+					opacity: fadePastValues
 				}),
 
 				// Dot that marks value at mouse (hover) position:

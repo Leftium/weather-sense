@@ -7,7 +7,7 @@
 		DailyWeather,
 		MinutelyWeather,
 		NsWeatherData,
-		WeatherDataEvents
+		WeatherDataEvents,
 	} from '$lib/ns-weather-data.svelte';
 
 	import _ from 'lodash-es';
@@ -24,7 +24,7 @@
 		MS_IN_SECOND,
 		SOLARIZED_BLUE,
 		SOLARIZED_RED,
-		WMO_CODES
+		WMO_CODES,
 	} from '$lib/util';
 	import type { Markish } from '@observablehq/plot';
 	import dayjs from 'dayjs';
@@ -34,7 +34,7 @@
 		start = Date.now(),
 		hours = 24,
 		xAxis = true,
-		ghostTracker = false
+		ghostTracker = false,
 	}: {
 		nsWeatherData: NsWeatherData;
 		start?: number;
@@ -77,7 +77,7 @@
 					accumulator.push({
 						ms,
 						x: ms,
-						type: 'sunrise'
+						type: 'sunrise',
 					});
 				}
 				if (current.sunset > msStart && current.sunset < msEnd) {
@@ -85,12 +85,12 @@
 					accumulator.push({
 						ms,
 						x: ms,
-						type: 'sunset'
+						type: 'sunset',
 					});
 				}
 				return accumulator;
 			},
-			[] as SolarEventItem[]
+			[] as SolarEventItem[],
 		);
 
 		if (nsWeatherData.minutely) {
@@ -142,13 +142,13 @@
 								xMiddle,
 								fill: WMO_CODES[nextCode].color,
 								isDarkText: WMO_CODES[nextCode].isDarkText,
-								opacity: current.ms < now ? 0.2 : 1
+								opacity: current.ms < now ? 0.2 : 1,
 							});
 						}
 					}
 					return accumulator;
 				},
-				[] as CodesItem[]
+				[] as CodesItem[],
 			);
 
 			const rain = minute0withoutLast
@@ -165,7 +165,7 @@
 						x2line: x2bar - 60,
 						y,
 						y2: y + 0.01,
-						opacity: d.ms < now ? 0.2 : 1
+						opacity: d.ms < now ? 0.2 : 1,
 					};
 				});
 
@@ -174,7 +174,7 @@
 				temperatureNormalized: Number.MAX_VALUE,
 				temperature: Number.MAX_VALUE,
 				dx: 0,
-				dy: 0
+				dy: 0,
 			};
 
 			let high = {
@@ -182,7 +182,7 @@
 				temperatureNormalized: 0,
 				temperature: 0,
 				dx: 0,
-				dy: 0
+				dy: 0,
 			};
 
 			_.forEachRight(filtered, (item, index) => {
@@ -203,7 +203,7 @@
 						temperatureNormalized,
 						temperature: item.temperature,
 						dx,
-						dy
+						dy,
 					};
 				}
 
@@ -213,7 +213,7 @@
 						temperatureNormalized,
 						temperature: item.temperature,
 						dx,
-						dy
+						dy,
 					};
 				}
 			});
@@ -224,7 +224,7 @@
 				high,
 				rain,
 				codes,
-				solarEvents
+				solarEvents,
 			};
 		}
 		return null;
@@ -254,8 +254,8 @@
 			y: { axis: null },
 			x: {
 				tickFormat: (ms: number) => nsWeatherData.tzFormat(ms, 'ha'),
-				domain: [msStart, msEnd]
-			}
+				domain: [msStart, msEnd],
+			},
 		};
 
 		const xScale = Plot.plot(plotOptions).scale('x');
@@ -279,7 +279,7 @@
 				const labelWidth: number = WMO_CODES[d.weatherCode].width;
 				const width = xScale?.apply(d.x2) - xScale?.apply(d.x1) - ICON_LABEL_PADDING;
 				return width < labelWidth + ICON_WIDTH + GAP_WIDTH ? null : d.text;
-			}
+			},
 		} as Plot.TextOptions;
 
 		if (!data?.all?.length) {
@@ -294,7 +294,7 @@
 					x1: 'x1',
 					x2: 'x2',
 					y: 1.45,
-					fill: 'fill'
+					fill: 'fill',
 				}),
 
 				/*
@@ -325,7 +325,7 @@
 					opacity: (d) => (d.precipitationProbabilityNormalized <= 0 ? 0 : fadePastValues(d)),
 					x: 'ms',
 					y: 'precipitationProbabilityNormalized',
-					fill: 'rgba(0, 0, 255, .2)'
+					fill: 'rgba(0, 0, 255, .2)',
 				}),
 
 				// The precipitation probability plotted as line:
@@ -335,7 +335,7 @@
 					x: 'ms',
 					y: 'precipitationProbabilityNormalized',
 					stroke: 'blue',
-					strokeWidth: 1.5
+					strokeWidth: 1.5,
 				}),
 
 				// Rain bar:
@@ -344,7 +344,7 @@
 					x1: 'x1bar',
 					x2: 'x2bar',
 					y: 'y',
-					fill: 'lightblue'
+					fill: 'lightblue',
 				}),
 
 				// Rain bar 'cap':
@@ -354,7 +354,7 @@
 					x2: 'x2line',
 					y1: 'y',
 					y2: 'y2',
-					stroke: 'darkcyan'
+					stroke: 'darkcyan',
 				}),
 
 				// Weather code label shadow text:
@@ -362,7 +362,7 @@
 					...labelTextOptions,
 					fill: (d) => (d.isDarkText ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)'),
 					dy: 1,
-					dx: 1
+					dx: 1,
 				}),
 
 				// Weather code label text:
@@ -391,7 +391,7 @@
 					src: (d) => {
 						const width = xScale?.apply(d.x2) - xScale?.apply(d.x1);
 						return width < ICON_WIDTH ? null : d.icon;
-					}
+					},
 				}),
 
 				// The dew point plotted as line:
@@ -402,7 +402,7 @@
 					y: 'dewPointNormalized',
 
 					stroke: '#268bd2',
-					strokeWidth: 2
+					strokeWidth: 2,
 				}),
 
 				// The temperature plotted as line:
@@ -413,7 +413,7 @@
 					y: 'temperatureNormalized',
 
 					stroke: 'black',
-					strokeWidth: 2
+					strokeWidth: 2,
 				}),
 
 				// High/low temp marks:
@@ -421,13 +421,13 @@
 					fillOpacity: fadePastValues,
 					x: 'ms',
 					y: 'temperatureNormalized',
-					fill: SOLARIZED_BLUE
+					fill: SOLARIZED_BLUE,
 				}),
 				Plot.dot([data.high], {
 					fillOpacity: fadePastValues,
 					x: 'ms',
 					y: 'temperatureNormalized',
-					fill: SOLARIZED_RED
+					fill: SOLARIZED_RED,
 				}),
 
 				/*
@@ -447,11 +447,11 @@
 					opacity: fadePastValues,
 					x: 'x',
 					y: 0.1,
-					src: (d) => `/icons/meteocons/${d.type}.png`
+					src: (d) => `/icons/meteocons/${d.type}.png`,
 				}),
 
 				// Dot that marks value at mouse (hover) position:
-				Plot.dot(data?.all, Plot.pointerX({ x: 'ms', y: 'temperatureNormalized', fill: 'purple' }))
+				Plot.dot(data?.all, Plot.pointerX({ x: 'ms', y: 'temperatureNormalized', fill: 'purple' })),
 			];
 
 			marks.push(
@@ -517,8 +517,8 @@
 							return next(i, s, v, d, c);
 						}
 						return null;
-					}
-				})
+					},
+				}),
 			);
 
 			// Add to hide automatic x axis:

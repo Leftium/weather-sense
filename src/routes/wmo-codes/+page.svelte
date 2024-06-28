@@ -15,19 +15,19 @@
 		snowGrains: [77, 77],
 		snowShowers: [85, 86],
 		snow: [71, 75],
-		thunderstorm: [95, 99]
+		thunderstorm: [95, 99],
 	};
 
 	// Convert Object to array, adding key as `.code` prop.
 	const wmoCodes = _.map(WMO_CODES, (value, code) => ({
 		code: Number(code),
-		...value
+		...value,
 	}));
 
 	const wmoCodesByType = _.map(wmoCodeGroups, ([firstIndex, lastIndex]) =>
 		_.filter(wmoCodes, (value) => {
 			return value.code >= firstIndex && value.code <= lastIndex;
-		})
+		}),
 	);
 </script>
 

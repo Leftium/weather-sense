@@ -9,7 +9,7 @@
 		SOLARIZED_RED,
 		headAndTail,
 		humanDistance,
-		wmoCode
+		wmoCode,
 	} from '$lib/util.js';
 	import RadarMap from './RadarMap.svelte';
 
@@ -26,7 +26,7 @@
 	emit('weatherdata_requestedSetLocation', {
 		source: data.source,
 		name: data.name,
-		coords: data.coords
+		coords: data.coords,
 	});
 
 	function toggleUnits(node: HTMLElement, options: { temperature: boolean | string }) {
@@ -42,7 +42,7 @@
 		return {
 			destroy() {
 				abortController.abort();
-			}
+			},
 		};
 	}
 
@@ -148,7 +148,7 @@
 			<pre>nsWeatherData.utcOffsetSeconds = {`${nsWeatherData.utcOffsetSeconds}`}</pre>
 			<pre>nsWeatherData.timezone = {`${nsWeatherData.timezone}`}</pre>
 			<pre>nsWeatherData.ms = {`${JSON.stringify(nsWeatherData.ms, null, 4)}`} ({nsWeatherData.tzFormat(
-					nsWeatherData.ms
+					nsWeatherData.ms,
 				)})</pre>
 			<pre>nsWeatherData.current = {`${JSON.stringify(nsWeatherData.current, null, 4)}`}</pre>
 			<pre>nsWeatherData.minutely = {`${JSON.stringify(headAndTail(nsWeatherData.minutely), null, 4)}`}</pre>

@@ -178,7 +178,7 @@ export function makeNsWeatherData() {
 					msPretty: nsWeatherData.tzFormat(ms),
 					x2Pretty: nsWeatherData.tzFormat(x2),
 					ms,
-					x2
+					x2,
 				});
 			});
 
@@ -199,7 +199,7 @@ export function makeNsWeatherData() {
 		const minTemperature =
 			Math.min(
 				_.minBy(hourly, 'temperature')?.temperature ?? 0,
-				_.minBy(hourly, 'dewPoint')?.dewPoint ?? 0
+				_.minBy(hourly, 'dewPoint')?.dewPoint ?? 0,
 			) ?? 0;
 		const maxTemperature = _.maxBy(hourly, 'temperature')?.temperature ?? 0;
 		const temperatureRange = maxTemperature - minTemperature;
@@ -218,7 +218,7 @@ export function makeNsWeatherData() {
 			const precipitationProbability = lerp(
 				item.precipitationProbability,
 				nextItem.precipitationProbability,
-				t
+				t,
 			);
 			const msPretty = nsWeatherData.tzFormat(ms, DATEFORMAT_MASK);
 
@@ -242,7 +242,7 @@ export function makeNsWeatherData() {
 				precipitationProbabilityNormalized,
 				humidity,
 				humidityNormalized,
-				minute
+				minute,
 			};
 		}
 
@@ -279,7 +279,7 @@ export function makeNsWeatherData() {
 	});
 
 	let units = $state({
-		temperature: 'F'
+		temperature: 'F',
 	});
 
 	let tracking = $state(false);
@@ -288,7 +288,7 @@ export function makeNsWeatherData() {
 		temperature: 'temperature',
 		temperatureMax: 'temperature',
 		temperatureMin: 'temperature',
-		displayTemperature: 'temperature'
+		displayTemperature: 'temperature',
 	};
 
 	async function fetchOpenMeteo() {
@@ -320,7 +320,7 @@ export function makeNsWeatherData() {
 			rain: json.current.rain,
 			humidity: json.current.relative_humidity_2m,
 			showers: json.current.showers,
-			snowfall: json.current.snowfall
+			snowfall: json.current.snowfall,
 		};
 
 		const hourlyKeys = {
@@ -329,7 +329,7 @@ export function makeNsWeatherData() {
 			relative_humidity_2m: 'relativeHumidity',
 			dew_point_2m: 'dewPoint',
 			precipitation_probability: 'precipitationProbability',
-			precipitation: 'precipitation'
+			precipitation: 'precipitation',
 		};
 
 		const dailyKeys = {
@@ -341,14 +341,14 @@ export function makeNsWeatherData() {
 			showers_sum: 'showers',
 			snowfall_sum: 'snow',
 			precipitation_hours: 'precipitationHours',
-			precipitation_probability_max: 'precipitationProbabilityMax'
+			precipitation_probability_max: 'precipitationProbabilityMax',
 		};
 
 		hourly = _.map(json.hourly.time, (unixtime, index: number) => {
 			const ms = unixtime * MS_IN_SECOND;
 			const object: Partial<HourlyWeather> = {
 				msPretty: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),
-				ms
+				ms,
 			};
 
 			_.forEach(hourlyKeys, (newKey, openMeteoKey) => {
@@ -365,7 +365,7 @@ export function makeNsWeatherData() {
 					? 'Today'
 					: nsWeatherData.tzFormat(
 							ms,
-							index < PAST_DAYS - 7 || index > PAST_DAYS + 7 ? 'MMM-DD' : 'dd-DD'
+							index < PAST_DAYS - 7 || index > PAST_DAYS + 7 ? 'MMM-DD' : 'dd-DD',
 						);
 
 			const sunrise = json.daily.sunrise[index] * MS_IN_SECOND;
@@ -377,7 +377,7 @@ export function makeNsWeatherData() {
 				ms,
 				fromToday: index - PAST_DAYS,
 				sunrise,
-				sunset
+				sunset,
 			};
 
 			_.forEach(dailyKeys, (newKey, openMeteoKey) => {
@@ -399,7 +399,7 @@ export function makeNsWeatherData() {
 
 			radar.frames = radar.frames.map((frame) => ({
 				...frame,
-				msPretty: nsWeatherData.tzFormat(frame.ms)
+				msPretty: nsWeatherData.tzFormat(frame.ms),
 			}));
 		}
 	}
@@ -417,7 +417,7 @@ export function makeNsWeatherData() {
 					return {
 						msPretty: nsWeatherData.tzFormat(ms),
 						ms,
-						path: frame.path
+						path: frame.path,
 					};
 				});
 
@@ -432,7 +432,7 @@ export function makeNsWeatherData() {
 				msStart,
 				msEnd,
 				host: rainviewerData.host,
-				frames
+				frames,
 			};
 			emit('weatherdata_updatedRadar', { nsWeatherData });
 		});
@@ -446,7 +446,7 @@ export function makeNsWeatherData() {
 				coords = {
 					latitude: params.coords.latitude,
 					longitude: params.coords.longitude,
-					accuracy: params.coords.accuracy
+					accuracy: params.coords.accuracy,
 				};
 			} else if (params.name) {
 				// coords = GEOCODE(params.name)
@@ -458,7 +458,7 @@ export function makeNsWeatherData() {
 				name = '...';
 				// name = REVERSE_GEOCODE(params.coords)
 				const resp = await fetch(
-					`/api/geo/reverse?lat=${params.coords.latitude}&lon=${params.coords.longitude}`
+					`/api/geo/reverse?lat=${params.coords.latitude}&lon=${params.coords.longitude}`,
 				);
 				const json = await resp.json();
 				const result = json[0];
@@ -639,7 +639,7 @@ export function makeNsWeatherData() {
 
 		tzFormat(ms: number, format = 'ddd MMM D, h:mm:ss.SSSa z') {
 			return dayjs(ms).tz(timezone).format(format).replace('z', timezoneAbbreviation);
-		}
+		},
 	};
 
 	return nsWeatherData;

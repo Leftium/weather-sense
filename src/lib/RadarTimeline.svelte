@@ -10,7 +10,7 @@
 
 	let {
 		radarLayers,
-		nsWeatherData
+		nsWeatherData,
 	}: { radarLayers: Record<string, RadarLayer>; nsWeatherData: NsWeatherData } = $props();
 
 	const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);

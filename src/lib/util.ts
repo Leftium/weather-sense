@@ -44,7 +44,7 @@ function wmoInterpretation(color: string, description: string, icon: string) {
 		color,
 		isDarkText,
 		width: 99,
-		icon
+		icon,
 	};
 }
 
@@ -88,7 +88,7 @@ export const WMO_CODES: Record<number, any> = {
 	95: wmoInterpretation('#B21E4F', 'Thunderstorm', 'thunderstorm'),
 
 	96: wmoInterpretation('#88143B', 'T-storm + L.Hail', 'thunderstorm-with-hail'),
-	99: wmoInterpretation('#5F0E28', 'T-storm + Hail', 'thunderstorm-with-hail')
+	99: wmoInterpretation('#5F0E28', 'T-storm + Hail', 'thunderstorm-with-hail'),
 };
 
 export function wmoCode(code: number | undefined) {
@@ -98,7 +98,7 @@ export function wmoCode(code: number | undefined) {
 	return {
 		description: '...',
 		width: 99,
-		icon: ''
+		icon: '',
 	};
 }
 
@@ -116,7 +116,7 @@ export function headAndTail(array: unknown[] | undefined | null) {
 		return {
 			length,
 			head: array[0],
-			tail: array[length - 1]
+			tail: array[length - 1],
 		};
 	}
 

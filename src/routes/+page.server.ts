@@ -9,7 +9,7 @@ export const load = async (loadEvent) => {
 	let coords = {
 		latitude: 37.5087,
 		longitude: 126.7219,
-		accuracy: 0
+		accuracy: 0,
 	};
 
 	const searchParams = loadEvent.url.searchParams;
@@ -19,7 +19,7 @@ export const load = async (loadEvent) => {
 
 	if (paramName) {
 		const fetched = await fetch(
-			`https://geocoding-api.open-meteo.com/v1/search?name=${paramName}&count=1`
+			`https://geocoding-api.open-meteo.com/v1/search?name=${paramName}&count=1`,
 		);
 		const jsoned = await fetched.json();
 
@@ -31,7 +31,7 @@ export const load = async (loadEvent) => {
 			coords = {
 				latitude: jsoned.results[0].latitude,
 				longitude: jsoned.results[0].longitude,
-				accuracy: 0
+				accuracy: 0,
 			};
 		}
 	}
@@ -48,7 +48,7 @@ export const load = async (loadEvent) => {
 			coords = {
 				latitude,
 				longitude,
-				accuracy: 0
+				accuracy: 0,
 			};
 		}
 	}
@@ -57,6 +57,6 @@ export const load = async (loadEvent) => {
 		ipAddress,
 		source,
 		name,
-		coords
+		coords,
 	};
 };

@@ -58,8 +58,8 @@
 			fullscreenControl: true,
 			forceSeparateButton: true,
 			fullscreenControlOptions: {
-				position: 'topright'
-			}
+				position: 'topright',
+			},
 		});
 
 		/*
@@ -71,7 +71,7 @@
 		/**/
 		new TileLayer('https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg', {
 			attribution:
-				'<a href="https://www.rainviewer.com/api.html" target="_blank">Rainviewer</a> | <a target="_blank" href="http://stamen.com">Stamen</a> | <a href="https://stadiamaps.com/" target="_blank">Stadia</a> | &copy; <a href="https://www.openstreetmap.org/about" target="_blank">OpenStreetMap</a>'
+				'<a href="https://www.rainviewer.com/api.html" target="_blank">Rainviewer</a> | <a target="_blank" href="http://stamen.com">Stamen</a> | <a href="https://stadiamaps.com/" target="_blank">Stadia</a> | &copy; <a href="https://www.openstreetmap.org/about" target="_blank">OpenStreetMap</a>',
 		}).addTo(map);
 		/**/
 
@@ -82,7 +82,7 @@
 		locateControl = new Control.Locate({
 			showCompass: false,
 			position: 'bottomright',
-			initialZoomLevel: 11
+			initialZoomLevel: 11,
 		});
 
 		locateControl.addTo(map);
@@ -104,8 +104,8 @@
 					coords: {
 						latitude: e.latlng.lat,
 						longitude: e.latlng.lng,
-						accuracy: e.accuracy
-					}
+						accuracy: e.accuracy,
+					},
 				});
 			}
 
@@ -130,14 +130,14 @@
 				const tileLayer = new TileLayer(urlTemplate, {
 					tileSize: 256,
 					opacity: 0,
-					zIndex: frame.ms
+					zIndex: frame.ms,
 				});
 
 				radarLayers[frame.path] = {
 					index,
 					ms: frame.ms,
 					loaded: false,
-					tileLayer
+					tileLayer,
 				};
 
 				//tileLayer.on('loading', startLoadingTile);
@@ -193,7 +193,7 @@
 		// Define a simple control class that positions itself into newly created footer control corner:
 		const RadarControl = Control.extend({
 			options: {
-				position: 'footer'
+				position: 'footer',
 			},
 			onAdd: function () {
 				const container = DomUtil.create('div', 'full-width');
@@ -204,14 +204,14 @@
 					target: container,
 					props: {
 						radarLayers,
-						nsWeatherData
-					}
+						nsWeatherData,
+					},
 				});
 
 				DomEvent.disableClickPropagation(container);
 
 				return container;
-			}
+			},
 		});
 
 		// Add simple control defined above to map:

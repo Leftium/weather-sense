@@ -89,7 +89,7 @@ export interface Emitter<Events extends Record<EventType, unknown>> {
 }
 
 export function getEmitter<Events extends Record<EventType, unknown>>(
-	source: string | { url: string }
+	source: string | { url: string },
 ): Emitter<Events> {
 	if (typeof source != 'string' && source?.url) {
 		source = cleanMetaUrl(source.url);
@@ -105,14 +105,14 @@ export function getEmitter<Events extends Record<EventType, unknown>>(
 			// ts: Date.now(),
 			target: '*',
 			source,
-			memo: []
+			memo: [],
 		};
 
 		// type EmitterEvent
 		const event = {
 			type: eventType,
 			meta,
-			params
+			params,
 		};
 
 		// Param event: EmitterEvent technically wraps params: Events[Key]

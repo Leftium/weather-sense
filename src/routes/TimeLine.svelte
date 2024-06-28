@@ -41,16 +41,16 @@
 
 	const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 
+	// const msStart = +dayjs(start).startOf('hour');
+	const msStart = Math.floor(start / MS_IN_HOUR) * MS_IN_HOUR;
+	const msEnd = msStart + hours * MS_IN_HOUR;
+
 	let div: HTMLDivElement;
 	let clientWidth: number = $state(0);
 	let plot: undefined | ReturnType<typeof Plot.plot> = $state();
 
 	let data = $derived.by(() => {
 		//gg('data');
-
-		// const msStart = +dayjs(start).startOf('hour');
-		const msStart = Math.floor(start / MS_IN_HOUR) * MS_IN_HOUR;
-		const msEnd = msStart + hours * MS_IN_HOUR;
 
 		type SolarEventItem = {
 			ms: number;
@@ -239,8 +239,17 @@
 			marginLeft: 12,
 			marginTop: 0,
 			marginBottom: 0,
-			y: { axis: null }
+			y: { axis: null },
+			x: {
+				tickFormat: (ms: number) => nsWeatherData.tzFormat(ms, 'ha'),
+				domain: [msStart, msEnd]
+			}
 		};
+
+		const xScale = Plot.plot({
+			...plotOptions,
+			marks: [Plot.text([WMO_CODES])]
+		}).scale('x');
 
 		if (!data?.all?.length) {
 			plot = undefined;
@@ -325,8 +334,8 @@
 					dy: 1,
 					textAnchor: 'middle',
 					text: (d) => {
-						const ox1 = plot?.scale('x')?.apply(d.x1);
-						const ox2 = plot?.scale('x')?.apply(d.x2);
+						const ox1 = xScale?.apply(d.x1);
+						const ox2 = xScale?.apply(d.x2);
 						const width = ox2 - ox1;
 						return width > 80 ? d.text : null;
 					},
@@ -341,8 +350,8 @@
 					y: 1.2,
 					textAnchor: 'middle',
 					text: (d) => {
-						const ox1 = plot?.scale('x')?.apply(d.x1);
-						const ox2 = plot?.scale('x')?.apply(d.x2);
+						const ox1 = xScale?.apply(d.x1);
+						const ox2 = xScale?.apply(d.x2);
 						const width = ox2 - ox1;
 						return width > 80 ? d.text : null;
 					},
@@ -358,8 +367,8 @@
 					width: 18,
 					height: 18,
 					src: (d) => {
-						const ox1 = plot?.scale('x')?.apply(d.x1);
-						const ox2 = plot?.scale('x')?.apply(d.x2);
+						const ox1 = xScale?.apply(d.x1);
+						const ox2 = xScale?.apply(d.x2);
 						const width = ox2 - ox1;
 						return width > 80 || width < 20 ? null : d.icon;
 					}
@@ -537,10 +546,6 @@
 	// Runs on weatherdata_updatedData event from nsWeatherData.
 	async function callPlotData() {
 		await tick();
-		if (!plot) {
-			// Hack: force extra render so plot.scale() is available.
-			plotData();
-		}
 		plotData();
 	}
 	on('weatherdata_updatedData', callPlotData);

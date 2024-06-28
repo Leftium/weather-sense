@@ -298,26 +298,26 @@
 					stroke: 'darkcyan'
 				}),
 
-				/*
 				// Weather code label shadow text:
 				Plot.text(data.codes, {
+					opacity: fadePastValues,
 					fontSize: 14,
 					x: 'xMiddle',
 					y: 1.2,
-					dx: 1,
 					dy: 1,
 					textAnchor: 'middle',
 					text: (d) => {
 						const ox1 = plot?.scale('x')?.apply(d.x1);
 						const ox2 = plot?.scale('x')?.apply(d.x2);
-						const text = ox2 - ox1 > 80 ? d.text : null;
-						return text;
+						const width = ox2 - ox1;
+						return width > 80 ? d.text : null;
 					},
 					fill: (d) => (d.isDarkText ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)')
 				}),
 
 				// Weather code label text:
 				Plot.text(data.codes, {
+					opacity: fadePastValues,
 					fontSize: 14,
 					x: 'xMiddle',
 					y: 1.2,
@@ -325,42 +325,46 @@
 					text: (d) => {
 						const ox1 = plot?.scale('x')?.apply(d.x1);
 						const ox2 = plot?.scale('x')?.apply(d.x2);
-						const text = ox2 - ox1 > 80 ? d.text : null;
-						return text;
+						const width = ox2 - ox1;
+						return width > 80 ? d.text : null;
 					},
 					fill: (d) => (d.isDarkText ? 'black' : 'white')
 				}),
-                */
 
 				// Weather code icon:
 				Plot.image(data.codes, {
+					opacity: fadePastValues,
 					x: 'xMiddle',
 					y: 1,
 					dy: -6,
 					width: 18,
 					height: 18,
-					src: 'icon',
-					opacity: fadePastValues
+					src: (d) => {
+						const ox1 = plot?.scale('x')?.apply(d.x1);
+						const ox2 = plot?.scale('x')?.apply(d.x2);
+						const width = ox2 - ox1;
+						return width > 80 || width < 20 ? null : d.icon;
+					}
 				}),
 
 				// The dew point plotted as line:
 				Plot.lineY(data?.all, {
+					strokeOpacity: fadePastValues,
 					x: 'ms',
 					y: 'dewPointNormalized',
 					curve,
 					stroke: '#268bd2',
-					strokeWidth: 2,
-					strokeOpacity: fadePastValues
+					strokeWidth: 2
 				}),
 
 				// The temperature plotted as line:
 				Plot.lineY(data?.all, {
+					strokeOpacity: fadePastValues,
 					x: 'ms',
 					y: 'temperatureNormalized',
 					curve,
 					stroke: 'black',
-					strokeWidth: 2,
-					strokeOpacity: fadePastValues
+					strokeWidth: 2
 				}),
 
 				// High/low temp marks:
@@ -389,13 +393,13 @@
 
 				// Plot sunrise as yellow rule and sunset as icons:
 				Plot.image(data?.solarEvents, {
+					opacity: fadePastValues,
 					x: 'x',
 					y: 0,
 					dy: -6,
 					width: 32,
 					height: 32,
-					src: (d) => `/icons/meteocons/${d.type}.png`,
-					opacity: fadePastValues
+					src: (d) => `/icons/meteocons/${d.type}.png`
 				}),
 
 				// Dot that marks value at mouse (hover) position:

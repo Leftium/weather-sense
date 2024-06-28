@@ -1,3 +1,7 @@
+<script context="module" lang="ts">
+	let adjustedLabelWidths = $state(false);
+</script>
+
 <script lang="ts">
 	import type {
 		DailyWeather,
@@ -39,7 +43,15 @@
 		ghostTracker?: boolean;
 	} = $props();
 
+	const wmoLabelElements: HTMLElement[] = $state([]);
+
 	const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
+
+	const ICON_WIDTH = 18;
+	const GAP_WIDTH = 2;
+	const MARGIN_LEFT = 12;
+	const MARGIN_RIGHT = 12;
+	const ICON_LABEL_PADDING = 16;
 
 	// const msStart = +dayjs(start).startOf('hour');
 	const msStart = Math.floor(start / MS_IN_HOUR) * MS_IN_HOUR;
@@ -235,8 +247,8 @@
 		const plotOptions = {
 			width: clientWidth,
 			height: 70,
-			marginRight: 12,
-			marginLeft: 12,
+			marginRight: MARGIN_RIGHT,
+			marginLeft: MARGIN_LEFT,
 			marginTop: 0,
 			marginBottom: 0,
 			y: { axis: null },
@@ -246,10 +258,29 @@
 			}
 		};
 
-		const xScale = Plot.plot({
-			...plotOptions,
-			marks: [Plot.text([WMO_CODES])]
-		}).scale('x');
+		const xScale = Plot.plot(plotOptions).scale('x');
+
+		const labelTextOptions = {
+			opacity: fadePastValues,
+			fontSize: 14,
+			fill: (d: { isDarkText: any }) => (d.isDarkText ? 'black' : 'white'),
+			y: 1.2,
+			x: (d) => {
+				if (!xScale?.invert) {
+					return d.xMiddle;
+				}
+
+				const iconWidthMs = xScale.invert(ICON_WIDTH + MARGIN_LEFT) - msStart;
+				const gapWidthMs = xScale.invert(GAP_WIDTH / 2 + MARGIN_LEFT) - msStart;
+
+				return d.xMiddle + (iconWidthMs + gapWidthMs) / 2;
+			},
+			text: (d) => {
+				const labelWidth: number = WMO_CODES[d.weatherCode].width;
+				const width = xScale?.apply(d.x2) - xScale?.apply(d.x1) - ICON_LABEL_PADDING;
+				return width < labelWidth + ICON_WIDTH + GAP_WIDTH ? null : d.text;
+			}
+		} as Plot.TextOptions;
 
 		if (!data?.all?.length) {
 			plot = undefined;
@@ -269,19 +300,20 @@
 				/*
 				// The humidity plotted as area:
 				Plot.areaY(data?.all, {
+                    curve,
 					opacity: fadePastValues,
 					x: 'ms',
 					y: 'humidityNormalized',
-					curve,
 					fill: 'rgba(42, 161, 152, .2)'
 				}),
 
 				// The humidity plotted as line:
 				Plot.lineY(data?.all, {
-					strokeOpacity: fadePastValues,
+					curve,
+                    strokeOpacity: fadePastValues,
 					x: 'ms',
 					y: 'humidityNormalized',
-					curve,
+
 					stroke: '#2aa198',
 					strokeWidth: 1.5
 				}),
@@ -289,19 +321,19 @@
 
 				// The precipitation probability plotted as area:
 				Plot.areaY(data?.all, {
+					curve,
 					opacity: (d) => (d.precipitationProbabilityNormalized <= 0 ? 0 : fadePastValues(d)),
 					x: 'ms',
 					y: 'precipitationProbabilityNormalized',
-					curve,
 					fill: 'rgba(0, 0, 255, .2)'
 				}),
 
 				// The precipitation probability plotted as line:
 				Plot.lineY(data?.all, {
+					curve,
 					strokeOpacity: (d) => (d.precipitationProbabilityNormalized <= 0 ? 0 : fadePastValues(d)),
 					x: 'ms',
 					y: 'precipitationProbabilityNormalized',
-					curve,
 					stroke: 'blue',
 					strokeWidth: 1.5
 				}),
@@ -327,69 +359,59 @@
 
 				// Weather code label shadow text:
 				Plot.text(data.codes, {
-					opacity: fadePastValues,
-					fontSize: 14,
-					x: 'xMiddle',
-					y: 1.2,
+					...labelTextOptions,
+					fill: (d) => (d.isDarkText ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)'),
 					dy: 1,
-					textAnchor: 'middle',
-					text: (d) => {
-						const ox1 = xScale?.apply(d.x1);
-						const ox2 = xScale?.apply(d.x2);
-						const width = ox2 - ox1;
-						return width > 80 ? d.text : null;
-					},
-					fill: (d) => (d.isDarkText ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)')
+					dx: 1
 				}),
 
 				// Weather code label text:
-				Plot.text(data.codes, {
-					opacity: fadePastValues,
-					fontSize: 14,
-					x: 'xMiddle',
-					y: 1.2,
-					textAnchor: 'middle',
-					text: (d) => {
-						const ox1 = xScale?.apply(d.x1);
-						const ox2 = xScale?.apply(d.x2);
-						const width = ox2 - ox1;
-						return width > 80 ? d.text : null;
-					},
-					fill: (d) => (d.isDarkText ? 'black' : 'white')
-				}),
+				Plot.text(data.codes, labelTextOptions),
 
 				// Weather code icon:
 				Plot.image(data.codes, {
 					opacity: fadePastValues,
-					x: 'xMiddle',
-					y: 1,
-					dy: -6,
-					width: 18,
-					height: 18,
+					width: ICON_WIDTH,
+					height: ICON_WIDTH,
+					y: 1.2,
+					x: (d) => {
+						if (!xScale?.invert) {
+							return d.xMiddle;
+						}
+
+						const labelWidth: number = WMO_CODES[d.weatherCode].width;
+						const labelWidthMs = xScale.invert(labelWidth + MARGIN_LEFT) - msStart;
+						const gapWidthMS = xScale.invert(GAP_WIDTH / 2 + MARGIN_LEFT) - msStart;
+
+						const width = xScale.apply(d.x2) - xScale.apply(d.x1) - ICON_LABEL_PADDING;
+						const isTooWide = width < labelWidth + ICON_WIDTH + GAP_WIDTH;
+
+						return d.xMiddle - (isTooWide ? 0 : (labelWidthMs + gapWidthMS) / 2);
+					},
 					src: (d) => {
-						const ox1 = xScale?.apply(d.x1);
-						const ox2 = xScale?.apply(d.x2);
-						const width = ox2 - ox1;
-						return width > 80 || width < 20 ? null : d.icon;
+						const width = xScale?.apply(d.x2) - xScale?.apply(d.x1);
+						return width < ICON_WIDTH ? null : d.icon;
 					}
 				}),
 
 				// The dew point plotted as line:
 				Plot.lineY(data?.all, {
+					curve,
 					strokeOpacity: fadePastValues,
 					x: 'ms',
 					y: 'dewPointNormalized',
-					curve,
+
 					stroke: '#268bd2',
 					strokeWidth: 2
 				}),
 
 				// The temperature plotted as line:
 				Plot.lineY(data?.all, {
+					curve,
 					strokeOpacity: fadePastValues,
 					x: 'ms',
 					y: 'temperatureNormalized',
-					curve,
+
 					stroke: 'black',
 					strokeWidth: 2
 				}),
@@ -420,12 +442,11 @@
 
 				// Plot sunrise as yellow rule and sunset as icons:
 				Plot.image(data?.solarEvents, {
-					opacity: fadePastValues,
-					x: 'x',
-					y: 0,
-					dy: -6,
 					width: 32,
 					height: 32,
+					opacity: fadePastValues,
+					x: 'x',
+					y: 0.1,
 					src: (d) => `/icons/meteocons/${d.type}.png`
 				}),
 
@@ -505,19 +526,13 @@
 				marks.push(Plot.axisX({ ticks: [] }));
 			}
 
-			plot = Plot.plot({
-				...plotOptions,
-				x: {
-					type: 'utc',
-					tickFormat: (ms) => nsWeatherData.tzFormat(ms, 'ha')
-				},
-				marks
-			});
+			plot = Plot.plot({ ...plotOptions, marks });
 		}
 
-		const placeholderPlot = Plot.plot(plotOptions);
 		div?.firstChild?.remove(); // remove old chart, if any
-		div?.append(plot || placeholderPlot); // add the new chart
+		if (plot) {
+			div?.append(plot); // add the new chart
+		}
 
 		if (plot) {
 			plot.addEventListener('input', (event) => {
@@ -567,9 +582,28 @@
 			emit('weatherdata_requestedTrackingEnd');
 		});
 
+		if (!adjustedLabelWidths) {
+			adjustedLabelWidths = true;
+			gg('getLabelWidths');
+			wmoLabelElements.forEach((element) => {
+				const code = Number(element.dataset.code);
+				//gg(code);
+				const width = element.clientWidth;
+				WMO_CODES[code].width = width;
+			});
+		}
+
 		// TODO: cleanup with resizeObserver.unobserve()?
 	});
 </script>
+
+{#if !adjustedLabelWidths}
+	<div class="labels-for-widths">
+		{#each Object.entries(WMO_CODES) as [code, props], index}
+			<div bind:this={wmoLabelElements[index]} data-code={code}>{props.description}</div>
+		{/each}
+	</div>
+{/if}
 
 <div bind:this={div} bind:clientWidth role="img"></div>
 
@@ -581,5 +615,18 @@
 
 	div {
 		user-select: none;
+	}
+
+	.labels-for-widths {
+		visibility: hidden;
+		height: 0;
+
+		display: flex;
+
+		font-size: 14px;
+		font-family: system-ui, sans-serif;
+
+		font-weight: 400;
+		white-space: nowrap;
 	}
 </style>

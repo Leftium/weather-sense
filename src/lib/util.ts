@@ -43,6 +43,7 @@ function wmoInterpretation(color: string, description: string, icon: string) {
 		description,
 		color,
 		isDarkText,
+		width: 99,
 		icon
 	};
 }
@@ -96,6 +97,7 @@ export function wmoCode(code: number | undefined) {
 	}
 	return {
 		description: '...',
+		width: 99,
 		icon: ''
 	};
 }

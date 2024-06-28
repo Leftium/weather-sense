@@ -43,8 +43,8 @@
 						<img src={data.icon} alt="" />
 					</div>
 					<div class="description">
-						<span class:is-dark-text={data.isDarkText} style:background-color={data.color}
-							>{data.description}</span
+						<span class:is-dark-text={data.isDarkText} style:background-color={data.color}>
+							<img src={data.icon} alt="" /> {data.description}</span
 						>
 					</div>
 				</article>
@@ -89,8 +89,13 @@
 		font-size: small;
 	}
 
+	.description img {
+		height: 22px;
+		width: 22px;
+	}
+
 	.description span {
-		padding: 0.3em;
+		padding: 0.6em;
 		border-radius: 0.3em;
 		line-height: 40px;
 		font-size: 13px;

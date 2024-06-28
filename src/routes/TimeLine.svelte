@@ -115,6 +115,7 @@
 							accumulator.push({
 								weatherCode: nextCode,
 								text: WMO_CODES[nextCode].description,
+								icon: WMO_CODES[nextCode].icon,
 								x1,
 								x2,
 								xMiddle: (Number(x1) + Number(x2)) / 2,
@@ -288,6 +289,7 @@
 					stroke: 'darkcyan'
 				}),
 
+				/*
 				// Weather code label shadow text:
 				Plot.text(data.codes, {
 					fontSize: 14,
@@ -318,6 +320,17 @@
 						return text;
 					},
 					fill: (d) => (d.isDarkText ? 'black' : 'white')
+				}),
+                */
+
+				// Weather code icon:
+				Plot.image(data.codes, {
+					x: 'xMiddle',
+					y: 1,
+					dy: -6,
+					width: 18,
+					height: 18,
+					src: 'icon'
 				}),
 
 				// The dew point plotted as line:
@@ -364,7 +377,7 @@
 				}),
                 */
 
-				// Plot sunrise as yellow rule and sunset as orange rule:
+				// Plot sunrise as yellow rule and sunset as icons:
 				Plot.image(data?.solarEvents, {
 					x: 'x',
 					y: 0,

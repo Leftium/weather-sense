@@ -257,16 +257,26 @@
 					fill: 'fill'
 				}),
 
+				/*
 				// The humidity plotted as area:
 				Plot.areaY(data?.all, {
 					opacity: fadePastValues,
 					x: 'ms',
 					y: 'humidityNormalized',
 					curve,
-					//stroke: '#2aa198',
-					//strokeWidth: 1.5,
-					fill: 'rgba(42, 161, 152, .4)'
+					fill: 'rgba(42, 161, 152, .2)'
 				}),
+
+				// The humidity plotted as line:
+				Plot.lineY(data?.all, {
+					strokeOpacity: fadePastValues,
+					x: 'ms',
+					y: 'humidityNormalized',
+					curve,
+					stroke: '#2aa198',
+					strokeWidth: 1.5
+				}),
+                */
 
 				// The precipitation probability plotted as area:
 				Plot.areaY(data?.all, {
@@ -274,9 +284,17 @@
 					x: 'ms',
 					y: 'precipitationProbabilityNormalized',
 					curve,
-					//stroke: 'blue',
-					//strokeWidth: 1.5,
-					fill: 'rgba(0, 0, 255, .4)'
+					fill: 'rgba(0, 0, 255, .2)'
+				}),
+
+				// The precipitation probability plotted as line:
+				Plot.lineY(data?.all, {
+					strokeOpacity: (d) => (d.precipitationProbabilityNormalized <= 0 ? 0 : fadePastValues(d)),
+					x: 'ms',
+					y: 'precipitationProbabilityNormalized',
+					curve,
+					stroke: 'blue',
+					strokeWidth: 1.5
 				}),
 
 				// Rain bar:

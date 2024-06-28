@@ -369,7 +369,7 @@ export function makeNsWeatherData() {
 						);
 
 			const sunrise = json.daily.sunrise[index] * MS_IN_SECOND;
-			const sunset = json.daily.sunrise[index] * MS_IN_SECOND;
+			const sunset = json.daily.sunset[index] * MS_IN_SECOND;
 
 			const object: Partial<DailyWeather> = {
 				msPretty: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),

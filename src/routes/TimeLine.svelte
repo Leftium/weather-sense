@@ -483,19 +483,18 @@
 							function drawTracker(ms: number, length: number, color: string) {
 								const ig = pg.append('g').attr('class', 'tracker-rect');
 								if (s.scales.x && s.scales.y) {
-									const x = s.scales.x.apply(ms);
-									const y = s.scales.y?.apply(1.45);
+									const x1 = s.scales.x.apply(ms);
+									const x2 = s.scales.x.apply(ms + length);
+									const y = s.scales.y?.apply(0);
 
-									const width = s.scales.x.apply(ms + length) - x;
-									const height = s.scales.y?.apply(0) - y;
-
-									ig.append('rect')
-										.attr('x', x)
-										.attr('width', width)
-										.attr('y', y)
-										.attr('height', height)
+									ig.append('line')
+										.attr('x1', x1)
+										.attr('x2', x2)
+										.attr('y1', y)
+										.attr('y2', y)
 										.attr('stroke', color)
-										.attr('fill', 'rgba(0,0,0,0)');
+										.attr('stroke-width', 4)
+										.attr('stroke-linecap', 'round');
 								}
 							}
 

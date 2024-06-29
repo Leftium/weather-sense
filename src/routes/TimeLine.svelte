@@ -237,12 +237,19 @@
 			marginBottom: 0,
 			y: { axis: null },
 			x: {
-				tickFormat: (ms: number) => nsWeatherData.tzFormat(ms, 'ha'),
+				type: 'utc',
 				domain: [msStart, msEnd],
 				range: [MARGIN_LEFT, clientWidth - MARGIN_RIGHT],
+				tickFormat: (ms: number) => nsWeatherData.tzFormat(ms, 'ha'),
 			},
 		};
 
+		if (!xAxis) {
+			//@ts-expect-error: axis is valid prop.
+			plotOptions.x.axis = null;
+		}
+
+		// @ts-expect-error: x.type is valid.
 		const xScale = Plot.scale(plotOptions);
 
 		const labelTextOptions = {
@@ -525,11 +532,7 @@
 				}),
 			);
 
-			// Add to hide automatic x axis:
-			if (!xAxis) {
-				marks.push(Plot.axisX({ ticks: [] }));
-			}
-
+			//@ts-expect-error: x.type is valid.
 			plot = Plot.plot({ ...plotOptions, marks });
 		}
 

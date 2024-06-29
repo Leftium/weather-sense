@@ -285,6 +285,7 @@
 					fill: 'fill',
 				}),
 
+				/*
 				// The humidity plotted as area:
 				Plot.areaY(data?.all, {
 					curve,
@@ -304,6 +305,7 @@
 					stroke: '#2aa198',
 					strokeWidth: 1.5,
 				}),
+                */
 
 				// The precipitation probability plotted as area:
 				Plot.areaY(data?.all, {

@@ -514,12 +514,12 @@
                             */
 
 							if (msValue >= msStart && msValue < msEnd) {
-								drawTracker(msValue, length, 'purple');
+								drawTracker(msValue, length, 'red');
 							} else if (ghostTracker) {
 								let offset = (msValue + nsWeatherData.utcOffsetSeconds * MS_IN_SECOND) % MS_IN_DAY;
 								const ghostTime = Number(msStart) + offset;
 
-								drawTracker(ghostTime, length, 'rgba(128,0,128,.2)');
+								drawTracker(ghostTime, length, 'rgba(256,0,0,0.3)');
 							}
 						};
 

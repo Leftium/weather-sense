@@ -58,20 +58,6 @@ type CurrentWeather = {
 	snowfall: number;
 };
 
-export type MinutelyWeather = {
-	ms: number;
-	msPretty: string;
-	minute: number;
-
-	temperature: number;
-	temperatureNormalized: number;
-	precipitation: number;
-	precipitationNormalized: number;
-
-	hourly?: HourlyWeather;
-	daily?: DailyWeather;
-};
-
 export type HourlyWeather = {
 	ms: number;
 	msPretty: string;
@@ -145,8 +131,6 @@ export function makeNsWeatherData() {
 	let hourly: HourlyWeather[] | null = $state(null);
 	let daily: DailyWeather[] | null = $state(null);
 
-	let byMinute: Record<number, MinutelyWeather> = $state({});
-
 	type DataItem = {
 		msPretty?: string;
 		ms: number;
@@ -157,6 +141,12 @@ export function makeNsWeatherData() {
 		dewPoint: number;
 		precipitation: number;
 		precipitationProbability: number;
+
+		temperatureNormalized: number;
+		dewPointNormalized: number;
+		precipitationNormalized: number;
+		precipitationProbabilityNormalized: number;
+		humidityNormalized: number;
 	};
 	let data: Map<number, DataItem> = $state(new Map());
 
@@ -165,16 +155,34 @@ export function makeNsWeatherData() {
 			return;
 		}
 		if (hourly) {
+			gg('make nsWeather.data');
+			console.time('nsWeather.data');
+			// Normalize temperatures to scale: [0, 1].
+			const minTemperature =
+				Math.min(
+					_.minBy(hourly, 'temperature')?.temperature ?? 0,
+					_.minBy(hourly, 'dewPoint')?.dewPoint ?? 0,
+				) ?? 0;
+			const maxTemperature = _.maxBy(hourly, 'temperature')?.temperature ?? 0;
+			const temperatureRange = maxTemperature - minTemperature;
+
 			hourly.forEach((item) => {
 				const ms = item.ms;
 				const msPretty = nsWeatherData.tzFormat(ms, DATEFORMAT_MASK);
 
 				const temperature = item.temperature;
+
 				const weatherCode = item.weatherCode;
 				const humidity = item.relativeHumidity;
 				const dewPoint = item.dewPoint;
 				const precipitation = item.precipitation;
 				const precipitationProbability = item.precipitationProbability;
+
+				const temperatureNormalized = (temperature - minTemperature) / temperatureRange;
+				const dewPointNormalized = (dewPoint - minTemperature) / temperatureRange;
+				const precipitationNormalized = 1 - Math.exp(-precipitation / 2);
+				const precipitationProbabilityNormalized = precipitationProbability / 100;
+				const humidityNormalized = humidity / 100;
 
 				data.set(ms, {
 					msPretty,
@@ -186,8 +194,16 @@ export function makeNsWeatherData() {
 					dewPoint,
 					precipitation,
 					precipitationProbability,
+
+					temperatureNormalized,
+					dewPointNormalized,
+					precipitationNormalized,
+					precipitationProbabilityNormalized,
+					humidityNormalized,
 				});
 			});
+			console.timeEnd('nsWeather.data');
+			gg('nsWeatherData.data.size:', nsWeatherData.data.size);
 		}
 	});
 
@@ -232,99 +248,6 @@ export function makeNsWeatherData() {
 			});
 
 		return intervals;
-	});
-
-	let minutely: MinutelyWeather[] = $derived.by(() => {
-		if (!browser || !hourly) {
-			return [];
-		}
-		gg('minutely:start');
-		console.time('minutely');
-
-		const minutely: MinutelyWeather[] = [];
-		byMinute = {};
-
-		// Normalize temperatures to scale: [0, 1].
-		const minTemperature =
-			Math.min(
-				_.minBy(hourly, 'temperature')?.temperature ?? 0,
-				_.minBy(hourly, 'dewPoint')?.dewPoint ?? 0,
-			) ?? 0;
-		const maxTemperature = _.maxBy(hourly, 'temperature')?.temperature ?? 0;
-		const temperatureRange = maxTemperature - minTemperature;
-
-		function makeMinuteData(minute: number, item: HourlyWeather, nextItem: HourlyWeather) {
-			const ms = item.ms + minute * MS_IN_MINUTE;
-
-			// Fake precipitation:
-			const day = dayjs(item.ms);
-			const precipitation = false && dev ? day.get('hour') / 10 : item.precipitation;
-
-			const t = minute / 60;
-			const temperature = lerp(item.temperature, nextItem.temperature, t);
-			const humidity = lerp(item.relativeHumidity, nextItem.relativeHumidity, t);
-			const dewPoint = lerp(item.dewPoint, nextItem.dewPoint, t);
-			const precipitationProbability = lerp(
-				item.precipitationProbability,
-				nextItem.precipitationProbability,
-				t,
-			);
-			const msPretty = nsWeatherData.tzFormat(ms, DATEFORMAT_MASK);
-
-			const temperatureNormalized = (temperature - minTemperature) / temperatureRange;
-			const dewPointNormalized = (dewPoint - minTemperature) / temperatureRange;
-			const precipitationNormalized = 1 - Math.exp(-precipitation / 2);
-			const precipitationProbabilityNormalized = precipitationProbability / 100;
-			const humidityNormalized = humidity / 100;
-
-			return {
-				msPretty,
-				ms,
-				temperature,
-				temperatureNormalized,
-				dewPoint,
-				dewPointNormalized,
-				hourly: item,
-				precipitation,
-				precipitationNormalized,
-				precipitationProbability,
-				precipitationProbabilityNormalized,
-				humidity,
-				humidityNormalized,
-				minute,
-			};
-		}
-
-		function next(minute: number, msCurrent: number) {
-			let step = 10;
-
-			if (radar.msStart && radar.msEnd && (msCurrent < radar.msStart || msCurrent >= radar.msEnd)) {
-				step = 60;
-				while (step != 10 && !(minute + step == 60)) {
-					step -= 10;
-				}
-			}
-			return minute + step;
-		}
-
-		hourly.forEach((item, index, array) => {
-			if (hourly && minutely && byMinute) {
-				if (index < array.length - 1) {
-					for (
-						let minute = 0;
-						minute < 60;
-						minute = next(minute, item.ms + minute * MS_IN_MINUTE)
-					) {
-						const minuteData = makeMinuteData(minute, item, array[index + 1]);
-						minutely.push(minuteData);
-						byMinute[minuteData.ms * MS_IN_SECOND] = minuteData;
-					}
-				}
-			}
-		});
-		console.timeEnd('minutely');
-		gg('minutely.length', minutely.length);
-		return minutely;
 	});
 
 	let units = $state({
@@ -612,10 +535,6 @@ export function makeNsWeatherData() {
 
 		get current() {
 			return { ...current };
-		},
-
-		get minutely() {
-			return minutely;
 		},
 
 		get hourly() {

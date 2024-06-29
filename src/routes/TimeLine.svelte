@@ -3,12 +3,7 @@
 </script>
 
 <script lang="ts">
-	import type {
-		DailyWeather,
-		MinutelyWeather,
-		NsWeatherData,
-		WeatherDataEvents,
-	} from '$lib/ns-weather-data.svelte';
+	import type { DailyWeather, NsWeatherData, WeatherDataEvents } from '$lib/ns-weather-data.svelte';
 
 	import _ from 'lodash-es';
 	import * as d3 from 'd3';
@@ -93,12 +88,13 @@
 			[] as SolarEventItem[],
 		);
 
-		if (nsWeatherData.minutely) {
-			const filtered = nsWeatherData.minutely.filter((item) => {
+		const dataValues = [...nsWeatherData.data.values()];
+		if (dataValues) {
+			const filtered = dataValues.filter((item) => {
 				return item.ms >= msStart && item.ms <= msEnd;
 			});
 
-			const minute0 = filtered.filter((d) => d.minute == 0);
+			const minute0 = filtered;
 
 			type CodesItem = {
 				ms: number;
@@ -117,39 +113,36 @@
 
 			const minute0withoutLast = minute0.toSpliced(-1, 1);
 
-			const codes = minute0withoutLast.reduce(
-				(accumulator: CodesItem[], current: MinutelyWeather) => {
-					const prevItem = accumulator.at(-1);
-					const prevCode = prevItem?.weatherCode;
-					const nextCode = current.hourly?.weatherCode;
+			const codes = minute0withoutLast.reduce((accumulator: CodesItem[], current) => {
+				const prevItem = accumulator.at(-1);
+				const prevCode = prevItem?.weatherCode;
+				const nextCode = current.weatherCode;
 
-					const x1 = current.ms;
-					const x2 = Math.min(current.ms + MS_IN_HOUR, msEnd);
-					const xMiddle = (Number(x1) + Number(x2)) / 2;
+				const x1 = current.ms;
+				const x2 = Math.min(current.ms + MS_IN_HOUR, msEnd);
+				const xMiddle = (Number(x1) + Number(x2)) / 2;
 
-					if (prevItem && prevCode == nextCode && prevCode != undefined) {
-						prevItem.x2 = x2;
-						prevItem.xMiddle = (Number(prevItem.x1) + x2) / 2;
-					} else {
-						if (nextCode != undefined) {
-							accumulator.push({
-								ms: xMiddle,
-								weatherCode: nextCode,
-								text: WMO_CODES[nextCode].description,
-								icon: WMO_CODES[nextCode].icon,
-								x1,
-								x2,
-								xMiddle,
-								fill: WMO_CODES[nextCode].color,
-								isDarkText: WMO_CODES[nextCode].isDarkText,
-								opacity: current.ms < now ? 0.2 : 1,
-							});
-						}
+				if (prevItem && prevCode == nextCode && prevCode != undefined) {
+					prevItem.x2 = x2;
+					prevItem.xMiddle = (Number(prevItem.x1) + x2) / 2;
+				} else {
+					if (nextCode != undefined) {
+						accumulator.push({
+							ms: xMiddle,
+							weatherCode: nextCode,
+							text: WMO_CODES[nextCode].description,
+							icon: WMO_CODES[nextCode].icon,
+							x1,
+							x2,
+							xMiddle,
+							fill: WMO_CODES[nextCode].color,
+							isDarkText: WMO_CODES[nextCode].isDarkText,
+							opacity: current.ms < now ? 0.2 : 1,
+						});
 					}
-					return accumulator;
-				},
-				[] as CodesItem[],
-			);
+				}
+				return accumulator;
+			}, [] as CodesItem[]);
 
 			const rain = minute0withoutLast
 				.filter((d) => d.precipitation > 0)

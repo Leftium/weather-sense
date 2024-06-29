@@ -255,10 +255,11 @@
 			x: {
 				tickFormat: (ms: number) => nsWeatherData.tzFormat(ms, 'ha'),
 				domain: [msStart, msEnd],
+				range: [MARGIN_LEFT, clientWidth - MARGIN_RIGHT],
 			},
 		};
 
-		const xScale = Plot.plot(plotOptions).scale('x');
+		const xScale = Plot.scale(plotOptions);
 
 		const labelTextOptions = {
 			opacity: fadePastValues,

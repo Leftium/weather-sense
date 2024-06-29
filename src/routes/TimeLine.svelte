@@ -207,18 +207,14 @@
 		return 1;
 	}
 
-	function makeTransformPercentage(keyName: string) {
-		return (da: any[]) => da.map((d) => d[keyName] / 100);
-	}
-
 	function makeTransFormPrecipitation() {
-		return (da: any[]) => da.map((d) => 1 - Math.exp(-d.precipitation / 2));
+		return (da: any[]) => da.map((d) => 100 * (1 - Math.exp(-d.precipitation / 8)));
 	}
 
 	function makeTransformTemperature(keyName = 'temperature') {
 		return function (da: any[]) {
 			const { minTemperature, temperatureRange } = nsWeatherData.temperatureStats;
-			return da.map((d) => (d[keyName] - minTemperature) / temperatureRange);
+			return da.map((d) => (100 * (d[keyName] - minTemperature)) / temperatureRange);
 		};
 	}
 
@@ -256,7 +252,7 @@
 			opacity: fadePastValues,
 			fontSize: 14,
 			fill: (d: { isDarkText: any }) => (d.isDarkText ? 'black' : 'white'),
-			y: 1.2,
+			y: 120,
 			x: (d) => {
 				if (!xScale?.invert) {
 					return d.xMiddle;
@@ -285,17 +281,16 @@
 					strokeOpacity: 'opacity',
 					x1: 'x1',
 					x2: 'x2',
-					y: 1.45,
+					y: 145,
 					fill: 'fill',
 				}),
 
-				/*
 				// The humidity plotted as area:
 				Plot.areaY(data?.all, {
 					curve,
 					opacity: fadePastValues,
 					x: 'ms',
-					y: { transform: makeTransformPercentage('humidity') },
+					y: 'humidity',
 					fill: 'rgba(42, 161, 152, .2)',
 				}),
 
@@ -304,19 +299,18 @@
 					curve,
 					strokeOpacity: fadePastValues,
 					x: 'ms',
-					y: { transform: makeTransformPercentage('humidity') },
+					y: 'humidity',
 
 					stroke: '#2aa198',
 					strokeWidth: 1.5,
 				}),
-                */
 
 				// The precipitation probability plotted as area:
 				Plot.areaY(data?.all, {
 					curve,
 					opacity: (d) => (d.precipitationProbability <= 0 ? 0 : fadePastValues(d)),
 					x: 'ms',
-					y: { transform: makeTransformPercentage('precipitationProbability') },
+					y: 'precipitationProbability',
 					fill: 'rgba(0, 0, 255, .2)',
 				}),
 
@@ -325,7 +319,7 @@
 					curve,
 					strokeOpacity: (d) => (d.precipitationProbability <= 0 ? 0 : fadePastValues(d)),
 					x: 'ms',
-					y: { transform: makeTransformPercentage('precipitationProbability') },
+					y: 'precipitationProbability',
 					stroke: 'blue',
 					strokeWidth: 1.5,
 				}),
@@ -365,7 +359,7 @@
 					opacity: fadePastValues,
 					width: ICON_WIDTH,
 					height: ICON_WIDTH,
-					y: 1.2,
+					y: 120,
 					x: (d) => {
 						if (!xScale?.invert) {
 							return d.xMiddle;
@@ -450,7 +444,7 @@
 					height: 32,
 					opacity: fadePastValues,
 					x: 'x',
-					y: 0.1,
+					y: 10,
 					src: (d) => `/icons/meteocons/${d.type}.png`,
 				}),
 

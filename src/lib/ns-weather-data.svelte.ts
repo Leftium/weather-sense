@@ -166,6 +166,9 @@ export function makeNsWeatherData() {
 
 			hourly.forEach((item) => {
 				const ms = item.ms;
+
+				const hour = dayjs(ms).get('hour');
+
 				const msPretty = nsWeatherData.tzFormat(ms, DATEFORMAT_MASK);
 
 				const temperature = item.temperature;
@@ -173,7 +176,8 @@ export function makeNsWeatherData() {
 				const weatherCode = item.weatherCode;
 				const humidity = item.relativeHumidity;
 				const dewPoint = item.dewPoint;
-				const precipitation = item.precipitation;
+				// Fake precipitation in dev mode:
+				const precipitation = false && dev ? (5 * hour) / 10 : item.precipitation;
 				const precipitationProbability = item.precipitationProbability;
 
 				data.set(ms, {

@@ -149,64 +149,40 @@
 				.map((d) => {
 					const x1bar = d.ms + 5 * MS_IN_MINUTE;
 					const x2bar = Math.min(d.ms + 55 * MS_IN_MINUTE, msEnd);
-					const y = d.precipitationNormalized;
+					const precipitation = d.precipitation;
 
 					return {
 						x1bar,
 						x2bar,
 						x1line: x1bar + 60,
 						x2line: x2bar - 60,
-						y,
-						y2: y + 0.01,
+						precipitation,
 						opacity: d.ms < now ? 0.2 : 1,
 					};
 				});
 
 			let low = {
 				ms: 0,
-				temperatureNormalized: Number.MAX_VALUE,
 				temperature: Number.MAX_VALUE,
-				dx: 0,
-				dy: 0,
 			};
 
 			let high = {
 				ms: 0,
-				temperatureNormalized: 0,
 				temperature: 0,
-				dx: 0,
-				dy: 0,
 			};
 
 			_.forEachRight(filtered, (item, index) => {
-				let dx = 0;
-				if (index < 5) {
-					dx = 10 - index;
-				} else if (index >= (filtered.length || 0) - 6) {
-					dx = -10 + ((filtered.length || 0) - index);
-				}
-
-				const temperatureNormalized = item.temperatureNormalized;
-
-				const dy = item.temperatureNormalized < 0.5 ? -10 : 10;
-
 				if (item.temperature > high.temperature) {
 					high = {
 						ms: item.ms,
-						temperatureNormalized,
 						temperature: item.temperature,
-						dx,
-						dy,
 					};
 				}
 
 				if (item.temperature < low.temperature || (ghostTracker && low.ms >= high.ms)) {
 					low = {
 						ms: item.ms,
-						temperatureNormalized,
 						temperature: item.temperature,
-						dx,
-						dy,
 					};
 				}
 			});
@@ -229,6 +205,21 @@
 			return 0.5;
 		}
 		return 1;
+	}
+
+	function makeTransformPercentage(keyName: string) {
+		return (da: any[]) => da.map((d) => d[keyName] / 100);
+	}
+
+	function makeTransFormPrecipitation() {
+		return (da: any[]) => da.map((d) => 1 - Math.exp(-d.precipitation / 2));
+	}
+
+	function makeTransformTemperature(keyName = 'temperature') {
+		return function (da: any[]) {
+			const { minTemperature, temperatureRange } = nsWeatherData.temperatureStats;
+			return da.map((d) => (d[keyName] - minTemperature) / temperatureRange);
+		};
 	}
 
 	const curve = 'catmull-rom';
@@ -291,43 +282,41 @@
 					fill: 'fill',
 				}),
 
-				/*
 				// The humidity plotted as area:
 				Plot.areaY(data?.all, {
-                    curve,
+					curve,
 					opacity: fadePastValues,
 					x: 'ms',
-					y: 'humidityNormalized',
-					fill: 'rgba(42, 161, 152, .2)'
+					y: { transform: makeTransformPercentage('humidity') },
+					fill: 'rgba(42, 161, 152, .2)',
 				}),
 
 				// The humidity plotted as line:
 				Plot.lineY(data?.all, {
 					curve,
-                    strokeOpacity: fadePastValues,
+					strokeOpacity: fadePastValues,
 					x: 'ms',
-					y: 'humidityNormalized',
+					y: { transform: makeTransformPercentage('humidity') },
 
 					stroke: '#2aa198',
-					strokeWidth: 1.5
+					strokeWidth: 1.5,
 				}),
-                */
 
 				// The precipitation probability plotted as area:
 				Plot.areaY(data?.all, {
 					curve,
-					opacity: (d) => (d.precipitationProbabilityNormalized <= 0 ? 0 : fadePastValues(d)),
+					opacity: (d) => (d.precipitationProbability <= 0 ? 0 : fadePastValues(d)),
 					x: 'ms',
-					y: 'precipitationProbabilityNormalized',
+					y: { transform: makeTransformPercentage('precipitationProbability') },
 					fill: 'rgba(0, 0, 255, .2)',
 				}),
 
 				// The precipitation probability plotted as line:
 				Plot.lineY(data?.all, {
 					curve,
-					strokeOpacity: (d) => (d.precipitationProbabilityNormalized <= 0 ? 0 : fadePastValues(d)),
+					strokeOpacity: (d) => (d.precipitationProbability <= 0 ? 0 : fadePastValues(d)),
 					x: 'ms',
-					y: 'precipitationProbabilityNormalized',
+					y: { transform: makeTransformPercentage('precipitationProbability') },
 					stroke: 'blue',
 					strokeWidth: 1.5,
 				}),
@@ -337,18 +326,18 @@
 					strokeOpacity: 'opacity',
 					x1: 'x1bar',
 					x2: 'x2bar',
-					y: 'y',
+					y: { transform: makeTransFormPrecipitation() },
 					fill: 'lightblue',
 				}),
 
 				// Rain bar 'cap':
-				Plot.rect(data.rain, {
+				Plot.ruleY(data.rain, {
 					strokeOpacity: 'opacity',
 					x1: 'x1line',
 					x2: 'x2line',
-					y1: 'y',
-					y2: 'y2',
+					y: { transform: makeTransFormPrecipitation() },
 					stroke: 'darkcyan',
+					strokeWidth: 2,
 				}),
 
 				// Weather code label shadow text:
@@ -393,7 +382,9 @@
 					curve,
 					strokeOpacity: fadePastValues,
 					x: 'ms',
-					y: 'dewPointNormalized',
+					y: {
+						transform: makeTransformTemperature('dewPoint'),
+					},
 
 					stroke: '#268bd2',
 					strokeWidth: 2,
@@ -404,8 +395,9 @@
 					curve,
 					strokeOpacity: fadePastValues,
 					x: 'ms',
-					y: 'temperatureNormalized',
-
+					y: {
+						transform: makeTransformTemperature(),
+					},
 					stroke: 'black',
 					strokeWidth: 2,
 				}),
@@ -413,15 +405,24 @@
 				// High/low temp marks:
 				Plot.dot([data.low], {
 					fillOpacity: fadePastValues,
+					strokeOpacity: fadePastValues,
 					x: 'ms',
-					y: 'temperatureNormalized',
+					y: {
+						transform: makeTransformTemperature(),
+					},
 					fill: SOLARIZED_BLUE,
+					stroke: 'black',
 				}),
 				Plot.dot([data.high], {
 					fillOpacity: fadePastValues,
+					strokeOpacity: fadePastValues,
 					x: 'ms',
-					y: 'temperatureNormalized',
+					y: {
+						transform: makeTransformTemperature(),
+					},
 					fill: SOLARIZED_RED,
+					stroke: 'black',
+					strokeWidth: 1,
 				}),
 
 				/*
@@ -445,7 +446,16 @@
 				}),
 
 				// Dot that marks value at mouse (hover) position:
-				Plot.dot(data?.all, Plot.pointerX({ x: 'ms', y: 'temperatureNormalized', fill: 'purple' })),
+				Plot.dot(
+					data?.all,
+					Plot.pointerX({
+						x: 'ms',
+						y: {
+							transform: makeTransformTemperature(),
+						},
+						fill: 'purple',
+					}),
+				),
 			];
 
 			marks.push(

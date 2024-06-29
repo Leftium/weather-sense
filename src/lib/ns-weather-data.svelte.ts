@@ -5,7 +5,7 @@ import _ from 'lodash-es';
 import { getEmitter } from '$lib/emitter';
 import { gg } from '$lib/gg';
 import type { Coordinates, Radar } from '$lib/types';
-import { MS_IN_HOUR, MS_IN_MINUTE, MS_IN_SECOND, celcius, lerp } from './util';
+import { MS_IN_HOUR, MS_IN_MINUTE, MS_IN_SECOND, celcius, lerp, summarize } from './util';
 import { browser, dev } from '$app/environment';
 
 export type WeatherDataEvents = {
@@ -141,30 +141,28 @@ export function makeNsWeatherData() {
 		dewPoint: number;
 		precipitation: number;
 		precipitationProbability: number;
-
-		temperatureNormalized: number;
-		dewPointNormalized: number;
-		precipitationNormalized: number;
-		precipitationProbabilityNormalized: number;
-		humidityNormalized: number;
 	};
 	let data: Map<number, DataItem> = $state(new Map());
+	let temperatureStats = $state({ minTemperature: 0, maxTemperature: 0, temperatureRange: 0 });
 
 	$effect(() => {
 		if (!browser) {
 			return;
 		}
+		gg('call nsWeatherData.data');
 		if (hourly) {
-			gg('make nsWeather.data');
+			gg('make nsWeatherData.data');
+			console.table(summarize($state.snapshot(hourly)));
 			console.time('nsWeather.data');
 			// Normalize temperatures to scale: [0, 1].
-			const minTemperature =
-				Math.min(
-					_.minBy(hourly, 'temperature')?.temperature ?? 0,
-					_.minBy(hourly, 'dewPoint')?.dewPoint ?? 0,
-				) ?? 0;
-			const maxTemperature = _.maxBy(hourly, 'temperature')?.temperature ?? 0;
+			const minTemperature = Math.min(
+				_.minBy(hourly, 'temperature')?.temperature ?? Number.MAX_VALUE,
+				_.minBy(hourly, 'dewPoint')?.dewPoint ?? Number.MAX_VALUE,
+			);
+			const maxTemperature = _.maxBy(hourly, 'temperature')?.temperature ?? Number.MIN_VALUE;
 			const temperatureRange = maxTemperature - minTemperature;
+
+			temperatureStats = { minTemperature, maxTemperature, temperatureRange };
 
 			hourly.forEach((item) => {
 				const ms = item.ms;
@@ -178,28 +176,19 @@ export function makeNsWeatherData() {
 				const precipitation = item.precipitation;
 				const precipitationProbability = item.precipitationProbability;
 
-				const temperatureNormalized = (temperature - minTemperature) / temperatureRange;
-				const dewPointNormalized = (dewPoint - minTemperature) / temperatureRange;
-				const precipitationNormalized = 1 - Math.exp(-precipitation / 2);
-				const precipitationProbabilityNormalized = precipitationProbability / 100;
-				const humidityNormalized = humidity / 100;
-
 				data.set(ms, {
 					msPretty,
 					ms,
 
-					temperature,
 					weatherCode,
-					humidity,
-					dewPoint,
-					precipitation,
-					precipitationProbability,
 
-					temperatureNormalized,
-					dewPointNormalized,
-					precipitationNormalized,
-					precipitationProbabilityNormalized,
-					humidityNormalized,
+					temperature,
+					dewPoint,
+
+					humidity,
+
+					precipitationProbability,
+					precipitation,
 				});
 			});
 			console.timeEnd('nsWeather.data');
@@ -264,6 +253,27 @@ export function makeNsWeatherData() {
 		displayDewPoint: 'temperature',
 	};
 
+	const hourlyKeys = {
+		weather_code: 'weatherCode',
+		temperature_2m: 'temperature',
+		relative_humidity_2m: 'relativeHumidity',
+		dew_point_2m: 'dewPoint',
+		precipitation_probability: 'precipitationProbability',
+		precipitation: 'precipitation',
+	};
+
+	const dailyKeys = {
+		weather_code: 'weatherCode',
+		temperature_2m_max: 'temperatureMax',
+		temperature_2m_min: 'temperatureMin',
+		precipitation_sum: 'precipitation',
+		rain_sum: 'rain',
+		showers_sum: 'showers',
+		snowfall_sum: 'snow',
+		precipitation_hours: 'precipitationHours',
+		precipitation_probability_max: 'precipitationProbabilityMax',
+	};
+
 	async function fetchOpenMeteo() {
 		gg('fetchOpenMeteo:start');
 		console.time('fetchOpenMeteo');
@@ -275,7 +285,6 @@ export function makeNsWeatherData() {
 			`&temperature_unit=fahrenheit&timeformat=unixtime&timezone=auto&past_days=${PAST_DAYS}&forecast_days=${FORECAST_DAYS}`;
 
 		const fetched = await fetch(url);
-
 		const json = await fetched.json();
 
 		timezone = json.timezone;
@@ -296,40 +305,21 @@ export function makeNsWeatherData() {
 			snowfall: json.current.snowfall,
 		};
 
-		const hourlyKeys = {
-			weather_code: 'weatherCode',
-			temperature_2m: 'temperature',
-			relative_humidity_2m: 'relativeHumidity',
-			dew_point_2m: 'dewPoint',
-			precipitation_probability: 'precipitationProbability',
-			precipitation: 'precipitation',
-		};
+		hourly = false
+			? []
+			: json.hourly.time.map((unixtime: number, index: number) => {
+					const ms = unixtime * MS_IN_SECOND;
+					const object: Partial<HourlyWeather> = {
+						msPretty: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),
+						ms,
+					};
 
-		const dailyKeys = {
-			weather_code: 'weatherCode',
-			temperature_2m_max: 'temperatureMax',
-			temperature_2m_min: 'temperatureMin',
-			precipitation_sum: 'precipitation',
-			rain_sum: 'rain',
-			showers_sum: 'showers',
-			snowfall_sum: 'snow',
-			precipitation_hours: 'precipitationHours',
-			precipitation_probability_max: 'precipitationProbabilityMax',
-		};
+					_.forEach(hourlyKeys, (keyData, keyOpenMeteo) => {
+						object[keyData as keyof HourlyWeather] = json.hourly[keyOpenMeteo][index];
+					});
 
-		hourly = _.map(json.hourly.time, (unixtime, index: number) => {
-			const ms = unixtime * MS_IN_SECOND;
-			const object: Partial<HourlyWeather> = {
-				msPretty: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),
-				ms,
-			};
-
-			_.forEach(hourlyKeys, (newKey, openMeteoKey) => {
-				object[newKey as keyof HourlyWeather] = json.hourly[openMeteoKey][index];
-			});
-
-			return object as HourlyWeather;
-		});
+					return object as HourlyWeather;
+				});
 
 		daily = _.map(json.daily.time, (unixtime, index: number) => {
 			const ms = unixtime * MS_IN_SECOND;
@@ -547,6 +537,10 @@ export function makeNsWeatherData() {
 
 		get data() {
 			return data;
+		},
+
+		get temperatureStats() {
+			return temperatureStats;
 		},
 
 		get units() {

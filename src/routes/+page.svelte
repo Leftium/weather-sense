@@ -94,7 +94,7 @@
 	</div>
 	<div class="other-measurements">
 		<div>
-			<span><b>Dew Point:</b> {nsWeatherData.format('displayDewPoint')}</span>
+			<span><b>Dew Point:</b> {nsWeatherData.format('displayDewPoint', false)}</span>
 			<span><b>Humidity:</b> {nsWeatherData.displayHumidity}%</span>
 		</div>
 		<div>

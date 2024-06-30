@@ -210,10 +210,7 @@
 
 	// Svelte action for timeline.
 	function trackable(node: HTMLElement) {
-		let insideTrackingArea = false;
-		let trackingOutside = false;
-
-		function trackToMouseX(e: MouseEvent) {
+		function trackToMouseX(e: PointerEvent) {
 			const svgNode = d3.select(div).select('svg').select('g[aria-label=rect]').node();
 			if (xScale.invert) {
 				const [x] = d3.pointer(e, svgNode);
@@ -223,70 +220,31 @@
 			}
 		}
 
-		function handleMouseMove(e: MouseEvent) {
-			// debug('mousemove@scrubbable')
-
-			if (insideTrackingArea) {
-				if (nsWeatherData.trackedElement === node) {
-					trackToMouseX(e);
-				} else if (nsWeatherData.trackedElement === null) {
-					emit('weatherdata_requestedTrackingStart', { node });
-				}
-			} else {
-				if (nsWeatherData.trackedElement === node) {
-					if (trackingOutside) {
-						trackToMouseX(e);
-					}
-					if (!trackingOutside) {
-						emit('weatherdata_requestedTrackingEnd');
-					}
-				}
+		function handlePointerMove(e: PointerEvent) {
+			// debug('handlePointerMove@trackable')
+			if (nsWeatherData.trackedElement === node) {
+				trackToMouseX(e);
 			}
 		}
 
-		function handleMouseEnter(e: MouseEvent) {
-			if (!insideTrackingArea) {
-				//gg('handleMouseEnter');
-				insideTrackingArea = true;
-			}
+		function handlePointerDown(e: PointerEvent) {
+			gg('handlePointerDown');
+			trackToMouseX(e);
+			emit('weatherdata_requestedTrackingStart', { node });
 		}
 
-		function handleMouseLeave(e: MouseEvent) {
-			if (insideTrackingArea) {
-				//gg('handleMouseLeave');
-				insideTrackingArea = false;
-			}
-		}
-
-		function handleMouseDown(e: MouseEvent) {
-			if (!trackingOutside) {
-				gg('handleMouseDown');
-				trackingOutside = true;
-			}
-		}
-
-		function handleMouseUp(e: MouseEvent) {
-			if (trackingOutside) {
-				gg('handleMouseUp:tracking');
-				trackingOutside = false;
-			}
-
-			if (!insideTrackingArea && nsWeatherData.trackedElement === node) {
-				gg('handleMouseUp:tracking:emit');
-				emit('weatherdata_requestedTrackingEnd');
-			}
+		function handlePointerUp(e: PointerEvent) {
+			gg('handlePointerUp');
+			emit('weatherdata_requestedTrackingEnd');
 		}
 
 		const abortController = new AbortController();
 		const { signal } = abortController;
 
-		window.addEventListener('mousemove', handleMouseMove, { signal });
+		window.addEventListener('pointermove', handlePointerMove, { signal });
 
-		div.addEventListener('mouseenter', handleMouseEnter, { signal });
-		div.addEventListener('mouseleave', handleMouseLeave, { signal });
-
-		div.addEventListener('mousedown', handleMouseDown, { signal });
-		window.addEventListener('mouseup', handleMouseUp, { signal });
+		div.addEventListener('pointerdown', handlePointerDown, { signal });
+		window.addEventListener('pointerup', handlePointerUp, { signal });
 
 		return {
 			destroy() {
@@ -696,6 +654,7 @@
 
 	div {
 		user-select: none;
+		touch-action: none;
 	}
 
 	.labels-for-widths {

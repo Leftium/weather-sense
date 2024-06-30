@@ -54,7 +54,6 @@
 
 	let div: HTMLDivElement;
 	let clientWidth: number = $state(0);
-	let plot: undefined | ReturnType<typeof Plot.plot> = $state();
 
 	let data = $derived.by(() => {
 		//gg('data');
@@ -301,9 +300,7 @@
 			},
 		} as Plot.TextOptions;
 
-		if (!data?.all?.length) {
-			plot = undefined;
-		} else {
+		if (data?.all?.length) {
 			const marks: Markish[] = [
 				//Plot.frame(),
 
@@ -495,15 +492,11 @@
 			];
 
 			//@ts-expect-error: x.type is valid.
-			plot = Plot.plot({ ...plotOptions, marks });
-		}
+			const plot = Plot.plot({ ...plotOptions, marks });
 
-		div?.firstChild?.remove(); // remove old chart, if any
-		if (plot) {
-			div?.append(plot); // add the new chart
-		}
+			div?.firstChild?.remove(); // First remove old chart, if any.
+			div?.append(plot); // Then add the new chart.
 
-		if (plot) {
 			plot.addEventListener('input', (event) => {
 				//gg($state.snapshot(plot.value), event);
 

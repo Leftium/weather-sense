@@ -261,6 +261,8 @@
 	.current {
 		display: grid;
 		grid-template-columns: 1fr auto 1fr;
+
+		line-height: 1.3;
 	}
 
 	.current > div:first-child {
@@ -269,7 +271,7 @@
 
 	.current .icon {
 		margin: 0 0.2em;
-		height: 64px;
+		height: 49px;
 	}
 
 	.current .time {

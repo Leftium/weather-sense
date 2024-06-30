@@ -241,6 +241,8 @@
 
 	function updateRuleX(value: number) {
 		const msIntervalStart = Math.floor(Number(value) / 10 / MS_IN_MINUTE) * 10 * MS_IN_MINUTE;
+		const interval = nsWeatherData.intervals.find((item) => item.ms === msIntervalStart);
+		const length = interval ? interval.x2 - msIntervalStart : MS_IN_HOUR;
 
 		const pg = d3.select(div).select('svg');
 		pg.select('.tracker-rect').remove();
@@ -261,9 +263,6 @@
 				.attr('stroke-width', 4)
 				.attr('stroke-linecap', 'round');
 		}
-
-		const interval = nsWeatherData.intervals.find((item) => item.ms === msIntervalStart);
-		const length = interval ? interval.x2 - msIntervalStart : MS_IN_HOUR;
 
 		if (msIntervalStart >= msStart && msIntervalStart < msEnd) {
 			drawTracker(msIntervalStart, length, 'red');
@@ -496,6 +495,9 @@
 
 			div?.firstChild?.remove(); // First remove old chart, if any.
 			div?.append(plot); // Then add the new chart.
+
+			// Render initial tracker.
+			updateRuleX(nsWeatherData.ms);
 
 			plot.addEventListener('input', (event) => {
 				//gg($state.snapshot(plot.value), event);

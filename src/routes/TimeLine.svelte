@@ -128,7 +128,7 @@
 				const nextCode = current.weatherCode;
 
 				const x1 = current.ms;
-				const x2 = Math.min(current.ms + MS_IN_HOUR, msEnd);
+				const x2 = Math.min(current.ms + MS_IN_HOUR + 2 * MS_IN_MINUTE, msEnd);
 				const xMiddle = (Number(x1) + Number(x2)) / 2;
 
 				if (prevItem && prevCode == nextCode && prevCode != undefined) {

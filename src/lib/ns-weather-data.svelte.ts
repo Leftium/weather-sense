@@ -33,7 +33,7 @@ export type WeatherDataEvents = {
 
 	weatherdata_updatedData: undefined;
 
-	weatherdata_requestedTrackingStart: undefined;
+	weatherdata_requestedTrackingStart: { node: HTMLElement };
 
 	weatherdata_requestedTrackingEnd: undefined;
 };
@@ -246,7 +246,7 @@ export function makeNsWeatherData() {
 		temperature: 'F',
 	});
 
-	let tracking = $state(false);
+	let trackedElement: HTMLElement | null = $state(null);
 
 	const unitsUsed: Record<string, keyof typeof units> = {
 		temperature: 'temperature',
@@ -445,21 +445,21 @@ export function makeNsWeatherData() {
 			const msMaxRadar = (radar.frames.at(-1)?.ms || 0) + 10 * MS_IN_MINUTE;
 			if (msTracker > msMaxRadar) {
 				radarPlaying = false;
-				if (!tracking) {
+				if (!trackedElement) {
 					msTracker = Date.now();
 					resetRadarOnPlay = true;
 				}
 			}
 		});
 
-		on('weatherdata_requestedTrackingStart', function () {
+		on('weatherdata_requestedTrackingStart', function (params) {
 			//gg('weatherdata_requestedTrackingStart');
-			tracking = true;
+			trackedElement = params.node;
 		});
 
 		on('weatherdata_requestedTrackingEnd', function () {
 			//gg('weatherdata_requestedTrackingEnd');
-			tracking = false;
+			trackedElement = null;
 			msTracker = Date.now();
 		});
 
@@ -552,6 +552,10 @@ export function makeNsWeatherData() {
 
 		get intervals() {
 			return intervals;
+		},
+
+		get trackedElement() {
+			return trackedElement;
 		},
 
 		get displayTemperature() {

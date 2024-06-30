@@ -198,6 +198,93 @@
 		return null;
 	});
 
+	// Svelte action for timeline.
+	function trackable(node: HTMLElement) {
+		let insideTrackingArea = false;
+		let trackingOutside = false;
+
+		function trackToMouseX(e: MouseEvent) {
+			const svgNode = d3.select(div).select('svg').select('g[aria-label=rect]').node();
+			if (xScale.invert) {
+				const [x] = d3.pointer(e, svgNode);
+				const ms = _.clamp(xScale.invert(x), msStart, msEnd);
+
+				emit('weatherdata_requestedSetTime', { ms });
+			}
+		}
+
+		function handleMouseMove(e: MouseEvent) {
+			// debug('mousemove@scrubbable')
+
+			if (insideTrackingArea) {
+				if (nsWeatherData.trackedElement === node) {
+					trackToMouseX(e);
+				} else if (nsWeatherData.trackedElement === null) {
+					emit('weatherdata_requestedTrackingStart', { node });
+				}
+			} else {
+				if (nsWeatherData.trackedElement === node) {
+					if (trackingOutside) {
+						trackToMouseX(e);
+					}
+					if (!trackingOutside) {
+						emit('weatherdata_requestedTrackingEnd');
+					}
+				}
+			}
+		}
+
+		function handleMouseEnter(e: MouseEvent) {
+			if (!insideTrackingArea) {
+				//gg('handleMouseEnter');
+				insideTrackingArea = true;
+			}
+		}
+
+		function handleMouseLeave(e: MouseEvent) {
+			if (insideTrackingArea) {
+				//gg('handleMouseLeave');
+				insideTrackingArea = false;
+			}
+		}
+
+		function handleMouseDown(e: MouseEvent) {
+			if (!trackingOutside) {
+				gg('handleMouseDown');
+				trackingOutside = true;
+			}
+		}
+
+		function handleMouseUp(e: MouseEvent) {
+			if (trackingOutside) {
+				gg('handleMouseUp:tracking');
+				trackingOutside = false;
+			}
+
+			if (!insideTrackingArea && nsWeatherData.trackedElement === node) {
+				gg('handleMouseUp:tracking:emit');
+				emit('weatherdata_requestedTrackingEnd');
+			}
+		}
+
+		const abortController = new AbortController();
+		const { signal } = abortController;
+
+		window.addEventListener('mousemove', handleMouseMove, { signal });
+
+		div.addEventListener('mouseenter', handleMouseEnter, { signal });
+		div.addEventListener('mouseleave', handleMouseLeave, { signal });
+
+		div.addEventListener('mousedown', handleMouseDown, { signal });
+		window.addEventListener('mouseup', handleMouseUp, { signal });
+
+		return {
+			destroy() {
+				abortController.abort();
+			},
+		};
+	}
+
 	function fadePastValues(d: { ms: number }) {
 		const now = Date.now();
 		if (d.ms < now) {
@@ -251,7 +338,7 @@
 			const ig = pg.append('g').attr('class', 'tracker-rect');
 
 			const x1 = xScale.apply(ms);
-			const x2 = xScale.apply(ms + length);
+			const x2 = xScale.apply(Math.min(ms + length, msEnd));
 			const y1 = yScale.apply(145);
 			const y2 = yScale.apply(0);
 
@@ -265,8 +352,8 @@
 
 			ig.append('rect')
 				.attr('x', x1)
-				.attr('width', x2 - x1)
 				.attr('y', y1)
+				.attr('width', x2 - x1)
 				.attr('height', y2 - y1)
 				.attr('fill', color)
 				.attr('opacity', 0.2);
@@ -484,18 +571,6 @@
 					y: 10,
 					src: (d) => `/icons/meteocons/${d.type}.png`,
 				}),
-
-				// Dot that marks value at mouse (hover) position:
-				Plot.dot(
-					data?.all,
-					Plot.pointerX({
-						x: 'ms',
-						y: {
-							transform: makeTransformTemperature(),
-						},
-						fill: 'purple',
-					}),
-				),
 			];
 
 			//@ts-expect-error: x.type is valid.
@@ -506,14 +581,6 @@
 
 			// Render initial tracker.
 			updateRuleX(nsWeatherData.ms);
-
-			plot.addEventListener('input', (event) => {
-				//gg($state.snapshot(plot.value), event);
-
-				if (plot?.value?.ms) {
-					emit('weatherdata_requestedSetTime', { ms: plot?.value?.ms });
-				}
-			});
 		}
 	}
 
@@ -521,7 +588,6 @@
 	// Runs every time nsWeatherData.ms changes value.
 	$effect(() => {
 		//gg('EFFECT');
-
 		updateRuleX(nsWeatherData.ms);
 	});
 
@@ -541,14 +607,6 @@
 			plotData();
 		});
 		resizeObserver.observe(div);
-
-		div.addEventListener('mouseenter', function () {
-			emit('weatherdata_requestedTrackingStart');
-		});
-
-		div.addEventListener('mouseleave', async function () {
-			emit('weatherdata_requestedTrackingEnd');
-		});
 
 		if (!adjustedLabelWidths) {
 			adjustedLabelWidths = true;
@@ -573,7 +631,7 @@
 	</div>
 {/if}
 
-<div bind:this={div} bind:clientWidth role="img"></div>
+<div bind:this={div} bind:clientWidth use:trackable role="img"></div>
 
 <style>
 	div,

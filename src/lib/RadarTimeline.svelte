@@ -49,7 +49,14 @@
 <div class="pico">
 	<div class="range-wrapper">
 		{#key [min, max]}
-			<input type="range" name="" id="" {min} {max} value={nsWeatherData.ms} {step} {oninput} />
+			<input
+				type="range"
+				{min}
+				{max}
+				value={_.clamp(nsWeatherData.ms, min, max)}
+				{step}
+				{oninput}
+			/>
 		{/key}
 		<datalist id="radar-markers">
 			{#each range as ms, index}

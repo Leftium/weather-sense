@@ -69,18 +69,18 @@
 		>
 	</div>
 	<div class="current">
-		<div class="time">
-			<div>{nsWeatherData.tzFormat(nsWeatherData.ms, 'ddd MMM D')}</div>
-			<div>
-				{nsWeatherData.tzFormat(nsWeatherData.ms, 'h:mma')}
-				<span class="timezone">{nsWeatherData.timezoneAbbreviation}</span>
-			</div>
+		<div class="condition">
+			<span>{wmoCode(nsWeatherData.displayWeatherCode).description}</span>
 		</div>
 
 		<img class="icon" src={wmoCode(nsWeatherData.displayWeatherCode).icon} alt="" />
 
-		<div class="condition">
-			<span>{wmoCode(nsWeatherData.displayWeatherCode).description}</span>
+		<div class="time">
+			<div>{nsWeatherData.tzFormat(nsWeatherData.ms, 'ddd MMM D')}</div>
+			<div>
+				{nsWeatherData.tzFormat(nsWeatherData.ms, 'hh:mma')}
+				<span class="timezone">{nsWeatherData.timezoneAbbreviation}</span>
+			</div>
 		</div>
 	</div>
 
@@ -101,13 +101,14 @@
 		<div>
 			<label>
 				<input type="checkbox" />
-				H|L:
-				<span use:toggleUnits={{ temperature: true }}>
-					{nsWeatherData.format('daily[2].temperatureMax', false)}
-				</span>|<span use:toggleUnits={{ temperature: true }}>
-					{nsWeatherData.format('daily[2].temperatureMin', false)}
-				</span>
 			</label>
+			<span use:toggleUnits={{ temperature: true }}>
+				{nsWeatherData.format('daily[2].temperatureMin', false)}
+			</span>
+			to
+			<span use:toggleUnits={{ temperature: true }}>
+				{nsWeatherData.format('daily[2].temperatureMax', false)}
+			</span>
 		</div>
 		<div>
 			<label>
@@ -267,14 +268,14 @@
 	}
 
 	.current .icon {
-		margin: 0 0.5em;
+		margin: 0 0.2em;
 		height: 64px;
 	}
 
 	.current .time {
 		width: 100%;
 
-		text-align: right;
+		text-align: left;
 	}
 
 	.current .condition {
@@ -283,10 +284,6 @@
 		justify-content: center;
 		font-size: large;
 		line-height: 1.2;
-	}
-
-	.current .condition span {
-		padding-right: 0.3em;
 	}
 
 	.other-measurements {

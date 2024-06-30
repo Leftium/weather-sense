@@ -68,69 +68,95 @@
 			>({humanDistance(nsWeatherData.coords?.accuracy) || nsWeatherData.source})</span
 		>
 	</div>
-	<div class="time">
-		{nsWeatherData.tzFormat(nsWeatherData.ms, 'ddd MMM D, h:mma')}
-		<span class="timezone">{nsWeatherData.timezoneAbbreviation}</span>
-	</div>
 	<div class="current">
-		<div>
-			<div class="main-temperature" use:toggleUnits={{ temperature: true }}>
-				{nsWeatherData.format('displayTemperature')}
-			</div>
-			<div class="temperature-range">
-				<span use:toggleUnits={{ temperature: true }}>
-					{nsWeatherData.format('daily[2].temperatureMin', false)}
-				</span>
-				to
-				<span use:toggleUnits={{ temperature: true }}>
-					{nsWeatherData.format('daily[2].temperatureMax', false)}
-				</span>
+		<div class="time">
+			<div>{nsWeatherData.tzFormat(nsWeatherData.ms, 'ddd MMM D')}</div>
+			<div>
+				{nsWeatherData.tzFormat(nsWeatherData.ms, 'h:mma')}
+				<span class="timezone">{nsWeatherData.timezoneAbbreviation}</span>
 			</div>
 		</div>
+
 		<img class="icon" src={wmoCode(nsWeatherData.displayWeatherCode).icon} alt="" />
 
 		<div class="condition">
 			<span>{wmoCode(nsWeatherData.displayWeatherCode).description}</span>
 		</div>
 	</div>
+
 	<div class="other-measurements">
-		<label>
-			<input
-				type="checkbox"
-				style:background-color={colors.dewPoint}
-				style:border-color={colors.dewPoint}
-				bind:checked={displayDewPoint}
-			/>
-			<span>
-				<b>Dew Point:</b>
+		<div>
+			<label>
+				<input
+					type="checkbox"
+					style:background-color={colors.temperature}
+					style:border-color={colors.temperature}
+				/>
+				Temp:
+			</label>
+			<span use:toggleUnits={{ temperature: true }}>
+				{nsWeatherData.format('displayTemperature')}
+			</span>
+		</div>
+		<div>
+			<label>
+				<input type="checkbox" />
+				H|L:
+				<span use:toggleUnits={{ temperature: true }}>
+					{nsWeatherData.format('daily[2].temperatureMax', false)}
+				</span>|<span use:toggleUnits={{ temperature: true }}>
+					{nsWeatherData.format('daily[2].temperatureMin', false)}
+				</span>
+			</label>
+		</div>
+		<div>
+			<label>
+				<input
+					type="checkbox"
+					style:background-color={colors.dewPoint}
+					style:border-color={colors.dewPoint}
+					bind:checked={displayDewPoint}
+				/>
+				Dew Point:
+			</label>
+			<span use:toggleUnits={{ temperature: true }}>
 				{nsWeatherData.format('displayDewPoint', false)}
 			</span>
-		</label>
-		<label>
-			<input
-				type="checkbox"
-				style:background-color={'white' || colors.humidity}
-				style:border-color={colors.humidity}
-			/>
-			<span><b>Humidity:</b> {nsWeatherData.displayHumidity}%</span>
-		</label>
+		</div>
+		<div>
+			<label>
+				<input
+					type="checkbox"
+					style:background-color={'white' || colors.humidity}
+					style:border-color={colors.humidity}
+				/>
+				Humidity:
+				<span>{nsWeatherData.displayHumidity}%</span>
+			</label>
+		</div>
 
-		<label>
-			<input
-				type="checkbox"
-				style:background-color={colors.precipitation}
-				style:border-color={colors.precipitation}
-			/>
-			<span><b>Precip:</b> {nsWeatherData.displayPrecipitation}mm</span>
-		</label>
-		<label>
-			<input
-				type="checkbox"
-				style:background-color={colors.precipitationProbability}
-				style:border-color={colors.precipitationProbability}
-			/>
-			<span><b>Chance:</b> {nsWeatherData.displayPrecipitationProbability}%</span>
-		</label>
+		<div>
+			<label>
+				<input
+					type="checkbox"
+					style:background-color={colors.precipitation}
+					style:border-color={colors.precipitation}
+				/>
+				Precip:
+				<span>{nsWeatherData.displayPrecipitation}mm</span>
+			</label>
+		</div>
+		<div>
+			<label>
+				<input
+					type="checkbox"
+					style:background-color={colors.precipitationProbability}
+					style:border-color={colors.precipitationProbability}
+				/>
+				Chance:
+				<span>{nsWeatherData.displayPrecipitationProbability}%</span>
+			</label>
+		</div>
 	</div>
 </div>
 
@@ -241,26 +267,21 @@
 	}
 
 	.current .icon {
-		margin-right: 0.5em;
+		margin: 0 0.5em;
 		height: 64px;
 	}
 
-	.main-temperature {
-		font-size: 2.3em;
-		margin-right: 0.2em;
-		line-height: 1.1;
-	}
+	.current .time {
+		width: 100%;
 
-	.temperature-range {
-		text-align: center;
+		text-align: right;
 	}
 
 	.current .condition {
 		display: flex;
 		flex-direction: column;
 		justify-content: center;
-		font-size: x-large;
-		font-weight: bold;
+		font-size: large;
 		line-height: 1.2;
 	}
 
@@ -270,14 +291,28 @@
 
 	.other-measurements {
 		display: grid;
-		grid-template-columns: auto auto;
+		grid-template-columns: 1fr 1fr;
+		column-gap: 1em;
+
+		width: 100%;
+		max-width: 320px;
 		margin: auto;
+		margin-bottom: 0.2em;
+	}
+
+	.other-measurements input {
+		margin: 0;
+	}
+
+	.other-measurements label {
+		display: inline;
 	}
 
 	.hourly,
 	.daily {
 		font-family: Lato, sans-serif;
-		margin: 1em 0;
+		margin-top: 0.2em;
+		margin-bottom: 1.5em;
 	}
 
 	.daily {

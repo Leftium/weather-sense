@@ -575,7 +575,7 @@ export function makeNsWeatherData() {
 		},
 
 		get displayPrecipitation() {
-			return data.get(nearestHour(msTracker))?.precipitation;
+			return data.get(nearestHour(msTracker))?.precipitation.toFixed(1);
 		},
 
 		get displayPrecipitationProbability() {

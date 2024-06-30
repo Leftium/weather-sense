@@ -5,7 +5,7 @@ import _ from 'lodash-es';
 import { getEmitter } from '$lib/emitter';
 import { gg } from '$lib/gg';
 import type { Coordinates, Radar } from '$lib/types';
-import { MS_IN_HOUR, MS_IN_MINUTE, MS_IN_SECOND, celcius, lerp, summarize } from './util';
+import { MS_IN_HOUR, MS_IN_MINUTE, MS_IN_SECOND, celcius } from './util';
 import { browser, dev } from '$app/environment';
 
 export type WeatherDataEvents = {

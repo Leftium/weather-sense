@@ -1,6 +1,4 @@
 <script lang="ts">
-	import JSON5 from 'json5';
-
 	import type { WeatherDataEvents } from '$lib/ns-weather-data.svelte.js';
 
 	import TimeLine from './TimeLine.svelte';
@@ -13,20 +11,22 @@
 		summarize,
 		humanDistance,
 		objectFromMap,
-		replacer,
 		wmoCode,
 	} from '$lib/util.js';
 	import RadarMap from './RadarMap.svelte';
 
-	import { makeNsWeatherData } from '$lib/ns-weather-data.svelte.js';
-	const nsWeatherData = makeNsWeatherData();
-
-	let { data } = $props();
-
 	import { clearEvents, getEmitter } from '$lib/emitter.js';
 	import { dev } from '$app/environment';
 	import { onDestroy } from 'svelte';
+
+	import { makeNsWeatherData } from '$lib/ns-weather-data.svelte.js';
+
+	const nsWeatherData = makeNsWeatherData();
 	const { emit } = getEmitter<WeatherDataEvents>(import.meta);
+
+	let { data } = $props();
+
+	let displayDewPoint = $state(true);
 
 	emit('weatherdata_requestedSetLocation', {
 		source: data.source,
@@ -93,14 +93,26 @@
 		</div>
 	</div>
 	<div class="other-measurements">
-		<div>
-			<span><b>Dew Point:</b> {nsWeatherData.format('displayDewPoint', false)}</span>
+		<label>
+			<input type="checkbox" bind:checked={displayDewPoint} />
+			<span>
+				<b>Dew Point:</b>
+				{nsWeatherData.format('displayDewPoint', false)}
+			</span>
+		</label>
+		<label>
+			<input type="checkbox" />
 			<span><b>Humidity:</b> {nsWeatherData.displayHumidity}%</span>
-		</div>
-		<div>
-			<span><b>Precipitation:</b> {nsWeatherData.displayPrecipitation}mm</span>
-			({nsWeatherData.displayPrecipitationProbability}%)
-		</div>
+		</label>
+
+		<label>
+			<input type="checkbox" />
+			<span><b>Precip:</b> {nsWeatherData.displayPrecipitation}mm</span>
+		</label>
+		<label>
+			<input type="checkbox" />
+			<span><b>Chance:</b> {nsWeatherData.displayPrecipitationProbability}%</span>
+		</label>
 	</div>
 </div>
 
@@ -239,6 +251,8 @@
 	}
 
 	.other-measurements {
+		display: grid;
+		grid-template-columns: auto auto;
 		margin: auto;
 	}
 

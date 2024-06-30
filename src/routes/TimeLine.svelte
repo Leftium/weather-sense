@@ -48,6 +48,16 @@
 	const MARGIN_RIGHT = 12;
 	const ICON_LABEL_PADDING = 16;
 
+	const draw: Record<string, boolean | string> = {
+		weatherCode: true, // true, 'icon', 'text', 'color'
+		humidity: false,
+		precipitationProbability: true,
+		precipitation: true,
+		dewPoint: true,
+		temperature: true,
+		solarEvents: true,
+	};
+
 	// const msStart = +dayjs(start).startOf('hour');
 	const msStart = Math.floor(start / MS_IN_HOUR) * MS_IN_HOUR;
 	const msEnd = msStart + hours * MS_IN_HOUR;
@@ -372,13 +382,17 @@
 	function plotData() {
 		//gg('plotData');
 
+		if (!data?.all?.length) {
+			return;
+		}
+
 		const labelTextOptions = {
 			opacity: fadePastValues,
 			fontSize: 14,
 			fill: (d: { isDarkText: any }) => (d.isDarkText ? 'black' : 'white'),
 			y: 120,
 			x: (d) => {
-				if (!xScale?.invert) {
+				if (!xScale?.invert || draw.weatherCode === 'text') {
 					return d.xMiddle;
 				}
 
@@ -394,11 +408,19 @@
 			},
 		} as Plot.TextOptions;
 
-		if (data?.all?.length) {
-			const marks: Markish[] = [
-				//Plot.frame(),
+		const marks: Markish[] = [
+			// Background; also needed for d3.pointer() target.
+			Plot.rectY([0], {
+				x1: msStart,
+				x2: msEnd,
+				y: 145,
+				fill: '#efefef',
+			}),
+		];
 
-				// Weather code colored bands:
+		if (draw.weatherCode) {
+			// Weather code colored bands:
+			marks.push(
 				Plot.rectY(data.codes, {
 					strokeOpacity: 'opacity',
 					x1: 'x1',
@@ -406,19 +428,24 @@
 					y: 145,
 					fill: 'fill',
 				}),
+			);
+		}
 
-				/*
+		if (draw.humidity) {
+			marks.push(
 				// The humidity plotted as area:
-				Plot.areaY(data?.all, {
+				Plot.areaY(data.all, {
 					curve,
 					opacity: fadePastValues,
 					x: 'ms',
 					y: 'humidity',
 					fill: 'rgba(42, 161, 152, .2)',
 				}),
+			);
 
+			marks.push(
 				// The humidity plotted as line:
-				Plot.lineY(data?.all, {
+				Plot.lineY(data.all, {
 					curve,
 					strokeOpacity: fadePastValues,
 					x: 'ms',
@@ -427,19 +454,24 @@
 					stroke: '#2aa198',
 					strokeWidth: 1.5,
 				}),
-                */
+			);
+		}
 
-				// The precipitation probability plotted as area:
-				Plot.areaY(data?.all, {
+		if (draw.precipitationProbability) {
+			// The precipitation probability plotted as area:
+			marks.push(
+				Plot.areaY(data.all, {
 					curve,
 					opacity: (d) => (d.precipitationProbability <= 0 ? 0 : fadePastValues(d)),
 					x: 'ms',
 					y: 'precipitationProbability',
 					fill: 'rgba(0, 0, 255, .2)',
 				}),
+			);
 
-				// The precipitation probability plotted as line:
-				Plot.lineY(data?.all, {
+			// The precipitation probability plotted as line:
+			marks.push(
+				Plot.lineY(data.all, {
 					curve,
 					strokeOpacity: (d) => (d.precipitationProbability <= 0 ? 0 : fadePastValues(d)),
 					x: 'ms',
@@ -447,8 +479,12 @@
 					stroke: 'blue',
 					strokeWidth: 1.5,
 				}),
+			);
+		}
 
-				// Rain bar:
+		if (draw.precipitation) {
+			//Rain bar:
+			marks.push(
 				Plot.rectY(data.rain, {
 					strokeOpacity: 'opacity',
 					x1: 'x1bar',
@@ -456,8 +492,10 @@
 					y: { transform: makeTransFormPrecipitation() },
 					fill: 'lightblue',
 				}),
+			);
 
-				// Rain bar 'cap':
+			// Rain bar 'cap':
+			marks.push(
 				Plot.ruleY(data.rain, {
 					strokeOpacity: 'opacity',
 					x1: 'x1line',
@@ -466,18 +504,28 @@
 					stroke: 'darkcyan',
 					strokeWidth: 2,
 				}),
+			);
+		}
 
-				// Weather code label shadow text:
+		if (draw.weatherCode === true || draw.weatherCode === 'text') {
+			// Weather code label shadow text:
+			marks.push(
 				Plot.text(data.codes, {
 					...labelTextOptions,
 					fill: (d) => (d.isDarkText ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)'),
 					dy: 1,
 					dx: 1,
 				}),
+			);
 
+			marks.push(
 				// Weather code label text:
 				Plot.text(data.codes, labelTextOptions),
+			);
+		}
 
+		if (draw.weatherCode == true || draw.weatherCode === 'icon') {
+			marks.push(
 				// Weather code icon:
 				Plot.image(data.codes, {
 					opacity: fadePastValues,
@@ -485,7 +533,7 @@
 					height: ICON_WIDTH,
 					y: 120,
 					x: (d) => {
-						if (!xScale?.invert) {
+						if (!xScale?.invert || draw.weatherCode === 'icon') {
 							return d.xMiddle;
 						}
 
@@ -503,7 +551,11 @@
 						return width < ICON_WIDTH ? null : d.icon;
 					},
 				}),
+			);
+		}
 
+		if (draw.dewPoint) {
+			marks.push(
 				// The dew point plotted as line:
 				Plot.lineY(data?.all, {
 					curve,
@@ -516,7 +568,11 @@
 					stroke: '#268bd2',
 					strokeWidth: 2,
 				}),
+			);
+		}
 
+		if (draw.temperature) {
+			marks.push(
 				// The temperature plotted as line:
 				Plot.lineY(data?.all, {
 					curve,
@@ -528,7 +584,9 @@
 					stroke: 'black',
 					strokeWidth: 2,
 				}),
+			);
 
+			marks.push(
 				// High/low temp marks:
 				Plot.dot([data.low], {
 					fillOpacity: fadePastValues,
@@ -540,6 +598,9 @@
 					fill: SOLARIZED_BLUE,
 					stroke: 'black',
 				}),
+			);
+
+			marks.push(
 				Plot.dot([data.high], {
 					fillOpacity: fadePastValues,
 					strokeOpacity: fadePastValues,
@@ -551,17 +612,11 @@
 					stroke: 'black',
 					strokeWidth: 1,
 				}),
+			);
+		}
 
-				/*
-				// Plot sunrise as yellow rule and sunset as orange rule:
-				Plot.ruleX(data?.solarEvents, {
-					x: 'x',
-					y1: 0,
-					y2: 1.5,
-					stroke: (d) => (d.type === 'sunrise' ? 'yellow' : 'orange')
-				}),
-                */
-
+		if (draw.solarEvents) {
+			marks.push(
 				// Plot sunrise as yellow rule and sunset as icons:
 				Plot.image(data?.solarEvents, {
 					width: 32,
@@ -571,17 +626,17 @@
 					y: 10,
 					src: (d) => `/icons/meteocons/${d.type}.png`,
 				}),
-			];
-
-			//@ts-expect-error: x.type is valid.
-			const plot = Plot.plot({ ...plotOptions, marks });
-
-			div?.firstChild?.remove(); // First remove old chart, if any.
-			div?.append(plot); // Then add the new chart.
-
-			// Render initial tracker.
-			updateRuleX(nsWeatherData.ms);
+			);
 		}
+
+		//@ts-expect-error: x.type is valid.
+		const plot = Plot.plot({ ...plotOptions, marks });
+
+		div?.firstChild?.remove(); // First remove old chart, if any.
+		div?.append(plot); // Then add the new chart.
+
+		// Render initial tracker.
+		updateRuleX(nsWeatherData.ms);
 	}
 
 	// Update rule location only (leaving rest of plot intact).

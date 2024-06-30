@@ -210,7 +210,9 @@
 
 	// Svelte action for timeline.
 	function trackable(node: HTMLElement) {
-		function trackToMouseX(e: PointerEvent) {
+		let trackUntilMouseUp = false;
+
+		function trackToMouseX(e: PointerEvent | MouseEvent) {
 			const svgNode = d3.select(div).select('svg').select('g[aria-label=rect]').node();
 			if (xScale.invert) {
 				const [x] = d3.pointer(e, svgNode);
@@ -221,7 +223,6 @@
 		}
 
 		function handlePointerMove(e: PointerEvent) {
-			// debug('handlePointerMove@trackable')
 			if (nsWeatherData.trackedElement === node) {
 				trackToMouseX(e);
 			}
@@ -229,13 +230,32 @@
 
 		function handlePointerDown(e: PointerEvent) {
 			gg('handlePointerDown');
+			trackUntilMouseUp = true;
 			trackToMouseX(e);
 			emit('weatherdata_requestedTrackingStart', { node });
 		}
 
 		function handlePointerUp(e: PointerEvent) {
-			gg('handlePointerUp');
-			emit('weatherdata_requestedTrackingEnd');
+			if (nsWeatherData.trackedElement === node) {
+				gg('handlePointerUp');
+				trackUntilMouseUp = false;
+				emit('weatherdata_requestedTrackingEnd');
+			}
+		}
+
+		function handleMMouseEnter(e: MouseEvent) {
+			if (!nsWeatherData.trackedElement) {
+				gg('handleMMouseEnter', nsWeatherData.trackedElement);
+				trackToMouseX(e);
+				emit('weatherdata_requestedTrackingStart', { node });
+			}
+		}
+
+		function handleMMouseLeave(e: MouseEvent) {
+			if (!nsWeatherData.trackedElement && !trackUntilMouseUp) {
+				gg('handleMMouseLeave');
+				emit('weatherdata_requestedTrackingEnd');
+			}
 		}
 
 		const abortController = new AbortController();
@@ -245,6 +265,9 @@
 
 		div.addEventListener('pointerdown', handlePointerDown, { signal });
 		window.addEventListener('pointerup', handlePointerUp, { signal });
+
+		div.addEventListener('mouseenter', handleMMouseEnter, { signal });
+		div.addEventListener('mouseleave', handleMMouseLeave, { signal });
 
 		return {
 			destroy() {

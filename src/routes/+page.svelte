@@ -12,6 +12,7 @@
 		humanDistance,
 		objectFromMap,
 		wmoCode,
+		colors,
 	} from '$lib/util.js';
 	import RadarMap from './RadarMap.svelte';
 
@@ -26,7 +27,7 @@
 
 	let { data } = $props();
 
-	let displayDewPoint = $state(true);
+	let displayDewPoint = $state(false);
 
 	emit('weatherdata_requestedSetLocation', {
 		source: data.source,
@@ -94,23 +95,40 @@
 	</div>
 	<div class="other-measurements">
 		<label>
-			<input type="checkbox" bind:checked={displayDewPoint} />
+			<input
+				type="checkbox"
+				style:background-color={colors.dewPoint}
+				style:border-color={colors.dewPoint}
+				bind:checked={displayDewPoint}
+			/>
 			<span>
 				<b>Dew Point:</b>
 				{nsWeatherData.format('displayDewPoint', false)}
 			</span>
 		</label>
 		<label>
-			<input type="checkbox" />
+			<input
+				type="checkbox"
+				style:background-color={'white' || colors.humidity}
+				style:border-color={colors.humidity}
+			/>
 			<span><b>Humidity:</b> {nsWeatherData.displayHumidity}%</span>
 		</label>
 
 		<label>
-			<input type="checkbox" />
+			<input
+				type="checkbox"
+				style:background-color={colors.precipitation}
+				style:border-color={colors.precipitation}
+			/>
 			<span><b>Precip:</b> {nsWeatherData.displayPrecipitation}mm</span>
 		</label>
 		<label>
-			<input type="checkbox" />
+			<input
+				type="checkbox"
+				style:background-color={colors.precipitationProbability}
+				style:border-color={colors.precipitationProbability}
+			/>
 			<span><b>Chance:</b> {nsWeatherData.displayPrecipitationProbability}%</span>
 		</label>
 	</div>

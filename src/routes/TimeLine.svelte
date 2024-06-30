@@ -13,6 +13,7 @@
 	import { getEmitter } from '$lib/emitter';
 	import { onMount, tick } from 'svelte';
 	import {
+		colors,
 		MS_IN_DAY,
 		MS_IN_HOUR,
 		MS_IN_MINUTE,
@@ -417,10 +418,10 @@
 				// The humidity plotted as area:
 				Plot.areaY(data.all, {
 					curve,
-					opacity: fadePastValues,
+					opacity: (d) => fadePastValues(d) * 0.2,
 					x: 'ms',
 					y: 'humidity',
-					fill: 'rgba(42, 161, 152, .2)',
+					fill: colors.humidity,
 				}),
 			);
 
@@ -432,32 +433,7 @@
 					x: 'ms',
 					y: 'humidity',
 
-					stroke: '#2aa198',
-					strokeWidth: 1.5,
-				}),
-			);
-		}
-
-		if (draw.precipitationProbability) {
-			// The precipitation probability plotted as area:
-			marks.push(
-				Plot.areaY(data.all, {
-					curve,
-					opacity: (d) => (d.precipitationProbability <= 0 ? 0 : fadePastValues(d)),
-					x: 'ms',
-					y: 'precipitationProbability',
-					fill: 'rgba(0, 0, 255, .2)',
-				}),
-			);
-
-			// The precipitation probability plotted as line:
-			marks.push(
-				Plot.lineY(data.all, {
-					curve,
-					strokeOpacity: (d) => (d.precipitationProbability <= 0 ? 0 : fadePastValues(d)),
-					x: 'ms',
-					y: 'precipitationProbability',
-					stroke: 'blue',
+					stroke: colors.humidity,
 					strokeWidth: 1.5,
 				}),
 			);
@@ -471,7 +447,7 @@
 					x1: 'x1bar',
 					x2: 'x2bar',
 					y: { transform: makeTransFormPrecipitation() },
-					fill: 'lightblue',
+					fill: colors.precipitation,
 				}),
 			);
 
@@ -484,6 +460,31 @@
 					y: { transform: makeTransFormPrecipitation() },
 					stroke: 'darkcyan',
 					strokeWidth: 2,
+				}),
+			);
+		}
+
+		if (draw.precipitationProbability) {
+			// The precipitation probability plotted as area:
+			marks.push(
+				Plot.areaY(data.all, {
+					curve,
+					opacity: (d) => (d.precipitationProbability <= 0 ? 0 : fadePastValues(d) * 0.2),
+					x: 'ms',
+					y: 'precipitationProbability',
+					fill: colors.precipitationProbability,
+				}),
+			);
+
+			// The precipitation probability plotted as line:
+			marks.push(
+				Plot.lineY(data.all, {
+					curve,
+					strokeOpacity: (d) => (d.precipitationProbability <= 0 ? 0 : fadePastValues(d)),
+					x: 'ms',
+					y: 'precipitationProbability',
+					stroke: colors.precipitationProbability,
+					strokeWidth: 1.5,
 				}),
 			);
 		}
@@ -546,7 +547,7 @@
 						transform: makeTransformTemperature('dewPoint'),
 					},
 
-					stroke: '#268bd2',
+					stroke: colors.dewPoint,
 					strokeWidth: 2,
 				}),
 			);
@@ -562,7 +563,7 @@
 					y: {
 						transform: makeTransformTemperature(),
 					},
-					stroke: 'black',
+					stroke: colors.temperature,
 					strokeWidth: 2,
 				}),
 			);
@@ -577,7 +578,7 @@
 						transform: makeTransformTemperature(),
 					},
 					fill: SOLARIZED_BLUE,
-					stroke: 'black',
+					stroke: colors.temperature,
 				}),
 			);
 
@@ -590,7 +591,7 @@
 						transform: makeTransformTemperature(),
 					},
 					fill: SOLARIZED_RED,
-					stroke: 'black',
+					stroke: colors.temperature,
 					strokeWidth: 1,
 				}),
 			);

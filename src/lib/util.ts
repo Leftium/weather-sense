@@ -5,11 +5,21 @@ import { gg } from './gg';
 
 export const SOLARIZED_RED = '#dc322f';
 export const SOLARIZED_BLUE = '#268bd2';
+export const SOLARIZED_CYAN = '#2aa198';
+export const SOLARIZED_GREEN = '#859900';
 
 export const MS_IN_SECOND = 1000;
 export const MS_IN_MINUTE = 60 * MS_IN_SECOND;
 export const MS_IN_HOUR = 60 * MS_IN_MINUTE;
 export const MS_IN_DAY = 24 * MS_IN_HOUR;
+
+export const colors = {
+	humidity: SOLARIZED_GREEN,
+	precipitationProbability: 'aqua',
+	precipitation: SOLARIZED_BLUE,
+	dewPoint: SOLARIZED_CYAN,
+	temperature: 'black',
+};
 
 export function jsonPretty(json: any) {
 	return JSON5.stringify(json, { space: 4, quote: '', replacer });

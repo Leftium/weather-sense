@@ -219,34 +219,65 @@
 	}
 
 	const curve = 'catmull-rom';
+	const plotOptions = $derived({
+		width: clientWidth,
+		height: 70,
+		marginRight: MARGIN_RIGHT,
+		marginLeft: MARGIN_LEFT,
+		marginTop: 0,
+		marginBottom: 0,
+		y: { axis: null, domain: [145, 0], range: [0, 70] },
+		x: {
+			type: 'utc',
+			axis: xAxis ? true : null,
+			domain: [msStart, msEnd],
+			range: [MARGIN_LEFT, clientWidth - MARGIN_RIGHT],
+			tickFormat: (ms: number) => nsWeatherData.tzFormat(ms, 'ha'),
+		},
+	});
+
+	// @ts-expect-error: x.type is valid.
+	const xScale = $derived(Plot.scale({ x: plotOptions.x }));
+	const yScale = $derived(Plot.scale({ y: plotOptions.y }));
+
+	function updateRuleX(value: number) {
+		const msIntervalStart = Math.floor(Number(value) / 10 / MS_IN_MINUTE) * 10 * MS_IN_MINUTE;
+
+		const pg = d3.select(div).select('svg');
+		pg.select('.tracker-rect').remove();
+
+		function drawTracker(ms: number, length: number, color: string) {
+			const ig = pg.append('g').attr('class', 'tracker-rect');
+
+			const x1 = xScale.apply(ms);
+			const x2 = xScale.apply(ms + length);
+			const y = yScale.apply(0);
+
+			ig.append('line')
+				.attr('x1', x1)
+				.attr('x2', x2)
+				.attr('y1', y)
+				.attr('y2', y)
+				.attr('stroke', color)
+				.attr('stroke-width', 4)
+				.attr('stroke-linecap', 'round');
+		}
+
+		const interval = nsWeatherData.intervals.find((item) => item.ms === msIntervalStart);
+		const length = interval ? interval.x2 - msIntervalStart : MS_IN_HOUR;
+
+		if (msIntervalStart >= msStart && msIntervalStart < msEnd) {
+			drawTracker(msIntervalStart, length, 'red');
+		} else if (ghostTracker) {
+			const offset = (msIntervalStart + nsWeatherData.utcOffsetSeconds * MS_IN_SECOND) % MS_IN_DAY;
+			const ghostTime = Number(msStart) + offset;
+			drawTracker(ghostTime, length, 'rgba(256,0,0,0.3)');
+		}
+	}
 
 	// Generate and place Obervable.Plot from data.
 	function plotData() {
 		//gg('plotData');
-
-		const plotOptions = {
-			width: clientWidth,
-			height: 70,
-			marginRight: MARGIN_RIGHT,
-			marginLeft: MARGIN_LEFT,
-			marginTop: 0,
-			marginBottom: 0,
-			y: { axis: null },
-			x: {
-				type: 'utc',
-				domain: [msStart, msEnd],
-				range: [MARGIN_LEFT, clientWidth - MARGIN_RIGHT],
-				tickFormat: (ms: number) => nsWeatherData.tzFormat(ms, 'ha'),
-			},
-		};
-
-		if (!xAxis) {
-			//@ts-expect-error: axis is valid prop.
-			plotOptions.x.axis = null;
-		}
-
-		// @ts-expect-error: x.type is valid.
-		const xScale = Plot.scale(plotOptions);
 
 		const labelTextOptions = {
 			opacity: fadePastValues,
@@ -463,72 +494,6 @@
 				),
 			];
 
-			marks.push(
-				// A custom ruleX than can be updated from the outside by calling .updateRuleX(value).
-				Plot.ruleX([data?.all[0].ms], {
-					// @ts-expect-error: needed to hide y-axis:
-					y: { axis: null },
-					render: (i, s, v, d, c, next) => {
-						const [msStart, msEnd] = Array.from(s.scales.x?.domain || []);
-
-						// @ts-expect-error: add custom property: .updateRuleX
-						c.ownerSVGElement.updateRuleX = (value: number) => {
-							const msValue = Math.floor(Number(value) / 10 / MS_IN_MINUTE) * 10 * MS_IN_MINUTE;
-
-							const pg = d3.select(div).select('svg');
-							pg.select('.tracker-rect').remove();
-
-							function drawTracker(ms: number, length: number, color: string) {
-								const ig = pg.append('g').attr('class', 'tracker-rect');
-								if (s.scales.x && s.scales.y) {
-									const x1 = s.scales.x.apply(ms);
-									const x2 = s.scales.x.apply(ms + length);
-									const y = s.scales.y?.apply(0);
-
-									ig.append('line')
-										.attr('x1', x1)
-										.attr('x2', x2)
-										.attr('y1', y)
-										.attr('y2', y)
-										.attr('stroke', color)
-										.attr('stroke-width', 4)
-										.attr('stroke-linecap', 'round');
-								}
-							}
-
-							const interval = nsWeatherData.intervals.find((item) => item.ms === msValue);
-							const length = interval ? interval.x2 - msValue : MS_IN_HOUR;
-
-							/*
-							gg(
-								'msValue',
-								msValue,
-								nsWeatherData.tzFormat(msValue),
-								length / MS_IN_MINUTE,
-								interval,
-								$state.snapshot(nsWeatherData.intervals)
-							);
-                            */
-
-							if (msValue >= msStart && msValue < msEnd) {
-								drawTracker(msValue, length, 'red');
-							} else if (ghostTracker) {
-								let offset = (msValue + nsWeatherData.utcOffsetSeconds * MS_IN_SECOND) % MS_IN_DAY;
-								const ghostTime = Number(msStart) + offset;
-
-								drawTracker(ghostTime, length, 'rgba(256,0,0,0.3)');
-							}
-						};
-
-						// Render next marks.
-						if (next) {
-							return next(i, s, v, d, c);
-						}
-						return null;
-					},
-				}),
-			);
-
 			//@ts-expect-error: x.type is valid.
 			plot = Plot.plot({ ...plotOptions, marks });
 		}
@@ -554,11 +519,7 @@
 	$effect(() => {
 		//gg('EFFECT');
 
-		// @ts-expect-error: use custom property: .updateRuleX
-		if (plot?.updateRuleX) {
-			// @ts-expect-error: use custom property: .updateRuleX
-			plot.updateRuleX(nsWeatherData.ms);
-		}
+		updateRuleX(nsWeatherData.ms);
 	});
 
 	// Update entire plot.

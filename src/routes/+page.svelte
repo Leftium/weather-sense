@@ -235,6 +235,11 @@
 		z-index: 10000;
 
 		background-color: var(--pico-background-color);
+
+		background-color: #eee;
+		padding: 0.2em 0.3em;
+		border-bottom-left-radius: 4.75px;
+		border-bottom-right-radius: 4.75px;
 	}
 
 	h3 {
@@ -296,7 +301,6 @@
 		width: 100%;
 		max-width: 20em;
 		margin: auto;
-		margin-bottom: 0.2em;
 	}
 
 	.other-measurements input {

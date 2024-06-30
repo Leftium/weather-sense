@@ -252,24 +252,32 @@
 
 			const x1 = xScale.apply(ms);
 			const x2 = xScale.apply(ms + length);
-			const y = yScale.apply(0);
+			const y1 = yScale.apply(145);
+			const y2 = yScale.apply(0);
 
 			ig.append('line')
 				.attr('x1', x1)
-				.attr('x2', x2)
-				.attr('y1', y)
-				.attr('y2', y)
+				.attr('x2', x1)
+				.attr('y1', y1)
+				.attr('y2', y2)
 				.attr('stroke', color)
-				.attr('stroke-width', 4)
-				.attr('stroke-linecap', 'round');
+				.attr('stroke-width', 2);
+
+			ig.append('rect')
+				.attr('x', x1)
+				.attr('width', x2 - x1)
+				.attr('y', y1)
+				.attr('height', y2 - y1)
+				.attr('fill', color)
+				.attr('opacity', 0.2);
 		}
 
 		if (msIntervalStart >= msStart && msIntervalStart < msEnd) {
-			drawTracker(msIntervalStart, length, 'red');
+			drawTracker(msIntervalStart, length, 'yellow');
 		} else if (ghostTracker) {
 			const offset = (msIntervalStart + nsWeatherData.utcOffsetSeconds * MS_IN_SECOND) % MS_IN_DAY;
 			const ghostTime = Number(msStart) + offset;
-			drawTracker(ghostTime, length, 'rgba(256,0,0,0.3)');
+			drawTracker(ghostTime, length, 'rgba(256,255,0,0.3)');
 		}
 	}
 

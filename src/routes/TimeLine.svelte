@@ -116,7 +116,6 @@
 				xMiddle: number;
 				fill: string;
 				isDarkText: boolean;
-				opacity: number;
 			};
 
 			const now = Date.now();
@@ -147,7 +146,6 @@
 							xMiddle,
 							fill: WMO_CODES[nextCode].color,
 							isDarkText: WMO_CODES[nextCode].isDarkText,
-							opacity: current.ms < now ? 0.2 : 1,
 						});
 					}
 				}
@@ -162,12 +160,12 @@
 					const precipitation = d.precipitation;
 
 					return {
+						ms: d.ms,
 						x1bar,
 						x2bar,
 						x1line: x1bar + 60,
 						x2line: x2bar - 60,
 						precipitation,
-						opacity: d.ms < now ? 0.2 : 1,
 					};
 				});
 
@@ -280,7 +278,7 @@
 	function fadePastValues(d: { ms: number }) {
 		const now = Date.now();
 		if (d.ms < now) {
-			return 0.5;
+			return 0.75;
 		}
 		return 1;
 	}
@@ -404,7 +402,7 @@
 			// Weather code colored bands:
 			marks.push(
 				Plot.rectY(data.codes, {
-					strokeOpacity: 'opacity',
+					strokeOpacity: fadePastValues,
 					x1: 'x1',
 					x2: 'x2',
 					y: 145,
@@ -439,31 +437,6 @@
 			);
 		}
 
-		if (draw.precipitation) {
-			//Rain bar:
-			marks.push(
-				Plot.rectY(data.rain, {
-					strokeOpacity: 'opacity',
-					x1: 'x1bar',
-					x2: 'x2bar',
-					y: { transform: makeTransFormPrecipitation() },
-					fill: colors.precipitation,
-				}),
-			);
-
-			// Rain bar 'cap':
-			marks.push(
-				Plot.ruleY(data.rain, {
-					strokeOpacity: 'opacity',
-					x1: 'x1line',
-					x2: 'x2line',
-					y: { transform: makeTransFormPrecipitation() },
-					stroke: 'darkcyan',
-					strokeWidth: 2,
-				}),
-			);
-		}
-
 		if (draw.precipitationProbability) {
 			// The precipitation probability plotted as area:
 			marks.push(
@@ -485,6 +458,32 @@
 					y: 'precipitationProbability',
 					stroke: colors.precipitationProbability,
 					strokeWidth: 1.5,
+				}),
+			);
+		}
+
+		if (draw.precipitation) {
+			//Rain bar:
+			marks.push(
+				Plot.rectY(data.rain, {
+					opacity: fadePastValues,
+					x1: 'x1bar',
+					x2: 'x2bar',
+					y: { transform: makeTransFormPrecipitation() },
+					fill: colors.precipitation,
+				}),
+			);
+
+			// Rain bar 'cap':
+			marks.push(
+				Plot.ruleY(data.rain, {
+					opacity: fadePastValues,
+					strokeOpacity: fadePastValues,
+					x1: 'x1line',
+					x2: 'x2line',
+					y: { transform: makeTransFormPrecipitation() },
+					stroke: 'aqua',
+					strokeWidth: 2,
 				}),
 			);
 		}

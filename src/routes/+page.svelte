@@ -295,7 +295,7 @@
 		column-gap: 1em;
 
 		width: 100%;
-		max-width: 19em;
+		max-width: 20em;
 		margin: auto;
 		margin-bottom: 0.2em;
 	}

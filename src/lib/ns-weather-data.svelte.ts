@@ -97,7 +97,7 @@ export type NsWeatherData = ReturnType<typeof makeNsWeatherData>;
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezonePlugin from 'dayjs/plugin/timezone';
-import { tick } from 'svelte';
+import { tick, untrack } from 'svelte';
 
 dayjs.extend(utc);
 dayjs.extend(timezonePlugin);
@@ -130,8 +130,6 @@ export function makeNsWeatherData() {
 	let hourly: HourlyWeather[] | null = $state(null);
 	let daily: DailyWeather[] | null = $state(null);
 
-	let temperatureStats = $state({ minTemperature: 0, maxTemperature: 0, temperatureRange: 0 });
-
 	const minTemperature = $derived.by(() => {
 		return !hourly
 			? 0
@@ -147,7 +145,7 @@ export function makeNsWeatherData() {
 
 	const temperatureRange = $derived(maxTemperature - minTemperature);
 
-	temperatureStats = { minTemperature, maxTemperature, temperatureRange };
+	const temperatureStats = $derived({ minTemperature, maxTemperature, temperatureRange });
 
 	type DataItem = {
 		msPretty?: string;
@@ -160,11 +158,12 @@ export function makeNsWeatherData() {
 		precipitation: number;
 		precipitationProbability: number;
 	};
-	let data = $derived.by(() => {
+	let data: Record<number, DataItem> = $state({});
+
+	$effect(() => {
 		gg('call nsWeatherData.data');
-		const data: Map<number, DataItem> = new Map();
 		if (!browser || !hourly) {
-			return data;
+			return;
 		}
 		gg('make nsWeatherData.data');
 		//console.table(summarize($state.snapshot(hourly)));
@@ -187,7 +186,7 @@ export function makeNsWeatherData() {
 			const precipitation = false && dev ? (50 / 23) * hour : item.precipitation;
 			const precipitationProbability = item.precipitationProbability;
 
-			data.set(ms, {
+			data[ms] = {
 				msPretty,
 				ms,
 
@@ -200,11 +199,15 @@ export function makeNsWeatherData() {
 
 				precipitationProbability,
 				precipitation,
-			});
+			};
 		});
 		console.timeEnd('nsWeather.data');
-		gg('nsWeatherData.data.size:', data.size);
-		return data;
+
+		untrack(() => {
+			//gg('nsWeatherData.data.size:', data.size);
+			gg('nsWeatherData.data.size:', Object.keys(data).length);
+			//console.table([...data.values()]);
+		});
 	});
 
 	type IntervalItem = {
@@ -567,27 +570,27 @@ export function makeNsWeatherData() {
 		},
 
 		get displayTemperature() {
-			return data.get(nearestHour(msTracker, timezone))?.temperature;
+			return data[nearestHour(msTracker, timezone)]?.temperature;
 		},
 
 		get displayWeatherCode() {
-			return data.get(nearestHour(msTracker, timezone))?.weatherCode;
+			return data[nearestHour(msTracker, timezone)]?.weatherCode;
 		},
 
 		get displayHumidity() {
-			return data.get(nearestHour(msTracker, timezone))?.humidity;
+			return data[nearestHour(msTracker, timezone)]?.humidity;
 		},
 
 		get displayDewPoint() {
-			return data.get(nearestHour(msTracker, timezone))?.dewPoint;
+			return data[nearestHour(msTracker, timezone)]?.dewPoint;
 		},
 
 		get displayPrecipitation() {
-			return data.get(nearestHour(msTracker, timezone))?.precipitation.toFixed(1);
+			return data[nearestHour(msTracker, timezone)]?.precipitation.toFixed(1);
 		},
 
 		get displayPrecipitationProbability() {
-			return data.get(nearestHour(msTracker, timezone))?.precipitationProbability;
+			return data[nearestHour(msTracker, timezone)]?.precipitationProbability;
 		},
 
 		get timezone() {

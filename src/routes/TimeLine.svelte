@@ -210,6 +210,7 @@
 	// Svelte action for timeline.
 	function trackable(node: HTMLElement) {
 		let trackUntilMouseUp = false;
+		let mouseIsOver = false;
 
 		function trackToMouseX(e: PointerEvent | MouseEvent) {
 			const svgNode = d3.select(div).select('svg').select('g[aria-label=rect]').node();
@@ -224,6 +225,9 @@
 		function handlePointerMove(e: PointerEvent) {
 			if (nsWeatherData.trackedElement === node) {
 				trackToMouseX(e);
+			} else if (mouseIsOver && nsWeatherData.trackedElement === null) {
+				trackToMouseX(e);
+				emit('weatherdata_requestedTrackingStart', { node });
 			}
 		}
 
@@ -243,6 +247,7 @@
 		}
 
 		function handleMMouseEnter(e: MouseEvent) {
+			mouseIsOver = true;
 			if (!nsWeatherData.trackedElement) {
 				gg('handleMMouseEnter', nsWeatherData.trackedElement);
 				trackToMouseX(e);
@@ -251,7 +256,8 @@
 		}
 
 		function handleMMouseLeave(e: MouseEvent) {
-			if (!nsWeatherData.trackedElement && !trackUntilMouseUp) {
+			mouseIsOver = false;
+			if (nsWeatherData.trackedElement === node && !trackUntilMouseUp) {
 				gg('handleMMouseLeave');
 				emit('weatherdata_requestedTrackingEnd');
 			}

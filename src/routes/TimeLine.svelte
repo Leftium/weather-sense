@@ -51,7 +51,7 @@
 
 	const draw: Record<string, boolean | string> = {
 		weatherCode: true, // true, 'icon', 'text', 'color'
-		humidity: true,
+		humidity: false,
 		precipitationProbability: true,
 		precipitation: true,
 		dewPoint: true,

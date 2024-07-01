@@ -378,7 +378,7 @@
 				.attr('width', x2 - x1)
 				.attr('height', y2 - y1)
 				.attr('fill', color)
-				.attr('opacity', 0.2);
+				.attr('opacity', 0.6);
 		}
 
 		if (msIntervalStart >= msStart && msIntervalStart < msEnd) {
@@ -386,7 +386,7 @@
 		} else if (ghostTracker) {
 			const offset = (msIntervalStart + nsWeatherData.utcOffsetSeconds * MS_IN_SECOND) % MS_IN_DAY;
 			const ghostTime = Number(msStart) + offset;
-			drawTracker(ghostTime, length, 'rgba(256,255,0,0.3)');
+			drawTracker(ghostTime, length, 'white');
 		}
 	}
 

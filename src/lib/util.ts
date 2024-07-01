@@ -90,46 +90,46 @@ function wmoInterpretation(color: string, description: string, icon: string) {
 }
 
 export const WMO_CODES: Record<number, any> = {
-	0: wmoInterpretation('#F1F1F1', 'Clear', 'clear'),
+	0: wmoInterpretation('#F1F1F1', 'Clear', 'clear'), // grey-50
 
-	1: wmoInterpretation('#E2E2E2', 'Mostly Clear', 'mostly-clear'),
-	2: wmoInterpretation('#C6C6C6', 'Partly Cloudy', 'partly-cloudy'),
-	3: wmoInterpretation('#ABABAB', 'Overcast', 'overcast'),
+	1: wmoInterpretation('#E2E2E2', 'Mostly Clear', 'mostly-clear'), // grey-100
+	2: wmoInterpretation('#C6C6C6', 'Partly Cloudy', 'partly-cloudy'), // grey-200
+	3: wmoInterpretation('#ABABAB', 'Overcast', 'overcast'), // grey-300
 
-	45: wmoInterpretation('#A4ACBA', 'Fog', 'fog'),
-	48: wmoInterpretation('#8891A4', 'Icy Fog', 'rime-fog'),
+	45: wmoInterpretation('#A4ACBA', 'Fog', 'fog'), // zinc-300
+	48: wmoInterpretation('#8891A4', 'Icy Fog', 'rime-fog'), // zinc-400
 
-	51: wmoInterpretation('#0CCECE', 'L.Drizzle', 'light-drizzle'),
-	53: wmoInterpretation('#0AC2C2', 'Drizzle', 'moderate-drizzle'),
-	55: wmoInterpretation('#05A2A2', 'H.Drizzle', 'dense-drizzle'),
+	51: wmoInterpretation('#0CCECE', 'L.Drizzle', 'light-drizzle'), // cyan-250
+	53: wmoInterpretation('#0AC2C2', 'Drizzle', 'moderate-drizzle'), // cyan-300
+	55: wmoInterpretation('#05A2A2', 'H.Drizzle', 'dense-drizzle'), // cyan-400
 
-	80: wmoInterpretation('#9BCCFD', 'L.Showers', 'light-rain'),
-	81: wmoInterpretation('#51B4FF', 'Showers', 'moderate-rain'),
-	82: wmoInterpretation('#029AE8', 'H.Showers', 'heavy-rain'),
+	80: wmoInterpretation('#9BCCFD', 'L.Showers', 'light-rain'), // azure-200
+	81: wmoInterpretation('#51B4FF', 'Showers', 'moderate-rain'), // azure-300
+	82: wmoInterpretation('#029AE8', 'H.Showers', 'heavy-rain'), // azure-400
 
-	61: wmoInterpretation('#BFC3FA', 'L.Rain', 'light-rain'),
-	63: wmoInterpretation('#9CA7FA', 'Rain', 'moderate-rain'),
-	65: wmoInterpretation('#748BF8', 'H.Rain', 'heavy-rain'),
+	61: wmoInterpretation('#BFC3FA', 'L.Rain', 'light-rain'), // blue-200
+	63: wmoInterpretation('#9CA7FA', 'Rain', 'moderate-rain'), // blue-300
+	65: wmoInterpretation('#748BF8', 'H.Rain', 'heavy-rain'), // blue-400
 
-	56: wmoInterpretation('#CAC1EE', 'L.Icy Drizzle', 'light-freezing-drizzle'),
-	57: wmoInterpretation('#9486E1', 'Icy Drizzle', 'dense-freezing-drizzle'),
+	56: wmoInterpretation('#CAC1EE', 'L.Icy Drizzle', 'light-freezing-drizzle'), // indigo-200
+	57: wmoInterpretation('#9486E1', 'Icy Drizzle', 'dense-freezing-drizzle'), // indigo-400
 
-	66: wmoInterpretation('#D3BFE8', 'L.Icy Rain', 'light-freezing-rain'),
-	67: wmoInterpretation('#A780D4', 'Icy Rain', 'heavy-freezing-rain'),
+	66: wmoInterpretation('#D3BFE8', 'L.Icy Rain', 'light-freezing-rain'), // violet-200
+	67: wmoInterpretation('#A780D4', 'Icy Rain', 'heavy-freezing-rain'), // violet-400
 
-	71: wmoInterpretation('#F9B1D8', 'L.Snow', 'slight-snowfall'),
-	73: wmoInterpretation('#F983C7', 'Snow', 'moderate-snowfall'),
-	75: wmoInterpretation('#F748B7', 'H.Snow', 'heavy-snowfall'),
+	71: wmoInterpretation('#F9B1D8', 'L.Snow', 'slight-snowfall'), // fuchsia-200
+	73: wmoInterpretation('#F983C7', 'Snow', 'moderate-snowfall'), //fuchsia-300
+	75: wmoInterpretation('#F748B7', 'H.Snow', 'heavy-snowfall'), //fuchsia-400
 
-	77: wmoInterpretation('#E7B6EE', 'Snow Grains', 'snowflake'),
+	77: wmoInterpretation('#E7B6EE', 'Snow Grains', 'snowflake'), // purple-200
 
-	85: wmoInterpretation('#E7B6EE', 'L.Snow Showers', 'slight-snowfall'),
-	86: wmoInterpretation('#CD68E0', 'Snow Showers', 'heavy-snowfall'),
+	85: wmoInterpretation('#E7B6EE', 'L.Snow Showers', 'slight-snowfall'), //purple-200
+	86: wmoInterpretation('#CD68E0', 'Snow Showers', 'heavy-snowfall'), // purple-400
 
-	95: wmoInterpretation('#B21E4F', 'Thunderstorm', 'thunderstorm'),
+	95: wmoInterpretation('#B21E4F', 'Thunderstorm', 'thunderstorm'), // pink-600
 
-	96: wmoInterpretation('#88143B', 'T-storm + L.Hail', 'thunderstorm-with-hail'),
-	99: wmoInterpretation('#5F0E28', 'T-storm + Hail', 'thunderstorm-with-hail'),
+	96: wmoInterpretation('#88143B', 'T-storm + L.Hail', 'thunderstorm-with-hail'), // pink-700
+	99: wmoInterpretation('#5F0E28', 'T-storm + Hail', 'thunderstorm-with-hail'), // pink-800
 };
 
 export function wmoCode(code: number | undefined) {

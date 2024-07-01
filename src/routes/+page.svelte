@@ -27,7 +27,7 @@
 
 	let { data } = $props();
 
-	let displayDewPoint = $state(false);
+	let displayDewPoint = $state(true);
 
 	emit('weatherdata_requestedSetLocation', {
 		source: data.source,
@@ -89,8 +89,9 @@
 			<label>
 				<input
 					type="checkbox"
-					style:background-color={colors.temperature}
+					style:color={colors.temperature}
 					style:border-color={colors.temperature}
+					checked
 				/>
 				Temp:
 			</label>
@@ -100,7 +101,7 @@
 		</div>
 		<div>
 			<label>
-				<input type="checkbox" />
+				<input type="checkbox" checked style:color="gray" />
 			</label>
 			<span use:toggleUnits={{ temperature: true }}>
 				{nsWeatherData.format('daily[2].temperatureMin', false)}
@@ -114,7 +115,7 @@
 			<label>
 				<input
 					type="checkbox"
-					style:background-color={colors.dewPoint}
+					style:color={colors.dewPoint}
 					style:border-color={colors.dewPoint}
 					bind:checked={displayDewPoint}
 				/>
@@ -126,11 +127,7 @@
 		</div>
 		<div>
 			<label>
-				<input
-					type="checkbox"
-					style:background-color={'white' || colors.humidity}
-					style:border-color={colors.humidity}
-				/>
+				<input type="checkbox" style:color={colors.humidity} style:border-color={colors.humidity} />
 				Humidity:
 				<span>{nsWeatherData.displayHumidity}%</span>
 			</label>
@@ -140,7 +137,8 @@
 			<label>
 				<input
 					type="checkbox"
-					style:background-color={colors.precipitation}
+					checked
+					style:color={colors.precipitation}
 					style:border-color={colors.precipitation}
 				/>
 				Precip:
@@ -151,7 +149,8 @@
 			<label>
 				<input
 					type="checkbox"
-					style:background-color={colors.precipitationProbability}
+					checked
+					style:color={colors.precipitationProbability}
 					style:border-color={colors.precipitationProbability}
 				/>
 				Chance:
@@ -310,6 +309,43 @@
 	.other-measurements label {
 		display: inline;
 	}
+
+	/*************************************************************************************/
+	/*Based on: https://moderncss.dev/pure-css-custom-checkbox-style/ */
+	.other-measurements input[type='checkbox'] {
+		appearance: none;
+		/* For iOS < 15 to remove gradient background */
+		background-color: #fff !important;
+		/* Not removed via appearance */
+		margin: 0;
+
+		font: inherit;
+		width: 1.2em;
+		height: 1.2em;
+
+		transform: translateY(-0.12em);
+
+		display: inline-grid;
+		place-content: center;
+	}
+
+	.other-measurements input[type='checkbox']::before {
+		content: '';
+		width: inherit;
+		height: inherit;
+		border-radius: inherit;
+
+		transform: scale(0);
+		transition: 200ms transform ease-in-out;
+
+		box-shadow: inset 2em 2em;
+	}
+
+	.other-measurements input[type='checkbox']:checked::before {
+		transform: scale(1);
+	}
+
+	/*************************************************************************************/
 
 	.hourly,
 	.daily {

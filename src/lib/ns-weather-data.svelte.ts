@@ -176,7 +176,7 @@ export function makeNsWeatherData() {
 			const humidity = item.relativeHumidity;
 			const dewPoint = item.dewPoint;
 			// Fake precipitation in dev mode:
-			const precipitation = false && dev ? (5 * hour) / 10 : item.precipitation;
+			const precipitation = true && dev ? (50 / 23) * hour : item.precipitation;
 			const precipitationProbability = item.precipitationProbability;
 
 			data.set(ms, {

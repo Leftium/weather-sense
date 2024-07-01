@@ -283,8 +283,35 @@
 		return 1;
 	}
 
-	function makeTransFormPrecipitation() {
-		return (da: any[]) => da.map((d) => 100 * (1 - Math.exp(-d.precipitation / 8)));
+	function makeTransFormPrecipitation(onlyLinear: boolean) {
+		const LINEAR_MAX = 20;
+
+		const LINEAR_SECTION = 70;
+		const CAP_BONUS = 3;
+
+		return (da: any[]) => {
+			const resultArray = da.map((d) => {
+				const p = d.precipitation;
+
+				// Linear scale maxing at 20mm/hr:
+				let resultValue =
+					LINEAR_MAX > 0 ? (Math.min(p, LINEAR_MAX) / LINEAR_MAX) * LINEAR_SECTION : 0;
+
+				if (!onlyLinear) {
+					resultValue += CAP_BONUS; // Add to get 'cap'
+					if (p >= LINEAR_MAX) {
+						resultValue +=
+							(140 - LINEAR_SECTION - CAP_BONUS) * (1 - Math.exp(-(p - LINEAR_MAX) / 200));
+					}
+				}
+				return resultValue;
+			});
+			if (!onlyLinear) {
+				//gg(resultArray);
+			}
+
+			return resultArray;
+		};
 	}
 
 	function makeTransformTemperature(keyName = 'temperature') {
@@ -437,6 +464,31 @@
 			);
 		}
 
+		if (draw.precipitation) {
+			// Rain bar 'cap':
+			marks.push(
+				Plot.rectY(data.rain, {
+					opacity: fadePastValues,
+					strokeOpacity: fadePastValues,
+					x1: 'x1bar',
+					x2: 'x2bar',
+					y: { transform: makeTransFormPrecipitation(false) },
+					fill: '#58FAF9',
+				}),
+			);
+
+			//Rain bar:
+			marks.push(
+				Plot.rectY(data.rain, {
+					opacity: fadePastValues,
+					x1: 'x1bar',
+					x2: 'x2bar',
+					y: { transform: makeTransFormPrecipitation(true) },
+					fill: colors.precipitation,
+				}),
+			);
+		}
+
 		if (draw.precipitationProbability) {
 			// The precipitation probability plotted as area:
 			marks.push(
@@ -457,32 +509,6 @@
 					x: 'ms',
 					y: 'precipitationProbability',
 					stroke: colors.precipitationProbability,
-					strokeWidth: 1.5,
-				}),
-			);
-		}
-
-		if (draw.precipitation) {
-			//Rain bar:
-			marks.push(
-				Plot.rectY(data.rain, {
-					opacity: fadePastValues,
-					x1: 'x1bar',
-					x2: 'x2bar',
-					y: { transform: makeTransFormPrecipitation() },
-					fill: colors.precipitation,
-				}),
-			);
-
-			// Rain bar 'cap':
-			marks.push(
-				Plot.ruleY(data.rain, {
-					opacity: fadePastValues,
-					strokeOpacity: fadePastValues,
-					x1: 'x1line',
-					x2: 'x2line',
-					y: { transform: makeTransFormPrecipitation() },
-					stroke: '#58FAF9',
 					strokeWidth: 1.5,
 				}),
 			);

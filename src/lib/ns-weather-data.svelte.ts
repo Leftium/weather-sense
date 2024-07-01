@@ -98,13 +98,13 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezonePlugin from 'dayjs/plugin/timezone';
 import { tick } from 'svelte';
-import { Map } from 'svelte/reactivity';
+import { Map as SvelteMap } from 'svelte/reactivity';
 
 dayjs.extend(utc);
 dayjs.extend(timezonePlugin);
 
-function nearestHour(ms: number) {
-	return Math.floor(ms / MS_IN_HOUR) * MS_IN_HOUR;
+function nearestHour(ms: number, timezone?: string) {
+	return (timezone ? dayjs.tz(ms, timezone) : dayjs(ms)).startOf('hour').valueOf();
 }
 
 export function makeNsWeatherData() {
@@ -133,6 +133,23 @@ export function makeNsWeatherData() {
 
 	let temperatureStats = $state({ minTemperature: 0, maxTemperature: 0, temperatureRange: 0 });
 
+	const minTemperature = $derived.by(() => {
+		return !hourly
+			? 0
+			: Math.min(
+					_.minBy(hourly, 'temperature')?.temperature ?? Number.MAX_VALUE,
+					_.minBy(hourly, 'dewPoint')?.dewPoint ?? Number.MAX_VALUE,
+				);
+	});
+
+	const maxTemperature = $derived.by(() => {
+		return !hourly ? 0 : _.maxBy(hourly, 'temperature')?.temperature ?? Number.MIN_VALUE;
+	});
+
+	const temperatureRange = $derived(maxTemperature - minTemperature);
+
+	temperatureStats = { minTemperature, maxTemperature, temperatureRange };
+
 	type DataItem = {
 		msPretty?: string;
 		ms: number;
@@ -154,14 +171,6 @@ export function makeNsWeatherData() {
 		//console.table(summarize($state.snapshot(hourly)));
 		console.time('nsWeather.data');
 		// Normalize temperatures to scale: [0, 1].
-		const minTemperature = Math.min(
-			_.minBy(hourly, 'temperature')?.temperature ?? Number.MAX_VALUE,
-			_.minBy(hourly, 'dewPoint')?.dewPoint ?? Number.MAX_VALUE,
-		);
-		const maxTemperature = _.maxBy(hourly, 'temperature')?.temperature ?? Number.MIN_VALUE;
-		const temperatureRange = maxTemperature - minTemperature;
-
-		temperatureStats = { minTemperature, maxTemperature, temperatureRange };
 
 		hourly.forEach((item) => {
 			const ms = item.ms;
@@ -559,27 +568,27 @@ export function makeNsWeatherData() {
 		},
 
 		get displayTemperature() {
-			return data.get(nearestHour(msTracker))?.temperature;
+			return data.get(nearestHour(msTracker, timezone))?.temperature;
 		},
 
 		get displayWeatherCode() {
-			return data.get(nearestHour(msTracker))?.weatherCode;
+			return data.get(nearestHour(msTracker, timezone))?.weatherCode;
 		},
 
 		get displayHumidity() {
-			return data.get(nearestHour(msTracker))?.humidity;
+			return data.get(nearestHour(msTracker, timezone))?.humidity;
 		},
 
 		get displayDewPoint() {
-			return data.get(nearestHour(msTracker))?.dewPoint;
+			return data.get(nearestHour(msTracker, timezone))?.dewPoint;
 		},
 
 		get displayPrecipitation() {
-			return data.get(nearestHour(msTracker))?.precipitation.toFixed(1);
+			return data.get(nearestHour(msTracker, timezone))?.precipitation.toFixed(1);
 		},
 
 		get displayPrecipitationProbability() {
-			return data.get(nearestHour(msTracker))?.precipitationProbability;
+			return data.get(nearestHour(msTracker, timezone))?.precipitationProbability;
 		},
 
 		get timezone() {

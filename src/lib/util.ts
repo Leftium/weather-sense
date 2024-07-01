@@ -14,8 +14,8 @@ export const MS_IN_HOUR = 60 * MS_IN_MINUTE;
 export const MS_IN_DAY = 24 * MS_IN_HOUR;
 
 export const colors = {
-	humidity: SOLARIZED_GREEN,
-	precipitationProbability: 'aqua',
+	humidity: '#9062CA',
+	precipitationProbability: '#58FAF9',
 	precipitation: SOLARIZED_BLUE,
 	dewPoint: SOLARIZED_CYAN,
 	temperature: 'black',
@@ -99,9 +99,9 @@ export const WMO_CODES: Record<number, any> = {
 	45: wmoInterpretation('#A4ACBA', 'Fog', 'fog'),
 	48: wmoInterpretation('#8891A4', 'Icy Fog', 'rime-fog'),
 
-	51: wmoInterpretation('#3DECEB', 'L.Drizzle', 'light-drizzle'),
-	53: wmoInterpretation('#0CCECE', 'Drizzle', 'moderate-drizzle'),
-	55: wmoInterpretation('#0AB1B1', 'H.Drizzle', 'dense-drizzle'),
+	51: wmoInterpretation('#0CCECE', 'L.Drizzle', 'light-drizzle'),
+	53: wmoInterpretation('#0AC2C2', 'Drizzle', 'moderate-drizzle'),
+	55: wmoInterpretation('#05A2A2', 'H.Drizzle', 'dense-drizzle'),
 
 	80: wmoInterpretation('#9BCCFD', 'L.Showers', 'light-rain'),
 	81: wmoInterpretation('#51B4FF', 'Showers', 'moderate-rain'),

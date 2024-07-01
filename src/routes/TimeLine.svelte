@@ -51,7 +51,7 @@
 
 	const draw: Record<string, boolean | string> = {
 		weatherCode: true, // true, 'icon', 'text', 'color'
-		humidity: false,
+		humidity: true,
 		precipitationProbability: true,
 		precipitation: true,
 		dewPoint: true,
@@ -482,8 +482,8 @@
 					x1: 'x1line',
 					x2: 'x2line',
 					y: { transform: makeTransFormPrecipitation() },
-					stroke: 'aqua',
-					strokeWidth: 2,
+					stroke: '#58FAF9',
+					strokeWidth: 1.5,
 				}),
 			);
 		}

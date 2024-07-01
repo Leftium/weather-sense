@@ -87,6 +87,11 @@
 
 	.description {
 		font-size: small;
+
+		overflow: hidden;
+		white-space: nowrap;
+
+		text-overflow: ellipsis;
 	}
 
 	.description img {

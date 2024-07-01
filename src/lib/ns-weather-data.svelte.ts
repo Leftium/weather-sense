@@ -158,17 +158,18 @@ export function makeNsWeatherData() {
 		precipitation: number;
 		precipitationProbability: number;
 	};
-	let data: Record<number, DataItem> = $state({});
 
-	$effect(() => {
-		gg('call nsWeatherData.data');
+	const data = $derived.by(() => {
+		gg('call nsWeatherData_data');
+		const newData: Map<number, DataItem> = new Map();
 		if (!browser || !hourly) {
-			return;
+			return newData;
 		}
-		gg('make nsWeatherData.data');
+
+		gg('make nsWeatherData_data');
+
 		//console.table(summarize($state.snapshot(hourly)));
-		console.time('nsWeather.data');
-		// Normalize temperatures to scale: [0, 1].
+		console.time('nsWeather_data');
 
 		hourly.forEach((item) => {
 			const ms = item.ms;
@@ -186,7 +187,7 @@ export function makeNsWeatherData() {
 			const precipitation = false && dev ? (50 / 23) * hour : item.precipitation;
 			const precipitationProbability = item.precipitationProbability;
 
-			data[ms] = {
+			newData.set(ms, {
 				msPretty,
 				ms,
 
@@ -199,15 +200,16 @@ export function makeNsWeatherData() {
 
 				precipitationProbability,
 				precipitation,
-			};
+			});
 		});
-		console.timeEnd('nsWeather.data');
+		console.timeEnd('nsWeather_data');
 
 		untrack(() => {
-			//gg('nsWeatherData.data.size:', data.size);
-			gg('nsWeatherData.data.size:', Object.keys(data).length);
+			gg('nsWeatherData.data.size:', newData.size);
+			//gg('nsWeatherData.data.size:', Object.keys(data).length);
 			//console.table([...data.values()]);
 		});
+		return newData;
 	});
 
 	type IntervalItem = {
@@ -570,27 +572,27 @@ export function makeNsWeatherData() {
 		},
 
 		get displayTemperature() {
-			return data[nearestHour(msTracker, timezone)]?.temperature;
+			return data.get(nearestHour(msTracker, timezone))?.temperature;
 		},
 
 		get displayWeatherCode() {
-			return data[nearestHour(msTracker, timezone)]?.weatherCode;
+			return data.get(nearestHour(msTracker, timezone))?.weatherCode;
 		},
 
 		get displayHumidity() {
-			return data[nearestHour(msTracker, timezone)]?.humidity;
+			return data.get(nearestHour(msTracker, timezone))?.humidity;
 		},
 
 		get displayDewPoint() {
-			return data[nearestHour(msTracker, timezone)]?.dewPoint;
+			return data.get(nearestHour(msTracker, timezone))?.dewPoint;
 		},
 
 		get displayPrecipitation() {
-			return data[nearestHour(msTracker, timezone)]?.precipitation.toFixed(1);
+			return data.get(nearestHour(msTracker, timezone))?.precipitation.toFixed(1);
 		},
 
 		get displayPrecipitationProbability() {
-			return data[nearestHour(msTracker, timezone)]?.precipitationProbability;
+			return data.get(nearestHour(msTracker, timezone))?.precipitationProbability;
 		},
 
 		get timezone() {

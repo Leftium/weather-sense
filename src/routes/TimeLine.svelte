@@ -97,7 +97,7 @@
 			[] as SolarEventItem[],
 		);
 
-		const dataValues = Object.values(nsWeatherData.data);
+		const dataValues = [...nsWeatherData.data.values()];
 		if (dataValues) {
 			const filtered = dataValues.filter((item) => {
 				return item.ms >= msStart && item.ms <= msEnd;

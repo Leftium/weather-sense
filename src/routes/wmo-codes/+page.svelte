@@ -43,9 +43,13 @@
 						<img src={data.icon} alt="" />
 					</div>
 					<div class="description">
-						<span class:is-dark-text={data.isDarkText} style:background-color={data.color}>
-							<img src={data.icon} alt="" /> {data.description}</span
-						>
+						<div class:is-dark-text={data.isDarkText} style:background-color={data.color}>
+							<img src={data.icon} alt="" />
+							{data.color}
+						</div>
+						<div class:is-dark-text={data.isDarkText} style:background-color={data.color}>
+							{data.description}
+						</div>
 					</div>
 				</article>
 			{/each}
@@ -99,8 +103,9 @@
 		width: 22px;
 	}
 
-	.description span {
-		padding: 0.6em;
+	.description div {
+		padding: 0 1em;
+		margin: 0.4em;
 		border-radius: 0.3em;
 		line-height: 40px;
 		font-size: 13px;
@@ -108,6 +113,8 @@
 
 		color: #fff;
 		text-shadow: 1px 0 rgb(0 0 0 / 50%);
+
+		text-align: center;
 	}
 
 	.description .is-dark-text {

@@ -44,11 +44,11 @@
 					</div>
 					<div class="description">
 						<div class:is-dark-text={data.isDarkText} style:background-color={data.color}>
-							<img src={data.icon} alt="" />
-							{data.color}
+							{data.description}
 						</div>
 						<div class:is-dark-text={data.isDarkText} style:background-color={data.color}>
-							{data.description}
+							<img src={data.icon} alt="" />
+							{data.color}
 						</div>
 					</div>
 				</article>

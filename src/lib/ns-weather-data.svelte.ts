@@ -485,7 +485,7 @@ export function makeNsWeatherData() {
 
 	function formatTemperature(n: number, { unit, showUnits }: { unit: string; showUnits: boolean }) {
 		if (unit === 'F') {
-			let formatted = `${Math.round(n)}°`;
+			let formatted = `${Math.floor(n)}°`;
 			if (showUnits) {
 				formatted = formatted + 'F';
 			}

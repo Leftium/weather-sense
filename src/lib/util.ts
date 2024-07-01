@@ -99,13 +99,13 @@ export const WMO_CODES: Record<number, any> = {
 	45: wmoInterpretation('#A4ACBA', 'Fog', 'fog'), // zinc-300
 	48: wmoInterpretation('#8891A4', 'Icy Fog', 'rime-fog'), // zinc-400
 
-	51: wmoInterpretation('#0CCECE', 'L.Drizzle', 'light-drizzle'), // cyan-250
-	53: wmoInterpretation('#0AC2C2', 'Drizzle', 'moderate-drizzle'), // cyan-300
-	55: wmoInterpretation('#05A2A2', 'H.Drizzle', 'dense-drizzle'), // cyan-400
+	51: wmoInterpretation('#B7D9FC', 'L.Drizzle', 'light-drizzle'), // azure-150
+	53: wmoInterpretation('#9BCCFD', 'Drizzle', 'moderate-drizzle'), // azure-200
+	55: wmoInterpretation('#79C0FF', 'H.Drizzle', 'dense-drizzle'), // azure-250
 
-	80: wmoInterpretation('#9BCCFD', 'L.Showers', 'light-rain'), // azure-200
-	81: wmoInterpretation('#51B4FF', 'Showers', 'moderate-rain'), // azure-300
-	82: wmoInterpretation('#029AE8', 'H.Showers', 'heavy-rain'), // azure-400
+	80: wmoInterpretation('#51B4FF', 'L.Showers', 'light-rain'), // azure-300
+	81: wmoInterpretation('#01AAFF', 'Showers', 'moderate-rain'), // azure-350
+	82: wmoInterpretation('#029AE8', 'H.Showers', 'heavy-rain'), // azure-450
 
 	61: wmoInterpretation('#BFC3FA', 'L.Rain', 'light-rain'), // blue-200
 	63: wmoInterpretation('#9CA7FA', 'Rain', 'moderate-rain'), // blue-300

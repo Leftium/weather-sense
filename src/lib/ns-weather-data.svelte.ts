@@ -5,7 +5,7 @@ import _ from 'lodash-es';
 import { getEmitter } from '$lib/emitter';
 import { gg } from '$lib/gg';
 import type { Coordinates, Radar } from '$lib/types';
-import { MS_IN_HOUR, MS_IN_MINUTE, MS_IN_SECOND, celcius } from './util';
+import { MS_IN_MINUTE, MS_IN_SECOND, celcius } from './util';
 import { browser, dev } from '$app/environment';
 
 export type WeatherDataEvents = {
@@ -98,14 +98,9 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezonePlugin from 'dayjs/plugin/timezone';
 import { tick } from 'svelte';
-import { Map as SvelteMap } from 'svelte/reactivity';
 
 dayjs.extend(utc);
 dayjs.extend(timezonePlugin);
-
-function nearestHour(ms: number, timezone?: string) {
-	return (timezone ? dayjs.tz(ms, timezone) : dayjs(ms)).startOf('hour').valueOf();
-}
 
 export function makeNsWeatherData() {
 	//gg('makeNsWeatherData');
@@ -122,6 +117,10 @@ export function makeNsWeatherData() {
 	let timezone = $state('Greenwich'); // GMT
 	let timezoneAbbreviation = $state('GMT'); // GMT
 	let utcOffsetSeconds = $state(0);
+
+	function nearestHour(ms: number, timezone?: string) {
+		return +dayjs.tz(ms, timezone).startOf('hour');
+	}
 
 	let radarPlaying = $state(false);
 	let resetRadarOnPlay = $state(true);
@@ -175,7 +174,7 @@ export function makeNsWeatherData() {
 		hourly.forEach((item) => {
 			const ms = item.ms;
 
-			const hour = dayjs(ms).get('hour');
+			const hour = dayjs.tz(ms, timezone).get('hour');
 
 			const msPretty = nsWeatherData.tzFormat(ms, DATEFORMAT_MASK);
 
@@ -616,7 +615,7 @@ export function makeNsWeatherData() {
 		},
 
 		tzFormat(ms: number, format = 'ddd MMM D, h:mm:ss.SSSa z') {
-			return dayjs(ms).tz(timezone).format(format).replace('z', timezoneAbbreviation);
+			return dayjs.tz(ms, timezone).format(format).replace('z', timezoneAbbreviation);
 		},
 	};
 

@@ -59,9 +59,8 @@
 		solarEvents: true,
 	};
 
-	// const msStart = +dayjs(start).startOf('hour');
-	const msStart = Math.floor(start / MS_IN_HOUR) * MS_IN_HOUR;
-	const msEnd = msStart + hours * MS_IN_HOUR;
+	const msStart = $derived(+dayjs.tz(start, nsWeatherData.timezone).startOf('hour'));
+	const msEnd = $derived(msStart + hours * MS_IN_HOUR);
 
 	let div: HTMLDivElement;
 	let clientWidth: number = $state(0);

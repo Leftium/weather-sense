@@ -31,6 +31,10 @@
 	);
 </script>
 
+<div class="pico container">
+	<center><a href="/">Back</a></center>
+</div>
+
 <div class="orig">
 	<div class="pico container">
 		{#each wmoCodesByType as wmoCodeType}

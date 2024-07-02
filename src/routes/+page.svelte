@@ -58,7 +58,11 @@
 </script>
 
 <div class="pico container">
-	<h3>WeatherSense</h3>
+	<span>
+		<b>WeatherSense</b>
+		<a href="wmo-codes">WMO Codes</a> |
+		<a href="https://github.com/Leftium/weather-sense">Source Code</a>
+	</span>
 </div>
 
 <div class="pico container sticky-info">

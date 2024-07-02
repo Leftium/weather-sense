@@ -119,9 +119,9 @@ export const WMO_CODES: Record<number, any> = {
 	81: makeWmo('azure.350', 'showers', 2, 'Showers', 'moderate-rain'),
 	82: makeWmo('azure.450', 'showers', 3, 'H.Showers', 'heavy-rain'),
 
-	61: makeWmo('azure.200', 'rain', 1, 'L.Rain', 'light-rain'),
-	63: makeWmo('azure.300', 'rain', 2, 'Rain', 'moderate-rain'),
-	65: makeWmo('azure.400', 'rain', 3, 'H.Rain', 'heavy-rain'),
+	61: makeWmo('blue.200', 'rain', 1, 'L.Rain', 'light-rain'),
+	63: makeWmo('blue.300', 'rain', 2, 'Rain', 'moderate-rain'),
+	65: makeWmo('blue.400', 'rain', 3, 'H.Rain', 'heavy-rain'),
 
 	56: makeWmo('indigo.200', 'icy-drizzle', 1, 'L.Icy Drizzle', 'light-freezing-drizzle'),
 	57: makeWmo('indigo.400', 'icy-drizzle', 3, 'Icy Drizzle', 'dense-freezing-drizzle'),

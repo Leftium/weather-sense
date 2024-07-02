@@ -1,7 +1,10 @@
+import _ from 'lodash-es';
 import JSON5 from 'json5';
 import Color from 'colorjs.io';
 
 import { gg } from './gg';
+
+import picoColors from '$lib/pico-color-palette.json';
 
 export const SOLARIZED_RED = '#dc322f';
 export const SOLARIZED_BLUE = '#268bd2';
@@ -63,16 +66,13 @@ export function humanDistance(n: number | undefined) {
 	return `${Math.floor(n)}${units}`;
 }
 
-export function lerp(v0: number, v1: number, t: number) {
-	return (1 - t) * v0 + t * v1;
-}
-
 const colorWhite = new Color('#fff');
 const colorBlack = new Color('#000');
 
-function wmoInterpretation(color: string, description: string, icon: string) {
-	color = color || '#9E9200';
-	icon = `/icons/airy/${icon}@4x.png`;
+function wmoInterpretation(picoColor: string, description: string, iconName: string) {
+	const color = _.get(picoColors, picoColor) || _.get(picoColors, 'yellow.400');
+
+	const icon = `/icons/airy/${iconName}@4x.png`;
 
 	const colorBackground = new Color(color);
 
@@ -82,54 +82,55 @@ function wmoInterpretation(color: string, description: string, icon: string) {
 
 	return {
 		description,
+		picoColor,
 		color,
 		isDarkText,
-		width: 99,
+		width: 99, // Will be replaced with actual width of text in pixels.
 		icon,
 	};
 }
 
 export const WMO_CODES: Record<number, any> = {
-	0: wmoInterpretation('#F1F1F1', 'Clear', 'clear'), // grey-50
+	0: wmoInterpretation('grey.50', 'Clear', 'clear'),
 
-	1: wmoInterpretation('#E2E2E2', 'Mostly Clear', 'mostly-clear'), // grey-100
-	2: wmoInterpretation('#C6C6C6', 'Partly Cloudy', 'partly-cloudy'), // grey-200
-	3: wmoInterpretation('#ABABAB', 'Overcast', 'overcast'), // grey-300
+	1: wmoInterpretation('grey.100', 'Mostly Clear', 'mostly-clear'),
+	2: wmoInterpretation('grey.200', 'Partly Cloudy', 'partly-cloudy'),
+	3: wmoInterpretation('grey.300', 'Overcast', 'overcast'),
 
-	45: wmoInterpretation('#A4ACBA', 'Fog', 'fog'), // zinc-300
-	48: wmoInterpretation('#8891A4', 'Icy Fog', 'rime-fog'), // zinc-400
+	45: wmoInterpretation('zinc.300', 'Fog', 'fog'),
+	48: wmoInterpretation('zinc.400', 'Icy Fog', 'rime-fog'),
 
-	51: wmoInterpretation('#B7D9FC', 'L.Drizzle', 'light-drizzle'), // azure-150
-	53: wmoInterpretation('#9BCCFD', 'Drizzle', 'moderate-drizzle'), // azure-200
-	55: wmoInterpretation('#79C0FF', 'H.Drizzle', 'dense-drizzle'), // azure-250
+	51: wmoInterpretation('azure.150', 'L.Drizzle', 'light-drizzle'),
+	53: wmoInterpretation('azure.200', 'Drizzle', 'moderate-drizzle'),
+	55: wmoInterpretation('azure.250', 'H.Drizzle', 'dense-drizzle'),
 
-	80: wmoInterpretation('#51B4FF', 'L.Showers', 'light-rain'), // azure-300
-	81: wmoInterpretation('#01AAFF', 'Showers', 'moderate-rain'), // azure-350
-	82: wmoInterpretation('#029AE8', 'H.Showers', 'heavy-rain'), // azure-450
+	80: wmoInterpretation('azure.300', 'L.Showers', 'light-rain'),
+	81: wmoInterpretation('azure.350', 'Showers', 'moderate-rain'),
+	82: wmoInterpretation('azure.450', 'H.Showers', 'heavy-rain'),
 
-	61: wmoInterpretation('#BFC3FA', 'L.Rain', 'light-rain'), // blue-200
-	63: wmoInterpretation('#9CA7FA', 'Rain', 'moderate-rain'), // blue-300
-	65: wmoInterpretation('#748BF8', 'H.Rain', 'heavy-rain'), // blue-400
+	61: wmoInterpretation('azure.200', 'L.Rain', 'light-rain'),
+	63: wmoInterpretation('azure.300', 'Rain', 'moderate-rain'),
+	65: wmoInterpretation('azure.400', 'H.Rain', 'heavy-rain'),
 
-	56: wmoInterpretation('#CAC1EE', 'L.Icy Drizzle', 'light-freezing-drizzle'), // indigo-200
-	57: wmoInterpretation('#9486E1', 'Icy Drizzle', 'dense-freezing-drizzle'), // indigo-400
+	56: wmoInterpretation('indigo.200', 'L.Icy Drizzle', 'light-freezing-drizzle'),
+	57: wmoInterpretation('indigo.400', 'Icy Drizzle', 'dense-freezing-drizzle'),
 
-	66: wmoInterpretation('#D3BFE8', 'L.Icy Rain', 'light-freezing-rain'), // violet-200
-	67: wmoInterpretation('#A780D4', 'Icy Rain', 'heavy-freezing-rain'), // violet-400
+	66: wmoInterpretation('violet.200', 'L.Icy Rain', 'light-freezing-rain'),
+	67: wmoInterpretation('violet.400', 'Icy Rain', 'heavy-freezing-rain'),
 
-	71: wmoInterpretation('#F9B1D8', 'L.Snow', 'slight-snowfall'), // fuchsia-200
-	73: wmoInterpretation('#F983C7', 'Snow', 'moderate-snowfall'), //fuchsia-300
-	75: wmoInterpretation('#F748B7', 'H.Snow', 'heavy-snowfall'), //fuchsia-400
+	71: wmoInterpretation('fuchsia.200', 'L.Snow', 'slight-snowfall'),
+	73: wmoInterpretation('fuchsia.300', 'Snow', 'moderate-snowfall'),
+	75: wmoInterpretation('fuchsia.400', 'H.Snow', 'heavy-snowfall'),
 
-	77: wmoInterpretation('#E7B6EE', 'Snow Grains', 'snowflake'), // purple-200
+	77: wmoInterpretation('purple.200', 'Snow Grains', 'snowflake'),
 
-	85: wmoInterpretation('#E7B6EE', 'L.Snow Showers', 'slight-snowfall'), //purple-200
-	86: wmoInterpretation('#CD68E0', 'Snow Showers', 'heavy-snowfall'), // purple-400
+	85: wmoInterpretation('purple.200', 'L.Snow Showers', 'slight-snowfall'),
+	86: wmoInterpretation('purple.400', 'Snow Showers', 'heavy-snowfall'),
 
-	95: wmoInterpretation('#B21E4F', 'Thunderstorm', 'thunderstorm'), // pink-600
+	95: wmoInterpretation('pink.600', 'Thunderstorm', 'thunderstorm'),
 
-	96: wmoInterpretation('#88143B', 'T-storm + L.Hail', 'thunderstorm-with-hail'), // pink-700
-	99: wmoInterpretation('#5F0E28', 'T-storm + Hail', 'thunderstorm-with-hail'), // pink-800
+	96: wmoInterpretation('pink.700', 'T-storm + L.Hail', 'thunderstorm-with-hail'),
+	99: wmoInterpretation('pink.800', 'T-storm + Hail', 'thunderstorm-with-hail'),
 };
 
 export function wmoCode(code: number | undefined) {

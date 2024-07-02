@@ -5,7 +5,7 @@ import _ from 'lodash-es';
 import { getEmitter } from '$lib/emitter';
 import { gg } from '$lib/gg';
 import type { Coordinates, Radar } from '$lib/types';
-import { MS_IN_MINUTE, MS_IN_SECOND, celcius } from './util';
+import { MS_IN_MINUTE, MS_IN_SECOND, celcius, startOf } from './util';
 import { browser, dev } from '$app/environment';
 
 export type WeatherDataEvents = {
@@ -117,10 +117,6 @@ export function makeNsWeatherData() {
 	let timezone = $state('Greenwich'); // GMT
 	let timezoneAbbreviation = $state('GMT'); // GMT
 	let utcOffsetSeconds = $state(0);
-
-	function nearestHour(ms: number, timezone?: string) {
-		return +dayjs.tz(ms, timezone).startOf('hour');
-	}
 
 	let radarPlaying = $state(false);
 	let resetRadarOnPlay = $state(true);
@@ -572,27 +568,27 @@ export function makeNsWeatherData() {
 		},
 
 		get displayTemperature() {
-			return data.get(nearestHour(msTracker, timezone))?.temperature;
+			return data.get(startOf(msTracker, 'hour', timezone))?.temperature;
 		},
 
 		get displayWeatherCode() {
-			return data.get(nearestHour(msTracker, timezone))?.weatherCode;
+			return data.get(startOf(msTracker, 'hour', timezone))?.weatherCode;
 		},
 
 		get displayHumidity() {
-			return data.get(nearestHour(msTracker, timezone))?.humidity;
+			return data.get(startOf(msTracker, 'hour', timezone))?.humidity;
 		},
 
 		get displayDewPoint() {
-			return data.get(nearestHour(msTracker, timezone))?.dewPoint;
+			return data.get(startOf(msTracker, 'hour', timezone))?.dewPoint;
 		},
 
 		get displayPrecipitation() {
-			return data.get(nearestHour(msTracker, timezone))?.precipitation.toFixed(1);
+			return data.get(startOf(msTracker, 'hour', timezone))?.precipitation.toFixed(1);
 		},
 
 		get displayPrecipitationProbability() {
-			return data.get(nearestHour(msTracker, timezone))?.precipitationProbability;
+			return data.get(startOf(msTracker, 'hour', timezone))?.precipitationProbability;
 		},
 
 		get timezone() {
@@ -605,6 +601,10 @@ export function makeNsWeatherData() {
 
 		get utcOffsetSeconds() {
 			return utcOffsetSeconds;
+		},
+
+		get utcOffsetMs() {
+			return utcOffsetSeconds * MS_IN_SECOND;
 		},
 
 		// Converts units, rounds to appropriate digits, and adds units label.

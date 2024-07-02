@@ -5,6 +5,7 @@ import Color from 'colorjs.io';
 import { gg } from './gg';
 
 import picoColors from '$lib/pico-color-palette.json';
+import dayjs from 'dayjs';
 
 export const SOLARIZED_RED = '#dc322f';
 export const SOLARIZED_BLUE = '#268bd2';
@@ -15,6 +16,8 @@ export const MS_IN_SECOND = 1000;
 export const MS_IN_MINUTE = 60 * MS_IN_SECOND;
 export const MS_IN_HOUR = 60 * MS_IN_MINUTE;
 export const MS_IN_DAY = 24 * MS_IN_HOUR;
+
+export const MS_IN_10_MINUTES = 10 * MS_IN_MINUTE;
 
 export const colors = {
 	humidity: '#9062CA',
@@ -150,6 +153,13 @@ export function wmoCode(code: number | undefined) {
 		width: 99,
 		icon: '',
 	};
+}
+
+export function startOf(ms: number, unit: number | dayjs.OpUnitType, timezone?: string) {
+	if (typeof unit === 'number') {
+		return Math.floor(ms / unit) * unit;
+	}
+	return +dayjs.tz(ms, timezone).startOf(unit);
 }
 
 export function celcius(f: number | undefined) {

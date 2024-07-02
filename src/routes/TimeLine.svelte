@@ -14,12 +14,13 @@
 	import { onMount, tick } from 'svelte';
 	import {
 		colors,
+		MS_IN_10_MINUTES,
 		MS_IN_DAY,
 		MS_IN_HOUR,
 		MS_IN_MINUTE,
-		MS_IN_SECOND,
 		SOLARIZED_BLUE,
 		SOLARIZED_RED,
+		startOf,
 		WMO_CODES,
 	} from '$lib/util';
 	import type { Markish } from '@observablehq/plot';
@@ -348,25 +349,22 @@
 	const xScale = $derived(Plot.scale({ x: plotOptions.x }));
 	const yScale = $derived(Plot.scale({ y: plotOptions.y }));
 
-	function updateRuleX(value: number) {
-		const msIntervalStart = Math.floor(Number(value) / 10 / MS_IN_MINUTE) * 10 * MS_IN_MINUTE;
-		const interval = nsWeatherData.intervals.find((item) => item.ms === msIntervalStart);
-		const length = interval ? interval.x2 - msIntervalStart : MS_IN_HOUR;
-
+	function updateTracker(ms: number) {
 		const pg = d3.select(div).select('svg');
 		pg.select('.tracker-rect').remove();
 
-		function drawTracker(ms: number, length: number, color: string) {
+		function drawTracker(ms: number, msIntervalStart: number, length: number, color: string) {
 			const ig = pg.append('g').attr('class', 'tracker-rect');
 
-			const x1 = xScale.apply(ms);
-			const x2 = xScale.apply(Math.min(ms + length, msEnd));
+			const x = xScale.apply(ms);
+			const x1 = xScale.apply(msIntervalStart);
+			const x2 = xScale.apply(Math.min(msIntervalStart + length, msEnd));
 			const y1 = yScale.apply(145);
 			const y2 = yScale.apply(0);
 
 			ig.append('line')
-				.attr('x1', x1)
-				.attr('x2', x1)
+				.attr('x1', x)
+				.attr('x2', x)
 				.attr('y1', y1)
 				.attr('y2', y2)
 				.attr('stroke', color)
@@ -378,15 +376,25 @@
 				.attr('width', x2 - x1)
 				.attr('height', y2 - y1)
 				.attr('fill', color)
-				.attr('opacity', 0.6);
+				.attr('opacity', 0.4);
 		}
 
+		const msStartOf10Min = startOf(ms, MS_IN_10_MINUTES);
+		const msStartOfHour = startOf(ms, MS_IN_HOUR);
+		const interval =
+			nsWeatherData.intervals.find((item) => item.ms === msStartOf10Min) ||
+			nsWeatherData.intervals.find((item) => item.ms === msStartOfHour);
+
+		const msIntervalStart = interval?.ms ?? ms;
+		const length = interval ? interval.x2 - interval.ms : 1;
+
 		if (msIntervalStart >= msStart && msIntervalStart < msEnd) {
-			drawTracker(msIntervalStart, length, 'yellow');
+			drawTracker(ms, msIntervalStart, length, 'yellow');
 		} else if (ghostTracker) {
-			const offset = (msIntervalStart + nsWeatherData.utcOffsetSeconds * MS_IN_SECOND) % MS_IN_DAY;
-			const ghostTime = Number(msStart) + offset;
-			drawTracker(ghostTime, length, 'white');
+			const msGhost = msStart + ((ms + nsWeatherData.utcOffsetMs) % MS_IN_DAY);
+			const msGhostInterval = msStart + ((msIntervalStart + nsWeatherData.utcOffsetMs) % MS_IN_DAY);
+
+			drawTracker(msGhost, msGhostInterval, length, 'white');
 		}
 	}
 
@@ -648,14 +656,14 @@
 		div?.append(plot); // Then add the new chart.
 
 		// Render initial tracker.
-		updateRuleX(nsWeatherData.ms);
+		updateTracker(nsWeatherData.ms);
 	}
 
 	// Update rule location only (leaving rest of plot intact).
 	// Runs every time nsWeatherData.ms changes value.
 	$effect(() => {
 		//gg('EFFECT');
-		updateRuleX(nsWeatherData.ms);
+		updateTracker(nsWeatherData.ms);
 	});
 
 	// Update entire plot.

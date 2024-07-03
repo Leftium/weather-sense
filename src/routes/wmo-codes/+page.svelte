@@ -47,22 +47,19 @@
 						{wmo.picoColor.replace('.', '-')}
 					</article>
 				{/each}
-				<article class="invisible wmo-item group-gap level-2"></article>
-				<article class="invisible divider-1 level-2"></article>
-				<article class="invisible divider-2 level-2"></article>
-				<article class="invisible divider-3 level-2"></article>
-				<article class="invisible divider-4 level-2"></article>
+				{#each ['No Precipitation', 'Rain', 'Mixed Precipitation', 'Snow', 'Thunder Storm'] as title, index}
+					<div class="divider divider-{index}">{title}</div>
+				{/each}
+
+				{#each [...Array(11)] as item}
+					<div class="wmo-item ghost-item"></div>
+				{/each}
 			</div>
 		</div>
 	{/if}
 </div>
 
 <style>
-	.invisible {
-		visibility: hidden;
-		margin-bottom: 0;
-	}
-
 	article {
 		padding: 0;
 	}
@@ -113,6 +110,11 @@
 			}
 		}
 
+		.ghost-item {
+			border: 1px dashed #d4d4d4;
+			color: rgba(0, 0, 0, 0);
+		}
+
 		.code {
 			position: absolute;
 			top: 0.3em;
@@ -143,7 +145,7 @@
 			font-size: 0.9em;
 			padding-top: 2em;
 
-			grid-template-columns: repeat(4, auto auto auto 4em);
+			grid-template-columns: repeat(4, 3em auto auto auto) 3em;
 
 			align-content: center;
 			justify-content: start;
@@ -178,79 +180,103 @@
 				grid-row-start: 3;
 			}
 
-			.group-clear {
-				grid-column-start: 1;
+			.divider {
+				background-color: #969eaf;
+				font-size: 1.2em;
+				font-weight: bold;
+				margin-bottom: 0;
+
+				padding: 1em 0;
+
+				writing-mode: vertical-lr;
+				grid-row: 1 / 4;
+
+				text-align: center;
+				margin-left: 1em;
 			}
 
-			.group-cloudy {
+			.divider-0 {
+				grid-column-start: 1;
+				background-color: #969eaf;
+			}
+
+			.group-clear {
 				grid-column-start: 2;
 			}
 
-			.group-fog {
+			.group-cloudy {
 				grid-column-start: 3;
 			}
 
-			.divider-1 {
+			.group-fog {
 				grid-column-start: 4;
 			}
 
-			.group-drizzle {
+			.divider-1 {
 				grid-column-start: 5;
+				background-color: rgb(1, 170, 255);
 			}
 
-			.group-showers {
+			.group-drizzle {
 				grid-column-start: 6;
 			}
 
-			.group-rain {
+			.group-showers {
 				grid-column-start: 7;
 			}
 
-			.divider-2 {
+			.group-rain {
 				grid-column-start: 8;
 			}
 
-			.group-icy-drizzle {
+			.divider-2 {
 				grid-column-start: 9;
+				background-color: rgb(162, 148, 229);
 			}
 
-			.group-gap {
+			.group-icy-drizzle {
 				grid-column-start: 10;
 			}
 
-			.group-icy-rain {
+			.group-gap {
 				grid-column-start: 11;
 			}
 
-			.divider-3 {
+			.group-icy-rain {
 				grid-column-start: 12;
 			}
 
-			.group-snow-grains {
+			.divider-3 {
 				grid-column-start: 13;
+				background-color: rgb(212, 125, 228);
 			}
 
-			.group-snow-showers {
+			.group-snow-grains {
 				grid-column-start: 14;
 			}
 
-			.group-snow {
+			.group-snow-showers {
 				grid-column-start: 15;
 			}
 
-			.divider-4 {
+			.group-snow {
 				grid-column-start: 16;
 			}
 
-			.group-thunderstorm {
+			.divider-4 {
 				grid-column-start: 17;
+				background-color: rgb(247, 112, 142);
+			}
+
+			.group-thunderstorm {
+				grid-column-start: 18;
 			}
 		}
 	}
 
 	.tall {
 		.wmo-grid {
-			grid-template-rows: repeat(4, auto auto auto 4em);
+			grid-template-rows: repeat(5, 4em auto auto auto);
 			margin: 1em 0em;
 			font-size: 0.8em;
 		}
@@ -273,72 +299,96 @@
 				grid-column-start: 3;
 			}
 
-			.group-clear {
-				grid-row-start: 1;
+			.divider {
+				background-color: #969eaf;
+				font-size: 1.2em;
+				font-weight: bold;
+				margin-bottom: 0;
+
+				grid-column: 1 / 4;
+
+				align-self: end;
+				width: 100%;
+				height: 2em;
+				text-align: center;
+				margin-top: 2em;
 			}
 
-			.group-cloudy {
+			.divider-0 {
+				grid-row-start: 1;
+				background-color: #969eaf;
+			}
+
+			.group-clear {
 				grid-row-start: 2;
 			}
 
-			.group-fog {
+			.group-cloudy {
 				grid-row-start: 3;
 			}
 
-			.divider-1 {
+			.group-fog {
 				grid-row-start: 4;
 			}
 
-			.group-drizzle {
+			.divider-1 {
 				grid-row-start: 5;
+				background-color: rgb(1, 170, 255);
 			}
 
-			.group-showers {
+			.group-drizzle {
 				grid-row-start: 6;
 			}
 
-			.group-rain {
+			.group-showers {
 				grid-row-start: 7;
 			}
 
-			.divider-2 {
+			.group-rain {
 				grid-row-start: 8;
 			}
 
-			.group-icy-drizzle {
+			.divider-2 {
 				grid-row-start: 9;
+				background-color: rgb(162, 148, 229);
 			}
 
-			.group-gap {
+			.group-icy-drizzle {
 				grid-row-start: 10;
 			}
 
-			.group-icy-rain {
+			.group-gap {
 				grid-row-start: 11;
 			}
 
-			.divider-3 {
+			.group-icy-rain {
 				grid-row-start: 12;
 			}
 
-			.group-snow-grains {
+			.divider-3 {
 				grid-row-start: 13;
+				background-color: rgb(212, 125, 228);
 			}
 
-			.group-snow-showers {
+			.group-snow-grains {
 				grid-row-start: 14;
 			}
 
-			.group-snow {
+			.group-snow-showers {
 				grid-row-start: 15;
 			}
 
-			.divider-4 {
+			.group-snow {
 				grid-row-start: 16;
 			}
 
-			.group-thunderstorm {
+			.divider-4 {
 				grid-row-start: 17;
+				background-color: rgb(247, 112, 142);
+			}
+
+			.group-thunderstorm {
+				grid-row-start: 18;
 			}
 		}
 	}

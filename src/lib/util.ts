@@ -138,9 +138,9 @@ export const WMO_CODES: Record<number, any> = {
 	73: makeWmo('fuchsia.450', 'snow', 2, 'Snow', 'moderate-snowfall'),
 	75: makeWmo('fuchsia.550', 'snow', 3, 'H.Snow', 'heavy-snowfall'),
 
-	95: makeWmo('pink.400', 'thunderstorm', 1, 'Thunder Storm', 'thunderstorm'),
-	96: makeWmo('pink.500', 'thunderstorm', 2, 'T-Storm + L.Hail', 'thunderstorm-with-hail'),
-	99: makeWmo('pink.600', 'thunderstorm', 3, 'T-Storm + Hail', 'thunderstorm-with-hail'),
+	95: makeWmo('pink.350', 'thunderstorm', 1, 'Thunder Storm', 'thunderstorm'),
+	96: makeWmo('pink.450', 'thunderstorm', 2, 'T-Storm + L.Hail', 'thunderstorm-with-hail'),
+	99: makeWmo('pink.550', 'thunderstorm', 3, 'T-Storm + Hail', 'thunderstorm-with-hail'),
 };
 
 export function wmoCode(code: number | undefined) {

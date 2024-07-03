@@ -48,11 +48,11 @@
 					</article>
 				{/each}
 				{#each ['No Precipitation', 'Rain', 'Mixed Precipitation', 'Snow', 'Thunder Storm'] as title, index}
-					<div class="divider divider-{index}">{title}</div>
+					<article class="divider divider-{index}">{title}</article>
 				{/each}
 
 				{#each [...Array(11)] as item}
-					<div class="wmo-item ghost-item"></div>
+					<article class="wmo-item ghost-item"></article>
 				{/each}
 			</div>
 		</div>

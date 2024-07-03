@@ -20,7 +20,7 @@
 	}
 
 	onMount(() => {
-		mode = offsetWidth > 412 || offsetHeight / offsetWidth >= 1.2 ? 'wide' : 'tall';
+		mode = offsetWidth > 412 || offsetHeight / offsetWidth < 1.7 ? 'wide' : 'tall';
 	});
 </script>
 

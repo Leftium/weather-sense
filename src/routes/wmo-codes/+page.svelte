@@ -249,10 +249,6 @@
 	}
 
 	.tall {
-		.grid-container {
-			margin-bottom: 2em;
-		}
-
 		.wmo-grid {
 			grid-template-rows: repeat(4, auto auto auto 4em);
 			margin: 1em 0em;

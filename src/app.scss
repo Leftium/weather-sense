@@ -8,3 +8,14 @@
 @import 'leaflet-gesture-handling/dist/leaflet-gesture-handling.css';
 
 /* Write your global styles here, in SCSS syntax. Variables and mixins from the src/variables.scss file are available here without importing */
+
+html,
+body,
+html > div .full-height {
+	height: 100%;
+}
+
+.flex-column {
+	display: flex;
+	flex-direction: column;
+}

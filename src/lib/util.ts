@@ -102,46 +102,45 @@ function makeWmo(
 }
 
 export const WMO_CODES: Record<number, any> = {
-	0: makeWmo('grey.50', 'clear', 1, 'Clear', 'clear'),
+	0: makeWmo('zinc.300', 'clear', 2, 'Clear', 'clear'),
 
-	1: makeWmo('grey.100', 'cloudy', 1, 'Mostly Clear', 'mostly-clear'),
-	2: makeWmo('grey.200', 'cloudy', 2, 'Partly Cloudy', 'partly-cloudy'),
-	3: makeWmo('grey.300', 'cloudy', 3, 'Overcast', 'overcast'),
+	1: makeWmo('zinc.250', 'cloudy', 1, 'Mostly Clear', 'mostly-clear'),
+	2: makeWmo('zinc.350', 'cloudy', 2, 'Partly Cloudy', 'partly-cloudy'),
+	3: makeWmo('zinc.450', 'cloudy', 3, 'Overcast', 'overcast'),
 
-	45: makeWmo('zinc.300', 'fog', 1, 'Fog', 'fog'),
-	48: makeWmo('zinc.400', 'fog', 3, 'Icy Fog', 'rime-fog'),
+	45: makeWmo('sand.350', 'fog', 1, 'Fog', 'fog'),
+	48: makeWmo('sand.550', 'fog', 3, 'Icy Fog', 'rime-fog'),
 
-	51: makeWmo('azure.150', 'drizzle', 1, 'L.Drizzle', 'light-drizzle'),
-	53: makeWmo('azure.200', 'drizzle', 2, 'Drizzle', 'moderate-drizzle'),
-	55: makeWmo('azure.250', 'drizzle', 3, 'H.Drizzle', 'dense-drizzle'),
+	51: makeWmo('azure.200', 'drizzle', 1, 'L.Drizzle', 'light-drizzle'),
+	53: makeWmo('azure.300', 'drizzle', 2, 'Drizzle', 'moderate-drizzle'),
+	55: makeWmo('azure.400', 'drizzle', 3, 'H.Drizzle', 'dense-drizzle'),
 
-	80: makeWmo('azure.300', 'showers', 1, 'L.Showers', 'light-rain'),
+	80: makeWmo('azure.250', 'showers', 1, 'L.Showers', 'light-rain'),
 	81: makeWmo('azure.350', 'showers', 2, 'Showers', 'moderate-rain'),
 	82: makeWmo('azure.450', 'showers', 3, 'H.Showers', 'heavy-rain'),
 
-	61: makeWmo('blue.200', 'rain', 1, 'L.Rain', 'light-rain'),
-	63: makeWmo('blue.300', 'rain', 2, 'Rain', 'moderate-rain'),
-	65: makeWmo('blue.400', 'rain', 3, 'H.Rain', 'heavy-rain'),
+	61: makeWmo('blue.350', 'rain', 1, 'L.Rain', 'light-rain'),
+	63: makeWmo('blue.450', 'rain', 2, 'Rain', 'moderate-rain'),
+	65: makeWmo('blue.550', 'rain', 3, 'H.Rain', 'heavy-rain'),
 
 	56: makeWmo('indigo.200', 'icy-drizzle', 1, 'L.Icy Drizzle', 'light-freezing-drizzle'),
 	57: makeWmo('indigo.400', 'icy-drizzle', 3, 'Icy Drizzle', 'dense-freezing-drizzle'),
 
-	66: makeWmo('violet.200', 'icy-rain', 1, 'L.Icy Rain', 'light-freezing-rain'),
-	67: makeWmo('violet.400', 'icy-rain', 3, 'Icy Rain', 'heavy-freezing-rain'),
+	66: makeWmo('violet.350', 'icy-rain', 1, 'L.Icy Rain', 'light-freezing-rain'),
+	67: makeWmo('violet.550', 'icy-rain', 3, 'Icy Rain', 'heavy-freezing-rain'),
 
-	71: makeWmo('fuchsia.200', 'snow', 1, 'L.Snow', 'slight-snowfall'),
-	73: makeWmo('fuchsia.300', 'snow', 2, 'Snow', 'moderate-snowfall'),
-	75: makeWmo('fuchsia.400', 'snow', 3, 'H.Snow', 'heavy-snowfall'),
+	77: makeWmo('purple.300', 'snow-grains', 2, 'Snow Grains', 'snowflake'),
 
-	77: makeWmo('purple.200', 'snow-grains', 1, 'Snow Grains', 'snowflake'),
+	85: makeWmo('purple.250', 'snow-showers', 1, 'L.Snow Showers', 'slight-snowfall'),
+	86: makeWmo('purple.450', 'snow-showers', 3, 'Snow Showers', 'heavy-snowfall'),
 
-	85: makeWmo('purple.200', 'show-showers', 1, 'L.Snow Showers', 'slight-snowfall'),
-	86: makeWmo('purple.400', 'show-showers', 3, 'Snow Showers', 'heavy-snowfall'),
+	71: makeWmo('fuchsia.350', 'snow', 1, 'L.Snow', 'slight-snowfall'),
+	73: makeWmo('fuchsia.450', 'snow', 2, 'Snow', 'moderate-snowfall'),
+	75: makeWmo('fuchsia.550', 'snow', 3, 'H.Snow', 'heavy-snowfall'),
 
-	95: makeWmo('pink.600', 'thunderstorm', 1, 'Thunderstorm', 'thunderstorm'),
-
-	96: makeWmo('pink.700', 'thunderstorm', 2, 'T-storm + L.Hail', 'thunderstorm-with-hail'),
-	99: makeWmo('pink.800', 'thunderstorm', 3, 'T-storm + Hail', 'thunderstorm-with-hail'),
+	95: makeWmo('pink.400', 'thunderstorm', 1, 'Thunder Storm', 'thunderstorm'),
+	96: makeWmo('pink.500', 'thunderstorm', 2, 'T-Storm + L.Hail', 'thunderstorm-with-hail'),
+	99: makeWmo('pink.600', 'thunderstorm', 3, 'T-Storm + Hail', 'thunderstorm-with-hail'),
 };
 
 export function wmoCode(code: number | undefined) {

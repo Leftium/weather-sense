@@ -245,10 +245,6 @@
 		border-bottom-right-radius: 4.75px;
 	}
 
-	h3 {
-		margin-bottom: 0.1em;
-	}
-
 	.name,
 	.time,
 	.current {

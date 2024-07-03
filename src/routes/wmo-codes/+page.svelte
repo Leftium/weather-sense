@@ -20,12 +20,15 @@
 	}
 
 	onMount(() => {
-		mode = offsetWidth > 375 ? 'wide' : 'tall';
+		mode = offsetWidth > 412 || offsetHeight / offsetWidth >= 1.2 ? 'wide' : 'tall';
 	});
 </script>
 
 <div class="pico container-fluid flex-column {mode}" bind:offsetWidth bind:offsetHeight>
-	<center><a href="/">Back to WeatherSense</a> <button {onclick}>Transpose</button></center>
+	<center
+		><a href="/">Back to WeatherSense</a>
+		<button {onclick}>Transpose</button></center
+	>
 
 	{#if mode}
 		<div class="grid-container">

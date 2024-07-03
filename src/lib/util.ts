@@ -102,14 +102,14 @@ function makeWmo(
 }
 
 export const WMO_CODES: Record<number, any> = {
-	0: makeWmo('zinc.300', 'clear', 2, 'Clear', 'clear'),
+	0: makeWmo('slate.300', 'clear', 2, 'Clear', 'clear'),
 
-	1: makeWmo('zinc.250', 'cloudy', 1, 'Mostly Clear', 'mostly-clear'),
-	2: makeWmo('zinc.350', 'cloudy', 2, 'Partly Cloudy', 'partly-cloudy'),
-	3: makeWmo('zinc.450', 'cloudy', 3, 'Overcast', 'overcast'),
+	1: makeWmo('slate.250', 'cloudy', 1, 'Mostly Clear', 'mostly-clear'),
+	2: makeWmo('slate.350', 'cloudy', 2, 'Partly Cloudy', 'partly-cloudy'),
+	3: makeWmo('slate.450', 'cloudy', 3, 'Overcast', 'overcast'),
 
-	45: makeWmo('sand.350', 'fog', 1, 'Fog', 'fog'),
-	48: makeWmo('sand.550', 'fog', 3, 'Icy Fog', 'rime-fog'),
+	45: makeWmo('grey.350', 'fog', 1, 'Fog', 'fog'),
+	48: makeWmo('grey.550', 'fog', 3, 'Icy Fog', 'rime-fog'),
 
 	51: makeWmo('azure.200', 'drizzle', 1, 'L.Drizzle', 'light-drizzle'),
 	53: makeWmo('azure.300', 'drizzle', 2, 'Drizzle', 'moderate-drizzle'),

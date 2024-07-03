@@ -59,7 +59,9 @@
 	{/if}
 </div>
 
-<style>
+<style lang="scss">
+	@use '@picocss/pico/scss/colors' as *;
+
 	article {
 		padding: 0;
 	}
@@ -181,7 +183,7 @@
 			}
 
 			.divider {
-				background-color: #969eaf;
+				background-color: $amber-200;
 				font-size: 1.2em;
 				font-weight: bold;
 				margin-bottom: 0;
@@ -197,7 +199,7 @@
 
 			.divider-0 {
 				grid-column-start: 1;
-				background-color: #969eaf;
+				background-color: $grey-450;
 			}
 
 			.group-clear {
@@ -214,7 +216,7 @@
 
 			.divider-1 {
 				grid-column-start: 5;
-				background-color: rgb(1, 170, 255);
+				background-color: $blue-550;
 			}
 
 			.group-drizzle {
@@ -231,7 +233,7 @@
 
 			.divider-2 {
 				grid-column-start: 9;
-				background-color: rgb(162, 148, 229);
+				background-color: $violet-550;
 			}
 
 			.group-icy-drizzle {
@@ -248,7 +250,7 @@
 
 			.divider-3 {
 				grid-column-start: 13;
-				background-color: rgb(212, 125, 228);
+				background-color: $fuchsia-450;
 			}
 
 			.group-snow-grains {
@@ -265,7 +267,7 @@
 
 			.divider-4 {
 				grid-column-start: 17;
-				background-color: rgb(247, 112, 142);
+				background-color: $pink-450;
 			}
 
 			.group-thunderstorm {
@@ -300,7 +302,7 @@
 			}
 
 			.divider {
-				background-color: #969eaf;
+				background-color: $amber-200;
 				font-size: 1.2em;
 				font-weight: bold;
 				margin-bottom: 0;
@@ -316,7 +318,7 @@
 
 			.divider-0 {
 				grid-row-start: 1;
-				background-color: #969eaf;
+				background-color: $grey-450;
 			}
 
 			.group-clear {
@@ -333,7 +335,7 @@
 
 			.divider-1 {
 				grid-row-start: 5;
-				background-color: rgb(1, 170, 255);
+				background-color: $blue-550;
 			}
 
 			.group-drizzle {
@@ -350,7 +352,7 @@
 
 			.divider-2 {
 				grid-row-start: 9;
-				background-color: rgb(162, 148, 229);
+				background-color: $violet-550;
 			}
 
 			.group-icy-drizzle {
@@ -367,7 +369,7 @@
 
 			.divider-3 {
 				grid-row-start: 13;
-				background-color: rgb(212, 125, 228);
+				background-color: $fuchsia-450;
 			}
 
 			.group-snow-grains {
@@ -384,7 +386,7 @@
 
 			.divider-4 {
 				grid-row-start: 17;
-				background-color: rgb(247, 112, 142);
+				background-color: $pink-450;
 			}
 
 			.group-thunderstorm {

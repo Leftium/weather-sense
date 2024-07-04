@@ -47,7 +47,7 @@
 						{wmo.picoColor.replace('.', '-')}
 					</article>
 				{/each}
-				{#each ['No Precipitation', 'Rain', 'Mixed Precipitation', 'Snow', 'Thunder Storm'] as title, index}
+				{#each ['No Precipitation', 'Rain', 'Freezing Rain', 'Snow', 'Thunder Storm'] as title, index}
 					<article class="divider divider-{index}">{title}</article>
 				{/each}
 

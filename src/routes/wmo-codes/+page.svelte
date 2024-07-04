@@ -114,7 +114,7 @@
 
 		.ghost-item {
 			border: 1px dashed #d4d4d4;
-			color: rgba(0, 0, 0, 0);
+			box-shadow: none;
 		}
 
 		.code {

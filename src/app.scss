@@ -13,6 +13,7 @@ html,
 body,
 html > div .full-height {
 	height: 100%;
+	overflow: auto;
 }
 
 .flex-column {

@@ -26,7 +26,9 @@
 
 <div class="pico container-fluid flex-column {mode}" bind:offsetWidth bind:offsetHeight>
 	<center
-		><a href="/">Back to WeatherSense</a>
+		><a href="/">Back to WeatherSense</a> |
+		<a href="https://blog.leftium.com/2024/07/wmo-codes.html">About this Table</a>
+		|
 		<button {onclick}>Transpose</button></center
 	>
 

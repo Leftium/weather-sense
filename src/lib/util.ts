@@ -102,8 +102,7 @@ function makeWmo(
 }
 
 export const WMO_CODES: Record<number, any> = {
-	0: makeWmo('slate.200', 'clear', 2, 'Clear', 'clear'),
-
+	0: makeWmo('slate.150', 'clear', 2, 'Clear', 'clear'),
 	1: makeWmo('slate.250', 'cloudy', 1, 'Mostly Clear', 'mostly-clear'),
 	2: makeWmo('slate.350', 'cloudy', 2, 'Partly Cloudy', 'partly-cloudy'),
 	3: makeWmo('slate.450', 'cloudy', 3, 'Overcast', 'overcast'),
@@ -129,7 +128,7 @@ export const WMO_CODES: Record<number, any> = {
 	66: makeWmo('violet.350', 'icy-rain', 1, 'L.Icy Rain', 'light-freezing-rain'),
 	67: makeWmo('violet.550', 'icy-rain', 3, 'Icy Rain', 'heavy-freezing-rain'),
 
-	77: makeWmo('purple.200', 'snow-grains', 2, 'Snow Grains', 'snowflake'),
+	77: makeWmo('purple.50', 'snow-grains', 2, 'Snow Grains', 'snowflake'),
 
 	85: makeWmo('purple.250', 'snow-showers', 1, 'L.Snow Showers', 'slight-snowfall'),
 	86: makeWmo('purple.450', 'snow-showers', 3, 'Snow Showers', 'heavy-snowfall'),

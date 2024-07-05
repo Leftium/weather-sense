@@ -317,21 +317,19 @@ export function makeNsWeatherData() {
 			snowfall: json.current.snowfall,
 		};
 
-		hourly = false
-			? []
-			: json.hourly.time.map((unixtime: number, index: number) => {
-					const ms = unixtime * MS_IN_SECOND;
-					const object: Partial<HourlyWeather> = {
-						msPretty: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),
-						ms,
-					};
+		hourly = json.hourly.time.map((unixtime: number, index: number) => {
+			const ms = unixtime * MS_IN_SECOND;
+			const object: Partial<HourlyWeather> = {
+				msPretty: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),
+				ms,
+			};
 
-					_.forEach(hourlyKeys, (keyData, keyOpenMeteo) => {
-						object[keyData as keyof HourlyWeather] = json.hourly[keyOpenMeteo][index];
-					});
+			_.forEach(hourlyKeys, (keyData, keyOpenMeteo) => {
+				object[keyData as keyof HourlyWeather] = json.hourly[keyOpenMeteo][index];
+			});
 
-					return object as HourlyWeather;
-				});
+			return object as HourlyWeather;
+		});
 
 		daily = _.map(json.daily.time, (unixtime, index: number) => {
 			const ms = unixtime * MS_IN_SECOND;

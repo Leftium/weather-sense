@@ -128,7 +128,7 @@ export const WMO_CODES: Record<number, any> = {
 	66: makeWmo('violet.350', 'icy-rain', 1, 'L.Icy Rain', 'light-freezing-rain'),
 	67: makeWmo('violet.550', 'icy-rain', 3, 'Icy Rain', 'heavy-freezing-rain'),
 
-	77: makeWmo('purple.50', 'snow-grains', 2, 'Snow Grains', 'snowflake'),
+	77: makeWmo('purple.150', 'snow-grains', 2, 'Snow Grains', 'snowflake'),
 
 	85: makeWmo('purple.250', 'snow-showers', 1, 'L.Snow Showers', 'slight-snowfall'),
 	86: makeWmo('purple.450', 'snow-showers', 3, 'Snow Showers', 'heavy-snowfall'),

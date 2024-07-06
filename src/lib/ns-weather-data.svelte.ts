@@ -44,7 +44,15 @@ const FORECAST_DAYS = dev ? 4 : 8; // 0 to 16
 
 const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 
-type CurrentWeather = {
+export type AirQuality = {
+	ms: number;
+	msPretty?: string;
+
+	usAqi: number;
+	europeanAqi: number;
+};
+
+type CurrentForecast = {
 	ms: number;
 	msPretty: string;
 	isDay: boolean;
@@ -58,7 +66,7 @@ type CurrentWeather = {
 	snowfall: number;
 };
 
-export type HourlyWeather = {
+export type HourlyForecast = {
 	ms: number;
 	msPretty: string;
 
@@ -72,7 +80,7 @@ export type HourlyWeather = {
 	precipitation: number;
 };
 
-export type DailyWeather = {
+export type DailyForecast = {
 	ms: number;
 	msPretty: string;
 	compactDate: string;
@@ -122,21 +130,33 @@ export function makeNsWeatherData() {
 	let resetRadarOnPlay = $state(true);
 	let radar: Radar = $state({ generated: 0, host: '', frames: [] });
 
-	let current: CurrentWeather | null = $state(null);
-	let hourly: HourlyWeather[] | null = $state(null);
-	let daily: DailyWeather[] | null = $state(null);
+	let omForecast: null | {
+		current: CurrentForecast;
+		hourly: HourlyForecast[];
+		daily: DailyForecast[];
+	} = $state(null);
+
+	const omAirQuality: {
+		current: null | AirQuality;
+		hourly: null | AirQuality[];
+	} = $state({
+		current: null,
+		hourly: null,
+	});
 
 	const minTemperature = $derived.by(() => {
-		return !hourly
+		return !omForecast
 			? 0
 			: Math.min(
-					_.minBy(hourly, 'temperature')?.temperature ?? Number.MAX_VALUE,
-					_.minBy(hourly, 'dewPoint')?.dewPoint ?? Number.MAX_VALUE,
+					_.minBy(omForecast.hourly, 'temperature')?.temperature ?? Number.MAX_VALUE,
+					_.minBy(omForecast.hourly, 'dewPoint')?.dewPoint ?? Number.MAX_VALUE,
 				);
 	});
 
 	const maxTemperature = $derived.by(() => {
-		return !hourly ? 0 : _.maxBy(hourly, 'temperature')?.temperature ?? Number.MIN_VALUE;
+		return !omForecast
+			? 0
+			: _.maxBy(omForecast.hourly, 'temperature')?.temperature ?? Number.MIN_VALUE;
 	});
 
 	const temperatureRange = $derived(maxTemperature - minTemperature);
@@ -158,7 +178,7 @@ export function makeNsWeatherData() {
 	const data = $derived.by(() => {
 		gg('call nsWeatherData_data');
 		const newData: Map<number, DataItem> = new Map();
-		if (!browser || !hourly) {
+		if (!browser || !omForecast) {
 			return newData;
 		}
 
@@ -167,7 +187,7 @@ export function makeNsWeatherData() {
 		//console.table(summarize($state.snapshot(hourly)));
 		console.time('nsWeather_data');
 
-		hourly.forEach((item) => {
+		omForecast.hourly.forEach((item) => {
 			const ms = item.ms;
 
 			const hour = dayjs.tz(ms, timezone).get('hour');
@@ -216,14 +236,14 @@ export function makeNsWeatherData() {
 	};
 
 	let intervals = $derived.by(() => {
-		if (!browser) {
+		if (!browser || !omForecast) {
 			return [];
 		}
 
 		const msIntervals: number[] = [];
 		const intervals: IntervalItem[] = [];
 
-		hourly?.forEach((item) => {
+		omForecast.hourly.forEach((item) => {
 			msIntervals.push(item.ms);
 		});
 
@@ -286,9 +306,9 @@ export function makeNsWeatherData() {
 		precipitation_probability_max: 'precipitationProbabilityMax',
 	};
 
-	async function fetchOpenMeteo() {
-		gg('fetchOpenMeteo:start');
-		console.time('fetchOpenMeteo');
+	async function fetchOpenMeteoForecast() {
+		gg('fetchOpenMeteoForecast:start');
+		console.time('fetchOpenMeteoForecast');
 		const url =
 			`https://api.open-meteo.com/v1/forecast?latitude=${coords?.latitude}&longitude=${coords?.longitude}` +
 			`&current=temperature_2m,relative_humidity_2m,is_day,precipitation,rain,showers,snowfall,weather_code` +
@@ -303,7 +323,7 @@ export function makeNsWeatherData() {
 		timezoneAbbreviation = json.timezone_abbreviation;
 		utcOffsetSeconds = json.utc_offset_seconds;
 
-		current = {
+		const current = {
 			msPretty: nsWeatherData.tzFormat(json.current.time * MS_IN_SECOND, DATEFORMAT_MASK),
 			ms: json.current.time * MS_IN_SECOND,
 			isDay: json.current.is_day === 1,
@@ -317,21 +337,21 @@ export function makeNsWeatherData() {
 			snowfall: json.current.snowfall,
 		};
 
-		hourly = json.hourly.time.map((unixtime: number, index: number) => {
+		const hourly = json.hourly.time.map((unixtime: number, index: number) => {
 			const ms = unixtime * MS_IN_SECOND;
-			const object: Partial<HourlyWeather> = {
+			const object: Partial<HourlyForecast> = {
 				msPretty: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),
 				ms,
 			};
 
 			_.forEach(hourlyKeys, (keyData, keyOpenMeteo) => {
-				object[keyData as keyof HourlyWeather] = json.hourly[keyOpenMeteo][index];
+				object[keyData as keyof HourlyForecast] = json.hourly[keyOpenMeteo][index];
 			});
 
-			return object as HourlyWeather;
+			return object as HourlyForecast;
 		});
 
-		daily = _.map(json.daily.time, (unixtime, index: number) => {
+		const daily = _.map(json.daily.time, (unixtime, index: number) => {
 			const ms = unixtime * MS_IN_SECOND;
 			const compactDate =
 				index === PAST_DAYS
@@ -344,7 +364,7 @@ export function makeNsWeatherData() {
 			const sunrise = json.daily.sunrise[index] * MS_IN_SECOND;
 			const sunset = json.daily.sunset[index] * MS_IN_SECOND;
 
-			const object: Partial<DailyWeather> = {
+			const object: Partial<DailyForecast> = {
 				msPretty: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),
 				compactDate,
 				ms,
@@ -354,16 +374,25 @@ export function makeNsWeatherData() {
 			};
 
 			_.forEach(dailyKeys, (newKey, openMeteoKey) => {
-				object[newKey as keyof DailyWeather] = json.daily[openMeteoKey][index];
+				object[newKey as keyof DailyForecast] = json.daily[openMeteoKey][index];
 			});
 
-			return object as DailyWeather;
+			return object as DailyForecast;
 		});
 
-		console.timeEnd('fetchOpenMeteo');
+		omForecast = {
+			current,
+			daily,
+			hourly,
+		};
+
+		console.timeEnd('fetchOpenMeteoForecast');
 
 		emit('weatherdata_updatedData');
-		gg('fetchOpenMeteo', { json: $state.snapshot(json), daily: $state.snapshot(daily) });
+		gg('fetchOpenMeteoForecast', {
+			json: $state.snapshot(json),
+			daily: $state.snapshot(omForecast.daily),
+		});
 
 		// Ensure pretty timestamps are in correct timezone:
 		await tick();
@@ -441,7 +470,7 @@ export function makeNsWeatherData() {
 
 			//gg({ name, coords, params });
 
-			fetchOpenMeteo();
+			fetchOpenMeteoForecast();
 		});
 
 		on('weatherdata_requestedSetTime', function (params) {
@@ -534,15 +563,15 @@ export function makeNsWeatherData() {
 		},
 
 		get current() {
-			return { ...current };
+			return { ...omForecast?.current };
 		},
 
 		get hourly() {
-			return hourly;
+			return omForecast?.hourly;
 		},
 
 		get daily() {
-			return daily?.toSpliced(-1, 1);
+			return omForecast?.daily.toSpliced(-1, 1);
 		},
 
 		get data() {

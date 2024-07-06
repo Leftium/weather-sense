@@ -3,7 +3,11 @@
 </script>
 
 <script lang="ts">
-	import type { DailyWeather, NsWeatherData, WeatherDataEvents } from '$lib/ns-weather-data.svelte';
+	import type {
+		DailyForecast,
+		NsWeatherData,
+		WeatherDataEvents,
+	} from '$lib/ns-weather-data.svelte';
 
 	import _ from 'lodash-es';
 	import * as d3 from 'd3';
@@ -76,7 +80,7 @@
 		};
 
 		const solarEvents = nsWeatherData.daily?.reduce(
-			(accumulator: SolarEventItem[], current: DailyWeather) => {
+			(accumulator: SolarEventItem[], current: DailyForecast) => {
 				if (current.sunrise > msStart && current.sunrise < msEnd) {
 					const ms = current.sunrise;
 					accumulator.push({

@@ -78,15 +78,17 @@
 	let div: HTMLDivElement;
 	let clientWidth: number = $state(0);
 
+	const aqiPlotHeight = 20;
+
 	let yDomainBottom = $derived.by(() => {
 		let value = 0;
 
 		if (draw.aqiUs) {
-			value -= 50;
+			value -= aqiPlotHeight;
 		}
 
 		if (draw.aqiEurope) {
-			value -= 50;
+			value -= aqiPlotHeight;
 		}
 
 		return value;
@@ -470,12 +472,12 @@
 	const curve = 'catmull-rom';
 	const plotOptions = $derived({
 		width: clientWidth,
-		height: 80,
+		height: 70,
 		marginRight: MARGIN_RIGHT,
 		marginLeft: MARGIN_LEFT,
 		marginTop: 0,
 		marginBottom: 0,
-		y: { axis: null, domain: [145, yDomainBottom], range: [0, 80] },
+		y: { axis: null, domain: [145, yDomainBottom], range: [0, 70] },
 		x: {
 			type: 'utc',
 			axis: xAxis ? true : null,
@@ -544,7 +546,7 @@
 
 		const aqiLabelTextOptions = {
 			opacity: fadePastValues,
-			fontSize: 13,
+			fontSize: 10,
 			fill: 'fillText',
 			y: -75,
 			x: (d) => d.xMiddle,
@@ -596,8 +598,8 @@
 						x1: 'x1',
 						x2: 'x2',
 
-						y1: draw.aqiEurope ? -100 : -50,
-						y2: draw.aqiEurope ? -50 : -0,
+						y1: aqiPlotHeight * (draw.aqiEurope ? -2 : -1),
+						y2: aqiPlotHeight * (draw.aqiEurope ? -1 : 0),
 						fill: 'fill',
 					}),
 				);
@@ -609,7 +611,7 @@
 						fill: 'fillShadow',
 						dy: 1,
 						dx: 1,
-						y: draw.aqiEurope ? -75 : -25,
+						y: aqiPlotHeight * (draw.aqiEurope ? -1.5 : -0.5),
 					}),
 				);
 
@@ -617,7 +619,7 @@
 					// Weather code label text:
 					Plot.text(dataAirQuality.aqiUsLevels, {
 						...aqiLabelTextOptions,
-						y: draw.aqiEurope ? -75 : -25,
+						y: aqiPlotHeight * (draw.aqiEurope ? -1.5 : -0.5),
 					}),
 				);
 			}
@@ -629,7 +631,7 @@
 						opacity: fadePastValues,
 						x1: 'x1',
 						x2: 'x2',
-						y1: -50,
+						y1: -aqiPlotHeight,
 						y2: -0,
 						fill: 'fill',
 					}),
@@ -640,7 +642,7 @@
 					Plot.text(dataAirQuality.aqiEuropeLevels, {
 						...aqiLabelTextOptions,
 						fill: 'fillShadow',
-						y: -25,
+						y: -aqiPlotHeight / 2,
 						dy: 1,
 						dx: 1,
 					}),
@@ -650,7 +652,7 @@
 					// Weather code label text:
 					Plot.text(dataAirQuality.aqiEuropeLevels, {
 						...aqiLabelTextOptions,
-						y: -25,
+						y: -aqiPlotHeight / 2,
 					}),
 				);
 			}

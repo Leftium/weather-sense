@@ -80,6 +80,7 @@
 
 	const aqiPlotHeight = 20;
 
+	const yDomainTop = 145;
 	let yDomainBottom = $derived.by(() => {
 		let value = 0;
 
@@ -477,7 +478,7 @@
 		marginLeft: MARGIN_LEFT,
 		marginTop: 0,
 		marginBottom: 0,
-		y: { axis: null, domain: [145, yDomainBottom], range: [0, 70] },
+		y: { axis: null, domain: [yDomainTop, yDomainBottom], range: [0, 70] },
 		x: {
 			type: 'utc',
 			axis: xAxis ? true : null,
@@ -501,7 +502,7 @@
 			const x = xScale.apply(ms);
 			const x1 = xScale.apply(msIntervalStart);
 			const x2 = xScale.apply(Math.min(msIntervalStart + length, msEnd));
-			const y1 = yScale.apply(145);
+			const y1 = yScale.apply(yDomainTop);
 			const y2 = yScale.apply(yDomainBottom);
 
 			ig.append('line')
@@ -584,7 +585,7 @@
 			Plot.rectY([0], {
 				x1: msStart,
 				x2: msEnd,
-				y: 145,
+				y: yDomainTop,
 				fill: '#efefef',
 			}),
 		];
@@ -666,7 +667,7 @@
 						opacity: fadePastValues,
 						x1: 'x1',
 						x2: 'x2',
-						y: 145,
+						y: yDomainTop,
 						fill: 'fill',
 					}),
 				);

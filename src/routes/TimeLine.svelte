@@ -126,7 +126,7 @@
 				const xMiddle = (Number(x1) + Number(x2)) / 2;
 
 				if (prevItem && prevText === currLabel.text) {
-					prevItem.x2 = x2;
+					prevItem.ms = prevItem.x2 = x2;
 					prevItem.xMiddle = (Number(prevItem.x1) + x2) / 2;
 				} else {
 					const fill = currLabel.color;
@@ -139,7 +139,7 @@
 					);
 
 					accumulator.push({
-						ms: xMiddle,
+						ms: x2,
 						aqiUs: currItem.aqiUs,
 						aqiEurope: currItem.aqiEurope,
 						text: currLabel.text,
@@ -167,7 +167,7 @@
 
 				if (prevItem && prevText === currLabel.text) {
 					prevItem.x2 = x2;
-					prevItem.xMiddle = (Number(prevItem.x1) + x2) / 2;
+					prevItem.ms = prevItem.xMiddle = (Number(prevItem.x1) + x2) / 2;
 				} else {
 					const fill = currLabel.color;
 					const fillText = contrastTextColor(fill);
@@ -179,7 +179,7 @@
 					);
 
 					accumulator.push({
-						ms: xMiddle,
+						ms: x2,
 						aqiUs: currItem.aqiUs,
 						aqiEurope: currItem.aqiEurope,
 						text: currLabel.text,
@@ -193,6 +193,8 @@
 				}
 				return accumulator;
 			}, [] as AqiItem[]);
+
+			gg(aqiEuropeLevels);
 
 			return {
 				all: filteredAirQuality,
@@ -263,7 +265,7 @@
 				const xMiddle = (Number(x1) + Number(x2)) / 2;
 
 				if (prevItem && prevCode == nextCode && prevCode != undefined) {
-					prevItem.x2 = x2;
+					prevItem.ms = prevItem.x2 = x2;
 					prevItem.xMiddle = (Number(prevItem.x1) + x2) / 2;
 				} else {
 					if (nextCode != undefined) {
@@ -277,7 +279,7 @@
 						);
 
 						accumulator.push({
-							ms: xMiddle,
+							ms: x2,
 							weatherCode: nextCode,
 							text: WMO_CODES[nextCode].description,
 							icon: WMO_CODES[nextCode].icon,
@@ -425,7 +427,7 @@
 	function fadePastValues(d: { ms: number }) {
 		const now = Date.now();
 		if (d.ms < now) {
-			return 0.75;
+			return 0.5;
 		}
 		return 1;
 	}
@@ -662,7 +664,7 @@
 				// Weather code colored bands:
 				marks.push(
 					Plot.rectY(dataForecast.codes, {
-						strokeOpacity: fadePastValues,
+						opacity: fadePastValues,
 						x1: 'x1',
 						x2: 'x2',
 						y: 145,

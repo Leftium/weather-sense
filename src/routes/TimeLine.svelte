@@ -194,8 +194,6 @@
 				return accumulator;
 			}, [] as AqiItem[]);
 
-			gg(aqiEuropeLevels);
-
 			return {
 				all: filteredAirQuality,
 				aqiUsLevels,

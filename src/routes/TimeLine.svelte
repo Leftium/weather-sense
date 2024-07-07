@@ -96,11 +96,9 @@
 		//gg('data');
 
 		if (nsWeatherData.dataAirQuality.size) {
-			const filtered = [...nsWeatherData.dataAirQuality.values()].filter((item) => {
+			const filteredAirQuality = [...nsWeatherData.dataAirQuality.values()].filter((item) => {
 				return item.ms >= msStart && item.ms <= msEnd;
 			});
-
-			const minute0 = filtered;
 
 			type AqiItem = {
 				ms: number;
@@ -116,9 +114,7 @@
 				fillShadow: string;
 			};
 
-			const minute0withoutLast = minute0.toSpliced(-1, 1);
-
-			const aqiUsLevels = minute0withoutLast.reduce((accumulator: AqiItem[], currItem) => {
+			const aqiUsLevels = filteredAirQuality.reduce((accumulator: AqiItem[], currItem) => {
 				const prevItem = accumulator.at(-1);
 
 				const prevText = prevItem ? aqiUsToLabel(prevItem.aqiUs).text : '';
@@ -158,7 +154,7 @@
 				return accumulator;
 			}, [] as AqiItem[]);
 
-			const aqiEuropeLevels = minute0withoutLast.reduce((accumulator: AqiItem[], currItem) => {
+			const aqiEuropeLevels = filteredAirQuality.reduce((accumulator: AqiItem[], currItem) => {
 				const prevItem = accumulator.at(-1);
 
 				const prevText = prevItem ? aqiEuropeToLabel(prevItem.aqiEurope).text : '';
@@ -199,7 +195,7 @@
 			}, [] as AqiItem[]);
 
 			return {
-				all: filtered,
+				all: filteredAirQuality,
 				aqiUsLevels,
 				aqiEuropeLevels,
 			};
@@ -240,11 +236,9 @@
 		);
 
 		if (nsWeatherData.dataForecast.size) {
-			const filtered = [...nsWeatherData.dataForecast.values()].filter((item) => {
+			const filteredForecast = [...nsWeatherData.dataForecast.values()].filter((item) => {
 				return item.ms >= msStart && item.ms <= msEnd;
 			});
-
-			const minute0 = filtered;
 
 			type CodesItem = {
 				ms: number;
@@ -259,9 +253,7 @@
 				fillShadow: string;
 			};
 
-			const minute0withoutLast = minute0.toSpliced(-1, 1);
-
-			const codes = minute0withoutLast.reduce((accumulator: CodesItem[], current) => {
+			const codes = filteredForecast.reduce((accumulator: CodesItem[], current) => {
 				const prevItem = accumulator.at(-1);
 				const prevCode = prevItem?.weatherCode;
 				const nextCode = current.weatherCode;
@@ -301,7 +293,7 @@
 				return accumulator;
 			}, [] as CodesItem[]);
 
-			const rain = minute0withoutLast
+			const rain = filteredForecast
 				.filter((d) => d.precipitation > 0)
 				.map((d) => {
 					const x1bar = d.ms + 5 * MS_IN_MINUTE;
@@ -328,7 +320,7 @@
 				temperature: 0,
 			};
 
-			_.forEachRight(filtered, (item, index) => {
+			_.forEachRight(filteredForecast, (item, index) => {
 				if (item.temperature > high.temperature) {
 					high = {
 						ms: item.ms,
@@ -345,7 +337,7 @@
 			});
 
 			return {
-				all: filtered,
+				all: filteredForecast,
 				low,
 				high,
 				rain,

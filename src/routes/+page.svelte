@@ -242,8 +242,8 @@
 	{#if dev}
 		<div class="pico debug">
 			<pre>nsWeatherData.ms = {nsWeatherData.ms} ({nsWeatherData.tzFormat(nsWeatherData.ms)})</pre>
-			<pre>nsWeatherData.data = {jsonPretty(
-					summarize(objectFromMap(nsWeatherData.dataForecast)),
+			<pre>nsWeatherData.dataAirQuality = {jsonPretty(
+					summarize(objectFromMap(nsWeatherData.dataAirQuality)),
 				)}</pre>
 
 			<pre>nsWeatherData.current = {jsonPretty(nsWeatherData.current)}</pre>

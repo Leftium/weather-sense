@@ -68,8 +68,8 @@
 		dewPoint: true,
 		temperature: true,
 		solarEvents: true,
-		aqiUs: false,
 		aqiEurope: true,
+		aqiUs: false,
 	};
 
 	const msStart = $derived(+dayjs.tz(start, nsWeatherData.timezone).startOf('hour'));
@@ -926,6 +926,8 @@
 		{#each [...AQI_INDEX_US, ...AQI_INDEX_EUROPE] as { text }}
 			<div bind:this={labelElements[text]}>{text}</div>
 		{/each}
+
+		<div bind:this={labelElements['No Data']}>No Data</div>
 	</div>
 {/if}
 

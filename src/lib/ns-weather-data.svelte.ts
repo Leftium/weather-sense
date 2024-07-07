@@ -40,7 +40,7 @@ export type WeatherDataEvents = {
 
 const DATEFORMAT_MASK = 'MM-DD hh:mma z';
 const PAST_DAYS = dev ? 2 : 2; // 0 to 92
-const FORECAST_DAYS = dev ? 4 : 7; // 0 to 7 for air-quality; 0 to 16 for forecast
+const FORECAST_DAYS = dev ? 2 : 8; // 0 to 16 for forecast; 0 to 7 for air-quality;
 
 const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 
@@ -344,7 +344,7 @@ export function makeNsWeatherData() {
 		const url =
 			`https://air-quality-api.open-meteo.com/v1/air-quality` +
 			`?latitude=${coords?.latitude}&longitude=${coords?.longitude}` +
-			`&timeformat=unixtime&timezone=auto&past_days=${PAST_DAYS}&forecast_days=${FORECAST_DAYS}` +
+			`&timeformat=unixtime&timezone=auto&past_days=${PAST_DAYS}&forecast_days=${Math.min(7, FORECAST_DAYS)}` +
 			`&current=us_aqi,european_aqi` +
 			`&hourly=us_aqi,european_aqi`;
 

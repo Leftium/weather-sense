@@ -23,8 +23,8 @@ export const colors = {
 	humidity: '#9062CA',
 	precipitationProbability: '#58FAF9',
 	precipitation: SOLARIZED_BLUE,
-	dewPoint: SOLARIZED_CYAN,
-	temperature: 'black',
+	dewPoint: picoColors.blue[600],
+	temperature: picoColors.blue[950],
 };
 
 export function jsonPretty(json: any) {

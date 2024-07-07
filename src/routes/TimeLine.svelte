@@ -593,7 +593,7 @@
 				// AQI code colored bands:
 				marks.push(
 					Plot.rectY(dataAirQuality.aqiUsLevels, {
-						strokeOpacity: fadePastValues,
+						opacity: fadePastValues,
 						x1: 'x1',
 						x2: 'x2',
 
@@ -627,7 +627,7 @@
 				// AQI code colored bands:
 				marks.push(
 					Plot.rectY(dataAirQuality.aqiEuropeLevels, {
-						strokeOpacity: fadePastValues,
+						opacity: fadePastValues,
 						x1: 'x1',
 						x2: 'x2',
 						y1: -50,

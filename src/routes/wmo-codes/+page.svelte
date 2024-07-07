@@ -39,7 +39,8 @@
 					<article
 						style:background-color={wmo.color}
 						class="wmo-item group-{wmo.group} level-{wmo.level}"
-						class:is-dark-text={wmo.isDarkText}
+						style:color={wmo.colorText}
+						style:text-shadow={`1px 1px ${wmo.colorShadow}`}
 					>
 						<div class="code">{wmo.code}</div>
 						<img src={wmo.icon} alt="" />
@@ -90,14 +91,6 @@
 		flex-grow: 1;
 
 		gap: 0.3em;
-
-		color: #fff;
-		text-shadow: 1px 1px rgb(0 0 0 / 50%);
-
-		.is-dark-text {
-			color: #333;
-			text-shadow: 1px 1px rgb(255 255 255 / 50%);
-		}
 
 		.wmo-item {
 			position: relative;

@@ -48,8 +48,8 @@ export type AirQuality = {
 	ms: number;
 	msPretty?: string;
 
-	usAqi: number;
-	europeanAqi: number;
+	aqiUs: number;
+	aqiEurope: number;
 };
 
 type CurrentForecast = {
@@ -102,6 +102,35 @@ export type DailyForecast = {
 
 export type NsWeatherData = ReturnType<typeof makeNsWeatherData>;
 
+type ForecastItem = {
+	msPretty?: string;
+	ms: number;
+
+	// From omForecast:
+	temperature: number;
+	weatherCode: number;
+	humidity: number;
+	dewPoint: number;
+	precipitation: number;
+	precipitationProbability: number;
+
+	// From omAirQuality:
+	// aqiUs: number;
+	// aqiEurope: number;
+
+	// From OpenWeather:
+	// TBD
+};
+
+type AirQualityItem = {
+	msPretty?: string;
+	ms: number;
+
+	// From omAirQuality:
+	aqiUs: number;
+	aqiEurope: number;
+};
+
 import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezonePlugin from 'dayjs/plugin/timezone';
@@ -136,13 +165,10 @@ export function makeNsWeatherData() {
 		daily: DailyForecast[];
 	} = $state(null);
 
-	const omAirQuality: {
-		current: null | AirQuality;
-		hourly: null | AirQuality[];
-	} = $state({
-		current: null,
-		hourly: null,
-	});
+	let omAirQuality: null | {
+		current: AirQuality;
+		hourly: AirQuality[];
+	} = $state(null);
 
 	const minTemperature = $derived.by(() => {
 		return !omForecast
@@ -163,67 +189,73 @@ export function makeNsWeatherData() {
 
 	const temperatureStats = $derived({ minTemperature, maxTemperature, temperatureRange });
 
-	type DataItem = {
-		msPretty?: string;
-		ms: number;
-
-		temperature: number;
-		weatherCode: number;
-		humidity: number;
-		dewPoint: number;
-		precipitation: number;
-		precipitationProbability: number;
-	};
-
-	const data = $derived.by(() => {
-		gg('call nsWeatherData_data');
-		const newData: Map<number, DataItem> = new Map();
-		if (!browser || !omForecast) {
+	const dataAirQuality = $derived.by(() => {
+		gg('dataAirQuality:derive');
+		const newData: Map<number, AirQualityItem> = new Map();
+		if (!browser || !omAirQuality) {
+			gg('dataAirQuality:empty');
 			return newData;
 		}
 
-		gg('make nsWeatherData_data');
+		//console.table(summarize($state.snapshot(hourly)));
+		console.time('dataAirQuality');
+
+		omAirQuality.hourly.forEach((item) => {
+			const ms = item.ms;
+
+			newData.set(ms, {
+				msPretty: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),
+				ms,
+
+				aqiUs: item.aqiUs,
+				aqiEurope: item.aqiEurope,
+			});
+		});
+		console.timeEnd('dataAirQuality');
+
+		untrack(() => {
+			gg('dataAirQuality.size:', newData.size);
+		});
+		return newData;
+	});
+
+	const dataForecast = $derived.by(() => {
+		gg('dataForecast:derive');
+		const newData: Map<number, ForecastItem> = new Map();
+		if (!browser || !omForecast) {
+			gg('dataForecast:empty');
+			return newData;
+		}
 
 		//console.table(summarize($state.snapshot(hourly)));
-		console.time('nsWeather_data');
+		console.time('dataForecast');
 
 		omForecast.hourly.forEach((item) => {
 			const ms = item.ms;
-
 			const hour = dayjs.tz(ms, timezone).get('hour');
 
-			const msPretty = nsWeatherData.tzFormat(ms, DATEFORMAT_MASK);
-
-			const temperature = item.temperature;
-
-			const weatherCode = item.weatherCode;
-			const humidity = item.relativeHumidity;
-			const dewPoint = item.dewPoint;
 			// Fake precipitation in dev mode:
 			const precipitation = false && dev ? (50 / 23) * hour : item.precipitation;
-			const precipitationProbability = item.precipitationProbability;
 
 			newData.set(ms, {
-				msPretty,
+				msPretty: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),
 				ms,
 
-				weatherCode,
+				weatherCode: item.weatherCode,
 
-				temperature,
-				dewPoint,
+				temperature: item.temperature,
+				dewPoint: item.dewPoint,
 
-				humidity,
+				humidity: item.relativeHumidity,
 
-				precipitationProbability,
+				precipitationProbability: item.precipitationProbability,
 				precipitation,
 			});
 		});
-		console.timeEnd('nsWeather_data');
+		console.timeEnd('dataForecast');
 
 		untrack(() => {
-			gg('nsWeatherData.data.size:', newData.size);
-			//gg('nsWeatherData.data.size:', Object.keys(data).length);
-			//console.table([...data.values()]);
+			gg('dataForecast.size:', newData.size);
 		});
 		return newData;
 	});
@@ -306,15 +338,82 @@ export function makeNsWeatherData() {
 		precipitation_probability_max: 'precipitationProbabilityMax',
 	};
 
+	async function fetchOpenMeteoAirQuality() {
+		gg('fetchOpenMeteoAirQuality:start');
+		console.time('fetchOpenMeteoAirQuality');
+		const url =
+			`https://air-quality-api.open-meteo.com/v1/air-quality` +
+			`?latitude=${coords?.latitude}&longitude=${coords?.longitude}` +
+			`&timeformat=unixtime&timezone=auto&past_days=${PAST_DAYS}&forecast_days=${FORECAST_DAYS}` +
+			`&current=us_aqi,european_aqi` +
+			`&hourly=us_aqi,european_aqi`;
+
+		const fetched = await fetch(url);
+		const json = await fetched.json();
+
+		timezone = json.timezone;
+		timezoneAbbreviation = json.timezone_abbreviation;
+		utcOffsetSeconds = json.utc_offset_seconds;
+
+		const current = {
+			msPretty: nsWeatherData.tzFormat(json.current.time * MS_IN_SECOND, DATEFORMAT_MASK),
+			ms: json.current.time * MS_IN_SECOND,
+
+			aqiUs: json.current.us_aqi,
+			aqiEurope: json.current.european_aqi,
+		};
+
+		const hourly = json.hourly.time.map((unixtime: number, index: number) => {
+			const ms = unixtime * MS_IN_SECOND;
+
+			const aqiUs = json.hourly.us_aqi[index];
+
+			const object: Partial<AirQuality> = {
+				msPretty: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),
+				ms,
+				aqiUs,
+				aqiEurope: json.hourly.european_aqi[index],
+			};
+
+			return object as HourlyForecast;
+		});
+
+		omAirQuality = {
+			current,
+			hourly,
+		};
+
+		console.timeEnd('fetchOpenMeteoAirQuality');
+
+		emit('weatherdata_updatedData');
+		gg('fetchOpenMeteoAirQuality', {
+			current: $state.snapshot(omAirQuality.current),
+			json: $state.snapshot(json),
+		});
+
+		// Ensure pretty timestamps are in correct timezone:
+		await tick();
+		if (radar.generated) {
+			radar.generatedPretty = nsWeatherData.tzFormat(radar.generated);
+
+			radar.frames = radar.frames.map((frame) => ({
+				...frame,
+				msPretty: nsWeatherData.tzFormat(frame.ms),
+			}));
+		}
+	}
+
 	async function fetchOpenMeteoForecast() {
 		gg('fetchOpenMeteoForecast:start');
 		console.time('fetchOpenMeteoForecast');
 		const url =
-			`https://api.open-meteo.com/v1/forecast?latitude=${coords?.latitude}&longitude=${coords?.longitude}` +
+			`https://api.open-meteo.com/v1/forecast` +
+			`?latitude=${coords?.latitude}&longitude=${coords?.longitude}` +
+			`&timeformat=unixtime&timezone=auto&past_days=${PAST_DAYS}&forecast_days=${FORECAST_DAYS}` +
+			`&temperature_unit=fahrenheit` +
 			`&current=temperature_2m,relative_humidity_2m,is_day,precipitation,rain,showers,snowfall,weather_code` +
 			`&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,weather_code,dew_point_2m` +
-			`&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,rain_sum,showers_sum,snowfall_sum,precipitation_hours,precipitation_probability_max` +
-			`&temperature_unit=fahrenheit&timeformat=unixtime&timezone=auto&past_days=${PAST_DAYS}&forecast_days=${FORECAST_DAYS}`;
+			`&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,rain_sum,showers_sum,snowfall_sum,precipitation_hours,precipitation_probability_max`;
 
 		const fetched = await fetch(url);
 		const json = await fetched.json();
@@ -390,8 +489,8 @@ export function makeNsWeatherData() {
 
 		emit('weatherdata_updatedData');
 		gg('fetchOpenMeteoForecast', {
+			current: $state.snapshot(omForecast.current),
 			json: $state.snapshot(json),
-			daily: $state.snapshot(omForecast.daily),
 		});
 
 		// Ensure pretty timestamps are in correct timezone:
@@ -471,6 +570,7 @@ export function makeNsWeatherData() {
 			//gg({ name, coords, params });
 
 			fetchOpenMeteoForecast();
+			fetchOpenMeteoAirQuality();
 		});
 
 		on('weatherdata_requestedSetTime', function (params) {
@@ -574,8 +674,12 @@ export function makeNsWeatherData() {
 			return omForecast?.daily.toSpliced(-1, 1);
 		},
 
-		get data() {
-			return data;
+		get dataAirQuality() {
+			return dataAirQuality;
+		},
+
+		get dataForecast() {
+			return dataForecast;
 		},
 
 		get temperatureStats() {
@@ -595,27 +699,35 @@ export function makeNsWeatherData() {
 		},
 
 		get displayTemperature() {
-			return data.get(startOf(msTracker, 'hour', timezone))?.temperature;
+			return dataForecast.get(startOf(msTracker, 'hour', timezone))?.temperature;
 		},
 
 		get displayWeatherCode() {
-			return data.get(startOf(msTracker, 'hour', timezone))?.weatherCode;
+			return dataForecast.get(startOf(msTracker, 'hour', timezone))?.weatherCode;
 		},
 
 		get displayHumidity() {
-			return data.get(startOf(msTracker, 'hour', timezone))?.humidity;
+			return dataForecast.get(startOf(msTracker, 'hour', timezone))?.humidity;
 		},
 
 		get displayDewPoint() {
-			return data.get(startOf(msTracker, 'hour', timezone))?.dewPoint;
+			return dataForecast.get(startOf(msTracker, 'hour', timezone))?.dewPoint;
 		},
 
 		get displayPrecipitation() {
-			return data.get(startOf(msTracker, 'hour', timezone))?.precipitation.toFixed(1);
+			return dataForecast.get(startOf(msTracker, 'hour', timezone))?.precipitation.toFixed(1);
 		},
 
 		get displayPrecipitationProbability() {
-			return data.get(startOf(msTracker, 'hour', timezone))?.precipitationProbability;
+			return dataForecast.get(startOf(msTracker, 'hour', timezone))?.precipitationProbability;
+		},
+
+		get displayAqiUs() {
+			return dataAirQuality.get(startOf(msTracker, 'hour', timezone))?.aqiUs;
+		},
+
+		get displayAqiEurope() {
+			return dataAirQuality.get(startOf(msTracker, 'hour', timezone))?.aqiEurope;
 		},
 
 		get timezone() {

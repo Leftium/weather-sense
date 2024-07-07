@@ -1,5 +1,6 @@
 <script context="module" lang="ts">
 	let adjustedLabelWidths = $state(false);
+	let labelWidths: Record<string, number> = $state({});
 </script>
 
 <script lang="ts">
@@ -17,7 +18,12 @@
 	import { getEmitter } from '$lib/emitter';
 	import { onMount, tick } from 'svelte';
 	import {
+		AQI_INDEX_EUROPE,
+		AQI_INDEX_US,
+		aqiEuropeToLabel,
+		aqiUsToLabel,
 		colors,
+		contrastTextColor,
 		MS_IN_10_MINUTES,
 		MS_IN_DAY,
 		MS_IN_HOUR,
@@ -44,7 +50,7 @@
 		ghostTracker?: boolean;
 	} = $props();
 
-	const wmoLabelElements: HTMLElement[] = $state([]);
+	const labelElements: Record<string, HTMLElement> = $state({});
 
 	const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 
@@ -62,6 +68,8 @@
 		dewPoint: true,
 		temperature: true,
 		solarEvents: true,
+		aqiUs: false,
+		aqiEurope: true,
 	};
 
 	const msStart = $derived(+dayjs.tz(start, nsWeatherData.timezone).startOf('hour'));
@@ -70,7 +78,136 @@
 	let div: HTMLDivElement;
 	let clientWidth: number = $state(0);
 
-	let data = $derived.by(() => {
+	let yDomainBottom = $derived.by(() => {
+		let value = 0;
+
+		if (draw.aqiUs) {
+			value -= 50;
+		}
+
+		if (draw.aqiEurope) {
+			value -= 50;
+		}
+
+		return value;
+	});
+
+	let dataAirQuality = $derived.by(() => {
+		//gg('data');
+
+		if (nsWeatherData.dataAirQuality.size) {
+			const filtered = [...nsWeatherData.dataAirQuality.values()].filter((item) => {
+				return item.ms >= msStart && item.ms <= msEnd;
+			});
+
+			const minute0 = filtered;
+
+			type AqiItem = {
+				ms: number;
+				aqiUs: number;
+				aqiEurope: number;
+
+				text: string;
+				x1: number;
+				x2: number;
+				xMiddle: number;
+				fill: string;
+				fillText: string;
+				fillShadow: string;
+			};
+
+			const minute0withoutLast = minute0.toSpliced(-1, 1);
+
+			const aqiUsLevels = minute0withoutLast.reduce((accumulator: AqiItem[], currItem) => {
+				const prevItem = accumulator.at(-1);
+
+				const prevText = prevItem ? aqiUsToLabel(prevItem.aqiUs).text : '';
+
+				const currLabel = aqiUsToLabel(currItem.aqiUs);
+
+				const x1 = currItem.ms;
+				const x2 = Math.min(currItem.ms + MS_IN_HOUR + 2 * MS_IN_MINUTE, msEnd);
+				const xMiddle = (Number(x1) + Number(x2)) / 2;
+
+				if (prevItem && prevText === currLabel.text) {
+					prevItem.x2 = x2;
+					prevItem.xMiddle = (Number(prevItem.x1) + x2) / 2;
+				} else {
+					const fill = currLabel.color;
+					const fillText = contrastTextColor(fill);
+					const fillShadow = contrastTextColor(
+						fill,
+						true,
+						`rgba(255 255 255 / 50%)`,
+						`rgba(51 51 51 / 50%)`,
+					);
+
+					accumulator.push({
+						ms: xMiddle,
+						aqiUs: currItem.aqiUs,
+						aqiEurope: currItem.aqiEurope,
+						text: currLabel.text,
+						x1,
+						x2,
+						xMiddle,
+						fill,
+						fillText,
+						fillShadow,
+					});
+				}
+				return accumulator;
+			}, [] as AqiItem[]);
+
+			const aqiEuropeLevels = minute0withoutLast.reduce((accumulator: AqiItem[], currItem) => {
+				const prevItem = accumulator.at(-1);
+
+				const prevText = prevItem ? aqiEuropeToLabel(prevItem.aqiEurope).text : '';
+
+				const currLabel = aqiEuropeToLabel(currItem.aqiEurope);
+
+				const x1 = currItem.ms;
+				const x2 = Math.min(currItem.ms + MS_IN_HOUR + 2 * MS_IN_MINUTE, msEnd);
+				const xMiddle = (Number(x1) + Number(x2)) / 2;
+
+				if (prevItem && prevText === currLabel.text) {
+					prevItem.x2 = x2;
+					prevItem.xMiddle = (Number(prevItem.x1) + x2) / 2;
+				} else {
+					const fill = currLabel.color;
+					const fillText = contrastTextColor(fill);
+					const fillShadow = contrastTextColor(
+						fill,
+						true,
+						`rgba(255 255 255 / 50%)`,
+						`rgba(51 51 51 / 50%)`,
+					);
+
+					accumulator.push({
+						ms: xMiddle,
+						aqiUs: currItem.aqiUs,
+						aqiEurope: currItem.aqiEurope,
+						text: currLabel.text,
+						x1,
+						x2,
+						xMiddle,
+						fill,
+						fillText,
+						fillShadow,
+					});
+				}
+				return accumulator;
+			}, [] as AqiItem[]);
+
+			return {
+				all: filtered,
+				aqiUsLevels,
+				aqiEuropeLevels,
+			};
+		}
+		return null;
+	});
+
+	let dataForecast = $derived.by(() => {
 		//gg('data');
 
 		type SolarEventItem = {
@@ -102,9 +239,8 @@
 			[] as SolarEventItem[],
 		);
 
-		const dataValues = [...nsWeatherData.data.values()];
-		if (dataValues) {
-			const filtered = dataValues.filter((item) => {
+		if (nsWeatherData.dataForecast.size) {
+			const filtered = [...nsWeatherData.dataForecast.values()].filter((item) => {
 				return item.ms >= msStart && item.ms <= msEnd;
 			});
 
@@ -119,10 +255,9 @@
 				x2: number;
 				xMiddle: number;
 				fill: string;
-				isDarkText: boolean;
+				fillText: string;
+				fillShadow: string;
 			};
-
-			const now = Date.now();
 
 			const minute0withoutLast = minute0.toSpliced(-1, 1);
 
@@ -140,6 +275,15 @@
 					prevItem.xMiddle = (Number(prevItem.x1) + x2) / 2;
 				} else {
 					if (nextCode != undefined) {
+						const fill = WMO_CODES[nextCode].color;
+						const fillText = contrastTextColor(fill);
+						const fillShadow = contrastTextColor(
+							fill,
+							true,
+							`rgba(255 255 255 / 50%)`,
+							`rgba(51 51 51 / 50%)`,
+						);
+
 						accumulator.push({
 							ms: xMiddle,
 							weatherCode: nextCode,
@@ -148,8 +292,9 @@
 							x1,
 							x2,
 							xMiddle,
-							fill: WMO_CODES[nextCode].color,
-							isDarkText: WMO_CODES[nextCode].isDarkText,
+							fill,
+							fillText,
+							fillShadow,
 						});
 					}
 				}
@@ -334,12 +479,12 @@
 	const curve = 'catmull-rom';
 	const plotOptions = $derived({
 		width: clientWidth,
-		height: 70,
+		height: 80,
 		marginRight: MARGIN_RIGHT,
 		marginLeft: MARGIN_LEFT,
 		marginTop: 0,
 		marginBottom: 0,
-		y: { axis: null, domain: [145, 0], range: [0, 70] },
+		y: { axis: null, domain: [145, yDomainBottom], range: [0, 80] },
 		x: {
 			type: 'utc',
 			axis: xAxis ? true : null,
@@ -364,7 +509,7 @@
 			const x1 = xScale.apply(msIntervalStart);
 			const x2 = xScale.apply(Math.min(msIntervalStart + length, msEnd));
 			const y1 = yScale.apply(145);
-			const y2 = yScale.apply(0);
+			const y2 = yScale.apply(yDomainBottom);
 
 			ig.append('line')
 				.attr('x1', x)
@@ -406,14 +551,23 @@
 	function plotData() {
 		//gg('plotData');
 
-		if (!data?.all?.length) {
-			return;
-		}
-
-		const labelTextOptions = {
+		const aqiLabelTextOptions = {
 			opacity: fadePastValues,
-			fontSize: 14,
-			fill: (d: { isDarkText: any }) => (d.isDarkText ? 'black' : 'white'),
+			fontSize: 13,
+			fill: 'fillText',
+			y: -75,
+			x: (d) => d.xMiddle,
+			text: (d) => {
+				const labelWidth: number = labelWidths[d.text];
+				const width = xScale?.apply(d.x2) - xScale?.apply(d.x1);
+				return width < labelWidth ? null : d.text;
+			},
+		} as Plot.TextOptions;
+
+		const codeLabelTextOptions = {
+			opacity: fadePastValues,
+			fontSize: 13,
+			fill: 'fillText',
 			y: 120,
 			x: (d) => {
 				if (!xScale?.invert || draw.weatherCode === 'text') {
@@ -426,7 +580,7 @@
 				return d.xMiddle + (iconWidthMs + gapWidthMs) / 2;
 			},
 			text: (d) => {
-				const labelWidth: number = WMO_CODES[d.weatherCode].width;
+				const labelWidth: number = labelWidths[d.text];
 				const width = xScale?.apply(d.x2) - xScale?.apply(d.x1) - ICON_LABEL_PADDING;
 				return width < labelWidth + ICON_WIDTH + GAP_WIDTH ? null : d.text;
 			},
@@ -442,215 +596,286 @@
 			}),
 		];
 
-		if (draw.weatherCode) {
-			// Weather code colored bands:
-			marks.push(
-				Plot.rectY(data.codes, {
-					strokeOpacity: fadePastValues,
-					x1: 'x1',
-					x2: 'x2',
-					y: 145,
-					fill: 'fill',
-				}),
-			);
+		if (dataAirQuality) {
+			if (draw.aqiUs) {
+				// AQI code colored bands:
+				marks.push(
+					Plot.rectY(dataAirQuality.aqiUsLevels, {
+						strokeOpacity: fadePastValues,
+						x1: 'x1',
+						x2: 'x2',
+
+						y1: draw.aqiEurope ? -100 : -50,
+						y2: draw.aqiEurope ? -50 : -0,
+						fill: 'fill',
+					}),
+				);
+
+				// AQI label shadow text:
+				marks.push(
+					Plot.text(dataAirQuality.aqiUsLevels, {
+						...aqiLabelTextOptions,
+						fill: 'fillShadow',
+						dy: 1,
+						dx: 1,
+						y: draw.aqiEurope ? -75 : -25,
+					}),
+				);
+
+				marks.push(
+					// Weather code label text:
+					Plot.text(dataAirQuality.aqiUsLevels, {
+						...aqiLabelTextOptions,
+						y: draw.aqiEurope ? -75 : -25,
+					}),
+				);
+			}
+
+			if (draw.aqiEurope) {
+				// AQI code colored bands:
+				marks.push(
+					Plot.rectY(dataAirQuality.aqiEuropeLevels, {
+						strokeOpacity: fadePastValues,
+						x1: 'x1',
+						x2: 'x2',
+						y1: -50,
+						y2: -0,
+						fill: 'fill',
+					}),
+				);
+
+				// AQI label shadow text:
+				marks.push(
+					Plot.text(dataAirQuality.aqiEuropeLevels, {
+						...aqiLabelTextOptions,
+						fill: 'fillShadow',
+						y: -25,
+						dy: 1,
+						dx: 1,
+					}),
+				);
+
+				marks.push(
+					// Weather code label text:
+					Plot.text(dataAirQuality.aqiEuropeLevels, {
+						...aqiLabelTextOptions,
+						y: -25,
+					}),
+				);
+			}
 		}
 
-		if (draw.humidity) {
-			marks.push(
-				// The humidity plotted as area:
-				Plot.areaY(data.all, {
-					curve,
-					opacity: (d) => fadePastValues(d) * 0.2,
-					x: 'ms',
-					y: 'humidity',
-					fill: colors.humidity,
-				}),
-			);
+		if (dataForecast) {
+			if (draw.weatherCode) {
+				// Weather code colored bands:
+				marks.push(
+					Plot.rectY(dataForecast.codes, {
+						strokeOpacity: fadePastValues,
+						x1: 'x1',
+						x2: 'x2',
+						y: 145,
+						fill: 'fill',
+					}),
+				);
+			}
 
-			marks.push(
-				// The humidity plotted as line:
-				Plot.lineY(data.all, {
-					curve,
-					strokeOpacity: fadePastValues,
-					x: 'ms',
-					y: 'humidity',
+			if (draw.humidity) {
+				marks.push(
+					// The humidity plotted as area:
+					Plot.areaY(dataForecast.all, {
+						curve,
+						opacity: (d) => fadePastValues(d) * 0.2,
+						x: 'ms',
+						y: 'humidity',
+						fill: colors.humidity,
+					}),
+				);
 
-					stroke: colors.humidity,
-					strokeWidth: 1.5,
-				}),
-			);
-		}
+				marks.push(
+					// The humidity plotted as line:
+					Plot.lineY(dataForecast.all, {
+						curve,
+						strokeOpacity: fadePastValues,
+						x: 'ms',
+						y: 'humidity',
 
-		if (draw.precipitation) {
-			// Rain bar 'cap':
-			marks.push(
-				Plot.rectY(data.rain, {
-					opacity: fadePastValues,
-					strokeOpacity: fadePastValues,
-					x1: 'x1bar',
-					x2: 'x2bar',
-					y: { transform: makeTransFormPrecipitation(false) },
-					fill: '#58FAF9',
-				}),
-			);
+						stroke: colors.humidity,
+						strokeWidth: 1.5,
+					}),
+				);
+			}
 
-			//Rain bar:
-			marks.push(
-				Plot.rectY(data.rain, {
-					opacity: fadePastValues,
-					x1: 'x1bar',
-					x2: 'x2bar',
-					y: { transform: makeTransFormPrecipitation(true) },
-					fill: colors.precipitation,
-				}),
-			);
-		}
+			if (draw.precipitation) {
+				// Rain bar 'cap':
+				marks.push(
+					Plot.rectY(dataForecast.rain, {
+						opacity: fadePastValues,
+						strokeOpacity: fadePastValues,
+						x1: 'x1bar',
+						x2: 'x2bar',
+						y: { transform: makeTransFormPrecipitation(false) },
+						fill: '#58FAF9',
+					}),
+				);
 
-		if (draw.precipitationProbability) {
-			// The precipitation probability plotted as area:
-			marks.push(
-				Plot.areaY(data.all, {
-					curve,
-					opacity: (d) => (d.precipitationProbability <= 0 ? 0 : fadePastValues(d) * 0.2),
-					x: 'ms',
-					y: 'precipitationProbability',
-					fill: colors.precipitationProbability,
-				}),
-			);
+				//Rain bar:
+				marks.push(
+					Plot.rectY(dataForecast.rain, {
+						opacity: fadePastValues,
+						x1: 'x1bar',
+						x2: 'x2bar',
+						y: { transform: makeTransFormPrecipitation(true) },
+						fill: colors.precipitation,
+					}),
+				);
+			}
 
-			// The precipitation probability plotted as line:
-			marks.push(
-				Plot.lineY(data.all, {
-					curve,
-					strokeOpacity: (d) => (d.precipitationProbability <= 0 ? 0 : fadePastValues(d)),
-					x: 'ms',
-					y: 'precipitationProbability',
-					stroke: colors.precipitationProbability,
-					strokeWidth: 1.5,
-				}),
-			);
-		}
+			if (draw.precipitationProbability) {
+				// The precipitation probability plotted as area:
+				marks.push(
+					Plot.areaY(dataForecast.all, {
+						curve,
+						opacity: (d) => (d.precipitationProbability <= 0 ? 0 : fadePastValues(d) * 0.2),
+						x: 'ms',
+						y: 'precipitationProbability',
+						fill: colors.precipitationProbability,
+					}),
+				);
 
-		if (draw.weatherCode === true || draw.weatherCode === 'text') {
-			// Weather code label shadow text:
-			marks.push(
-				Plot.text(data.codes, {
-					...labelTextOptions,
-					fill: (d) => (d.isDarkText ? 'rgba(255,255,255,0.5)' : 'rgba(0,0,0,0.5)'),
-					dy: 1,
-					dx: 1,
-				}),
-			);
+				// The precipitation probability plotted as line:
+				marks.push(
+					Plot.lineY(dataForecast.all, {
+						curve,
+						strokeOpacity: (d) => (d.precipitationProbability <= 0 ? 0 : fadePastValues(d)),
+						x: 'ms',
+						y: 'precipitationProbability',
+						stroke: colors.precipitationProbability,
+						strokeWidth: 1.5,
+					}),
+				);
+			}
 
-			marks.push(
-				// Weather code label text:
-				Plot.text(data.codes, labelTextOptions),
-			);
-		}
+			if (draw.weatherCode === true || draw.weatherCode === 'text') {
+				// Weather code label shadow text:
+				marks.push(
+					Plot.text(dataForecast.codes, {
+						...codeLabelTextOptions,
+						fill: 'fillShadow',
+						dx: 1,
+						dy: 1,
+					}),
+				);
 
-		if (draw.weatherCode == true || draw.weatherCode === 'icon') {
-			marks.push(
-				// Weather code icon:
-				Plot.image(data.codes, {
-					opacity: fadePastValues,
-					width: ICON_WIDTH,
-					height: ICON_WIDTH,
-					y: 120,
-					x: (d) => {
-						if (!xScale?.invert || draw.weatherCode === 'icon') {
-							return d.xMiddle;
-						}
+				marks.push(
+					// Weather code label text:
+					Plot.text(dataForecast.codes, codeLabelTextOptions),
+				);
+			}
 
-						const labelWidth: number = WMO_CODES[d.weatherCode].width;
-						const labelWidthMs = xScale.invert(labelWidth + MARGIN_LEFT) - msStart;
-						const gapWidthMS = xScale.invert(GAP_WIDTH / 2 + MARGIN_LEFT) - msStart;
+			if (draw.weatherCode == true || draw.weatherCode === 'icon') {
+				marks.push(
+					// Weather code icon:
+					Plot.image(dataForecast.codes, {
+						opacity: fadePastValues,
+						width: ICON_WIDTH,
+						height: ICON_WIDTH,
+						y: 120,
+						x: (d) => {
+							if (!xScale?.invert || draw.weatherCode === 'icon') {
+								return d.xMiddle;
+							}
 
-						const width = xScale.apply(d.x2) - xScale.apply(d.x1) - ICON_LABEL_PADDING;
-						const isTooWide = width < labelWidth + ICON_WIDTH + GAP_WIDTH;
+							const labelWidth: number = labelWidths[d.text];
+							const labelWidthMs = xScale.invert(labelWidth + MARGIN_LEFT) - msStart;
+							const gapWidthMS = xScale.invert(GAP_WIDTH / 2 + MARGIN_LEFT) - msStart;
 
-						return d.xMiddle - (isTooWide ? 0 : (labelWidthMs + gapWidthMS) / 2);
-					},
-					src: (d) => {
-						const width = xScale?.apply(d.x2) - xScale?.apply(d.x1);
-						return width < ICON_WIDTH ? null : d.icon;
-					},
-				}),
-			);
-		}
+							const width = xScale.apply(d.x2) - xScale.apply(d.x1) - ICON_LABEL_PADDING;
+							const isTooWide = width < labelWidth + ICON_WIDTH + GAP_WIDTH;
 
-		if (draw.dewPoint) {
-			marks.push(
-				// The dew point plotted as line:
-				Plot.lineY(data?.all, {
-					curve,
-					strokeOpacity: fadePastValues,
-					x: 'ms',
-					y: {
-						transform: makeTransformTemperature('dewPoint'),
-					},
+							return d.xMiddle - (isTooWide ? 0 : (labelWidthMs + gapWidthMS) / 2);
+						},
+						src: (d) => {
+							const width = xScale?.apply(d.x2) - xScale?.apply(d.x1);
+							return width < ICON_WIDTH ? null : d.icon;
+						},
+					}),
+				);
+			}
 
-					stroke: colors.dewPoint,
-					strokeWidth: 2,
-				}),
-			);
-		}
+			if (draw.dewPoint) {
+				marks.push(
+					// The dew point plotted as line:
+					Plot.lineY(dataForecast?.all, {
+						curve,
+						strokeOpacity: fadePastValues,
+						x: 'ms',
+						y: {
+							transform: makeTransformTemperature('dewPoint'),
+						},
 
-		if (draw.temperature) {
-			marks.push(
-				// The temperature plotted as line:
-				Plot.lineY(data?.all, {
-					curve,
-					strokeOpacity: fadePastValues,
-					x: 'ms',
-					y: {
-						transform: makeTransformTemperature(),
-					},
-					stroke: colors.temperature,
-					strokeWidth: 2,
-				}),
-			);
+						stroke: colors.dewPoint,
+						strokeWidth: 2,
+					}),
+				);
+			}
 
-			marks.push(
-				// High/low temp marks:
-				Plot.dot([data.low], {
-					fillOpacity: fadePastValues,
-					strokeOpacity: fadePastValues,
-					x: 'ms',
-					y: {
-						transform: makeTransformTemperature(),
-					},
-					fill: SOLARIZED_BLUE,
-					stroke: colors.temperature,
-				}),
-			);
+			if (draw.temperature) {
+				marks.push(
+					// The temperature plotted as line:
+					Plot.lineY(dataForecast?.all, {
+						curve,
+						strokeOpacity: fadePastValues,
+						x: 'ms',
+						y: {
+							transform: makeTransformTemperature(),
+						},
+						stroke: colors.temperature,
+						strokeWidth: 2,
+					}),
+				);
 
-			marks.push(
-				Plot.dot([data.high], {
-					fillOpacity: fadePastValues,
-					strokeOpacity: fadePastValues,
-					x: 'ms',
-					y: {
-						transform: makeTransformTemperature(),
-					},
-					fill: SOLARIZED_RED,
-					stroke: colors.temperature,
-					strokeWidth: 1,
-				}),
-			);
-		}
+				marks.push(
+					// High/low temp marks:
+					Plot.dot([dataForecast.low], {
+						fillOpacity: fadePastValues,
+						strokeOpacity: fadePastValues,
+						x: 'ms',
+						y: {
+							transform: makeTransformTemperature(),
+						},
+						fill: SOLARIZED_BLUE,
+						stroke: colors.temperature,
+					}),
+				);
 
-		if (draw.solarEvents) {
-			marks.push(
-				// Plot sunrise as yellow rule and sunset as icons:
-				Plot.image(data?.solarEvents, {
-					width: 32,
-					height: 32,
-					opacity: fadePastValues,
-					x: 'x',
-					y: 10,
-					src: (d) => `/icons/meteocons/${d.type}.png`,
-				}),
-			);
+				marks.push(
+					Plot.dot([dataForecast.high], {
+						fillOpacity: fadePastValues,
+						strokeOpacity: fadePastValues,
+						x: 'ms',
+						y: {
+							transform: makeTransformTemperature(),
+						},
+						fill: SOLARIZED_RED,
+						stroke: colors.temperature,
+						strokeWidth: 1,
+					}),
+				);
+			}
+
+			if (draw.solarEvents) {
+				marks.push(
+					// Plot sunrise as yellow rule and sunset as icons:
+					Plot.image(dataForecast?.solarEvents, {
+						width: 32,
+						height: 32,
+						opacity: fadePastValues,
+						x: 'x',
+						y: 10,
+						src: (d) => `/icons/meteocons/${d.type}.png`,
+					}),
+				);
+			}
 		}
 
 		//@ts-expect-error: x.type is valid.
@@ -690,11 +915,9 @@
 		if (!adjustedLabelWidths) {
 			adjustedLabelWidths = true;
 			gg('getLabelWidths');
-			wmoLabelElements.forEach((element) => {
-				const code = Number(element.dataset.code);
-				//gg(code);
-				const width = element.clientWidth;
-				WMO_CODES[code].width = width;
+
+			_.each(labelElements, (element, text) => {
+				labelWidths[text] = element.clientWidth;
 			});
 		}
 
@@ -704,8 +927,12 @@
 
 {#if !adjustedLabelWidths}
 	<div class="labels-for-widths">
-		{#each Object.entries(WMO_CODES) as [code, props], index}
-			<div bind:this={wmoLabelElements[index]} data-code={code}>{props.description}</div>
+		{#each Object.values(WMO_CODES) as props}
+			<div bind:this={labelElements[props.description]}>{props.description}</div>
+		{/each}
+
+		{#each [...AQI_INDEX_US, ...AQI_INDEX_EUROPE] as { text }}
+			<div bind:this={labelElements[text]}>{text}</div>
 		{/each}
 	</div>
 {/if}

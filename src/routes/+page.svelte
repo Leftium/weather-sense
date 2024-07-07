@@ -13,6 +13,8 @@
 		objectFromMap,
 		wmoCode,
 		colors,
+		aqiUsToLabel,
+		aqiEuropeToLabel,
 	} from '$lib/util.js';
 	import RadarMap from './RadarMap.svelte';
 
@@ -161,6 +163,31 @@
 				<span>{nsWeatherData.displayPrecipitationProbability}%</span>
 			</label>
 		</div>
+		<div>
+			<label>
+				<input
+					type="checkbox"
+					checked
+					style:color={aqiEuropeToLabel(nsWeatherData.displayAqiEurope ?? 0).color}
+					style:border-color={aqiEuropeToLabel(nsWeatherData.displayAqiEurope ?? 0).color}
+				/>
+				EU AQI:
+				<span>{nsWeatherData.displayAqiEurope}</span>
+			</label>
+		</div>
+		<div>
+			<label>
+				<input
+					type="checkbox"
+					checked={false}
+					style:color={aqiUsToLabel(nsWeatherData.displayAqiUs ?? 0).color}
+					style:border-color={aqiUsToLabel(nsWeatherData.displayAqiUs ?? 0).color}
+				/>
+
+				US AQI:
+				<span>{nsWeatherData.displayAqiUs}</span>
+			</label>
+		</div>
 	</div>
 </div>
 
@@ -215,7 +242,9 @@
 	{#if dev}
 		<div class="pico debug">
 			<pre>nsWeatherData.ms = {nsWeatherData.ms} ({nsWeatherData.tzFormat(nsWeatherData.ms)})</pre>
-			<pre>nsWeatherData.data = {jsonPretty(summarize(objectFromMap(nsWeatherData.data)))}</pre>
+			<pre>nsWeatherData.data = {jsonPretty(
+					summarize(objectFromMap(nsWeatherData.dataForecast)),
+				)}</pre>
 
 			<pre>nsWeatherData.current = {jsonPretty(nsWeatherData.current)}</pre>
 			<pre>nsWeatherData.hourly = {jsonPretty(summarize(nsWeatherData.hourly))}</pre>
@@ -398,7 +427,7 @@
 
 	.timeline {
 		flex-grow: 1;
-		height: 90px;
+		height: 100px;
 	}
 
 	.name {

@@ -69,8 +69,64 @@ export function humanDistance(n: number | undefined) {
 	return `${Math.floor(n)}${units}`;
 }
 
-const colorWhite = new Color('#fff');
-const colorBlack = new Color('#000');
+function makeAqiLabel(text: string, color: string) {
+	return { text, color };
+}
+
+export const AQI_INDEX_US = [
+	makeAqiLabel('Good', 'hsl(115, 58%, 65%)'),
+	makeAqiLabel('Moderate', 'hsl(46, 87%, 56%)'),
+	makeAqiLabel('Unhealthy for Sensitive Groups', 'hsl(29, 90%, 55%)'),
+	makeAqiLabel('Unhealthy', 'hsl(352, 83%, 55%)'),
+	makeAqiLabel('Very unhealthy', 'rgb(203, 36, 176)'),
+	makeAqiLabel('Hazardous', 'rgb(100, 30, 155)'),
+];
+
+export const AQI_INDEX_EUROPE = [
+	makeAqiLabel('Good', 'hsl(188, 76%, 71%)'),
+	makeAqiLabel('Fair', 'rgb(123, 218, 114)'),
+	makeAqiLabel('Moderate', 'rgb(240, 196, 45)'),
+	makeAqiLabel('Poor', 'rgb(236, 44, 69)'),
+	makeAqiLabel('Very Poor', 'rgb(150, 2, 50)'),
+	makeAqiLabel('Extremely Poor', 'rgb(81, 39, 113)'),
+];
+
+// Ranges from 0-50 (good), 51-100 (moderate), 101-150 (unhealthy for sensitive groups), 151-200 (unhealthy), 201-300 (very unhealthy) and 301-500 (hazardous).
+export function aqiUsToLabel(aqi: number) {
+	const index = aqi > 300 ? 5 : aqi > 200 ? 4 : aqi > 151 ? 3 : aqi > 100 ? 2 : aqi > 50 ? 1 : 0;
+	return AQI_INDEX_US[index];
+}
+
+// Ranges from 0-20 (good), 20-40 (fair), 40-60 (moderate), 60-80 (poor), 80-100 (very poor) and exceeds 100 for extremely poor conditions.
+export function aqiEuropeToLabel(aqi: number) {
+	const index = Math.min(Math.floor(aqi / 20), 5);
+	return AQI_INDEX_EUROPE[index];
+}
+
+const colorWhite = new Color('white');
+const colorBlack = new Color('#333');
+
+export function contrastTextColor(
+	color: any,
+	shadow: boolean = false,
+	color1: string | Color = colorWhite,
+	color2: string | Color = colorBlack,
+) {
+	if (!color) {
+		return 'red';
+	}
+
+	const colorBackground = new Color(color);
+	const colorA = new Color(color1);
+	const colorB = new Color(color2);
+
+	const needsDarkText =
+		shadow ===
+		Math.abs(colorBackground.contrastAPCA(colorA)) < Math.abs(colorBackground.contrastAPCA(colorB));
+
+	const returnValue = needsDarkText ? colorA : colorB;
+	return returnValue.toString({ format: 'hex' });
+}
 
 function makeWmo(
 	picoColor: string,
@@ -85,9 +141,13 @@ function makeWmo(
 
 	const colorBackground = new Color(color);
 
-	const isDarkText =
-		Math.abs(colorBackground.contrastAPCA(colorBlack)) >
-		Math.abs(colorBackground.contrastAPCA(colorWhite));
+	const colorText = contrastTextColor(colorBackground);
+	const colorShadow = contrastTextColor(
+		colorBackground,
+		true,
+		`rgba(255 255 255 / 50%)`,
+		`rgba(51 51 51 / 50%)`,
+	);
 
 	return {
 		description,
@@ -95,8 +155,8 @@ function makeWmo(
 		level,
 		picoColor,
 		color,
-		isDarkText,
-		width: 99, // Will be replaced with actual width of text in pixels.
+		colorText,
+		colorShadow,
 		icon,
 	};
 }
@@ -148,7 +208,6 @@ export function wmoCode(code: number | undefined) {
 	}
 	return {
 		description: '...',
-		width: 99,
 		icon: '',
 	};
 }

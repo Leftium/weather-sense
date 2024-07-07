@@ -195,7 +195,6 @@
 			}, [] as AqiItem[]);
 
 			return {
-				all: filteredAirQuality,
 				aqiUsLevels,
 				aqiEuropeLevels,
 			};
@@ -236,7 +235,7 @@
 		);
 
 		if (nsWeatherData.dataForecast.size) {
-			const filteredForecast = [...nsWeatherData.dataForecast.values()].filter((item) => {
+			const metrics = [...nsWeatherData.dataForecast.values()].filter((item) => {
 				return item.ms >= msStart && item.ms <= msEnd;
 			});
 
@@ -253,7 +252,7 @@
 				fillShadow: string;
 			};
 
-			const codes = filteredForecast.reduce((accumulator: CodesItem[], current) => {
+			const codes = metrics.reduce((accumulator: CodesItem[], current) => {
 				const prevItem = accumulator.at(-1);
 				const prevCode = prevItem?.weatherCode;
 				const nextCode = current.weatherCode;
@@ -293,7 +292,7 @@
 				return accumulator;
 			}, [] as CodesItem[]);
 
-			const rain = filteredForecast
+			const rain = metrics
 				.filter((d) => d.precipitation > 0)
 				.map((d) => {
 					const x1bar = d.ms + 5 * MS_IN_MINUTE;
@@ -320,7 +319,7 @@
 				temperature: 0,
 			};
 
-			_.forEachRight(filteredForecast, (item, index) => {
+			_.forEachRight(metrics, (item, index) => {
 				if (item.temperature > high.temperature) {
 					high = {
 						ms: item.ms,
@@ -337,7 +336,7 @@
 			});
 
 			return {
-				all: filteredForecast,
+				metrics,
 				low,
 				high,
 				rain,
@@ -674,7 +673,7 @@
 			if (draw.humidity) {
 				marks.push(
 					// The humidity plotted as area:
-					Plot.areaY(dataForecast.all, {
+					Plot.areaY(dataForecast.metrics, {
 						curve,
 						opacity: (d) => fadePastValues(d) * 0.2,
 						x: 'ms',
@@ -685,7 +684,7 @@
 
 				marks.push(
 					// The humidity plotted as line:
-					Plot.lineY(dataForecast.all, {
+					Plot.lineY(dataForecast.metrics, {
 						curve,
 						strokeOpacity: fadePastValues,
 						x: 'ms',
@@ -725,7 +724,7 @@
 			if (draw.precipitationProbability) {
 				// The precipitation probability plotted as area:
 				marks.push(
-					Plot.areaY(dataForecast.all, {
+					Plot.areaY(dataForecast.metrics, {
 						curve,
 						opacity: (d) => (d.precipitationProbability <= 0 ? 0 : fadePastValues(d) * 0.2),
 						x: 'ms',
@@ -736,7 +735,7 @@
 
 				// The precipitation probability plotted as line:
 				marks.push(
-					Plot.lineY(dataForecast.all, {
+					Plot.lineY(dataForecast.metrics, {
 						curve,
 						strokeOpacity: (d) => (d.precipitationProbability <= 0 ? 0 : fadePastValues(d)),
 						x: 'ms',
@@ -797,7 +796,7 @@
 			if (draw.dewPoint) {
 				marks.push(
 					// The dew point plotted as line:
-					Plot.lineY(dataForecast?.all, {
+					Plot.lineY(dataForecast.metrics, {
 						curve,
 						strokeOpacity: fadePastValues,
 						x: 'ms',
@@ -814,7 +813,7 @@
 			if (draw.temperature) {
 				marks.push(
 					// The temperature plotted as line:
-					Plot.lineY(dataForecast?.all, {
+					Plot.lineY(dataForecast.metrics, {
 						curve,
 						strokeOpacity: fadePastValues,
 						x: 'ms',

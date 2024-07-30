@@ -276,7 +276,7 @@
 <div bind:this={mapElement} style:height="100%"></div>
 
 <style>
-	:global(.leaflet-footer) {
+	div :global(.leaflet-footer) {
 		/* Stick to bottom of map: */
 		position: absolute;
 		left: 0;
@@ -308,6 +308,6 @@
 	}
 
 	div :global(.bw) {
-		filter: grayscale(100%);
+		filter: grayscale(75%);
 	}
 </style>

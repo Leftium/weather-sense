@@ -70,6 +70,7 @@
 
 		/**/
 		new TileLayer('https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg', {
+			className: 'bw',
 			attribution:
 				'<a href="https://www.rainviewer.com/api.html" target="_blank">Rainviewer</a> | <a target="_blank" href="http://stamen.com">Stamen</a> | <a href="https://stadiamaps.com/" target="_blank">Stadia</a> | &copy; <a href="https://www.openstreetmap.org/about" target="_blank">OpenStreetMap</a>',
 		}).addTo(map);
@@ -294,15 +295,19 @@
 	}
 
 	/* Raise bottom control corners above footer: */
-	:global(.leaflet-bottom) {
+	div :global(.leaflet-bottom) {
 		bottom: 44px;
 	}
 
-	:global(.leaflet-control-attribution) {
+	div :global(.leaflet-control-attribution) {
 		font-size: x-small;
 	}
 
-	:global(.full-width) {
+	div :global(.full-width) {
 		width: 100%;
+	}
+
+	div :global(.bw) {
+		filter: grayscale(100%);
 	}
 </style>

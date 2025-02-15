@@ -10,10 +10,10 @@
 		...value,
 	}));
 
-	let offsetWidth = 0;
-	let offsetHeight = 0;
+	let offsetWidth = $state(0);
+	let offsetHeight = $state(0);
 
-	let mode = '';
+	let mode = $state('');
 
 	function onclick() {
 		mode = mode === 'tall' ? 'wide' : 'tall';

@@ -1,4 +1,4 @@
-<script context="module" lang="ts">
+<script module lang="ts">
 	let adjustedLabelWidths = $state(false);
 	let labelWidths: Record<string, number> = $state({});
 </script>

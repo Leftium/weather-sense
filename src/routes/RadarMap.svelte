@@ -80,6 +80,7 @@
 
 		new Control.Attribution({ position: 'topleft' }).addTo(map);
 
+		/*
 		locateControl = new Control.Locate({
 			showCompass: false,
 			position: 'bottomright',
@@ -87,6 +88,7 @@
 		});
 
 		locateControl.addTo(map);
+        */
 		new Control.Zoom({ position: 'bottomright' }).addTo(map);
 
 		map.on('locationfound', async function onLocationFound(e) {

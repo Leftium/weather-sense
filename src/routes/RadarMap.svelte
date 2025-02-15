@@ -39,7 +39,7 @@
 
 		const { Map, TileLayer, Circle, Control, DomUtil, DomEvent } = await import('leaflet');
 		const { GestureHandling } = await import('leaflet-gesture-handling');
-		await import('leaflet.locatecontrol');
+		const { LocateControl } = await import('leaflet.locatecontrol');
 		await import('leaflet.fullscreen');
 
 		const lat = nsWeatherData.coords?.latitude || 0;
@@ -80,15 +80,13 @@
 
 		new Control.Attribution({ position: 'topleft' }).addTo(map);
 
-		/*
-		locateControl = new Control.Locate({
+		locateControl = new LocateControl({
 			showCompass: false,
 			position: 'bottomright',
 			initialZoomLevel: 11,
 		});
-
 		locateControl.addTo(map);
-        */
+
 		new Control.Zoom({ position: 'bottomright' }).addTo(map);
 
 		map.on('locationfound', async function onLocationFound(e) {

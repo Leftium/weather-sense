@@ -15,7 +15,7 @@
 	import { MS_IN_SECOND } from '$lib/util';
 
 	let mapElement: HTMLDivElement;
-	let map: Map;
+	let map: Map | null = null;
 	let locateControl: Control.Locate;
 	let radarTimelineControl: RadarTimeline;
 	let animationFrameId: number;
@@ -200,7 +200,6 @@
 				const container = DomUtil.create('div', 'full-width');
 				DomEvent.disableClickPropagation(container);
 
-				// @ts-expect-error
 				radarTimelineControl = mount(RadarTimeline, {
 					target: container,
 					props: {
@@ -261,8 +260,9 @@
 
 	onDestroy(() => {
 		if (map) {
+			let typedMap = map as Map;
 			gg('Unloading Leaflet map.');
-			map.remove();
+			typedMap.remove();
 		}
 		if (radarTimelineControl) {
 			unmount(radarTimelineControl);

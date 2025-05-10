@@ -1,22 +1,30 @@
-# create-svelte
+# WeatherSense
 
-Everything you need to build a Svelte project, powered by [`create-svelte`](https://github.com/sveltejs/kit/tree/main/packages/create-svelte).
+User-friendly, actionable weather forecasts.
 
-## Creating a project
+![image](https://github.com/user-attachments/assets/a639a7af-91ed-4c33-b148-26da7311b324)
 
-If you're seeing this, you've probably already done this step. Congrats!
 
-```bash
-# create a new project in the current directory
-npm create svelte@latest
 
-# create a new project in my-app
-npm create svelte@latest my-app
-```
+## Instructions for devs
 
-## Developing
+WeatherSense uses [SvelteKit](https://svelte.dev/docs/kit) as a base.
 
-Once you've created a project and installed dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
+
+
+### API Keys
+
+The main API used is [OpenMeteo](https://open-meteo.com/), where API keys are optional (non-commercial use).
+
+Extra optional API keys:
+- https://openweathermap.org/api (For reverse geocoding.)
+- https://stadiamaps.com/ (For maps on non-localhost domains.)
+
+Copy `.env.example` to `.env`, add your own keys
+
+### Developing
+
+After installing dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
 
 ```bash
 npm run dev
@@ -25,7 +33,7 @@ npm run dev
 npm run dev -- --open
 ```
 
-## Building
+### Building
 
 To create a production version of your app:
 
@@ -34,5 +42,3 @@ npm run build
 ```
 
 You can preview the production build with `npm run preview`.
-
-> To deploy your app, you may need to install an [adapter](https://kit.svelte.dev/docs/adapters) for your target environment.

@@ -182,7 +182,7 @@ export function makeNsWeatherData() {
 	const maxTemperature = $derived.by(() => {
 		return !omForecast
 			? 0
-			: _.maxBy(omForecast.hourly, 'temperature')?.temperature ?? Number.MIN_VALUE;
+			: (_.maxBy(omForecast.hourly, 'temperature')?.temperature ?? Number.MIN_VALUE);
 	});
 
 	const temperatureRange = $derived(maxTemperature - minTemperature);
@@ -290,7 +290,7 @@ export function makeNsWeatherData() {
 
 		_.uniq(msIntervals)
 			.sort()
-			.forEach((ms, index, msIntervals) => {
+			.forEach((ms: number, index: number, msIntervals: { [x: string]: number }) => {
 				const x2 = msIntervals[index + 1] - 1;
 				intervals.push({
 					msPretty: nsWeatherData.tzFormat(ms),
@@ -443,14 +443,14 @@ export function makeNsWeatherData() {
 				ms,
 			};
 
-			_.forEach(hourlyKeys, (keyData, keyOpenMeteo) => {
+			_.forEach(hourlyKeys, (keyData: string, keyOpenMeteo: string | number) => {
 				object[keyData as keyof HourlyForecast] = json.hourly[keyOpenMeteo][index];
 			});
 
 			return object as HourlyForecast;
 		});
 
-		const daily = _.map(json.daily.time, (unixtime, index: number) => {
+		const daily = _.map(json.daily.time, (unixtime: number, index: number) => {
 			const ms = unixtime * MS_IN_SECOND;
 			const compactDate =
 				index === PAST_DAYS
@@ -472,7 +472,7 @@ export function makeNsWeatherData() {
 				sunset,
 			};
 
-			_.forEach(dailyKeys, (newKey, openMeteoKey) => {
+			_.forEach(dailyKeys, (newKey: string, openMeteoKey: string | number) => {
 				object[newKey as keyof DailyForecast] = json.daily[openMeteoKey][index];
 			});
 

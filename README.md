@@ -6,22 +6,22 @@ User-friendly, actionable weather forecasts.
 
 
 
-## Instructions for devs
 
-WeatherSense uses [SvelteKit](https://svelte.dev/docs/kit) as a base.
-
-
+## Notes for devs
 
 ### API Keys
 
-The main API used is [OpenMeteo](https://open-meteo.com/), where API keys are optional (non-commercial use).
+The main API used is [Open-Meteo](https://open-meteo.com/), where API keys are optional (for non-commercial use).
 
 Extra optional API keys:
-- https://openweathermap.org/api (For reverse geocoding.)
-- https://stadiamaps.com/ (For maps on non-localhost domains.)
+- https://openweathermap.org/api (For reverse geocoding)
+- https://stadiamaps.com/ (For maps on non-localhost domains)
 
 Copy `.env.example` to `.env`, add your own keys
 
+<details>
+<summary><b>WeatherSense uses <a href="https://svelte.dev/docs/kit">SvelteKit</a> as a base.</b> (Open for more details...)</summary>
+  
 ### Developing
 
 After installing dependencies with `npm install` (or `pnpm install` or `yarn`), start a development server:
@@ -42,3 +42,8 @@ npm run build
 ```
 
 You can preview the production build with `npm run preview`.
+
+
+</details>
+
+

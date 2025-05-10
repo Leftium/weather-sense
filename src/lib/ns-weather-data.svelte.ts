@@ -1,6 +1,6 @@
 // Defines nation-state for weather data.
 
-import _ from 'lodash-es';
+import { forEach, get, map, maxBy, minBy, uniq } from 'lodash-es';
 
 import { getEmitter } from '$lib/emitter';
 import { gg } from '$lib/gg';
@@ -174,15 +174,15 @@ export function makeNsWeatherData() {
 		return !omForecast
 			? 0
 			: Math.min(
-					_.minBy(omForecast.hourly, 'temperature')?.temperature ?? Number.MAX_VALUE,
-					_.minBy(omForecast.hourly, 'dewPoint')?.dewPoint ?? Number.MAX_VALUE,
+					minBy(omForecast.hourly, 'temperature')?.temperature ?? Number.MAX_VALUE,
+					minBy(omForecast.hourly, 'dewPoint')?.dewPoint ?? Number.MAX_VALUE,
 				);
 	});
 
 	const maxTemperature = $derived.by(() => {
 		return !omForecast
 			? 0
-			: (_.maxBy(omForecast.hourly, 'temperature')?.temperature ?? Number.MIN_VALUE);
+			: (maxBy(omForecast.hourly, 'temperature')?.temperature ?? Number.MIN_VALUE);
 	});
 
 	const temperatureRange = $derived(maxTemperature - minTemperature);
@@ -288,9 +288,9 @@ export function makeNsWeatherData() {
 			msIntervals.push(finalFrame.ms + 10 * MS_IN_MINUTE);
 		}
 
-		_.uniq(msIntervals)
+		uniq(msIntervals)
 			.sort()
-			.forEach((ms: number, index: number, msIntervals: { [x: string]: number }) => {
+			.forEach((ms, index, msIntervals) => {
 				const x2 = msIntervals[index + 1] - 1;
 				intervals.push({
 					msPretty: nsWeatherData.tzFormat(ms),
@@ -443,14 +443,14 @@ export function makeNsWeatherData() {
 				ms,
 			};
 
-			_.forEach(hourlyKeys, (keyData: string, keyOpenMeteo: string | number) => {
+			forEach(hourlyKeys, (keyData: string, keyOpenMeteo: string | number) => {
 				object[keyData as keyof HourlyForecast] = json.hourly[keyOpenMeteo][index];
 			});
 
 			return object as HourlyForecast;
 		});
 
-		const daily = _.map(json.daily.time, (unixtime: number, index: number) => {
+		const daily = map(json.daily.time, (unixtime: number, index: number) => {
 			const ms = unixtime * MS_IN_SECOND;
 			const compactDate =
 				index === PAST_DAYS
@@ -472,7 +472,7 @@ export function makeNsWeatherData() {
 				sunset,
 			};
 
-			_.forEach(dailyKeys, (newKey: string, openMeteoKey: string | number) => {
+			forEach(dailyKeys, (newKey: string, openMeteoKey: string | number) => {
 				object[newKey as keyof DailyForecast] = json.daily[openMeteoKey][index];
 			});
 
@@ -750,7 +750,7 @@ export function makeNsWeatherData() {
 		format(dataPath: string, showUnits = true) {
 			const key = dataPath.replace(/.*\./, '') as keyof typeof unitsUsed;
 			const unit = units[unitsUsed[key]];
-			const n = _.get(nsWeatherData, dataPath);
+			const n = get(nsWeatherData, dataPath);
 
 			if (n === undefined) {
 				return '...';

@@ -1,4 +1,4 @@
-import _ from 'lodash-es';
+import { get } from 'lodash-es';
 import JSON5 from 'json5';
 import Color from 'colorjs.io';
 
@@ -137,7 +137,7 @@ function makeWmo(
 	description: string,
 	iconName: string,
 ) {
-	const color = _.get(picoColors, picoColor) || _.get(picoColors, 'yellow.400');
+	const color = get(picoColors, picoColor) || get(picoColors, 'yellow.400');
 
 	const icon = `/icons/airy/${iconName}@4x.png`;
 

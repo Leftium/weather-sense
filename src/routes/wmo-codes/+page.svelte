@@ -1,11 +1,11 @@
 <script lang="ts">
-	import _ from 'lodash-es';
+	import { map } from 'lodash-es';
 
 	import { WMO_CODES } from '$lib/util';
 	import { onMount } from 'svelte';
 
 	// Convert Object to array, adding key as `.code` prop.
-	const wmoCodes = _.map(WMO_CODES, (value, code) => ({
+	const wmoCodes = map(WMO_CODES, (value, code) => ({
 		code: Number(code),
 		...value,
 	}));

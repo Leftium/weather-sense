@@ -2,7 +2,7 @@
 	import { type NsWeatherData, type WeatherDataEvents } from '$lib/ns-weather-data.svelte';
 	import type { RadarLayer } from '$lib/types';
 
-	import _ from 'lodash-es';
+	import { clamp, find } from 'lodash-es';
 
 	import { getEmitter } from '$lib/emitter';
 	import { gg } from '$lib/gg';
@@ -49,21 +49,14 @@
 <div class="pico">
 	<div class="range-wrapper">
 		{#key [min, max]}
-			<input
-				type="range"
-				{min}
-				{max}
-				value={_.clamp(nsWeatherData.ms, min, max)}
-				{step}
-				{oninput}
-			/>
+			<input type="range" {min} {max} value={clamp(nsWeatherData.ms, min, max)} {step} {oninput} />
 		{/key}
 		<datalist id="radar-markers">
 			{#each range as ms, index}
 				{@const isMinorIndex = index % 4}
 				<div
 					class="tick"
-					class:loaded={index === range.length - 1 || _.find(radarLayers, ['index', index])?.loaded}
+					class:loaded={index === range.length - 1 || find(radarLayers, ['index', index])?.loaded}
 					class:minor-time={isMinorIndex}
 				>
 					{nsWeatherData.tzFormat(ms, isMinorIndex ? 'mm' : 'h:mm')}

@@ -10,7 +10,7 @@
 		WeatherDataEvents,
 	} from '$lib/ns-weather-data.svelte';
 
-	import _ from 'lodash-es';
+	import { clamp, each, forEachRight } from 'lodash-es';
 	import * as d3 from 'd3';
 
 	import { gg } from '$lib/gg';
@@ -322,7 +322,7 @@
 				temperature: 0,
 			};
 
-			_.forEachRight(metrics, (item, index) => {
+			forEachRight(metrics, (item, index) => {
 				if (item.temperature > high.temperature) {
 					high = {
 						ms: item.ms,
@@ -359,7 +359,7 @@
 			const svgNode = d3.select(div).select('svg').select('g[aria-label=rect]').node();
 			if (xScale.invert) {
 				const [x] = d3.pointer(e, svgNode);
-				const ms = _.clamp(xScale.invert(x), msStart, msEnd);
+				const ms = clamp(xScale.invert(x), msStart, msEnd);
 
 				emit('weatherdata_requestedSetTime', { ms });
 			}
@@ -910,7 +910,7 @@
 			adjustedLabelWidths = true;
 			gg('getLabelWidths');
 
-			_.each(labelElements, (element, text) => {
+			each(labelElements, (element, text) => {
 				labelWidths[text] = element.clientWidth;
 			});
 		}

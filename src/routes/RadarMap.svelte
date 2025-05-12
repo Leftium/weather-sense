@@ -50,7 +50,7 @@
 
 		let map = new Map(mapElement, {
 			center: [lat, lon],
-			zoom: 5,
+			zoom: 11,
 			zoomControl: false,
 			attributionControl: false,
 			// @ts-expect-error: added by leaflet-gesture-handling

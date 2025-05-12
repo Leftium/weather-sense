@@ -440,7 +440,7 @@
 	}
 
 	.map {
-		height: 240px;
+		height: 340px;
 	}
 
 	.container {

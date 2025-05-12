@@ -62,8 +62,8 @@
 <div class="pico container">
 	<span>
 		<b>WeatherSense</b>
-		<a href="wmo-codes">WMO Codes</a> |
-		<a href="https://github.com/Leftium/weather-sense">Source Code</a>
+		<a href="https://blog.leftium.com/2025/05/weathersense.html">About this app</a> |
+		<a href="wmo-codes">WMO Codes</a>
 	</span>
 </div>
 

@@ -239,6 +239,13 @@
 		</div>
 	</div>
 
+	<center class="pico">
+		<div>
+			Weather/AQI data and geocoding by <a href="https://open-meteo.com/">Open-Meteo.com</a>
+		</div>
+		<div>Reverse geocoding by <a href="https://openweathermap.org/">OpenWeather</a></div>
+	</center>
+
 	{#if dev}
 		<div class="pico debug">
 			<pre>nsWeatherData.ms = {nsWeatherData.ms} ({nsWeatherData.tzFormat(nsWeatherData.ms)})</pre>

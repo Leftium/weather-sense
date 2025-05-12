@@ -25,7 +25,7 @@ export const load = async (loadEvent) => {
 
 		//gg(jsoned);
 
-		if (jsoned.results.length) {
+		if (jsoned?.results?.length) {
 			source = `geocoded`;
 			name = jsoned.results[0].name;
 			coords = {

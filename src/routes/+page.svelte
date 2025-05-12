@@ -241,7 +241,7 @@
 
 	<center class="pico">
 		<div>
-			Weather/AQI data and geocoding by <a href="https://open-meteo.com/">Open-Meteo.com</a>
+			Weather/AQI/geocoding by <a href="https://open-meteo.com/">Open-Meteo.com</a>
 		</div>
 		<div>Reverse geocoding by <a href="https://openweathermap.org/">OpenWeather</a></div>
 	</center>

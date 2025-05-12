@@ -50,7 +50,7 @@
 
 		let map = new Map(mapElement, {
 			center: [lat, lon],
-			zoom: 11,
+			zoom: 10,
 			zoomControl: false,
 			attributionControl: false,
 			// @ts-expect-error: added by leaflet-gesture-handling
@@ -77,13 +77,22 @@
 		/**/
 
 		const accuracyCircle = new Circle([lat, lon], { radius: accuracy }).addTo(map);
+		const scaleCircles = [...Array(10).keys()].map((n) => {
+			return new Circle([lat, lon], {
+				color: '#ffffff',
+				opacity: 0.5,
+				fillOpacity: 0,
+				radius: (n + 1) * 10_000,
+			}).addTo(map);
+		});
 
 		new Control.Attribution({ position: 'topleft' }).addTo(map);
+		new Control.Scale({ position: 'bottomleft' }).addTo(map);
 
 		locateControl = new LocateControl({
 			showCompass: false,
 			position: 'bottomright',
-			initialZoomLevel: 11,
+			initialZoomLevel: 10,
 		});
 		locateControl.addTo(map);
 
@@ -91,6 +100,10 @@
 
 		map.on('locationfound', async function onLocationFound(e) {
 			accuracyCircle.setLatLng(e.latlng).setRadius(e.accuracy);
+			scaleCircles.map((circle) => {
+				circle.setLatLng(e.latlng);
+			});
+
 			gg(e);
 
 			const distance = nsWeatherData.coords

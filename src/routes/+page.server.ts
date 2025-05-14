@@ -14,6 +14,9 @@ export const load = async (loadEvent) => {
 
 	const searchParams = loadEvent.url.searchParams;
 	const paramName = searchParams.get('name') ?? searchParams.get('n');
+	const mapStyle = searchParams.has('gus_massa')
+		? 'openstreetmap'
+		: searchParams.get('mapstyle') || 'stamen';
 
 	//gg(paramName);
 
@@ -58,5 +61,6 @@ export const load = async (loadEvent) => {
 		source,
 		name,
 		coords,
+		mapStyle,
 	};
 };

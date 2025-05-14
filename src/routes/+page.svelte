@@ -199,7 +199,7 @@
 		</div>
 
 		<div class="map">
-			<RadarMap {nsWeatherData} />
+			<RadarMap {nsWeatherData} mapStyle={data.mapStyle} />
 		</div>
 
 		<div class="daily grid pico">

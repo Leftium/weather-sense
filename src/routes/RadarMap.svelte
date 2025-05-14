@@ -20,7 +20,10 @@
 	let radarTimelineControl: RadarTimeline;
 	let animationFrameId: number;
 
-	let { nsWeatherData }: { nsWeatherData: NsWeatherData } = $props();
+	let {
+		nsWeatherData,
+		mapStyle = 'openstreetmap',
+	}: { nsWeatherData: NsWeatherData; mapStyle?: string } = $props();
 
 	const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 
@@ -62,19 +65,19 @@
 			},
 		});
 
-		/*
-		new TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-			attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-		}).addTo(map);
-		/**/
-
-		/**/
-		new TileLayer('https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg', {
-			className: 'bw',
-			attribution:
-				'<a href="https://www.rainviewer.com/api.html" target="_blank">Rainviewer</a> | <a target="_blank" href="http://stamen.com">Stamen</a> | <a href="https://stadiamaps.com/" target="_blank">Stadia</a> | &copy; <a href="https://www.openstreetmap.org/about" target="_blank">OpenStreetMap</a>',
-		}).addTo(map);
-		/**/
+		if (mapStyle === 'openstreetmap') {
+			new TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+				className: 'bw',
+				attribution:
+					'<a href="https://www.rainviewer.com/api.html" target="_blank">Rainviewer</a> | &copy; <a href="https://www.openstreetmap.org/about" target="_blank">OpenStreetMap</a>',
+			}).addTo(map);
+		} else {
+			new TileLayer('https://tiles.stadiamaps.com/tiles/stamen_watercolor/{z}/{x}/{y}.jpg', {
+				className: 'bw',
+				attribution:
+					'<a href="https://www.rainviewer.com/api.html" target="_blank">Rainviewer</a> | <a target="_blank" href="http://stamen.com">Stamen</a> | <a href="https://stadiamaps.com/" target="_blank">Stadia</a> | &copy; <a href="https://www.openstreetmap.org/about" target="_blank">OpenStreetMap</a>',
+			}).addTo(map);
+		}
 
 		const accuracyCircle = new Circle([lat, lon], { radius: accuracy }).addTo(map);
 		const scaleCircles = [...Array(10).keys()].map((n) => {

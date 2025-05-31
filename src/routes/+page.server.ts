@@ -40,8 +40,8 @@ export const load = async (loadEvent) => {
 	}
 
 	if (source === 'hardcoded') {
-		const city = headers.get('x-vercel-ip-city');
-		const country = headers.get('x-vercel-ip-country');
+		const city = decodeURIComponent(headers.get('x-vercel-ip-city') || '');
+		const country = decodeURIComponent(headers.get('x-vercel-ip-country') || '');
 		const latitude = Number(headers.get('x-vercel-ip-latitude'));
 		const longitude = Number(headers.get('x-vercel-ip-longitude'));
 

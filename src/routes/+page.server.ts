@@ -41,13 +41,14 @@ export const load = async (loadEvent) => {
 
 	if (source === 'hardcoded') {
 		const city = decodeURIComponent(headers.get('x-vercel-ip-city') || '');
+		const region = decodeURIComponent(headers.get('x-vercel-ip-country-region') || '');
 		const country = decodeURIComponent(headers.get('x-vercel-ip-country') || '');
 		const latitude = Number(headers.get('x-vercel-ip-latitude'));
 		const longitude = Number(headers.get('x-vercel-ip-longitude'));
 
 		if (city && country && latitude && longitude) {
 			source = 'geo-ip';
-			name = `${city}, ${country}`;
+			name = `${city}, ${country === 'US' ? region : country}`;
 			coords = {
 				latitude,
 				longitude,

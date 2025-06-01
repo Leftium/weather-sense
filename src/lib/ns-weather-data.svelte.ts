@@ -564,7 +564,7 @@ export function makeNsWeatherData() {
 				const json = await resp.json();
 				const result = json[0];
 
-				name = `${result.name}, ${result.country}`;
+				name = `${result.name}, ${result.state || result.country}`;
 			}
 
 			//gg({ name, coords, params });

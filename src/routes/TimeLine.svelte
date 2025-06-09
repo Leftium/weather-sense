@@ -10,7 +10,7 @@
 		WeatherDataEvents,
 	} from '$lib/ns-weather-data.svelte';
 
-	import { clamp, each, forEachRight } from 'lodash-es';
+	import { clamp, each, forEachRight, maxBy } from 'lodash-es';
 	import * as d3 from 'd3';
 
 	import { gg } from '$lib/gg';
@@ -254,10 +254,14 @@
 				fill: string;
 				fillText: string;
 				fillShadow: string;
+				counts: Record<number, number>;
 			};
 
 			function consolidatedWeatherCode(code: number) {
-				if ([0, 1, 2, 3, 45, 48].includes(code)) {
+				if ([0, 1, 2, 3].includes(code)) {
+					return 3;
+				}
+				if ([45, 48].includes(code)) {
 					return 48;
 				}
 				if ([51, 53, 55, 80, 81, 82, 61, 63, 65].includes(code)) {
@@ -275,20 +279,42 @@
 				return -1;
 			}
 
-			const codes = metrics.reduce((accumulator: CodesItem[], current) => {
+			function determineNextCode(prevCode: number | undefined, currCode: number) {
+				if (prevCode !== undefined) {
+					const prevCodeConsolidated = consolidatedWeatherCode(prevCode);
+					const currCodeConsolidated = consolidatedWeatherCode(currCode);
+
+					if (prevCodeConsolidated === currCodeConsolidated) {
+						return Math.max(prevCode, currCode);
+					}
+				}
+				return currCode;
+			}
+
+			const codes = metrics.reduce((accumulator: CodesItem[], current, index, array) => {
 				const currCodeConsolidated = consolidatedWeatherCode(current.weatherCode);
 
 				const prevItem = accumulator.at(-1);
 				const prevCode = prevItem?.weatherCode;
-				const prevCodeConsolidated = prevCode
-					? consolidatedWeatherCode(prevCode)
-					: currCodeConsolidated;
+				const prevCodeConsolidated =
+					prevCode !== undefined ? consolidatedWeatherCode(prevCode) : currCodeConsolidated;
 
-				const nextCode =
-					prevCode && prevCodeConsolidated === currCodeConsolidated
-						? Math.max(prevCode, current.weatherCode)
-						: current.weatherCode;
+				const counts = prevItem?.counts || {};
+				counts[current.weatherCode] = counts[current.weatherCode] || 0;
+
+				// Don't count final (25th) hour needed for fence post problem.
+				if (index < array.length - 1) {
+					counts[current.weatherCode] += 1;
+				}
+
+				let nextCode = determineNextCode(prevCode, current.weatherCode);
 				const nextCodeConsolidated = consolidatedWeatherCode(nextCode);
+
+				if (nextCodeConsolidated === 3) {
+					nextCode = Number(
+						maxBy(Object.keys(counts), (code) => counts[Number(code)] + Number(code) / 100),
+					);
+				}
 
 				const x1 = current.ms;
 				const x2 = Math.min(current.ms + MS_IN_HOUR + 2 * MS_IN_MINUTE, msEnd);
@@ -297,7 +323,7 @@
 
 				const draftItem = {
 					ms: x2,
-					weatherCode: nextCode,
+					weatherCode: current.weatherCode,
 					text: WMO_CODES[nextCode].description,
 					icon: WMO_CODES[nextCode].icon,
 					x1,
@@ -311,6 +337,7 @@
 						`rgba(255 255 255 / 50%)`,
 						`rgba(51 51 51 / 50%)`,
 					),
+					counts: { [current.weatherCode]: 1 },
 				};
 
 				if (prevItem && prevCodeConsolidated === nextCodeConsolidated) {
@@ -318,11 +345,10 @@
 						...draftItem,
 						x1: prevItem.x1,
 						xMiddle: (Number(prevItem.x1) + x2) / 2,
+						counts,
 					};
 				} else {
-					if (nextCode != undefined) {
-						accumulator.push(draftItem);
-					}
+					accumulator.push(draftItem);
 				}
 				return accumulator;
 			}, [] as CodesItem[]);

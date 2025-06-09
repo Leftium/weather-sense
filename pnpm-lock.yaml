@@ -83,6 +83,9 @@ importers:
       haversine-distance:
         specifier: ^1.2.3
         version: 1.2.3
+      htl:
+        specifier: ^0.3.1
+        version: 0.3.1
       iconify-icon:
         specifier: ^3.0.0
         version: 3.0.0
@@ -1195,6 +1198,10 @@ packages:
 
   haversine-distance@1.2.3:
     resolution: {integrity: sha512-cRKtuukt+/fVprlLueX30mytMNtiQ4tff93FDW9yrBx3BYrq6gujiw1+hEaaxssKlOZTm8R3BPtMbNM+n0+bqQ==}
+
+  htl@0.3.1:
+    resolution: {integrity: sha512-1LBtd+XhSc+++jpOOt0lCcEycXs/zTQSupOISnVAUmvGBpV7DH+C2M6hwV7zWYfpTMMg9ch4NO0lHiOTAMHdVA==}
+    engines: {node: '>=12'}
 
   iconify-icon@3.0.0:
     resolution: {integrity: sha512-yPcnpkn8HUEUckrxxJBOer3jbGv3bqozHsLMLBRxhk3As1X76BgV2mS2a1HTNOIagR8nUs30H3qAd9GLe8Mnlg==}
@@ -2678,6 +2685,8 @@ snapshots:
   has-flag@4.0.0: {}
 
   haversine-distance@1.2.3: {}
+
+  htl@0.3.1: {}
 
   iconify-icon@3.0.0:
     dependencies:

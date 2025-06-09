@@ -24,7 +24,7 @@ export const colors = {
 	precipitationProbability: '#58FAF9',
 	precipitation: SOLARIZED_BLUE,
 	dewPoint: picoColors.blue[600],
-	temperature: picoColors.blue[950],
+	temperature: 'url(#gradient)', // picoColors.blue[950],
 };
 
 export function jsonPretty(json: any) {

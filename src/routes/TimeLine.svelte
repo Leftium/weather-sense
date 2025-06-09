@@ -15,6 +15,7 @@
 
 	import { gg } from '$lib/gg';
 	import * as Plot from '@observablehq/plot';
+	import * as htl from 'htl';
 	import { getEmitter } from '$lib/emitter';
 	import { onMount, tick } from 'svelte';
 	import {
@@ -849,7 +850,7 @@
 					// The temperature plotted as line:
 					Plot.lineY(dataForecast.metrics, {
 						curve,
-						strokeOpacity: fadePastValues,
+						strokeOpacity: 1,
 						x: 'ms',
 						y: {
 							transform: makeTransformTemperature(),
@@ -868,8 +869,7 @@
 						y: {
 							transform: makeTransformTemperature(),
 						},
-						fill: SOLARIZED_BLUE,
-						stroke: colors.temperature,
+						fill: 'blue',
 					}),
 				);
 
@@ -881,9 +881,7 @@
 						y: {
 							transform: makeTransformTemperature(),
 						},
-						fill: SOLARIZED_RED,
-						stroke: colors.temperature,
-						strokeWidth: 1,
+						fill: 'red',
 					}),
 				);
 			}
@@ -901,6 +899,15 @@
 					}),
 				);
 			}
+			marks.push(
+				() => htl.svg`
+                  <defs>
+                    <linearGradient id="gradient" gradientTransform="rotate(90)">
+                      <stop offset="0%" stop-color="red" />
+                      <stop offset="100%" stop-color="blue" />
+                    </linearGradient>
+                  </defs>`,
+			);
 		}
 
 		//@ts-expect-error: x.type is valid.

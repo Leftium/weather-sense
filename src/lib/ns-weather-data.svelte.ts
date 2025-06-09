@@ -40,7 +40,7 @@ export type WeatherDataEvents = {
 
 const DATEFORMAT_MASK = 'MM-DD hh:mma z';
 const PAST_DAYS = dev ? 2 : 1; // 0 to 92
-const FORECAST_DAYS = dev ? 4 : 5; // 0 to 16 for forecast; 0 to 7 for air-quality;
+const FORECAST_DAYS = dev ? 4 : 9; // 0 to 16 for forecast; 0 to 7 for air-quality;
 
 const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 

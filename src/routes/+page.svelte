@@ -200,6 +200,7 @@
 		<div class="daily grid pico">
 			{#each nsWeatherData.daily || [] as day, index}
 				{@const past = day.fromToday < 0}
+				{@const today = day.fromToday === 0}
 				<div class="grid day-label">
 					<div class="grid icon-date">
 						<img
@@ -209,7 +210,7 @@
 							alt=""
 							class:past
 						/>
-						<div class="day" class:today={day.fromToday === 0} class:past>
+						<div class={['day', { past, today }]}>
 							{day.compactDate}
 						</div>
 					</div>
@@ -222,7 +223,7 @@
 						</div>
 					</div>
 				</div>
-				<div class="timeline">
+				<div class={['timeline', { today }]}>
 					<TimeLine
 						{nsWeatherData}
 						start={day.ms}
@@ -399,7 +400,7 @@
 		width: 32px;
 	}
 
-	.daily .today {
+	.daily .day.today {
 		font-weight: bold;
 	}
 
@@ -430,6 +431,10 @@
 	.timeline {
 		flex-grow: 1;
 		height: 90px;
+
+		&.today {
+			height: 145px;
+		}
 	}
 
 	.name {

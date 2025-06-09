@@ -255,41 +255,72 @@
 				fillShadow: string;
 			};
 
+			function consolidatedWeatherCode(code: number) {
+				if ([0, 1, 2, 3, 45, 48].includes(code)) {
+					return 48;
+				}
+				if ([51, 53, 55, 80, 81, 82, 61, 63, 65].includes(code)) {
+					return 65;
+				}
+				if ([56, 57, 66, 67].includes(code)) {
+					return 67;
+				}
+				if ([77, 85, 86, 71, 73, 75].includes(code)) {
+					return 75;
+				}
+				if ([95, 96, 99].includes(code)) {
+					return 99;
+				}
+				return -1;
+			}
+
 			const codes = metrics.reduce((accumulator: CodesItem[], current) => {
+				const currCodeConsolidated = consolidatedWeatherCode(current.weatherCode);
+
 				const prevItem = accumulator.at(-1);
 				const prevCode = prevItem?.weatherCode;
-				const nextCode = current.weatherCode;
+				const prevCodeConsolidated = prevCode
+					? consolidatedWeatherCode(prevCode)
+					: currCodeConsolidated;
+
+				const nextCode =
+					prevCode && prevCodeConsolidated === currCodeConsolidated
+						? Math.max(prevCode, current.weatherCode)
+						: current.weatherCode;
+				const nextCodeConsolidated = consolidatedWeatherCode(nextCode);
 
 				const x1 = current.ms;
 				const x2 = Math.min(current.ms + MS_IN_HOUR + 2 * MS_IN_MINUTE, msEnd);
-				const xMiddle = (Number(x1) + Number(x2)) / 2;
 
-				if (prevItem && prevCode == nextCode && prevCode != undefined) {
-					prevItem.ms = prevItem.x2 = x2;
-					prevItem.xMiddle = (Number(prevItem.x1) + x2) / 2;
+				const fill = WMO_CODES[nextCode].color;
+
+				const draftItem = {
+					ms: x2,
+					weatherCode: nextCode,
+					text: WMO_CODES[nextCode].description,
+					icon: WMO_CODES[nextCode].icon,
+					x1,
+					x2,
+					xMiddle: (Number(x1) + Number(x2)) / 2,
+					fill: WMO_CODES[nextCode].color,
+					fillText: contrastTextColor(fill),
+					fillShadow: contrastTextColor(
+						fill,
+						true,
+						`rgba(255 255 255 / 50%)`,
+						`rgba(51 51 51 / 50%)`,
+					),
+				};
+
+				if (prevItem && prevCodeConsolidated === nextCodeConsolidated) {
+					accumulator[accumulator.length - 1] = {
+						...draftItem,
+						x1: prevItem.x1,
+						xMiddle: (Number(prevItem.x1) + x2) / 2,
+					};
 				} else {
 					if (nextCode != undefined) {
-						const fill = WMO_CODES[nextCode].color;
-						const fillText = contrastTextColor(fill);
-						const fillShadow = contrastTextColor(
-							fill,
-							true,
-							`rgba(255 255 255 / 50%)`,
-							`rgba(51 51 51 / 50%)`,
-						);
-
-						accumulator.push({
-							ms: x2,
-							weatherCode: nextCode,
-							text: WMO_CODES[nextCode].description,
-							icon: WMO_CODES[nextCode].icon,
-							x1,
-							x2,
-							xMiddle,
-							fill,
-							fillText,
-							fillShadow,
-						});
+						accumulator.push(draftItem);
 					}
 				}
 				return accumulator;

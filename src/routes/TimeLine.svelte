@@ -57,8 +57,8 @@
 
 	const ICON_WIDTH = 18;
 	const GAP_WIDTH = 2;
-	const MARGIN_LEFT = 12;
-	const MARGIN_RIGHT = 12;
+	const MARGIN_LEFT = 0;
+	const MARGIN_RIGHT = 0;
 	const ICON_LABEL_PADDING = 16;
 
 	const draw: Record<string, boolean | string> = {

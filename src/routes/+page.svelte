@@ -447,7 +447,7 @@
 	}
 
 	.map {
-		height: 340px;
+		height: 419px;
 	}
 
 	.container {

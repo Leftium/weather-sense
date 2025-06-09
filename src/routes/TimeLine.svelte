@@ -299,16 +299,19 @@
 				const prevCodeConsolidated =
 					prevCode !== undefined ? consolidatedWeatherCode(prevCode) : currCodeConsolidated;
 
-				const counts = prevItem?.counts || {};
+				let nextCode = determineNextCode(prevCode, current.weatherCode);
+				const nextCodeConsolidated = consolidatedWeatherCode(nextCode);
+
+				const counts =
+					prevItem !== undefined && prevCodeConsolidated === nextCodeConsolidated
+						? prevItem.counts
+						: {};
 				counts[current.weatherCode] = counts[current.weatherCode] || 0;
 
-				// Don't count final (25th) hour needed for fence post problem.
+				// Don't count final (25th) hour (needed for fence post problem).
 				if (index < array.length - 1) {
 					counts[current.weatherCode] += 1;
 				}
-
-				let nextCode = determineNextCode(prevCode, current.weatherCode);
-				const nextCodeConsolidated = consolidatedWeatherCode(nextCode);
 
 				if (nextCodeConsolidated === 3) {
 					nextCode = Number(
@@ -337,7 +340,7 @@
 						`rgba(255 255 255 / 50%)`,
 						`rgba(51 51 51 / 50%)`,
 					),
-					counts: { [current.weatherCode]: 1 },
+					counts: {},
 				};
 
 				if (prevItem && prevCodeConsolidated === nextCodeConsolidated) {

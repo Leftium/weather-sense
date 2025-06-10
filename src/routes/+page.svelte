@@ -394,7 +394,7 @@
 		width: 1.2em;
 		height: 1.2em;
 
-		transform: translateY(-0.12em);
+		transform: translateY(-0.06em);
 
 		display: inline-grid;
 		place-content: center;

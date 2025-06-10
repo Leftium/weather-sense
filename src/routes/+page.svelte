@@ -451,10 +451,10 @@
 
 	.timeline {
 		flex-grow: 1;
-		height: calc(87px + $size-3);
+		height: calc(64px + $size-3);
 
 		&.today {
-			height: calc(141px + $size-3);
+			height: calc(104px + $size-3);
 		}
 	}
 
@@ -468,7 +468,7 @@
 	}
 
 	.map {
-		height: 370px;
+		height: 320px;
 	}
 
 	.container {
@@ -486,7 +486,7 @@
 
 	@media (max-width: 768px) {
 		.map {
-			height: 220px;
+			height: 240px;
 		}
 	}
 

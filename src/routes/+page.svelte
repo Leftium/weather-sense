@@ -325,11 +325,16 @@
 		width: 100%;
 
 		text-align: left;
+
+		margin-left: $size-1;
 	}
 
 	.current .condition {
 		display: flex;
 		flex-direction: column;
+
+		margin-right: $size-1;
+
 		justify-content: center;
 		font-size: large;
 		line-height: 1.2;

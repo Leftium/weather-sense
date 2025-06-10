@@ -36,6 +36,7 @@
 		"leaflet.locatecontrol": "^0.84.2",
 		"lodash-es": "^4.17.21",
 		"mitt": "^3.0.1",
+		"open-props-scss": "^0.8.0",
 		"prettier": "^3.5.3",
 		"prettier-plugin-svelte": "^3.4.0",
 		"sass": "^1.89.1",

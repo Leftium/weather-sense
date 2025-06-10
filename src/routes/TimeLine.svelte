@@ -534,12 +534,12 @@
 	const curve = 'catmull-rom';
 	const plotOptions = $derived({
 		width: clientWidth,
-		height: xAxis ? 113 : 70,
+		height: xAxis ? 141 : 87,
 		marginRight: MARGIN_RIGHT,
 		marginLeft: MARGIN_LEFT,
 		marginTop: 0,
 		marginBottom: 0,
-		y: { axis: null, domain: [yDomainTop, yDomainBottom], range: [0, xAxis ? 113 : 70] },
+		y: { axis: null, domain: [yDomainTop, yDomainBottom], range: [0, xAxis ? 141 : 87] },
 		x: {
 			type: 'utc',
 			axis: xAxis ? true : null,

@@ -263,7 +263,9 @@
 	</div>
 </div>
 
-<style>
+<style lang="scss">
+	@use 'open-props-scss' as *;
+
 	.sticky-info {
 		position: sticky;
 		top: 0;
@@ -275,6 +277,10 @@
 		padding: 0.2em 0.3em;
 		border-bottom-left-radius: 4.75px;
 		border-bottom-right-radius: 4.75px;
+
+		& > div {
+			padding-block: $size-1;
+		}
 	}
 
 	.name,
@@ -430,10 +436,10 @@
 
 	.timeline {
 		flex-grow: 1;
-		height: 90px;
+		height: calc(87px + $size-3);
 
 		&.today {
-			height: 145px;
+			height: calc(141px + $size-3);
 		}
 	}
 
@@ -447,12 +453,11 @@
 	}
 
 	.map {
-		height: 419px;
+		height: 370px;
 	}
 
 	.container {
 		display: grid;
-		grid-template-rows: 1fr auto;
 	}
 
 	.scroll {

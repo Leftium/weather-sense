@@ -100,18 +100,7 @@
 				{nsWeatherData.format('displayTemperature')}
 			</span>
 		</div>
-		<div>
-			<label>
-				<input type="checkbox" checked style:color="gray" />
-			</label>
-			<span use:toggleUnits={{ temperature: true }}>
-				{nsWeatherData.format('daily[2].temperatureMin', false)}
-			</span>
-			to
-			<span use:toggleUnits={{ temperature: true }}>
-				{nsWeatherData.format('daily[2].temperatureMax', false)}
-			</span>
-		</div>
+
 		<div>
 			<label>
 				<input
@@ -126,13 +115,6 @@
 				{nsWeatherData.format('displayDewPoint', false)}
 			</span>
 		</div>
-		<div>
-			<label>
-				<input type="checkbox" style:color={colors.humidity} style:border-color={colors.humidity} />
-				Humidity:
-				<span>{nsWeatherData.displayHumidity}%</span>
-			</label>
-		</div>
 
 		<div>
 			<label>
@@ -146,18 +128,7 @@
 				<span>{nsWeatherData.displayPrecipitation}mm</span>
 			</label>
 		</div>
-		<div>
-			<label>
-				<input
-					type="checkbox"
-					checked
-					style:color={colors.precipitationProbability}
-					style:border-color={colors.precipitationProbability}
-				/>
-				Chance:
-				<span>{nsWeatherData.displayPrecipitationProbability}%</span>
-			</label>
-		</div>
+
 		<div>
 			<label>
 				<input
@@ -170,6 +141,41 @@
 				<span>{nsWeatherData.displayAqiEurope}</span>
 			</label>
 		</div>
+
+		<div>
+			<label>
+				<input type="checkbox" checked style:color="gray" />
+			</label>
+			<span use:toggleUnits={{ temperature: true }}>
+				{nsWeatherData.format('daily[2].temperatureMin', false)}
+			</span>
+			to
+			<span use:toggleUnits={{ temperature: true }}>
+				{nsWeatherData.format('daily[2].temperatureMax', false)}
+			</span>
+		</div>
+
+		<div>
+			<label>
+				<input type="checkbox" style:color={colors.humidity} style:border-color={colors.humidity} />
+				Humidity:
+				<span>{nsWeatherData.displayHumidity}%</span>
+			</label>
+		</div>
+
+		<div>
+			<label>
+				<input
+					type="checkbox"
+					checked
+					style:color={colors.precipitationProbability}
+					style:border-color={colors.precipitationProbability}
+				/>
+				Chance:
+				<span>{nsWeatherData.displayPrecipitationProbability}%</span>
+			</label>
+		</div>
+
 		<div>
 			<label>
 				<input
@@ -178,7 +184,6 @@
 					style:color={aqiUsToLabel(nsWeatherData.displayAqiUs ?? 0).color}
 					style:border-color={aqiUsToLabel(nsWeatherData.displayAqiUs ?? 0).color}
 				/>
-
 				US AQI:
 				<span>{nsWeatherData.displayAqiUs}</span>
 			</label>
@@ -332,12 +337,22 @@
 
 	.other-measurements {
 		display: grid;
-		grid-template-columns: 1fr 1fr;
+		grid-template-columns: 1fr 1fr 1fr 1fr;
 		column-gap: 1em;
 
+		max-width: 36em;
 		width: 100%;
-		max-width: 20em;
 		margin: auto;
+	}
+
+	@media (width < 768px) {
+		.other-measurements {
+			grid-template-columns: 1fr 1fr;
+			grid-template-rows: 1fr 1fr 1fr 1fr;
+			grid-auto-flow: column;
+
+			max-width: 18em;
+		}
 	}
 
 	.other-measurements input {

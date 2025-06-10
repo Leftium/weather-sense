@@ -485,14 +485,6 @@
 		};
 	}
 
-	function fadePastValues(d: { ms: number }) {
-		const now = Date.now();
-		if (d.ms < now) {
-			return 0.5;
-		}
-		return 1;
-	}
-
 	function makeTransFormPrecipitation(onlyLinear: boolean) {
 		const LINEAR_MAX = 20;
 
@@ -607,7 +599,6 @@
 		//gg('plotData');
 
 		const aqiLabelTextOptions = {
-			opacity: fadePastValues,
 			fontSize: 10,
 			fill: 'fillText',
 			y: -75,
@@ -620,7 +611,6 @@
 		} as Plot.TextOptions;
 
 		const codeLabelTextOptions = {
-			opacity: fadePastValues,
 			fontSize: 13,
 			fill: 'fillText',
 			y: 120,
@@ -656,7 +646,6 @@
 				// AQI code colored bands:
 				marks.push(
 					Plot.rectY(dataAirQuality.aqiUsLevels, {
-						opacity: fadePastValues,
 						x1: 'x1',
 						x2: 'x2',
 
@@ -690,7 +679,6 @@
 				// AQI code colored bands:
 				marks.push(
 					Plot.rectY(dataAirQuality.aqiEuropeLevels, {
-						opacity: fadePastValues,
 						x1: 'x1',
 						x2: 'x2',
 						y1: -aqiPlotHeight,
@@ -725,7 +713,6 @@
 				// Weather code colored bands:
 				marks.push(
 					Plot.rectY(dataForecast.codes, {
-						opacity: fadePastValues,
 						x1: 'x1',
 						x2: 'x2',
 						y: yDomainTop,
@@ -739,7 +726,7 @@
 					// The humidity plotted as area:
 					Plot.areaY(dataForecast.metrics, {
 						curve,
-						opacity: (d) => fadePastValues(d) * 0.2,
+						opacity: 0.2,
 						x: 'ms',
 						y: 'humidity',
 						fill: colors.humidity,
@@ -750,7 +737,6 @@
 					// The humidity plotted as line:
 					Plot.lineY(dataForecast.metrics, {
 						curve,
-						strokeOpacity: fadePastValues,
 						x: 'ms',
 						y: 'humidity',
 
@@ -764,8 +750,6 @@
 				// Rain bar 'cap':
 				marks.push(
 					Plot.rectY(dataForecast.rain, {
-						opacity: fadePastValues,
-						strokeOpacity: fadePastValues,
 						x1: 'x1bar',
 						x2: 'x2bar',
 						y: { transform: makeTransFormPrecipitation(false) },
@@ -776,7 +760,6 @@
 				//Rain bar:
 				marks.push(
 					Plot.rectY(dataForecast.rain, {
-						opacity: fadePastValues,
 						x1: 'x1bar',
 						x2: 'x2bar',
 						y: { transform: makeTransFormPrecipitation(true) },
@@ -790,7 +773,7 @@
 				marks.push(
 					Plot.areaY(dataForecast.metrics, {
 						curve,
-						opacity: (d) => (d.precipitationProbability <= 0 ? 0 : fadePastValues(d) * 0.2),
+						opacity: (d) => (d.precipitationProbability <= 0 ? 0 : 0.2),
 						x: 'ms',
 						y: 'precipitationProbability',
 						fill: colors.precipitationProbability,
@@ -801,7 +784,7 @@
 				marks.push(
 					Plot.lineY(dataForecast.metrics, {
 						curve,
-						strokeOpacity: (d) => (d.precipitationProbability <= 0 ? 0 : fadePastValues(d)),
+						strokeOpacity: (d) => (d.precipitationProbability <= 0 ? 0 : 1),
 						x: 'ms',
 						y: 'precipitationProbability',
 						stroke: colors.precipitationProbability,
@@ -831,7 +814,6 @@
 				marks.push(
 					// Weather code icon:
 					Plot.image(dataForecast.codes, {
-						opacity: fadePastValues,
 						width: ICON_WIDTH,
 						height: ICON_WIDTH,
 						y: 120,
@@ -862,7 +844,7 @@
 					// The dew point plotted as line:
 					Plot.lineY(dataForecast.metrics, {
 						curve,
-						strokeOpacity: fadePastValues,
+
 						x: 'ms',
 						y: {
 							transform: makeTransformTemperature('dewPoint'),
@@ -892,8 +874,6 @@
 				marks.push(
 					// High/low temp marks:
 					Plot.dot([dataForecast.low], {
-						fillOpacity: fadePastValues,
-						strokeOpacity: fadePastValues,
 						x: 'ms',
 						y: {
 							transform: makeTransformTemperature(),
@@ -904,8 +884,6 @@
 
 				marks.push(
 					Plot.dot([dataForecast.high], {
-						fillOpacity: fadePastValues,
-						strokeOpacity: fadePastValues,
 						x: 'ms',
 						y: {
 							transform: makeTransformTemperature(),
@@ -921,13 +899,25 @@
 					Plot.image(dataForecast?.solarEvents, {
 						width: 32,
 						height: 32,
-						opacity: fadePastValues,
+
 						x: 'x',
 						y: 10,
 						src: (d) => `/icons/meteocons/${d.type}.png`,
 					}),
 				);
 			}
+
+			marks.push(
+				Plot.rectY([0], {
+					x1: msStart,
+					x2: Math.min(msEnd, Date.now()),
+					y1: yDomainTop,
+					y2: yDomainBottom,
+					fill: 'white',
+					opacity: 0.5,
+				}),
+			);
+
 			marks.push(
 				() => htl.svg`
                   <defs>

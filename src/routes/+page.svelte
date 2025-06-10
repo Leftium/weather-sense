@@ -93,7 +93,7 @@
 	<div class="other-measurements">
 		<div>
 			<label>
-				<input type="checkbox" style:color="black" style:border-color="black" checked />
+				<input type="checkbox" class="temperature" checked />
 				Temp:
 			</label>
 			<span use:toggleUnits={{ temperature: true }}>
@@ -348,6 +348,15 @@
 		max-width: 36em;
 		width: 100%;
 		margin: auto;
+
+		input.temperature {
+			border-color: purple;
+		}
+
+		input[checked].temperature:before {
+			background: linear-gradient(45deg, blue 20%, red 80%);
+			box-shadow: none;
+		}
 	}
 
 	@media (width < 768px) {

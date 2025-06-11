@@ -345,7 +345,7 @@
 		grid-template-columns: 1fr 1fr 1fr 1fr;
 		column-gap: 1em;
 
-		max-width: 36em;
+		max-width: 40em;
 		width: 100%;
 		margin: auto;
 
@@ -369,7 +369,7 @@
 			grid-template-rows: 1fr 1fr 1fr 1fr;
 			grid-auto-flow: column;
 
-			max-width: 18em;
+			max-width: 20em;
 		}
 	}
 

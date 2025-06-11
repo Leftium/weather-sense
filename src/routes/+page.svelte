@@ -352,13 +352,13 @@
 		input.temperature {
 			border: calc(var(--pico-border-radius) / 2) solid transparent;
 			border-radius: var(--pico-border-radius);
-			background-image: linear-gradient(white, white), linear-gradient(45deg, blue 20%, red 80%);
+			background-image: linear-gradient(white, white), linear-gradient(20deg, blue 20%, red 85%);
 			background-origin: border-box;
 			background-clip: padding-box, border-box;
 		}
 
 		input[checked].temperature:before {
-			background: linear-gradient(45deg, blue 20%, red 80%);
+			background: linear-gradient(20deg, blue 20%, red 85%);
 			box-shadow: none;
 		}
 	}

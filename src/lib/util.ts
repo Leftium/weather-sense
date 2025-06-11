@@ -74,21 +74,21 @@ function makeAqiLabel(text: string, color: string) {
 }
 
 export const AQI_INDEX_US = [
-	makeAqiLabel('Good', 'hsl(115, 58%, 65%)'),
-	makeAqiLabel('Moderate', 'hsl(46, 87%, 56%)'),
-	makeAqiLabel('Unhealthy for Sensitive Groups', 'hsl(29, 90%, 55%)'),
-	makeAqiLabel('Unhealthy', 'hsl(352, 83%, 55%)'),
-	makeAqiLabel('Very unhealthy', 'rgb(203, 36, 176)'),
-	makeAqiLabel('Hazardous', 'rgb(100, 30, 155)'),
+	makeAqiLabel('Good', '#859900'),
+	makeAqiLabel('Moderate', '#b58900'),
+	makeAqiLabel('Unhealthy for Sensitive Groups', '#cb4b16'),
+	makeAqiLabel('Unhealthy', '#dc322f'),
+	makeAqiLabel('Very unhealthy', '#d33682'),
+	makeAqiLabel('Hazardous', '#6c71c4'),
 ];
 
 export const AQI_INDEX_EUROPE = [
-	makeAqiLabel('Good', 'hsl(188, 76%, 71%)'),
-	makeAqiLabel('Fair', 'rgb(123, 218, 114)'),
-	makeAqiLabel('Moderate', 'rgb(240, 196, 45)'),
-	makeAqiLabel('Poor', 'rgb(236, 44, 69)'),
-	makeAqiLabel('Very Poor', 'rgb(150, 2, 50)'),
-	makeAqiLabel('Extremely Poor', 'rgb(81, 39, 113)'),
+	makeAqiLabel('Good', '#2aa198'),
+	makeAqiLabel('Fair', '#859900'),
+	makeAqiLabel('Moderate', '#b58900'),
+	makeAqiLabel('Poor', '#dc322f'),
+	makeAqiLabel('Very Poor', '#d33682'),
+	makeAqiLabel('Extremely Poor', '#6c71c4'),
 ];
 
 const NO_DATA_LABEL = makeAqiLabel('No Data', picoColors.grey[300]);

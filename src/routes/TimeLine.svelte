@@ -910,7 +910,7 @@
 			marks.push(
 				Plot.rectY([0], {
 					x1: msStart,
-					x2: Math.min(msEnd, Date.now()),
+					x2: Math.min(msEnd, Math.max(msStart, Date.now())),
 					y1: yDomainTop,
 					y2: yDomainBottom,
 					fill: 'white',

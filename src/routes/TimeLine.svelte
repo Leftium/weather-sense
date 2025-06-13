@@ -893,7 +893,7 @@
 				);
 			}
 
-			if (draw.solarEvents) {
+			if (draw.solarEvents && xAxis) {
 				marks.push(
 					// Plot sunrise as yellow rule and sunset as icons:
 					Plot.image(dataForecast?.solarEvents, {
@@ -901,7 +901,7 @@
 						height: 32,
 
 						x: 'x',
-						y: yDomainTop + 8,
+						y: yDomainBottom - 4,
 						src: (d) => `/icons/meteocons/${d.type}.png`,
 					}),
 				);

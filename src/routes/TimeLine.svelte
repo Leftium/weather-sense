@@ -901,7 +901,7 @@
 						height: 32,
 
 						x: 'x',
-						y: 10,
+						y: yDomainTop + 8,
 						src: (d) => `/icons/meteocons/${d.type}.png`,
 					}),
 				);

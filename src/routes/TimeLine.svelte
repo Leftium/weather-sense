@@ -566,13 +566,15 @@
 				.attr('stroke', color)
 				.attr('stroke-width', 2);
 
-			ig.append('rect')
-				.attr('x', x1)
-				.attr('y', y1)
-				.attr('width', x2 - x1)
-				.attr('height', y2 - y1)
-				.attr('fill', color)
-				.attr('opacity', 0.4);
+			if (color === 'yellow') {
+				ig.append('rect')
+					.attr('x', x1)
+					.attr('y', y1)
+					.attr('width', x2 - x1)
+					.attr('height', y2 - y1)
+					.attr('fill', color)
+					.attr('opacity', 0.4);
+			}
 		}
 
 		const msStartOf10Min = startOf(ms, MS_IN_10_MINUTES);

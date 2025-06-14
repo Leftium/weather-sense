@@ -343,46 +343,25 @@
 		/*************************************************************************************/
 		/*Based on: https://moderncss.dev/pure-css-custom-checkbox-style/ */
 		input[type='checkbox'] {
-			appearance: none;
-			/* For iOS < 15 to remove gradient background */
-			background-color: #fff !important;
-			/* Not removed via appearance */
-			margin: 0;
-
-			font: inherit;
-			width: 1.2em;
-			height: 1.2em;
+			--linear-color: linear-gradient(var(--color) 0 0);
+			--linear-white: linear-gradient(white 0 0);
 
 			transform: translateY(-0.06em);
 
 			display: inline-grid;
 			place-content: center;
 
-			border-color: var(--color);
-
 			&::before {
-				grid-row: 1;
-				grid-column: 1;
-				content: '';
 				width: inherit;
 				height: inherit;
-				border-radius: inherit;
 
-				transform: scale(0);
-				transition: 500ms transform ease-in-out;
-
-				background: var(--color);
+				transform: scale(1);
+				transition: 250ms transform ease-in-out;
 			}
 
 			&:checked::before {
-				transform: scale(1);
+				transform: scale(0);
 			}
-		}
-
-		/*************************************************************************************/
-
-		input[name='temperature'] {
-			--gradient: linear-gradient(20deg, blue 20%, red 85%);
 
 			&::before,
 			&::after {
@@ -391,15 +370,30 @@
 
 				content: '';
 				border-radius: inherit;
+
 				border: calc(var(--pico-border-radius) / 2) solid transparent;
 				background-origin: border-box;
 				background-clip: padding-box, border-box;
 
-				background-image: var(--gradient), var(--gradient);
+				background-image: var(--linear-white), var(--linear-color);
 			}
 
 			&::after {
-				background-image: linear-gradient(white, white), var(--gradient);
+				background-image: var(--linear-color), var(--linear-color);
+			}
+
+			/*************************************************************************************/
+
+			&[name='temperature'] {
+				--gradient: linear-gradient(20deg, blue 20%, red 85%);
+
+				&::before {
+					background-image: var(--linear-white), var(--gradient);
+				}
+
+				&::after {
+					background-image: var(--gradient), var(--gradient);
+				}
 			}
 		}
 	}

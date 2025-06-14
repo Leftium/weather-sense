@@ -93,7 +93,7 @@
 	<div class="other-measurements">
 		<div>
 			<label>
-				<input type="checkbox" class="temperature" checked />
+				<input name="temperature" type="checkbox" checked />
 				Temp:
 			</label>
 			<span use:toggleUnits={{ temperature: true }}>
@@ -103,12 +103,7 @@
 
 		<div>
 			<label>
-				<input
-					type="checkbox"
-					style:color={colors.dewPoint}
-					style:border-color={colors.dewPoint}
-					bind:checked={displayDewPoint}
-				/>
+				<input type="checkbox" style="--color: {colors.dewPoint}" bind:checked={displayDewPoint} />
 				Dew Point:
 			</label>
 			<span use:toggleUnits={{ temperature: true }}>
@@ -118,12 +113,7 @@
 
 		<div>
 			<label>
-				<input
-					type="checkbox"
-					checked
-					style:color={colors.precipitation}
-					style:border-color={colors.precipitation}
-				/>
+				<input type="checkbox" checked style="--color: {colors.precipitation}" />
 				Precip:
 				<span>{nsWeatherData.displayPrecipitation}mm</span>
 			</label>
@@ -134,8 +124,7 @@
 				<input
 					type="checkbox"
 					checked
-					style:color={aqiEuropeToLabel(nsWeatherData.displayAqiEurope ?? 0).color}
-					style:border-color={aqiEuropeToLabel(nsWeatherData.displayAqiEurope ?? 0).color}
+					style="--color: {aqiEuropeToLabel(nsWeatherData.displayAqiEurope ?? 0).color}"
 				/>
 				EU AQI:
 				<span>{nsWeatherData.displayAqiEurope}</span>
@@ -144,7 +133,7 @@
 
 		<div>
 			<label>
-				<input type="checkbox" checked style:color="gray" />
+				<input type="checkbox" checked style="--color: gray" />
 			</label>
 			<span use:toggleUnits={{ temperature: true }}>
 				{nsWeatherData.format('daily[2].temperatureMin', false)}
@@ -157,7 +146,7 @@
 
 		<div>
 			<label>
-				<input type="checkbox" style:color={colors.humidity} style:border-color={colors.humidity} />
+				<input type="checkbox" style="--color: {colors.humidity}" />
 				Humidity:
 				<span>{nsWeatherData.displayHumidity}%</span>
 			</label>
@@ -165,12 +154,7 @@
 
 		<div>
 			<label>
-				<input
-					type="checkbox"
-					checked
-					style:color={colors.precipitationProbability}
-					style:border-color={colors.precipitationProbability}
-				/>
+				<input type="checkbox" checked style="--color: {colors.precipitationProbability}" />
 				Chance:
 				<span>{nsWeatherData.displayPrecipitationProbability}%</span>
 			</label>
@@ -181,8 +165,7 @@
 				<input
 					type="checkbox"
 					checked={false}
-					style:color={aqiUsToLabel(nsWeatherData.displayAqiUs ?? 0).color}
-					style:border-color={aqiUsToLabel(nsWeatherData.displayAqiUs ?? 0).color}
+					style="--color: {aqiUsToLabel(nsWeatherData.displayAqiUs ?? 0).color}"
 				/>
 				US AQI:
 				<span>{nsWeatherData.displayAqiUs}</span>
@@ -340,39 +323,6 @@
 		line-height: 1.2;
 	}
 
-	.other-measurements {
-		display: grid;
-		grid-template-columns: 1fr 1fr 1fr 1fr;
-		column-gap: 1em;
-
-		max-width: 40em;
-		width: 100%;
-		margin: auto;
-
-		input.temperature {
-			border: calc(var(--pico-border-radius) / 2) solid transparent;
-			border-radius: var(--pico-border-radius);
-			background-image: linear-gradient(white, white), linear-gradient(20deg, blue 20%, red 85%);
-			background-origin: border-box;
-			background-clip: padding-box, border-box;
-		}
-
-		input[checked].temperature:before {
-			background: linear-gradient(20deg, blue 20%, red 85%);
-			box-shadow: none;
-		}
-	}
-
-	@media (width < 768px) {
-		.other-measurements {
-			grid-template-columns: 1fr 1fr;
-			grid-template-rows: 1fr 1fr 1fr 1fr;
-			grid-auto-flow: column;
-
-			max-width: 20em;
-		}
-	}
-
 	.other-measurements input {
 		margin: 0;
 	}
@@ -398,6 +348,8 @@
 
 		display: inline-grid;
 		place-content: center;
+
+		border-color: var(--color);
 	}
 
 	.other-measurements input[type='checkbox']::before {
@@ -409,7 +361,7 @@
 		transform: scale(0);
 		transition: 200ms transform ease-in-out;
 
-		box-shadow: inset 2em 2em;
+		background: var(--color);
 	}
 
 	.other-measurements input[type='checkbox']:checked::before {
@@ -417,6 +369,38 @@
 	}
 
 	/*************************************************************************************/
+
+	.other-measurements {
+		display: grid;
+		grid-template-columns: 1fr 1fr 1fr 1fr;
+		column-gap: 1em;
+
+		max-width: 40em;
+		width: 100%;
+		margin: auto;
+
+		input[name='temperature'] {
+			border: calc(var(--pico-border-radius) / 2) solid transparent;
+			border-radius: var(--pico-border-radius);
+			background-image: linear-gradient(white, white), linear-gradient(20deg, blue 20%, red 85%);
+			background-origin: padding-box, border-box;
+			background-clip: padding-box, border-box;
+
+			&:global(:checked)::before {
+				background-image: linear-gradient(20deg, blue 20%, red 85%);
+			}
+		}
+	}
+
+	@media (width < 768px) {
+		.other-measurements {
+			grid-template-columns: 1fr 1fr;
+			grid-template-rows: 1fr 1fr 1fr 1fr;
+			grid-auto-flow: column;
+
+			max-width: 20em;
+		}
+	}
 
 	.hourly,
 	.daily {

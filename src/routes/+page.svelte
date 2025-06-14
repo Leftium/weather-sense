@@ -225,8 +225,14 @@
 		</div>
 		{#if forecastDaysVisible < 16}
 			<center class="pico">
-				<button onclick={() => (forecastDaysVisible *= 2)}>View more days</button>
-				<button onclick={() => (forecastDaysVisible = 16)}>All days</button>
+				<div role="group">
+					<button class="outline contrast" onclick={() => (forecastDaysVisible *= 2)}>
+						View more days
+					</button>
+					<button class="outline secondary" onclick={() => (forecastDaysVisible = 16)}>
+						View all days
+					</button>
+				</div>
 			</center>
 		{/if}
 	</div>

@@ -29,6 +29,7 @@
 
 	let { data } = $props();
 
+	let forecastDaysVisible = $state(4);
 	let displayDewPoint = $state(true);
 
 	emit('weatherdata_requestedSetLocation', {
@@ -189,7 +190,8 @@
 			{#each nsWeatherData.daily || [] as day, index}
 				{@const past = day.fromToday < 0}
 				{@const today = day.fromToday === 0}
-				<div class="grid day-label">
+				{@const hidden = day.fromToday > forecastDaysVisible - 1}
+				<div class="grid day-label" {hidden}>
 					<div class="grid icon-date">
 						<img
 							class="icon small"
@@ -211,7 +213,7 @@
 						</div>
 					</div>
 				</div>
-				<div class={['timeline', { today }]}>
+				<div class={['timeline', { today }]} {hidden}>
 					<TimeLine
 						{nsWeatherData}
 						start={day.ms}
@@ -221,9 +223,15 @@
 				</div>
 			{/each}
 		</div>
+		{#if forecastDaysVisible < 16}
+			<center class="pico">
+				<button onclick={() => (forecastDaysVisible *= 2)}>View more days</button>
+				<button onclick={() => (forecastDaysVisible = 16)}>All days</button>
+			</center>
+		{/if}
 	</div>
 
-	<center class="pico">
+	<center class="pico attribution">
 		<div>
 			Weather/AQI/geocoding by <a href="https://open-meteo.com/">Open-Meteo.com</a>
 		</div>
@@ -408,11 +416,14 @@
 		}
 	}
 
-	.hourly,
-	.daily {
+	.hourly {
 		font-family: Lato, sans-serif;
 		margin-top: 0.2em;
 		margin-bottom: 1.5em;
+	}
+
+	.daily {
+		margin-bottom: 0.2em;
 	}
 
 	.daily {
@@ -485,6 +496,10 @@
 
 	.scroll {
 		overflow: auto;
+	}
+
+	.attribution {
+		margin-block: 1.5em;
 	}
 
 	.debug {

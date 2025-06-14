@@ -205,7 +205,7 @@ export const WMO_CODES: Record<number, any> = {
 };
 
 export function wmoCode(code: number | undefined) {
-	if (code !== undefined) {
+	if (code !== undefined && WMO_CODES[code] !== undefined) {
 		return WMO_CODES[code];
 	}
 	return {

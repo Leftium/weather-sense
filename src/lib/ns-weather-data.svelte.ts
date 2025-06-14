@@ -39,8 +39,8 @@ export type WeatherDataEvents = {
 };
 
 const DATEFORMAT_MASK = 'MM-DD hh:mma z';
-const PAST_DAYS = dev ? 2 : 1; // 0 to 92
-const FORECAST_DAYS = dev ? 4 : 9; // 0 to 16 for forecast; 0 to 7 for air-quality;
+const PAST_DAYS = dev ? 92 : 1; // 0 to 92
+const FORECAST_DAYS = dev ? 16 : 9; // 0 to 16 for forecast; 0 to 7 for air-quality;
 
 const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 
@@ -436,48 +436,56 @@ export function makeNsWeatherData() {
 			snowfall: json.current.snowfall,
 		};
 
-		const hourly = json.hourly.time.map((unixtime: number, index: number) => {
-			const ms = unixtime * MS_IN_SECOND;
-			const object: Partial<HourlyForecast> = {
-				msPretty: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),
-				ms,
-			};
+		const hourly = json.hourly.time
+			.map((unixtime: number, index: number) => {
+				const ms = unixtime * MS_IN_SECOND;
+				const object: Partial<HourlyForecast> = {
+					msPretty: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),
+					ms,
+				};
 
-			forEach(hourlyKeys, (keyData: string, keyOpenMeteo: string | number) => {
-				object[keyData as keyof HourlyForecast] = json.hourly[keyOpenMeteo][index];
+				forEach(hourlyKeys, (keyData: string, keyOpenMeteo: string | number) => {
+					object[keyData as keyof HourlyForecast] = json.hourly[keyOpenMeteo][index];
+				});
+
+				return object as HourlyForecast;
+			})
+			.filter((hourlyForecast: HourlyForecast, index: number) => {
+				return hourlyForecast.weatherCode !== null;
 			});
 
-			return object as HourlyForecast;
-		});
+		const daily = json.daily.time
+			.map((unixtime: number, index: number) => {
+				const ms = unixtime * MS_IN_SECOND;
+				const compactDate =
+					index === PAST_DAYS
+						? 'Today'
+						: nsWeatherData.tzFormat(
+								ms,
+								index < PAST_DAYS - 7 || index > PAST_DAYS + 7 ? 'MMM-DD' : 'dd-DD',
+							);
 
-		const daily = map(json.daily.time, (unixtime: number, index: number) => {
-			const ms = unixtime * MS_IN_SECOND;
-			const compactDate =
-				index === PAST_DAYS
-					? 'Today'
-					: nsWeatherData.tzFormat(
-							ms,
-							index < PAST_DAYS - 7 || index > PAST_DAYS + 7 ? 'MMM-DD' : 'dd-DD',
-						);
+				const sunrise = json.daily.sunrise[index] * MS_IN_SECOND;
+				const sunset = json.daily.sunset[index] * MS_IN_SECOND;
 
-			const sunrise = json.daily.sunrise[index] * MS_IN_SECOND;
-			const sunset = json.daily.sunset[index] * MS_IN_SECOND;
+				const object: Partial<DailyForecast> = {
+					msPretty: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),
+					compactDate,
+					ms,
+					fromToday: index - PAST_DAYS,
+					sunrise,
+					sunset,
+				};
 
-			const object: Partial<DailyForecast> = {
-				msPretty: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),
-				compactDate,
-				ms,
-				fromToday: index - PAST_DAYS,
-				sunrise,
-				sunset,
-			};
+				forEach(dailyKeys, (newKey: string, openMeteoKey: string | number) => {
+					object[newKey as keyof DailyForecast] = json.daily[openMeteoKey][index];
+				});
 
-			forEach(dailyKeys, (newKey: string, openMeteoKey: string | number) => {
-				object[newKey as keyof DailyForecast] = json.daily[openMeteoKey][index];
+				return object as DailyForecast;
+			})
+			.filter((dailyForecast: DailyForecast, index: number) => {
+				return dailyForecast.weatherCode !== null;
 			});
-
-			return object as DailyForecast;
-		});
 
 		omForecast = {
 			current,

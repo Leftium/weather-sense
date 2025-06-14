@@ -361,13 +361,15 @@
 			border-color: var(--color);
 
 			&::before {
+				grid-row: 1;
+				grid-column: 1;
 				content: '';
 				width: inherit;
 				height: inherit;
 				border-radius: inherit;
 
 				transform: scale(0);
-				transition: 200ms transform ease-in-out;
+				transition: 500ms transform ease-in-out;
 
 				background: var(--color);
 			}
@@ -382,14 +384,22 @@
 		input[name='temperature'] {
 			--gradient: linear-gradient(20deg, blue 20%, red 85%);
 
-			border: calc(var(--pico-border-radius) / 2) solid transparent;
-			border-radius: var(--pico-border-radius);
-			background-image: linear-gradient(white, white), var(--gradient);
-			background-origin: padding-box, border-box;
-			background-clip: padding-box, border-box;
+			&::before,
+			&::after {
+				grid-row: 1;
+				grid-column: 1;
 
-			&::before {
-				background-image: var(--gradient);
+				content: '';
+				border-radius: inherit;
+				border: calc(var(--pico-border-radius) / 2) solid transparent;
+				background-origin: border-box;
+				background-clip: padding-box, border-box;
+
+				background-image: var(--gradient), var(--gradient);
+			}
+
+			&::after {
+				background-image: linear-gradient(white, white), var(--gradient);
 			}
 		}
 	}

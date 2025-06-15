@@ -29,9 +29,8 @@
 		><a href="/">Back to WeatherSense</a> |
 		<a href="https://blog.leftium.com/2024/07/wmo-codes.html">About this Table</a>
 		|
-		<button {onclick}>Transpose</button></center
+		<button class="outline secondary" {onclick}>Transpose</button></center
 	>
-
 	{#if mode}
 		<div class="grid-container">
 			<div class="wmo-grid">

@@ -130,13 +130,24 @@ export function contrastTextColor(
 	return returnValue.toString({ format: 'hex' });
 }
 
-function makeWmo(
-	picoColor: string,
-	group: string,
-	level: number,
-	description: string,
-	iconName: string,
-) {
+function makeWmo(wsCode: number, picoColor: string, description: string, iconName: string) {
+	const groups = [
+		'clear',
+		'cloudy',
+		'fog',
+		'drizzle',
+		'showers',
+		'rain',
+		'icy-drizzle',
+		'icy-rain',
+		'snow-grains',
+		'snow-showers',
+		'snow',
+		'thunderstorm',
+	];
+
+	const group = groups[Math.floor(wsCode / 10) % 100];
+	const level = wsCode % 10;
 	const color = get(picoColors, picoColor) || get(picoColors, 'yellow.400');
 
 	const icon = `/icons/airy/${iconName}@4x.png`;
@@ -153,6 +164,7 @@ function makeWmo(
 
 	return {
 		description,
+		wsCode,
 		group,
 		level,
 		picoColor,
@@ -163,45 +175,40 @@ function makeWmo(
 	};
 }
 
+// prettier-ignore
 export const WMO_CODES: Record<number, any> = {
-	0: makeWmo('slate.150', 'clear', 2, 'Clear', 'clear'),
-	1: makeWmo('slate.250', 'cloudy', 1, 'Mostly Clear', 'mostly-clear'),
-	2: makeWmo('slate.350', 'cloudy', 2, 'Partly Cloudy', 'partly-cloudy'),
-	3: makeWmo('slate.450', 'cloudy', 3, 'Overcast', 'overcast'),
+	0:  makeWmo(        2, 'slate.150',   'Clear',            'clear'),
+	1:  makeWmo( 1_0_01_1, 'slate.250',   'Mostly Clear',     'mostly-clear'),
+	2:  makeWmo( 2_0_01_2, 'slate.350',   'Partly Cloudy',    'partly-cloudy'),
+	3:  makeWmo( 3_0_01_3, 'slate.450',   'Overcast',         'overcast'),
+	45: makeWmo(45_0_02_1, 'grey.350',    'Fog',              'fog'),
+    48: makeWmo(48_0_02_3, 'grey.550',    'Icy Fog',          'rime-fog'),
 
-	45: makeWmo('grey.350', 'fog', 1, 'Fog', 'fog'),
-	48: makeWmo('grey.550', 'fog', 3, 'Icy Fog', 'rime-fog'),
+	51: makeWmo(51_1_03_1, 'azure.200',   'L.Drizzle',        'light-drizzle'),
+	53: makeWmo(53_1_03_2, 'azure.300',   'Drizzle',          'moderate-drizzle'),
+	55: makeWmo(55_1_03_3, 'azure.400',   'H.Drizzle',        'dense-drizzle'),
+	80: makeWmo(80_1_04_1, 'azure.250',   'L.Showers',        'light-rain'),
+	81: makeWmo(81_1_04_2, 'azure.350',   'Showers',          'moderate-rain'),
+	82: makeWmo(82_1_04_3, 'azure.450',   'H.Showers',        'heavy-rain'),
+	61: makeWmo(61_1_05_1, 'blue.350',    'L.Rain',           'light-rain'),
+	63: makeWmo(63_1_05_2, 'blue.450',    'Rain',             'moderate-rain'),
+    65: makeWmo(65_1_05_3, 'blue.550',    'H.Rain',           'heavy-rain'),
 
-	51: makeWmo('azure.200', 'drizzle', 1, 'L.Drizzle', 'light-drizzle'),
-	53: makeWmo('azure.300', 'drizzle', 2, 'Drizzle', 'moderate-drizzle'),
-	55: makeWmo('azure.400', 'drizzle', 3, 'H.Drizzle', 'dense-drizzle'),
+	56: makeWmo(56_2_06_1, 'indigo.200',  'L.Icy Drizzle',    'light-freezing-drizzle'),
+	57: makeWmo(57_2_06_3, 'indigo.400',  'Icy Drizzle',      'dense-freezing-drizzle'),
+	66: makeWmo(66_2_07_1, 'violet.350',  'L.Icy Rain',       'light-freezing-rain'),
+    67: makeWmo(67_2_07_3, 'violet.550',  'Icy Rain',         'heavy-freezing-rain'),
 
-	80: makeWmo('azure.250', 'showers', 1, 'L.Showers', 'light-rain'),
-	81: makeWmo('azure.350', 'showers', 2, 'Showers', 'moderate-rain'),
-	82: makeWmo('azure.450', 'showers', 3, 'H.Showers', 'heavy-rain'),
+	77: makeWmo(77_3_08_2, 'purple.150',  'Snow Grains',      'snowflake'),
+	85: makeWmo(85_3_09_1, 'purple.250',  'L.Snow Showers',   'slight-snowfall'),
+	86: makeWmo(86_3_09_3, 'purple.450',  'Snow Showers',     'heavy-snowfall'),
+	71: makeWmo(71_3_10_1, 'fuchsia.350', 'L.Snow',           'slight-snowfall'),
+	73: makeWmo(73_3_10_2, 'fuchsia.450', 'Snow',             'moderate-snowfall'),
+    75: makeWmo(75_3_10_3, 'fuchsia.550', 'H.Snow',           'heavy-snowfall'),
 
-	61: makeWmo('blue.350', 'rain', 1, 'L.Rain', 'light-rain'),
-	63: makeWmo('blue.450', 'rain', 2, 'Rain', 'moderate-rain'),
-	65: makeWmo('blue.550', 'rain', 3, 'H.Rain', 'heavy-rain'),
-
-	56: makeWmo('indigo.200', 'icy-drizzle', 1, 'L.Icy Drizzle', 'light-freezing-drizzle'),
-	57: makeWmo('indigo.400', 'icy-drizzle', 3, 'Icy Drizzle', 'dense-freezing-drizzle'),
-
-	66: makeWmo('violet.350', 'icy-rain', 1, 'L.Icy Rain', 'light-freezing-rain'),
-	67: makeWmo('violet.550', 'icy-rain', 3, 'Icy Rain', 'heavy-freezing-rain'),
-
-	77: makeWmo('purple.150', 'snow-grains', 2, 'Snow Grains', 'snowflake'),
-
-	85: makeWmo('purple.250', 'snow-showers', 1, 'L.Snow Showers', 'slight-snowfall'),
-	86: makeWmo('purple.450', 'snow-showers', 3, 'Snow Showers', 'heavy-snowfall'),
-
-	71: makeWmo('fuchsia.350', 'snow', 1, 'L.Snow', 'slight-snowfall'),
-	73: makeWmo('fuchsia.450', 'snow', 2, 'Snow', 'moderate-snowfall'),
-	75: makeWmo('fuchsia.550', 'snow', 3, 'H.Snow', 'heavy-snowfall'),
-
-	95: makeWmo('pink.350', 'thunderstorm', 1, 'Thunder Storm', 'thunderstorm'),
-	96: makeWmo('pink.450', 'thunderstorm', 2, 'T-Storm + L.Hail', 'thunderstorm-with-hail'),
-	99: makeWmo('pink.550', 'thunderstorm', 3, 'T-Storm + Hail', 'thunderstorm-with-hail'),
+	95: makeWmo(95_4_11_1, 'pink.350',    'Thunder Storm',    'thunderstorm'),
+	96: makeWmo(96_4_11_2, 'pink.450',    'T-Storm + L.Hail', 'thunderstorm-with-hail',),
+	99: makeWmo(99_4_11_3, 'pink.550',    'T-Storm + Hail',   'thunderstorm-with-hail'),
 };
 
 export function wmoCode(code: number | undefined) {

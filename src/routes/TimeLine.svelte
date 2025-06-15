@@ -257,53 +257,33 @@
 				counts: Record<number, number>;
 			};
 
-			function consolidatedWeatherCode(code: number) {
-				if ([0, 1, 2, 3].includes(code)) {
-					return 3;
-				}
-				if ([45, 48].includes(code)) {
-					return 48;
-				}
-				if ([51, 53, 55, 80, 81, 82, 61, 63, 65].includes(code)) {
-					return 65;
-				}
-				if ([56, 57, 66, 67].includes(code)) {
-					return 67;
-				}
-				if ([77, 85, 86, 71, 73, 75].includes(code)) {
-					return 75;
-				}
-				if ([95, 96, 99].includes(code)) {
-					return 99;
+			function precipitationGroup(code: number) {
+				if (WMO_CODES[code]?.wsCode !== undefined) {
+					return Math.floor(WMO_CODES[code].wsCode / 1000) % 10;
 				}
 				return -1;
 			}
 
 			function determineNextCode(prevCode: number | undefined, currCode: number) {
 				if (prevCode !== undefined) {
-					const prevCodeConsolidated = consolidatedWeatherCode(prevCode);
-					const currCodeConsolidated = consolidatedWeatherCode(currCode);
-
-					if (prevCodeConsolidated === currCodeConsolidated) {
-						return Math.max(prevCode, currCode);
+					if (precipitationGroup(prevCode) === precipitationGroup(currCode)) {
+						return WMO_CODES[prevCode].wsCode > WMO_CODES[currCode].wsCode ? prevCode : currCode;
 					}
 				}
 				return currCode;
 			}
 
 			const codes = metrics.reduce((accumulator: CodesItem[], current, index, array) => {
-				const currCodeConsolidated = consolidatedWeatherCode(current.weatherCode);
-
 				const prevItem = accumulator.at(-1);
 				const prevCode = prevItem?.weatherCode;
-				const prevCodeConsolidated =
-					prevCode !== undefined ? consolidatedWeatherCode(prevCode) : currCodeConsolidated;
+				const prevPrecipitationGroup =
+					prevCode !== undefined
+						? precipitationGroup(prevCode)
+						: precipitationGroup(current.weatherCode);
 
 				let nextCode = determineNextCode(prevCode, current.weatherCode);
-				const nextCodeConsolidated = consolidatedWeatherCode(nextCode);
-
 				const counts =
-					prevItem !== undefined && prevCodeConsolidated === nextCodeConsolidated
+					prevItem !== undefined && prevPrecipitationGroup === precipitationGroup(nextCode)
 						? prevItem.counts
 						: {};
 				counts[current.weatherCode] = counts[current.weatherCode] || 0;
@@ -313,7 +293,7 @@
 					counts[current.weatherCode] += 1;
 				}
 
-				if (nextCodeConsolidated === 3) {
+				if (precipitationGroup(nextCode) === 0) {
 					nextCode = Number(
 						maxBy(Object.keys(counts), (code) => counts[Number(code)] + Number(code) / 100),
 					);
@@ -345,7 +325,7 @@
 					counts: {},
 				};
 
-				if (prevItem && prevCodeConsolidated === nextCodeConsolidated) {
+				if (prevItem && prevPrecipitationGroup === precipitationGroup(nextCode)) {
 					accumulator[accumulator.length - 1] = {
 						...draftItem,
 						x1: prevItem.x1,

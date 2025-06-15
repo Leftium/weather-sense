@@ -23,6 +23,7 @@
 	import { onDestroy } from 'svelte';
 
 	import { makeNsWeatherData } from '$lib/ns-weather-data.svelte.js';
+	import { slide } from 'svelte/transition';
 
 	const nsWeatherData = makeNsWeatherData();
 	const { emit } = getEmitter<WeatherDataEvents>(import.meta);
@@ -187,11 +188,10 @@
 		</div>
 
 		<div class="daily grid pico">
-			{#each nsWeatherData.daily || [] as day, index}
+			{#each (nsWeatherData.daily || []).filter((day) => day.fromToday < forecastDaysVisible) as day, index}
 				{@const past = day.fromToday < 0}
 				{@const today = day.fromToday === 0}
-				{@const hidden = day.fromToday > forecastDaysVisible - 1}
-				<div class="grid day-label" {hidden}>
+				<div class="grid day-label" transition:slide={{ duration: 1000 }}>
 					<div class="grid icon-date">
 						<img
 							class="icon small"
@@ -213,7 +213,7 @@
 						</div>
 					</div>
 				</div>
-				<div class={['timeline', { today }]} {hidden}>
+				<div class={['timeline', { today }]} transition:slide={{ duration: 1000 }}>
 					<TimeLine
 						{nsWeatherData}
 						start={day.ms}

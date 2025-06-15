@@ -319,6 +319,8 @@
 					);
 				}
 
+				gg(current.msPretty, WMO_CODES[nextCode].description);
+
 				const x1 = current.ms;
 				const x2 = Math.min(current.ms + MS_IN_HOUR + 2 * MS_IN_MINUTE, msEnd);
 
@@ -326,7 +328,7 @@
 
 				const draftItem = {
 					ms: x2,
-					weatherCode: current.weatherCode,
+					weatherCode: nextCode,
 					text: WMO_CODES[nextCode].description,
 					icon: WMO_CODES[nextCode].icon,
 					x1,

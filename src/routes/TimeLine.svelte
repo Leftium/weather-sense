@@ -319,7 +319,7 @@
 					);
 				}
 
-				gg(current.msPretty, WMO_CODES[nextCode].description);
+				// gg(current.msPretty, WMO_CODES[nextCode].description);
 
 				const x1 = current.ms;
 				const x2 = Math.min(current.ms + MS_IN_HOUR + 2 * MS_IN_MINUTE, msEnd);

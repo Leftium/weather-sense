@@ -227,7 +227,7 @@
 			<center class="pico">
 				<div role="group" style:width="initial">
 					<button class="outline contrast" onclick={() => (forecastDaysVisible *= 2)}>
-						View more forecast
+						View more days
 					</button>
 					<button class="outline secondary" onclick={() => (forecastDaysVisible = 16)}>
 						Full forecast

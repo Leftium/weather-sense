@@ -1,5 +1,11 @@
 <script lang="ts">
-	import { MapLibre, NavigationControl, ScaleControl, GlobeControl } from 'svelte-maplibre-gl';
+	import {
+		MapLibre,
+		NavigationControl,
+		ScaleControl,
+		GlobeControl,
+		FullScreenControl,
+	} from 'svelte-maplibre-gl';
 
 	import type { RadarFrame, RadarLayer } from '$lib/types.js';
 	import type { NsWeatherData, WeatherDataEvents } from '$lib/ns-weather-data.svelte.js';
@@ -301,9 +307,11 @@
 	zoom={10}
 	center={{ lng: nsWeatherData.coords?.longitude || 0, lat: nsWeatherData.coords?.latitude || 0 }}
 >
-	<NavigationControl />
-	<ScaleControl />
+	<FullScreenControl />
 	<GlobeControl />
+
+	<ScaleControl />
+	<NavigationControl position="bottom-right" />
 </MapLibre>
 
 <style>

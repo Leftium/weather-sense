@@ -6,6 +6,7 @@
 		GlobeControl,
 		FullScreenControl,
 		AttributionControl,
+		GeolocateControl,
 	} from 'svelte-maplibre-gl';
 
 	import type { RadarFrame, RadarLayer } from '$lib/types.js';
@@ -314,6 +315,7 @@
 	<GlobeControl />
 
 	<ScaleControl />
+	<GeolocateControl position="bottom-right" />
 	<NavigationControl position="bottom-right" />
 </MapLibre>
 

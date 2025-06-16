@@ -69,8 +69,34 @@ export function humanDistance(n: number | undefined) {
 	return `${Math.floor(n)}${units}`;
 }
 
+const colorWhite = new Color('white');
+const colorBlack = new Color('#333');
+
+export function contrastTextColor(
+	color: any,
+	shadow: boolean = false,
+	color1: string | Color = colorWhite,
+	color2: string | Color = colorBlack,
+) {
+	if (!color) {
+		return 'red';
+	}
+
+	const colorBackground = new Color(color);
+	const colorA = new Color(color1);
+	const colorB = new Color(color2);
+
+	const needsDarkText =
+		shadow ===
+		Math.abs(colorBackground.contrastAPCA(colorA)) < Math.abs(colorBackground.contrastAPCA(colorB));
+
+	const returnValue = needsDarkText ? colorA : colorB;
+	return returnValue.toString({ format: 'hex' });
+}
+
 function makeAqiLabel(text: string, color: string) {
-	return { text, color };
+	const textColor = contrastTextColor(color);
+	return { text, color, textColor };
 }
 
 export const AQI_INDEX_US = [
@@ -109,31 +135,6 @@ export function aqiEuropeToLabel(aqi: number | null) {
 	}
 	const index = Math.min(Math.floor(aqi / 20), 5);
 	return AQI_INDEX_EUROPE[index];
-}
-
-const colorWhite = new Color('white');
-const colorBlack = new Color('#333');
-
-export function contrastTextColor(
-	color: any,
-	shadow: boolean = false,
-	color1: string | Color = colorWhite,
-	color2: string | Color = colorBlack,
-) {
-	if (!color) {
-		return 'red';
-	}
-
-	const colorBackground = new Color(color);
-	const colorA = new Color(color1);
-	const colorB = new Color(color2);
-
-	const needsDarkText =
-		shadow ===
-		Math.abs(colorBackground.contrastAPCA(colorA)) < Math.abs(colorBackground.contrastAPCA(colorB));
-
-	const returnValue = needsDarkText ? colorA : colorB;
-	return returnValue.toString({ format: 'hex' });
 }
 
 function makeWmo(wsCode: number, picoColor: string, description: string, iconName: string) {

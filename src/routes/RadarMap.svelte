@@ -65,7 +65,7 @@
 			},
 		});
 
-		if (mapStyle === 'openstreetmap') {
+		if (true || mapStyle === 'openstreetmap') {
 			new TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
 				className: 'bw',
 				attribution:

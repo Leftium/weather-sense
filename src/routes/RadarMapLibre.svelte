@@ -5,6 +5,7 @@
 		ScaleControl,
 		GlobeControl,
 		FullScreenControl,
+		AttributionControl,
 	} from 'svelte-maplibre-gl';
 
 	import type { RadarFrame, RadarLayer } from '$lib/types.js';
@@ -306,7 +307,9 @@
 	style="https://tiles.openfreemap.org/styles/positron"
 	zoom={10}
 	center={{ lng: nsWeatherData.coords?.longitude || 0, lat: nsWeatherData.coords?.latitude || 0 }}
+	attributionControl={false}
 >
+	<AttributionControl position="top-left" />
 	<FullScreenControl />
 	<GlobeControl />
 

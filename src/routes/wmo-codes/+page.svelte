@@ -310,6 +310,8 @@
 				height: 2em;
 				text-align: center;
 				margin-top: 2em;
+
+				color: white;
 			}
 
 			.divider-0 {

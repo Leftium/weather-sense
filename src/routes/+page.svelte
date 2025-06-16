@@ -17,6 +17,7 @@
 		aqiEuropeToLabel,
 	} from '$lib/util.js';
 	import RadarMap from './RadarMap.svelte';
+	import RadarMapLibre from './RadarMapLibre.svelte';
 
 	import { clearEvents, getEmitter } from '$lib/emitter.js';
 	import { dev } from '$app/environment';
@@ -182,6 +183,10 @@
 		<div class="hourly pico">
 			<b>Next 24 hours</b>
 			<TimeLine {nsWeatherData} start={Date.now() - 2 * MS_IN_HOUR} />
+		</div>
+
+		<div class="map">
+			<RadarMapLibre {nsWeatherData} mapStyle={data.mapStyle} />
 		</div>
 
 		<div class="map">

@@ -126,7 +126,7 @@
 				<input
 					type="checkbox"
 					checked
-					style="--color: {aqiEuropeToLabel(nsWeatherData.displayAqiEurope ?? 0).color}"
+					style="--color: {aqiEuropeToLabel(nsWeatherData.displayAqiEurope ?? null).color}"
 				/>
 				EU AQI:
 				<span>{nsWeatherData.displayAqiEurope}</span>
@@ -167,7 +167,7 @@
 				<input
 					type="checkbox"
 					checked={false}
-					style="--color: {aqiUsToLabel(nsWeatherData.displayAqiUs ?? 0).color}"
+					style="--color: {aqiUsToLabel(nsWeatherData.displayAqiUs ?? null).color}"
 				/>
 				US AQI:
 				<span>{nsWeatherData.displayAqiUs}</span>

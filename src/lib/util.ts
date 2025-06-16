@@ -94,15 +94,21 @@ export const AQI_INDEX_EUROPE = [
 const NO_DATA_LABEL = makeAqiLabel('No Data', picoColors.grey[300]);
 
 // Ranges from 0-50 (good), 51-100 (moderate), 101-150 (unhealthy for sensitive groups), 151-200 (unhealthy), 201-300 (very unhealthy) and 301-500 (hazardous).
-export function aqiUsToLabel(aqi: number) {
+export function aqiUsToLabel(aqi: number | null) {
+	if (aqi === null) {
+		return NO_DATA_LABEL;
+	}
 	const index = aqi > 300 ? 5 : aqi > 200 ? 4 : aqi > 151 ? 3 : aqi > 100 ? 2 : aqi > 50 ? 1 : 0;
-	return aqi === null ? NO_DATA_LABEL : AQI_INDEX_US[index];
+	return AQI_INDEX_US[index];
 }
 
 // Ranges from 0-20 (good), 20-40 (fair), 40-60 (moderate), 60-80 (poor), 80-100 (very poor) and exceeds 100 for extremely poor conditions.
-export function aqiEuropeToLabel(aqi: number) {
+export function aqiEuropeToLabel(aqi: number | null) {
+	if (aqi === null) {
+		return NO_DATA_LABEL;
+	}
 	const index = Math.min(Math.floor(aqi / 20), 5);
-	return aqi === null ? NO_DATA_LABEL : AQI_INDEX_EUROPE[index];
+	return AQI_INDEX_EUROPE[index];
 }
 
 const colorWhite = new Color('white');

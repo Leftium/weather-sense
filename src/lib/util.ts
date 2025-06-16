@@ -94,29 +94,60 @@ export function contrastTextColor(
 	return returnValue.toString({ format: 'hex' });
 }
 
-function makeAqiLabel(text: string, color: string, range: string, description: string = '') {
+function makeAqiLabel(text: string, color: string, range: string = '', description: string = '') {
 	const textColor = contrastTextColor(color);
-	return { text, color, textColor, range };
+	return { text, color, textColor, range, description };
 }
 
 // prettier-ignore
 export const AQI_INDEX_US = [
-	makeAqiLabel('Good',                           picoColors.green[150],     '0-50'),
-	makeAqiLabel('Moderate',                       picoColors.yellow[100],   '51-100'),
-	makeAqiLabel('Unhealthy for Sensitive Groups', picoColors.pumpkin[300], '101-150'),
-	makeAqiLabel('Unhealthy',                      picoColors.red[450],     '151-200'),
-	makeAqiLabel('Very Unhealthy',                 picoColors.purple[650],  '201-300'),
-	makeAqiLabel('Hazardous',                      picoColors.pink[650],    '300-500'),
+	makeAqiLabel('Good',                           picoColors.green[150],     '0-50',
+		`Air quality is considered satisfactory, and air pollution poses little or no risk.<br><br>
+        It's a great day to be active outside.`,
+	),
+	makeAqiLabel('Moderate',                       picoColors.yellow[100],   '51-100',
+		`Air quality is acceptable; however, for some pollutants there may be a moderate health concern
+        for a very small number of people who are unusually sensitive to air pollution.<br><br>
+        It's a good day to be active outside.`,
+	),
+	makeAqiLabel('Unhealthy for Sensitive Groups', picoColors.pumpkin[300], '101-150',
+		`Members of sensitive groups may experience health effects. The general public is not likely to be affected.<br><br>
+        It's OK to be active outside, but take more breaks and do less intense activities.`,
+	),
+	makeAqiLabel('Unhealthy',                      picoColors.red[450],     '151-200',
+		`Everyone may begin to experience health effects; members of sensitive groups may experience more serious health effects.<br><br>
+        Reduce prolonged or heavy exertion. Take more breaks during all outdoor activities.`,
+	),
+	makeAqiLabel('Very Unhealthy',                 picoColors.purple[650],  '201-300',
+		`Health alert: everyone may experience more serious health effects.<br><br>
+        Avoid prolonged or heavy exertion. Consider moving activities indoors or rescheduling to a time when air quality is better.`,
+	),
+	makeAqiLabel('Hazardous',                      picoColors.pink[650],    '300-500',
+		`Health warnings of emergency conditions. The entire population is more likely to be affected.<br><br>
+        Avoid all physical activity outdoors.`,
+	),
 ];
 
 // prettier-ignore
 export const AQI_INDEX_EUROPE = [
-	makeAqiLabel('Good',           picoColors.cyan[150],     '0-20'),
-	makeAqiLabel('Fair',           picoColors.cyan[250],    '21-40'),
-	makeAqiLabel('Moderate',       picoColors.yellow[150],  '41-60'),
-	makeAqiLabel('Poor',           picoColors.red[400],     '61-80'),
-	makeAqiLabel('Very Poor',      picoColors.purple[650],  '81-100'),
-	makeAqiLabel('Extremely Poor', picoColors.pink[650],   '100+'),
+	makeAqiLabel('Good',           picoColors.cyan[150],     '0-20',
+        `The air quality is good. Enjoy your usual outdoor activities.`
+    ),
+	makeAqiLabel('Fair',           picoColors.cyan[250],    '21-40',
+        `Enjoy your usual outdoor activities.`
+    ),
+	makeAqiLabel('Moderate',       picoColors.yellow[150],  '41-60',
+        `Enjoy your usual outdoor activities`
+    ),
+	makeAqiLabel('Poor',           picoColors.red[400],     '61-80',
+        `Consider reducing intense activities outdoors, if you experience symptoms such as sore eyes, a cough or sore throat.`
+    ),
+	makeAqiLabel('Very Poor',      picoColors.purple[650],  '81-100',
+        `Consider reducing intense activities outdoors, if you experience symptoms such as sore eyes, a cough or sore throat.`
+    ),
+	makeAqiLabel('Extremely Poor', picoColors.pink[650],   '100+',
+        `Reduce physical activities outdoors.`
+    ),
 ];
 
 const NO_DATA_LABEL = makeAqiLabel('No Data', picoColors.grey[300]);

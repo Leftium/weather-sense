@@ -94,27 +94,29 @@ export function contrastTextColor(
 	return returnValue.toString({ format: 'hex' });
 }
 
-function makeAqiLabel(text: string, color: string) {
+function makeAqiLabel(text: string, color: string, range: string, description: string = '') {
 	const textColor = contrastTextColor(color);
-	return { text, color, textColor };
+	return { text, color, textColor, range };
 }
 
+// prettier-ignore
 export const AQI_INDEX_US = [
-	makeAqiLabel('Good', '#859900'),
-	makeAqiLabel('Moderate', '#b58900'),
-	makeAqiLabel('Unhealthy for Sensitive Groups', '#cb4b16'),
-	makeAqiLabel('Unhealthy', '#dc322f'),
-	makeAqiLabel('Very unhealthy', '#d33682'),
-	makeAqiLabel('Hazardous', '#6c71c4'),
+	makeAqiLabel('Good',                           picoColors.green[150],     '0-50'),
+	makeAqiLabel('Moderate',                       picoColors.yellow[100],   '51-100'),
+	makeAqiLabel('Unhealthy for Sensitive Groups', picoColors.pumpkin[300], '101-150'),
+	makeAqiLabel('Unhealthy',                      picoColors.red[450],     '151-200'),
+	makeAqiLabel('Very Unhealthy',                 picoColors.purple[650],  '201-300'),
+	makeAqiLabel('Hazardous',                      picoColors.pink[650],    '300-500'),
 ];
 
+// prettier-ignore
 export const AQI_INDEX_EUROPE = [
-	makeAqiLabel('Good', '#2aa198'),
-	makeAqiLabel('Fair', '#859900'),
-	makeAqiLabel('Moderate', '#b58900'),
-	makeAqiLabel('Poor', '#dc322f'),
-	makeAqiLabel('Very Poor', '#d33682'),
-	makeAqiLabel('Extremely Poor', '#6c71c4'),
+	makeAqiLabel('Good',           picoColors.cyan[150],     '0-20'),
+	makeAqiLabel('Fair',           picoColors.cyan[250],    '21-40'),
+	makeAqiLabel('Moderate',       picoColors.yellow[150],  '41-60'),
+	makeAqiLabel('Poor',           picoColors.red[400],     '61-80'),
+	makeAqiLabel('Very Poor',      picoColors.purple[650],  '81-100'),
+	makeAqiLabel('Extremely Poor', picoColors.pink[650],   '100+'),
 ];
 
 const NO_DATA_LABEL = makeAqiLabel('No Data', picoColors.grey[300]);

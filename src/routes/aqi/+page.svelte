@@ -7,6 +7,24 @@
 		<a href="/">Back to WeatherSense</a>
 	</center>
 
+	<article>
+		{#each AQI_INDEX_EUROPE as aqiLevel}
+			<div style:background-color={aqiLevel.color}>
+				<span style:color={aqiLevel.textColor}>{aqiLevel.range}</span>
+				<span style:color={aqiLevel.textColor}>{aqiLevel.text}</span>
+			</div>
+		{/each}
+	</article>
+
+	<article>
+		{#each AQI_INDEX_US as aqiLevel}
+			<div style:background-color={aqiLevel.color}>
+				<span style:color={aqiLevel.textColor}>{aqiLevel.range}</span>
+				<span style:color={aqiLevel.textColor}>{aqiLevel.text}</span>
+			</div>
+		{/each}
+	</article>
+
 	<pre>AQI_INDEX_EUROPE = {JSON.stringify(AQI_INDEX_EUROPE, null, 4)}
         // Ranges from 0-20 (good), 20-40 (fair), 40-60 (moderate), 60-80 (poor), 80-100 (very poor) and exceeds 100 for extremely poor conditions.
     </pre>

@@ -189,6 +189,8 @@
 
 				text-align: center;
 				margin-left: 1em;
+
+				color: white;
 			}
 
 			.divider-0 {

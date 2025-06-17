@@ -308,22 +308,42 @@
 		}
 	});
 
-	const center = [nsWeatherData.coords?.longitude || 0, nsWeatherData.coords?.latitude || 0];
+	const lng = $derived(nsWeatherData.coords?.longitude || 0);
+	const lat = $derived(nsWeatherData.coords?.latitude || 0);
+
+	const center = $derived([lng, lat]);
 	const radiusKm = 10;
 
-	const circleFeatures = [...Array(10).keys()].map((n) =>
-		circle(center, (n + 1) * radiusKm, {
-			steps: 64,
-			units: 'kilometers',
-		}),
+	const circleFeatures = $derived(
+		[...Array(10).keys()].map((n) =>
+			circle(center, (n + 1) * radiusKm, {
+				steps: 64,
+				units: 'kilometers',
+			}),
+		),
 	);
 
-	const geojson = featureCollection(circleFeatures);
+	const geojson = $derived(featureCollection(circleFeatures));
 
 	const linePaint = {
 		'line-color': 'rgba(0, 0, 0, 20%)',
 		'line-width': 3,
 	};
+
+	function ongeolocate(event: { coords: { longitude: any; latitude: any; accuracy: any } }) {
+		const { longitude, latitude, accuracy } = event.coords;
+
+		// TODO: Don't emit events when new coords are too close.
+
+		emit('weatherdata_requestedSetLocation', {
+			source: 'geolocation',
+			coords: {
+				latitude,
+				longitude,
+				accuracy,
+			},
+		});
+	}
 </script>
 
 <MapLibre
@@ -334,7 +354,6 @@
 	attributionControl={false}
 >
 	<GeoJSONSource id="circleSource" data={geojson} />
-
 	<RawLayer id="circleOutline" type="line" source="circleSource" paint={linePaint} />
 
 	<AttributionControl position="top-left" />
@@ -347,6 +366,7 @@
 		fitBoundsOptions={{
 			maxZoom: 9, // Customize your zoom level here
 		}}
+		{ongeolocate}
 	/>
 	<NavigationControl position="bottom-right" />
 </MapLibre>

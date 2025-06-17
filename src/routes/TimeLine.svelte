@@ -29,8 +29,6 @@
 		MS_IN_DAY,
 		MS_IN_HOUR,
 		MS_IN_MINUTE,
-		SOLARIZED_BLUE,
-		SOLARIZED_RED,
 		startOf,
 		WMO_CODES,
 	} from '$lib/util';

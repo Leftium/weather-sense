@@ -5,7 +5,7 @@
 	import 'iconify-icon';
 	import haversine from 'haversine-distance';
 
-	import type { Control, Map } from 'leaflet';
+	///import type { Control, Map } from 'leaflet';
 
 	import { mount, onDestroy, onMount, tick, unmount, untrack } from 'svelte';
 
@@ -15,8 +15,8 @@
 	import { MS_IN_SECOND } from '$lib/util';
 
 	let mapElement: HTMLDivElement;
-	let map: Map | null = null;
-	let locateControl: Control.Locate;
+
+	///let locateControl: Control.Locate;
 	let radarTimelineControl: RadarTimeline;
 	let animationFrameId: number;
 
@@ -37,33 +37,26 @@
 		return Math.floor(15 * fractionPlayed) || 12;
 	});
 
+	import pkg from 'maplibre-gl';
+	const { Map } = pkg;
+	let map;
 	onMount(async () => {
-		emit('weatherdata_requestedFetchRainviewerData');
-
-		const { Map, TileLayer, Circle, Control, DomUtil, DomEvent } = await import('leaflet');
-		const { GestureHandling } = await import('leaflet-gesture-handling');
-		const { LocateControl } = await import('leaflet.locatecontrol');
-		await import('leaflet.fullscreen');
-
 		const lat = nsWeatherData.coords?.latitude || 0;
 		const lon = nsWeatherData.coords?.longitude || 0;
 		const accuracy = nsWeatherData.coords?.accuracy || 0;
 
-		Map.addInitHook('addHandler', 'gestureHandling', GestureHandling);
+		emit('weatherdata_requestedFetchRainviewerData');
 
-		let map = new Map(mapElement, {
-			center: [lat, lon],
-			zoom: 10,
-			zoomControl: false,
-			attributionControl: false,
-			// @ts-expect-error: added by leaflet-gesture-handling
-			gestureHandling: false,
-			fullscreenControl: true,
-			forceSeparateButton: true,
-			fullscreenControlOptions: {
-				position: 'topright',
-			},
+		map = new Map({
+			container: mapElement,
+			style: 'https://tiles.openfreemap.org/styles/positron',
+			center: [lon, lat],
+			zoom: 9,
 		});
+
+		{
+			/*
+		Map.addInitHook('addHandler', 'gestureHandling', GestureHandling);
 
 		if (true || mapStyle === 'openstreetmap') {
 			new TileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -272,6 +265,8 @@
 		}
 
 		animationFrameId = requestAnimationFrame(step);
+        */
+		}
 	});
 
 	onDestroy(() => {

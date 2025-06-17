@@ -91,13 +91,13 @@
 		});
 
 		map
-			.addControl(new maplibregl.AttributionControl({}), 'top-left')
+			.addControl(new maplibregl.AttributionControl({}), 'bottom-left')
 			.addControl(new maplibregl.FullscreenControl({ container: mainElement }))
-			.addControl(new maplibregl.GlobeControl())
+			.addControl(new maplibregl.GlobeControl(), 'top-left')
 			.addControl(new maplibregl.NavigationControl(), 'bottom-right')
 			.addControl(new maplibregl.ScaleControl({ unit: 'imperial' }))
 			.addControl(new maplibregl.ScaleControl())
-			.addControl(geolocateControl, 'bottom-right');
+			.addControl(geolocateControl, 'top-right');
 
 		map.on('load', () => {
 			map.addSource('circles', { type: 'geojson', data: makeCircleFeaturesCollection([lon, lat]) });

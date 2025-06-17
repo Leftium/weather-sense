@@ -186,10 +186,10 @@
 		</div>
 
 		<div class="map">
-			<RadarMapLibre {nsWeatherData} mapStyle={data.mapStyle} />
+			<RadarMapLibre {nsWeatherData} />
 		</div>
 
-		<div class="map">
+		<div class="map" hidden>
 			<RadarMap {nsWeatherData} mapStyle={data.mapStyle} />
 		</div>
 
@@ -499,7 +499,7 @@
 	}
 
 	.map {
-		height: 320px;
+		height: 368px;
 	}
 
 	.container {

@@ -9,7 +9,7 @@
 	import { MS_IN_MINUTE, MS_IN_SECOND } from './util';
 
 	let {
-		radarLayers,
+		radarLayers = $bindable(),
 		nsWeatherData,
 	}: { radarLayers: Record<string, RadarLayer>; nsWeatherData: NsWeatherData } = $props();
 
@@ -66,13 +66,12 @@
 	</div>
 
 	<div role="none" class="play-pause" {onclick}>
-		{#if nsWeatherData.radarPlaying}
-			<iconify-icon icon="solar:pause-bold" width="2em" height="2em" style="color: black"
-			></iconify-icon>
-		{:else}
-			<iconify-icon icon="solar:play-bold" width="2em" height="2em" style="color: black"
-			></iconify-icon>
-		{/if}
+		<iconify-icon
+			icon={`solar:${nsWeatherData.radarPlaying ? 'play' : 'pause'}-bold`}
+			width="1.5em"
+			height="1.5em"
+			style="color: black"
+		></iconify-icon>
 	</div>
 </div>
 
@@ -80,7 +79,10 @@
 	.pico {
 		display: flex;
 		align-items: center;
-		line-height: 1;
+		padding: 0.125em;
+		height: 2.5em;
+
+		background-color: whitesmoke;
 	}
 
 	.play-pause {

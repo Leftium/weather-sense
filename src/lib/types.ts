@@ -21,9 +21,19 @@ export type Radar = {
 	msEnd?: number;
 };
 
-export type RadarLayer = {
-	index: number;
-	ms: number;
-	loaded: boolean;
-	tileLayer: TileLayer;
-};
+export type RadarLayer =
+	| {
+			__brand: 'RadarMap';
+			index: number;
+			ms: number;
+			loaded: boolean;
+			tileLayer: TileLayer;
+	  }
+	| {
+			__brand: 'RadarMapLibre';
+			index: number;
+			ms: number;
+			loaded: boolean;
+			layerId: string;
+			sourceId: string;
+	  };

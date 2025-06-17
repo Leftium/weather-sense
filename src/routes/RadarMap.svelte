@@ -27,7 +27,7 @@
 
 	const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 
-	let radarLayers: Record<string, RadarLayer> = $state({});
+	let radarLayers: Record<string, RadarLayer & { __brand: 'RadarMap' }> = $state({});
 
 	let radarFrameIndex = $derived.by(() => {
 		const fractionPlayed =
@@ -155,7 +155,7 @@
 					ms: frame.ms,
 					loaded: false,
 					tileLayer,
-				};
+				} as RadarLayer & { __brand: 'RadarMap' };
 
 				//tileLayer.on('loading', startLoadingTile);
 				tileLayer.on('load', () => {

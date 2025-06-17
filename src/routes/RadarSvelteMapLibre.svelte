@@ -1,4 +1,20 @@
 <script lang="ts">
+	import {
+		MapLibre,
+		NavigationControl,
+		ScaleControl,
+		GlobeControl,
+		FullScreenControl,
+		AttributionControl,
+		GeolocateControl,
+		GeoJSONSource,
+		CircleLayer,
+		RawLayer,
+	} from 'svelte-maplibre-gl';
+
+	import { circle } from '@turf/circle';
+	import { featureCollection } from '@turf/helpers';
+
 	import type { RadarFrame, RadarLayer } from '$lib/types.js';
 	import type { NsWeatherData, WeatherDataEvents } from '$lib/ns-weather-data.svelte.js';
 
@@ -48,6 +64,9 @@
 		const lat = nsWeatherData.coords?.latitude || 0;
 		const lon = nsWeatherData.coords?.longitude || 0;
 		const accuracy = nsWeatherData.coords?.accuracy || 0;
+
+		/*
+
 
 		Map.addInitHook('addHandler', 'gestureHandling', GestureHandling);
 
@@ -272,6 +291,7 @@
 		}
 
 		animationFrameId = requestAnimationFrame(step);
+        */
 	});
 
 	onDestroy(() => {
@@ -287,11 +307,87 @@
 			cancelAnimationFrame(animationFrameId);
 		}
 	});
+
+	const lng = $derived(nsWeatherData.coords?.longitude || 0);
+	const lat = $derived(nsWeatherData.coords?.latitude || 0);
+
+	const center = $derived([lng, lat]);
+	const radiusKm = 10;
+
+	const circleFeatures = $derived(
+		[...Array(10).keys()].map((n) =>
+			circle(center, (n + 1) * radiusKm, {
+				steps: 64,
+				units: 'kilometers',
+			}),
+		),
+	);
+
+	const geojson = $derived(featureCollection(circleFeatures));
+
+	const linePaint = {
+		'line-color': 'rgba(0, 0, 0, 20%)',
+		'line-width': 3,
+	};
+
+	function handleMapLoad(event: { detail: { map: Map } }) {
+		gg({ map });
+		map = event.detail.map;
+	}
+
+	function ongeolocate(event: { coords: { longitude: any; latitude: any; accuracy: any } }) {
+		const { longitude, latitude, accuracy } = event.coords;
+
+		// TODO: Don't emit events when new coords are too close.
+
+		emit('weatherdata_requestedSetLocation', {
+			source: 'geolocation',
+			coords: {
+				latitude,
+				longitude,
+				accuracy,
+			},
+		});
+	}
+
+	let mapComponent = $state<MapLibre>();
 </script>
 
-<div bind:this={mapElement} style:height="100%"></div>
+<MapLibre
+	bind:this={mapComponent}
+	on:load={() => {
+		map = mapComponent.getMap();
+		gg({ map });
+	}}
+	class="map-libre"
+	style="https://tiles.openfreemap.org/styles/positron"
+	zoom={9}
+	center={{ lng: nsWeatherData.coords?.longitude || 0, lat: nsWeatherData.coords?.latitude || 0 }}
+	attributionControl={false}
+>
+	<GeoJSONSource id="circleSource" data={geojson} />
+	<RawLayer id="circleOutline" type="line" source="circleSource" paint={linePaint} />
+
+	<AttributionControl position="top-left" />
+	<FullScreenControl />
+	<GlobeControl />
+
+	<ScaleControl />
+	<GeolocateControl
+		position="bottom-right"
+		fitBoundsOptions={{
+			maxZoom: 9, // Customize your zoom level here
+		}}
+		{ongeolocate}
+	/>
+	<NavigationControl position="bottom-right" />
+</MapLibre>
 
 <style>
+	:global(.map-libre) {
+		height: 100%;
+	}
+
 	div :global(.leaflet-footer) {
 		/* Stick to bottom of map: */
 		position: absolute;

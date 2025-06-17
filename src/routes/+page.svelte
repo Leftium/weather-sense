@@ -521,7 +521,7 @@
 
 	@media (max-width: 768px) {
 		.map {
-			height: 240px;
+			height: 290px;
 		}
 	}
 

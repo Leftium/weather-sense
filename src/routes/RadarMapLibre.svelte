@@ -15,6 +15,7 @@
 	import { getEmitter } from '$lib/emitter.js';
 	import RadarTimeline from '$lib/RadarTimeline.svelte';
 	import { dev } from '$app/environment';
+	import { clamp } from 'lodash-es';
 
 	let mainElement: HTMLElement;
 	let mapElement: HTMLDivElement;
@@ -32,7 +33,7 @@
 			(nsWeatherData.ms - nsWeatherData.radar.frames[0]?.ms) /
 			(nsWeatherData.radar.frames[15]?.ms - nsWeatherData.radar.frames[0]?.ms);
 
-		return Math.min(15, Math.floor(15 * fractionPlayed));
+		return clamp(0, Math.floor(15 * fractionPlayed), 15);
 	});
 
 	function makeCircleFeaturesCollection(center: [number, number]) {

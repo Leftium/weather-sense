@@ -14,6 +14,7 @@
 	import { gg } from '$lib/gg.js';
 	import { getEmitter } from '$lib/emitter.js';
 	import RadarTimeline from '$lib/RadarTimeline.svelte';
+	import { dev } from '$app/environment';
 
 	let mainElement: HTMLElement;
 	let mapElement: HTMLDivElement;
@@ -57,7 +58,7 @@
 			container: mapElement,
 			style: 'https://tiles.openfreemap.org/styles/positron',
 			center: [lon, lat],
-			zoom: 5,
+			zoom: dev ? 5 : 9,
 			attributionControl: false,
 		});
 
@@ -66,7 +67,7 @@
 				enableHighAccuracy: true,
 			},
 			fitBoundsOptions: {
-				maxZoom: 5,
+				maxZoom: dev ? 5 : 9,
 			},
 		});
 

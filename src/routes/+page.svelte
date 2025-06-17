@@ -199,7 +199,8 @@
 				{nsWeatherData}
 				start={nsWeatherData.daily?.[0]?.ms}
 				hours={24 * 9}
-				xAxis={true}
+				xAxis={false}
+				height={104}
 				ghostTracker={true}
 			/>
 		</div>
@@ -286,7 +287,8 @@
 	@use 'open-props-scss' as *;
 
 	.dayline {
-		margin-block: 2em;
+		margin-block: 1em;
+		height: calc(104px + $size-3);
 	}
 
 	.sticky-info {

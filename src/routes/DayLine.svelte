@@ -40,12 +40,14 @@
 		start = Date.now(),
 		hours = 24,
 		xAxis = true,
+		height = 64,
 		ghostTracker = false,
 	}: {
 		nsWeatherData: NsWeatherData;
 		start?: number;
 		hours?: number;
 		xAxis?: boolean;
+		height?: number;
 		ghostTracker?: boolean;
 	} = $props();
 
@@ -62,13 +64,13 @@
 	const draw: Record<string, boolean | string> = {
 		weatherCode: true, // true, 'icon', 'text', 'color'
 		humidity: false,
-		precipitationProbability: true,
-		precipitation: true,
-		dewPoint: true,
-		temperature: true,
-		solarEvents: true,
+		precipitationProbability: false,
+		precipitation: false,
+		dewPoint: false,
+		temperature: false,
+		solarEvents: false,
 		aqiEurope: true,
-		aqiUs: false,
+		aqiUs: true,
 	};
 
 	const msStart = $derived(+dayjs.tz(start, nsWeatherData.timezone).startOf('hour'));
@@ -506,12 +508,12 @@
 	const curve = 'catmull-rom';
 	const plotOptions = $derived({
 		width: clientWidth,
-		height: xAxis ? 104 : 64,
+		height,
 		marginRight: MARGIN_RIGHT,
 		marginLeft: MARGIN_LEFT,
 		marginTop: 0,
 		marginBottom: 0,
-		y: { axis: null, domain: [yDomainTop, yDomainBottom], range: [0, xAxis ? 104 : 64] },
+		y: { axis: null, domain: [yDomainTop, yDomainBottom], range: [0, height] },
 		x: {
 			type: 'utc',
 			axis: xAxis ? true : null,

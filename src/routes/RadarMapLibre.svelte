@@ -67,9 +67,6 @@
 			positionOptions: {
 				enableHighAccuracy: true,
 			},
-			fitBoundsOptions: {
-				maxZoom: dev ? 5 : 10,
-			},
 		});
 
 		geolocateControl.on('geolocate', (event) => {
@@ -89,6 +86,12 @@
 				const source = map.getSource('circles') as maplibregl.GeoJSONSource;
 				source.setData(makeCircleFeaturesCollection([longitude, latitude]));
 			}
+
+			map.flyTo({
+				center: [longitude, latitude],
+				zoom: dev ? 5 : 10, // Fixed zoom that's globe-appropriate
+				duration: 0,
+			});
 		});
 
 		map
@@ -111,6 +114,11 @@
 					'line-width': 3,
 				},
 			});
+		});
+
+		// Start in globe projection:
+		map.on('style.load', () => {
+			map.setProjection({ type: 'globe' });
 		});
 
 		////Map.addInitHook('addHandler', 'gestureHandling', GestureHandling);

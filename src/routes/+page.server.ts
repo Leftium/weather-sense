@@ -5,10 +5,10 @@ export const load = async (loadEvent) => {
 	const { headers } = loadEvent.request;
 
 	let source = 'hardcoded';
-	let name = 'Bupyeong-gu, KR';
+	let name = 'St Paul, MN';
 	let coords = {
-		latitude: 37.5087,
-		longitude: 126.7219,
+		latitude: 44.9478656,
+		longitude: -93.1856384,
 		accuracy: 0,
 	};
 

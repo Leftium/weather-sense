@@ -67,7 +67,7 @@
 
 	<div role="none" class="play-pause" {onclick}>
 		<iconify-icon
-			icon={`solar:${nsWeatherData.radarPlaying ? 'play' : 'pause'}-bold`}
+			icon={`solar:${nsWeatherData.radarPlaying ? 'pause' : 'play'}-bold`}
 			width="1.5em"
 			height="1.5em"
 			style="color: black"

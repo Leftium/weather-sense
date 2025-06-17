@@ -7,7 +7,13 @@
 		FullScreenControl,
 		AttributionControl,
 		GeolocateControl,
+		GeoJSONSource,
+		CircleLayer,
+		RawLayer,
 	} from 'svelte-maplibre-gl';
+
+	import { circle } from '@turf/circle';
+	import { featureCollection } from '@turf/helpers';
 
 	import type { RadarFrame, RadarLayer } from '$lib/types.js';
 	import type { NsWeatherData, WeatherDataEvents } from '$lib/ns-weather-data.svelte.js';
@@ -301,21 +307,47 @@
 			cancelAnimationFrame(animationFrameId);
 		}
 	});
+
+	const center = [nsWeatherData.coords?.longitude || 0, nsWeatherData.coords?.latitude || 0];
+	const radiusKm = 10;
+
+	const circleFeatures = [...Array(10).keys()].map((n) =>
+		circle(center, (n + 1) * radiusKm, {
+			steps: 64,
+			units: 'kilometers',
+		}),
+	);
+
+	const geojson = featureCollection(circleFeatures);
+
+	const linePaint = {
+		'line-color': 'rgba(0, 0, 0, 20%)',
+		'line-width': 3,
+	};
 </script>
 
 <MapLibre
 	class="map-libre"
 	style="https://tiles.openfreemap.org/styles/positron"
-	zoom={10}
+	zoom={9}
 	center={{ lng: nsWeatherData.coords?.longitude || 0, lat: nsWeatherData.coords?.latitude || 0 }}
 	attributionControl={false}
 >
+	<GeoJSONSource id="circleSource" data={geojson} />
+
+	<RawLayer id="circleOutline" type="line" source="circleSource" paint={linePaint} />
+
 	<AttributionControl position="top-left" />
 	<FullScreenControl />
 	<GlobeControl />
 
 	<ScaleControl />
-	<GeolocateControl position="bottom-right" />
+	<GeolocateControl
+		position="bottom-right"
+		fitBoundsOptions={{
+			maxZoom: 9, // Customize your zoom level here
+		}}
+	/>
 	<NavigationControl position="bottom-right" />
 </MapLibre>
 

@@ -21,6 +21,15 @@ const config = {
 			showToggleButton: 'always',
 			toggleButtonPos: 'bottom-right',
 		},
+		onwarn: (warning, handler) => {
+			if (
+				warning.code === 'vite-plugin-svelte-preprocess-many-dependencies' &&
+				warning.message.includes('open-props-scss')
+			) {
+				return; // suppress it
+			}
+			handler(warning); // let others through
+		},
 	},
 };
 

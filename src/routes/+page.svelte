@@ -2,7 +2,7 @@
 	import type { WeatherDataEvents } from '$lib/ns-weather-data.svelte.js';
 
 	import TimeLine from './TimeLine.svelte';
-	import DayLine from './DayLine.svelte';
+	import Overview from './Overview.svelte';
 
 	import {
 		MS_IN_HOUR,
@@ -194,8 +194,8 @@
 			<RadarMap {nsWeatherData} mapStyle={data.mapStyle} />
 		</div>
 
-		<div class="dayline">
-			<DayLine
+		<div class="overview">
+			<Overview
 				{nsWeatherData}
 				start={nsWeatherData.daily?.[0]?.ms}
 				hours={24 * 9}
@@ -286,7 +286,7 @@
 <style lang="scss">
 	@use 'open-props-scss' as *;
 
-	.dayline {
+	.overview {
 		margin-block: 1em;
 		height: calc(104px + $size-3);
 	}

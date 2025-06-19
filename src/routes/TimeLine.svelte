@@ -353,6 +353,20 @@
 					};
 				});
 
+			const precipitationProbability = metrics.map((d, index, array) => {
+				const precipitationProbability = d.precipitationProbability;
+				const nextPrecipitationProbability = array?.[index + 1]?.precipitationProbability;
+
+				const strokeOpacity = precipitationProbability + nextPrecipitationProbability > 0 ? 1 : 0;
+
+				return {
+					ms: d.ms,
+					opacity: strokeOpacity * 0.2,
+					strokeOpacity,
+					precipitationProbability,
+				};
+			});
+
 			let low = {
 				ms: 0,
 				temperature: Number.MAX_VALUE,
@@ -384,6 +398,7 @@
 				low,
 				high,
 				rain,
+				precipitationProbability,
 				codes,
 				solarEvents,
 			};
@@ -503,7 +518,7 @@
 		};
 	}
 
-	const curve = 'catmull-rom';
+	const curve = 'natural';
 	const plotOptions = $derived({
 		width: clientWidth,
 		height: xAxis ? 104 : 64,
@@ -753,9 +768,9 @@
 			if (draw.precipitationProbability) {
 				// The precipitation probability plotted as area:
 				marks.push(
-					Plot.areaY(dataForecast.metrics, {
+					Plot.areaY(dataForecast.precipitationProbability, {
 						curve,
-						opacity: (d) => (d.precipitationProbability <= 0 ? 0 : 0.2),
+						opacity: 'opacity',
 						x: 'ms',
 						y: 'precipitationProbability',
 						fill: colors.precipitationProbability,
@@ -764,9 +779,9 @@
 
 				// The precipitation probability plotted as line:
 				marks.push(
-					Plot.lineY(dataForecast.metrics, {
+					Plot.lineY(dataForecast.precipitationProbability, {
 						curve,
-						strokeOpacity: (d) => (d.precipitationProbability <= 0 ? 0 : 1),
+						strokeOpacity: 'strokeOpacity',
 						x: 'ms',
 						y: 'precipitationProbability',
 						stroke: colors.precipitationProbability,

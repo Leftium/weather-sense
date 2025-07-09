@@ -95,7 +95,7 @@
 		});
 
 		map
-			.addControl(new maplibregl.AttributionControl({}), 'bottom-left')
+			.addControl(new maplibregl.AttributionControl({compact: false}), 'bottom-left')
 			.addControl(new maplibregl.FullscreenControl({ container: mainElement }))
 			.addControl(new maplibregl.GlobeControl(), 'top-left')
 			.addControl(new maplibregl.NavigationControl(), 'bottom-right')

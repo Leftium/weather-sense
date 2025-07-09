@@ -536,11 +536,13 @@
 		overflow-x: scroll;
 	}
 
+	/*
 	@media (max-width: 768px) {
 		.map {
 			height: 290px;
 		}
 	}
+	*/
 
 	.grid {
 		grid-row-gap: 0.1em;

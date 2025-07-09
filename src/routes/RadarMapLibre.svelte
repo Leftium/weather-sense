@@ -59,7 +59,7 @@
 			container: mapElement,
 			style: 'https://tiles.openfreemap.org/styles/positron',
 			center: [lon, lat],
-			zoom: dev ? 5 : 10,
+			zoom: dev ? 5 : 9.7725 ,
 			attributionControl: false,
 		});
 

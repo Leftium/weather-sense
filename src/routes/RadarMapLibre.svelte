@@ -127,15 +127,15 @@
 
 		///---------------------------------------------------------------------------------------///
 
-		function addLayer(frame: RadarFrame, index: number, preload = false) {
+		function addRainviewerLayer(frame: RadarFrame, index: number, preload = false) {
 			if (!frame?.path) {
 				return null;
 			}
 			if (!radarLayers[frame.path]) {
-				const colorScheme = 6; // from 0 to 8. Check the https://rainviewer.com/api/color-schemes.html for additional information
+				const colorScheme = 4; // from 0 to 8. Check the https://rainviewer.com/api/color-schemes.html for additional information
 				const smooth = 1; // 0 - not smooth, 1 - smooth
 				const snow = 1; // 0 - do not show snow colors, 1 - show snow colors
-				const tileSize = 512; // can be 256 or 512.
+				const tileSize = 256; // can be 256 or 512.
 
 				const layerId = `rv-layer-${frame.ms}`;
 				const sourceId = `rv-src-${frame.ms}`;
@@ -173,7 +173,7 @@
 
 			const nextIndex = index + 1;
 			if (preload && nextIndex < nsWeatherData.radar.frames.length) {
-				addLayer(nsWeatherData.radar.frames[nextIndex], nextIndex, true);
+				addRainviewerLayer(nsWeatherData.radar.frames[nextIndex], nextIndex, true);
 			}
 			return radarLayer;
 		}
@@ -183,10 +183,10 @@
 			const radarFrame = nsWeatherData.radar.frames[radarFrameIndex];
 
 			// Load and display current radar layer.
-			addLayer(radarFrame, radarFrameIndex);
+			addRainviewerLayer(radarFrame, radarFrameIndex);
 
 			// Pre-load next radar layers:
-			addLayer(nsWeatherData.radar.frames[0], 0, true);
+			addRainviewerLayer(nsWeatherData.radar.frames[0], 0, true);
 		});
 
 		///---------------------------------------------------------------------------------------///

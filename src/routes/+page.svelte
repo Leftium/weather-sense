@@ -294,7 +294,7 @@
 	.sticky-info {
 		position: sticky;
 		top: 0;
-		z-index: 10000;
+		z-index: 100000;
 
 		background-color: var(--pico-background-color);
 

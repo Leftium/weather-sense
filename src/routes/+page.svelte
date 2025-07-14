@@ -206,7 +206,7 @@
 		</div>
 
 		<div class="daily grid pico">
-			{#each (nsWeatherData.daily || []).filter((day) => day.fromToday > -200 && day.fromToday < forecastDaysVisible) as day, index}
+			{#each (nsWeatherData.daily || []).filter((day) => day.fromToday > -2 && day.fromToday < forecastDaysVisible) as day, index}
 				{@const past = day.fromToday < 0}
 				{@const today = day.fromToday === 0}
 				<div class="grid day-label" transition:slide={{ duration: 1000 }}>

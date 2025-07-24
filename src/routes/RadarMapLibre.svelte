@@ -133,7 +133,7 @@
 				return null;
 			}
 			if (!radarLayers[frame.path]) {
-				const colorScheme = 4; // from 0 to 8. Check the https://rainviewer.com/api/color-schemes.html for additional information
+				const colorScheme = 8; // from 0 to 8. Check the https://rainviewer.com/api/color-schemes.html for additional information
 				const smooth = 1; // 0 - not smooth, 1 - smooth
 				const snow = 1; // 0 - do not show snow colors, 1 - show snow colors
 				const tileSize = 256; // can be 256 or 512.

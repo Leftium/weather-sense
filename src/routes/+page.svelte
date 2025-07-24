@@ -194,7 +194,7 @@
 			<RadarMap {nsWeatherData} mapStyle={data.mapStyle} />
 		</div>
 
-		<div class="overview">
+		<div class="overview" hidden>
 			<Overview
 				{nsWeatherData}
 				start={nsWeatherData.daily?.[0]?.ms}

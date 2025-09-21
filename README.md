@@ -4,10 +4,6 @@ User-friendly, actionable weather forecasts.
 
 ![image](https://github.com/user-attachments/assets/e003badb-4832-430d-8f6c-faf9677abb4e)
 
-
-
-
-
 ## Notes for devs
 
 ### API Keys
@@ -15,6 +11,7 @@ User-friendly, actionable weather forecasts.
 The main API used is [Open-Meteo](https://open-meteo.com/), where API keys are optional (for non-commercial use).
 
 Extra optional API keys:
+
 - https://openweathermap.org/api (For reverse geocoding)
 - https://stadiamaps.com/ (For maps on non-localhost domains)
 
@@ -44,7 +41,4 @@ npm run build
 
 You can preview the production build with `npm run preview`.
 
-
 </details>
-
-

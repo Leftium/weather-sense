@@ -14,6 +14,9 @@ importers:
       '@eslint/js':
         specifier: ^9.22.0
         version: 9.36.0
+      '@leftium/logo':
+        specifier: ^0.0.2
+        version: 0.0.2(svelte@5.39.3)
       '@observablehq/plot':
         specifier: ^0.6.17
         version: 0.6.17
@@ -398,6 +401,11 @@ packages:
 
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
+
+  '@leftium/logo@0.0.2':
+    resolution: {integrity: sha512-5+WN/GCAMeLhWxoPfhMlv1HTifyBDsc8lWdd0bMntOdUtAYk1ELAdflImRPcH/brhYsi+smTwaqjAjq4YpnVlA==}
+    peerDependencies:
+      svelte: ^5.0.0
 
   '@mapbox/geojson-rewind@0.5.2':
     resolution: {integrity: sha512-tJaT+RbYGJYStt7wI3cq4Nl4SXxG8W7JDG5DMJu97V25RnbNg3QtQtf+KD+VLjNpWKYsRvXDNmNrBgEETr1ifA==}
@@ -1976,6 +1984,10 @@ snapshots:
     dependencies:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
+
+  '@leftium/logo@0.0.2(svelte@5.39.3)':
+    dependencies:
+      svelte: 5.39.3
 
   '@mapbox/geojson-rewind@0.5.2':
     dependencies:

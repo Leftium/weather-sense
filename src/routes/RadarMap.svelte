@@ -142,9 +142,8 @@
 				const snow = 1; // 0 - do not show snow colors, 1 - show snow colors
 				const tileSize = 512; // can be 256 or 512.
 
-				// Use proxy to avoid ORB issues in production, WebP for better efficiency
-				const framePath = frame.path.startsWith('/') ? frame.path.slice(1) : frame.path;
-				const urlTemplate = `/api/rainviewer-proxy/${framePath}/${tileSize}/{z}/{x}/{y}/${colorScheme}/${smooth}_${snow}.webp`;
+				// Direct to RainViewer - no proxy needed with overzoom protection
+				const urlTemplate = `${nsWeatherData.radar.host}${frame.path}/${tileSize}/{z}/{x}/{y}/${colorScheme}/${smooth}_${snow}.webp`;
 
 				const tileLayer = new TileLayer(urlTemplate, {
 					tileSize: 256,

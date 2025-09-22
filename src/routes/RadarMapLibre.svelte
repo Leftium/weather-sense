@@ -154,8 +154,8 @@
 
 				const layerId = `rv-layer-${frame.ms}`;
 				const sourceId = `rv-src-${frame.ms}`;
-				const framePath = frame.path.startsWith('/') ? frame.path.slice(1) : frame.path;
-				const tileUrl = `/api/rainviewer-proxy/${framePath}/${tileSize}/{z}/{x}/{y}/${colorScheme}/${smooth}_${snow}.webp`;
+				// Direct to RainViewer with overzoom protection (maxzoom: 10)
+				const tileUrl = `${nsWeatherData.radar.host}${frame.path}/${tileSize}/{z}/{x}/{y}/${colorScheme}/${smooth}_${snow}.webp`;
 
 				if (!map.getSource(sourceId)) {
 					map.addSource(sourceId, {

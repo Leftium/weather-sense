@@ -17,7 +17,7 @@
 		aqiUsToLabel,
 		aqiEuropeToLabel,
 	} from '$lib/util.js';
-	import RadarMap from './RadarMap.svelte';
+	// import RadarMap from './RadarMap.svelte';
 	import RadarMapLibre from './RadarMapLibre.svelte';
 
 	import { clearEvents, getEmitter } from '$lib/emitter.js';
@@ -190,9 +190,10 @@
 			<RadarMapLibre {nsWeatherData} />
 		</div>
 
-		<div class="map" hidden>
+		<!-- Commented out to prevent duplicate API calls - keep for testing/comparison -->
+		<!-- <div class="map" hidden>
 			<RadarMap {nsWeatherData} mapStyle={data.mapStyle} />
-		</div>
+		</div> -->
 
 		<div class="overview" hidden>
 			<Overview

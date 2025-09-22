@@ -63,7 +63,7 @@
 			style: 'https://tiles.openfreemap.org/styles/positron',
 			cooperativeGestures: true,
 			center: [lon, lat],
-			zoom: 9.0, // Max safe zoom (requests tile level 9, under RainViewer's level 10 limit)
+			zoom: (dev ? 5 : 9) + 0.7725, // Can zoom past 10 thanks to overzoom
 			attributionControl: false,
 		});
 
@@ -93,7 +93,7 @@
 
 			map.flyTo({
 				center: [longitude, latitude],
-				zoom: 9, // Max safe zoom for RainViewer tile limit
+				zoom: dev ? 5 : 10, // Can use zoom 10+ with overzoom enabled
 				duration: 0,
 			});
 		});
@@ -162,6 +162,7 @@
 						type: 'raster',
 						tiles: [tileUrl],
 						tileSize: 256,
+						maxzoom: 10, // Don't fetch tiles above zoom 10 - will overzoom instead
 						attribution:
 							'<a href="https://www.rainviewer.com/api.html" target="_blank">RainViewer</a>',
 					});

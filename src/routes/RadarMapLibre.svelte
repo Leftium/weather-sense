@@ -117,6 +117,17 @@
 					'line-width': 3,
 				},
 			});
+
+			// Initialize radar layers if data is already available
+			if (nsWeatherData.radar?.frames?.length) {
+				const radarFrame = nsWeatherData.radar.frames[radarFrameIndex];
+				if (radarFrame) {
+					addRainviewerLayer(radarFrame, radarFrameIndex);
+					if (nsWeatherData.radar.frames[0]) {
+						addRainviewerLayer(nsWeatherData.radar.frames[0], 0, true);
+					}
+				}
+			}
 		});
 
 		// Start in globe projection:
@@ -190,6 +201,7 @@
 		on('weatherdata_updatedRadar', function () {
 			//gg('Initialize Radar layers.');
 			if (!nsWeatherData.radar?.frames?.length) return;
+			if (!map || !map.loaded()) return; // Wait for map to be loaded
 
 			const radarFrame = nsWeatherData.radar.frames[radarFrameIndex];
 			if (!radarFrame) return;

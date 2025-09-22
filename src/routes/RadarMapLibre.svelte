@@ -16,6 +16,7 @@
 	import RadarTimeline from '$lib/RadarTimeline.svelte';
 	import { dev } from '$app/environment';
 	import { clamp } from 'lodash-es';
+	import { MS_IN_SECOND } from '$lib/util.js';
 
 	let mainElement: HTMLElement;
 	let mapElement: HTMLDivElement;
@@ -236,13 +237,27 @@
 			if (nsWeatherData.radar?.generated && nsWeatherData.radar?.frames?.length) {
 				const deltaTime = timeStamp - prevTimestamp;
 
-				if (deltaTime > 20 && radarFrameIndex < nsWeatherData.radar.frames.length) {
-					Object.values(radarLayers).forEach((radarLayer, index) => {
-						const layerId = `rv-layer-${radarLayer.ms}`;
-						if (map.getLayer(layerId)) {
-							map.setPaintProperty(layerId, 'raster-opacity', index === radarFrameIndex ? 0.6 : 0);
-						}
-					});
+				if (deltaTime > 20) {
+					// Advance time if playing
+					if (nsWeatherData.radarPlaying) {
+						emit('weatherdata_requestedSetTime', { ms: nsWeatherData.ms + 40 * MS_IN_SECOND });
+					}
+
+					// Update layer opacity
+					if (radarFrameIndex < nsWeatherData.radar.frames.length) {
+						Object.values(radarLayers).forEach((radarLayer, index) => {
+							const layerId = `rv-layer-${radarLayer.ms}`;
+							if (map.getLayer(layerId)) {
+								map.setPaintProperty(
+									layerId,
+									'raster-opacity',
+									index === radarFrameIndex ? 0.6 : 0,
+								);
+							}
+						});
+					}
+
+					prevTimestamp = timeStamp;
 				}
 			}
 			animationFrameId = requestAnimationFrame(step);

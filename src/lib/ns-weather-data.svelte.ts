@@ -611,7 +611,7 @@ export function makeNsWeatherData() {
 		on('weatherdata_requestedTogglePlay', function () {
 			radarPlaying = !radarPlaying;
 
-			if (resetRadarOnPlay) {
+			if (resetRadarOnPlay && radar.frames?.length) {
 				msTracker = radar.frames[0].ms;
 			}
 			resetRadarOnPlay = false;

@@ -45,9 +45,9 @@
 		const { LocateControl } = await import('leaflet.locatecontrol');
 		await import('leaflet.fullscreen');
 
-		const lat = nsWeatherData.coords?.latitude || 0;
-		const lon = nsWeatherData.coords?.longitude || 0;
-		const accuracy = nsWeatherData.coords?.accuracy || 0;
+		const lat = nsWeatherData.coords?.latitude ?? 0;
+		const lon = nsWeatherData.coords?.longitude ?? 0;
+		const accuracy = nsWeatherData.coords?.accuracy ?? 0;
 
 		Map.addInitHook('addHandler', 'gestureHandling', GestureHandling);
 

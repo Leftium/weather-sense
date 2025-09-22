@@ -32,11 +32,20 @@
 	let radarFrameIndex = $derived.by(() => {
 		if (!nsWeatherData.radar?.frames?.length) return 0;
 
-		const fractionPlayed =
-			(nsWeatherData.ms - nsWeatherData.radar.frames[0]?.ms) /
-			(nsWeatherData.radar.frames[15]?.ms - nsWeatherData.radar.frames[0]?.ms);
+		const firstFrame = nsWeatherData.radar.frames[0];
+		const lastFrame =
+			nsWeatherData.radar.frames[15] ??
+			nsWeatherData.radar.frames[nsWeatherData.radar.frames.length - 1];
 
-		return clamp(0, Math.floor(15 * fractionPlayed), 15);
+		if (!firstFrame || !lastFrame || firstFrame.ms === lastFrame.ms) return 0;
+
+		const fractionPlayed = (nsWeatherData.ms - firstFrame.ms) / (lastFrame.ms - firstFrame.ms);
+
+		// Ensure we never return NaN or invalid indices
+		if (!isFinite(fractionPlayed) || fractionPlayed < 0) return 0;
+
+		const index = Math.floor(15 * fractionPlayed);
+		return clamp(index, 0, Math.min(15, nsWeatherData.radar.frames.length - 1));
 	});
 
 	function makeCircleFeaturesCollection(center: [number, number]) {
@@ -52,9 +61,9 @@
 
 	let map: maplibregl.Map;
 	onMount(async () => {
-		const lat = nsWeatherData.coords?.latitude || 0;
-		const lon = nsWeatherData.coords?.longitude || 0;
-		const accuracy = nsWeatherData.coords?.accuracy || 0;
+		const lat = nsWeatherData.coords?.latitude ?? 0;
+		const lon = nsWeatherData.coords?.longitude ?? 0;
+		const accuracy = nsWeatherData.coords?.accuracy ?? 0;
 
 		emit('weatherdata_requestedFetchRainviewerData');
 
@@ -247,6 +256,7 @@
 					// Update layer opacity
 					if (radarFrameIndex < nsWeatherData.radar.frames.length) {
 						Object.values(radarLayers).forEach((radarLayer, index) => {
+							if (!radarLayer?.ms) return;
 							const layerId = `rv-layer-${radarLayer.ms}`;
 							if (map.getLayer(layerId)) {
 								map.setPaintProperty(

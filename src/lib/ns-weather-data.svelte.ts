@@ -339,11 +339,15 @@ export function makeNsWeatherData() {
 	};
 
 	async function fetchOpenMeteoAirQuality() {
+		if (!coords) {
+			gg('fetchOpenMeteoAirQuality: No coordinates available');
+			return;
+		}
 		gg('fetchOpenMeteoAirQuality:start');
 		console.time('fetchOpenMeteoAirQuality');
 		const url =
 			`https://air-quality-api.open-meteo.com/v1/air-quality` +
-			`?latitude=${coords?.latitude}&longitude=${coords?.longitude}` +
+			`?latitude=${coords.latitude}&longitude=${coords.longitude}` +
 			`&timeformat=unixtime&timezone=auto&past_days=${PAST_DAYS}&forecast_days=${Math.min(7, FORECAST_DAYS)}` +
 			`&current=us_aqi,european_aqi` +
 			`&hourly=us_aqi,european_aqi`;
@@ -404,11 +408,15 @@ export function makeNsWeatherData() {
 	}
 
 	async function fetchOpenMeteoForecast() {
+		if (!coords) {
+			gg('fetchOpenMeteoForecast: No coordinates available');
+			return;
+		}
 		gg('fetchOpenMeteoForecast:start');
 		console.time('fetchOpenMeteoForecast');
 		const url =
 			`https://api.open-meteo.com/v1/forecast` +
-			`?latitude=${coords?.latitude}&longitude=${coords?.longitude}` +
+			`?latitude=${coords.latitude}&longitude=${coords.longitude}` +
 			`&timeformat=unixtime&timezone=auto&past_days=${PAST_DAYS}&forecast_days=${FORECAST_DAYS}` +
 			`&temperature_unit=fahrenheit` +
 			`&current=temperature_2m,relative_humidity_2m,is_day,precipitation,rain,showers,snowfall,weather_code` +
@@ -446,7 +454,9 @@ export function makeNsWeatherData() {
 
 				forEach(hourlyKeys, (keyData: string, keyOpenMeteo: string | number) => {
 					const value = json.hourly[keyOpenMeteo]?.[index];
-					object[keyData as keyof HourlyForecast] = value ?? 0;
+					// Ensure we always have a number, never null/undefined
+					const safeValue = typeof value === 'number' ? value : 0;
+					object[keyData as keyof HourlyForecast] = safeValue;
 				});
 
 				return object as HourlyForecast;

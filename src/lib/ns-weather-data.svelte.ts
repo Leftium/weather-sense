@@ -516,8 +516,8 @@ export function makeNsWeatherData() {
 
 	if (browser) {
 		on('weatherdata_requestedFetchRainviewerData', async function () {
-			// Load all the available map frames from RainViewer API.
-			const fetched = await fetch('https://api.rainviewer.com/public/weather-maps.json');
+			// Load all the available map frames from RainViewer API via proxy to avoid CORS
+			const fetched = await fetch('/api/rainviewer/weather-maps');
 			const rainviewerData = await fetched.json();
 
 			const frames = (rainviewerData.radar.past || [])

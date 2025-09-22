@@ -201,7 +201,21 @@
 		on('weatherdata_updatedRadar', function () {
 			//gg('Initialize Radar layers.');
 			if (!nsWeatherData.radar?.frames?.length) return;
-			if (!map || !map.loaded()) return; // Wait for map to be loaded
+			if (!map) return; // Map must exist
+
+			// If map style isn't ready yet, wait for it to load
+			if (!map.isStyleLoaded()) {
+				map.once('load', () => {
+					const radarFrame = nsWeatherData.radar.frames[radarFrameIndex];
+					if (radarFrame) {
+						addRainviewerLayer(radarFrame, radarFrameIndex);
+						if (nsWeatherData.radar.frames[0]) {
+							addRainviewerLayer(nsWeatherData.radar.frames[0], 0, true);
+						}
+					}
+				});
+				return;
+			}
 
 			const radarFrame = nsWeatherData.radar.frames[radarFrameIndex];
 			if (!radarFrame) return;

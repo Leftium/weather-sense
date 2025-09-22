@@ -140,7 +140,7 @@
 
 				const layerId = `rv-layer-${frame.ms}`;
 				const sourceId = `rv-src-${frame.ms}`;
-				const tileUrl = `${nsWeatherData.radar.host}/${frame.path}/${tileSize}/{z}/{x}/{y}/${colorScheme}/${smooth}_${snow}.webp`;
+				const tileUrl = `${nsWeatherData.radar.host}${frame.path}/${tileSize}/{z}/{x}/{y}/${colorScheme}/${smooth}_${snow}.webp`;
 
 				if (!map.getSource(sourceId)) {
 					map.addSource(sourceId, {

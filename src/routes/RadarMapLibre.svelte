@@ -29,6 +29,8 @@
 	let radarLayers: Record<string, RadarLayer & { __brand: 'RadarMapLibre' }> = $state({});
 
 	let radarFrameIndex = $derived.by(() => {
+		if (!nsWeatherData.radar?.frames?.length) return 0;
+
 		const fractionPlayed =
 			(nsWeatherData.ms - nsWeatherData.radar.frames[0]?.ms) /
 			(nsWeatherData.radar.frames[15]?.ms - nsWeatherData.radar.frames[0]?.ms);
@@ -140,13 +142,16 @@
 
 				const layerId = `rv-layer-${frame.ms}`;
 				const sourceId = `rv-src-${frame.ms}`;
-				const tileUrl = `${nsWeatherData.radar.host}${frame.path}/${tileSize}/{z}/{x}/{y}/${colorScheme}/${smooth}_${snow}.webp`;
+				const framePath = frame.path.startsWith('/') ? frame.path.slice(1) : frame.path;
+				const tileUrl = `/api/rainviewer-proxy/${framePath}/${tileSize}/{z}/{x}/{y}/${colorScheme}/${smooth}_${snow}.webp`;
 
 				if (!map.getSource(sourceId)) {
 					map.addSource(sourceId, {
 						type: 'raster',
 						tiles: [tileUrl],
 						tileSize: 256,
+						attribution:
+							'<a href="https://www.rainviewer.com/api.html" target="_blank">RainViewer</a>',
 					});
 				}
 
@@ -173,34 +178,44 @@
 			const radarLayer = radarLayers[frame.path];
 
 			const nextIndex = index + 1;
-			if (preload && nextIndex < nsWeatherData.radar.frames.length) {
-				addRainviewerLayer(nsWeatherData.radar.frames[nextIndex], nextIndex, true);
+			if (preload && nsWeatherData.radar?.frames && nextIndex < nsWeatherData.radar.frames.length) {
+				const nextFrame = nsWeatherData.radar.frames[nextIndex];
+				if (nextFrame) {
+					addRainviewerLayer(nextFrame, nextIndex, true);
+				}
 			}
 			return radarLayer;
 		}
 
 		on('weatherdata_updatedRadar', function () {
 			//gg('Initialize Radar layers.');
+			if (!nsWeatherData.radar?.frames?.length) return;
+
 			const radarFrame = nsWeatherData.radar.frames[radarFrameIndex];
+			if (!radarFrame) return;
 
 			// Load and display current radar layer.
 			addRainviewerLayer(radarFrame, radarFrameIndex);
 
 			// Pre-load next radar layers:
-			addRainviewerLayer(nsWeatherData.radar.frames[0], 0, true);
+			if (nsWeatherData.radar.frames[0]) {
+				addRainviewerLayer(nsWeatherData.radar.frames[0], 0, true);
+			}
 		});
 
 		///---------------------------------------------------------------------------------------///
 
 		let prevTimestamp = 0;
 		function step(timeStamp: number) {
-			if (nsWeatherData.radar.generated) {
+			if (nsWeatherData.radar?.generated && nsWeatherData.radar?.frames?.length) {
 				const deltaTime = timeStamp - prevTimestamp;
 
 				if (deltaTime > 20 && radarFrameIndex < nsWeatherData.radar.frames.length) {
 					Object.values(radarLayers).forEach((radarLayer, index) => {
 						const layerId = `rv-layer-${radarLayer.ms}`;
-						map.setPaintProperty(layerId, 'raster-opacity', index === radarFrameIndex ? 0.6 : 0);
+						if (map.getLayer(layerId)) {
+							map.setPaintProperty(layerId, 'raster-opacity', index === radarFrameIndex ? 0.6 : 0);
+						}
 					});
 				}
 			}

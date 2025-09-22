@@ -62,7 +62,7 @@
 			style: 'https://tiles.openfreemap.org/styles/positron',
 			cooperativeGestures: true,
 			center: [lon, lat],
-			zoom: 7,
+			zoom: 9.0, // Max safe zoom (requests tile level 9, under RainViewer's level 10 limit)
 			attributionControl: false,
 		});
 
@@ -92,7 +92,7 @@
 
 			map.flyTo({
 				center: [longitude, latitude],
-				zoom: dev ? 5 : 10, // Fixed zoom that's globe-appropriate
+				zoom: 9, // Max safe zoom for RainViewer tile limit
 				duration: 0,
 			});
 		});

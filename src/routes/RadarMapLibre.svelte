@@ -62,7 +62,7 @@
 			style: 'https://tiles.openfreemap.org/styles/positron',
 			cooperativeGestures: true,
 			center: [lon, lat],
-			zoom: (dev ? 5 : 9) + 0.7725,
+			zoom: 7,
 			attributionControl: false,
 		});
 

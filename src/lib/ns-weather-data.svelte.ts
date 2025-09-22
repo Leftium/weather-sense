@@ -235,20 +235,20 @@ export function makeNsWeatherData() {
 			const hour = dayjs.tz(ms, timezone).get('hour');
 
 			// Fake precipitation in dev mode:
-			const precipitation = false && dev ? (50 / 23) * hour : item.precipitation;
+			const precipitation = false && dev ? (50 / 23) * hour : (item.precipitation ?? 0);
 
 			newData.set(ms, {
 				msPretty: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),
 				ms,
 
-				weatherCode: item.weatherCode,
+				weatherCode: item.weatherCode ?? 0,
 
-				temperature: item.temperature,
-				dewPoint: item.dewPoint,
+				temperature: item.temperature ?? 0,
+				dewPoint: item.dewPoint ?? 0,
 
-				humidity: item.relativeHumidity,
+				humidity: item.relativeHumidity ?? 0,
 
-				precipitationProbability: item.precipitationProbability,
+				precipitationProbability: item.precipitationProbability ?? 0,
 				precipitation,
 			});
 		});
@@ -445,7 +445,8 @@ export function makeNsWeatherData() {
 				};
 
 				forEach(hourlyKeys, (keyData: string, keyOpenMeteo: string | number) => {
-					object[keyData as keyof HourlyForecast] = json.hourly[keyOpenMeteo][index];
+					const value = json.hourly[keyOpenMeteo]?.[index];
+					object[keyData as keyof HourlyForecast] = value ?? 0;
 				});
 
 				return object as HourlyForecast;

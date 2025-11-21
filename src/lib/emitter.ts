@@ -7,7 +7,7 @@
 // - Unsupported: all, off().
 
 import mitt, { type Handler, type EventType } from 'mitt';
-import { gg } from '$lib/gg';
+import { gg } from '@leftium/gg';
 
 const storage =
 	typeof localStorage !== 'undefined' ? localStorage : { getItem: () => '', setItem: () => null };

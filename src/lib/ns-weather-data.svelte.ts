@@ -3,7 +3,7 @@
 import { forEach, get, map, maxBy, minBy, uniq } from 'lodash-es';
 
 import { getEmitter } from '$lib/emitter';
-import { gg } from '$lib/gg';
+import { gg } from '@leftium/gg';
 import type { Coordinates, Radar } from '$lib/types';
 import { MS_IN_MINUTE, MS_IN_SECOND, celcius, startOf } from './util';
 import { browser, dev } from '$app/environment';

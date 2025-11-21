@@ -17,6 +17,7 @@
 	"devDependencies": {
 		"@eslint/compat": "^1.2.5",
 		"@eslint/js": "^9.22.0",
+		"@leftium/gg": "^0.0.19",
 		"@leftium/logo": "^0.0.2",
 		"@observablehq/plot": "^0.6.17",
 		"@picocss/pico": "^2.1.1",
@@ -39,7 +40,6 @@
 		"colorjs.io": "^0.5.2",
 		"d3": "^7.9.0",
 		"dayjs": "^1.11.18",
-		"debug": "^4.4.3",
 		"eslint": "^9.22.0",
 		"eslint-config-prettier": "^10.0.1",
 		"eslint-plugin-svelte": "^3.0.0",

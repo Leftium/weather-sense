@@ -9,7 +9,7 @@
 
 	import { mount, onDestroy, onMount, tick, unmount, untrack } from 'svelte';
 
-	import { gg } from '$lib/gg.js';
+	import { gg } from '@leftium/gg';
 	import { getEmitter } from '$lib/emitter.js';
 	import RadarTimeline from '$lib/RadarTimeline.svelte';
 	import { MS_IN_SECOND } from '$lib/util';

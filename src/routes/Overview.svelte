@@ -13,7 +13,7 @@
 	import { clamp, each, forEachRight, maxBy } from 'lodash-es';
 	import * as d3 from 'd3';
 
-	import { gg } from '$lib/gg';
+	import { gg } from '@leftium/gg';
 	import * as Plot from '@observablehq/plot';
 	import * as htl from 'htl';
 	import { getEmitter } from '$lib/emitter';

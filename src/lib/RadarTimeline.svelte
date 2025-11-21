@@ -5,7 +5,7 @@
 	import { clamp, find } from 'lodash-es';
 
 	import { getEmitter } from '$lib/emitter';
-	import { gg } from '$lib/gg';
+	import { gg } from '@leftium/gg';
 	import { MS_IN_MINUTE, MS_IN_SECOND } from './util';
 
 	let {

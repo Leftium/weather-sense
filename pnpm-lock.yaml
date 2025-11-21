@@ -15,8 +15,8 @@ importers:
         specifier: ^9.22.0
         version: 9.36.0
       '@leftium/gg':
-        specifier: ^0.0.19
-        version: 0.0.19(svelte@5.39.3)
+        specifier: ^0.0.20
+        version: 0.0.20(svelte@5.39.3)
       '@leftium/logo':
         specifier: ^0.0.2
         version: 0.0.2(svelte@5.39.3)
@@ -402,8 +402,8 @@ packages:
   '@jridgewell/trace-mapping@0.3.31':
     resolution: {integrity: sha512-zzNR+SdQSDJzc8joaeP8QQoCQr8NuYx2dIIytl1QeBEZHJ9uW6hebsrYgbz8hJwUQao3TWCMtmfV8Nu1twOLAw==}
 
-  '@leftium/gg@0.0.19':
-    resolution: {integrity: sha512-f/BsS8Zj2p7k2w0ujm4erhKXdlriMMdFZ3iA12vsEHcrjI8QO6PrGtLgmf99UXSTwnrXZRSGHXwmsJzpN+7a1g==}
+  '@leftium/gg@0.0.20':
+    resolution: {integrity: sha512-E/UnT77C4p1fo6srXIzBPLoVNWQz2Tvpt+IYhCtBq0x7A7rMMlnTJJ3DV8NkvdZrkA7KN8F2JF21z6u2RZ0hyw==}
     peerDependencies:
       svelte: ^5.0.0
 
@@ -2007,7 +2007,7 @@ snapshots:
       '@jridgewell/resolve-uri': 3.1.2
       '@jridgewell/sourcemap-codec': 1.5.5
 
-  '@leftium/gg@0.0.19(svelte@5.39.3)':
+  '@leftium/gg@0.0.20(svelte@5.39.3)':
     dependencies:
       dotenv: 17.2.3
       error-stack-parser: 2.1.4

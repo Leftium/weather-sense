@@ -2,11 +2,6 @@
 	$parent-selector: '.pico'
 );
 
-@import 'leaflet/dist/leaflet.css';
-@import 'leaflet.fullscreen/Control.FullScreen.css';
-@import 'leaflet.locatecontrol/dist/L.Control.Locate.min.css';
-@import 'leaflet-gesture-handling/dist/leaflet-gesture-handling.css';
-
 /* Write your global styles here, in SCSS syntax. Variables and mixins from the src/variables.scss file are available here without importing */
 
 html,

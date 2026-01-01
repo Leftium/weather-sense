@@ -1,5 +1,3 @@
-import type { TileLayer } from 'leaflet';
-
 export type Coordinates = {
 	latitude: number;
 	longitude: number;
@@ -21,19 +19,11 @@ export type Radar = {
 	msEnd?: number;
 };
 
-export type RadarLayer =
-	| {
-			__brand: 'RadarMap';
-			index: number;
-			ms: number;
-			loaded: boolean;
-			tileLayer: TileLayer;
-	  }
-	| {
-			__brand: 'RadarMapLibre';
-			index: number;
-			ms: number;
-			loaded: boolean;
-			layerId: string;
-			sourceId: string;
-	  };
+export type RadarLayer = {
+	__brand: 'RadarMapLibre';
+	index: number;
+	ms: number;
+	loaded: boolean;
+	layerId: string;
+	sourceId: string;
+};

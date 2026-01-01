@@ -53,15 +53,6 @@ importers:
       '@types/eslint':
         specifier: ^9.6.1
         version: 9.6.1
-      '@types/leaflet':
-        specifier: ^1.9.20
-        version: 1.9.20
-      '@types/leaflet.fullscreen':
-        specifier: ^3.0.3
-        version: 3.0.3
-      '@types/leaflet.locatecontrol':
-        specifier: ^0.82.1
-        version: 0.82.1
       '@types/lodash-es':
         specifier: ^4.17.12
         version: 4.17.12
@@ -107,18 +98,6 @@ importers:
       json5:
         specifier: ^2.2.3
         version: 2.2.3
-      leaflet:
-        specifier: ^1.9.4
-        version: 1.9.4
-      leaflet-gesture-handling:
-        specifier: ^1.2.2
-        version: 1.2.2
-      leaflet.fullscreen:
-        specifier: ^4.0.0
-        version: 4.0.0
-      leaflet.locatecontrol:
-        specifier: ^0.85.1
-        version: 0.85.1
       lodash-es:
         specifier: ^4.17.21
         version: 4.17.21
@@ -830,15 +809,6 @@ packages:
   '@types/json-schema@7.0.15':
     resolution: {integrity: sha512-5+fP8P8MFNC+AyZCDxrB2pkZFPGzqQWUzpSeuuVLvm8VMcorNYavBqoFcxK8bQz4Qsbn4oUEEem4wDLfcysGHA==}
 
-  '@types/leaflet.fullscreen@3.0.3':
-    resolution: {integrity: sha512-4x/90m2SaxPZT9D4bRu8P8kK3UvyOJC11xOkaN9CBtmvnTCG6fnBL6qlPjOCDcH0PVHdBaruqFUMWZfhwy9Uwg==}
-
-  '@types/leaflet.locatecontrol@0.82.1':
-    resolution: {integrity: sha512-AcDyhhPDrF48iRa0/ShKgtAgR7a6ts2SzsoUUM9/+IwTZl/1iPP/JIg+wpwoobTMfx+bF2mUUkXKRwieveVgNQ==}
-
-  '@types/leaflet@1.9.20':
-    resolution: {integrity: sha512-rooalPMlk61LCaLOvBF2VIf9M47HgMQqi5xQ9QRi7c8PkdIe0WrIi5IxXUXQjAdL0c+vcQ01mYWbthzmp9GHWw==}
-
   '@types/lodash-es@4.17.12':
     resolution: {integrity: sha512-0NgftHUcV4v34VhXm8QBSftKVXtbkBG3ViCjs6+eJ5a6y6Mi/jiFGPc1sC7QK+9BFhWrURE3EOggmWaSxL9OzQ==}
 
@@ -1422,18 +1392,6 @@ packages:
 
   launch-editor@2.12.0:
     resolution: {integrity: sha512-giOHXoOtifjdHqUamwKq6c49GzBdLjvxrd2D+Q4V6uOHopJv7p9VJxikDsQ/CBXZbEITgUqSVHXLTG3VhPP1Dg==}
-
-  leaflet-gesture-handling@1.2.2:
-    resolution: {integrity: sha512-Blf5V4PoNphWkzL7Y1qge+Spkd4OCQ2atjwUNhMhLIcjKzPcBH++x/lwOinaR9jSqLWqJ6oKYO8d0XdTffy4hQ==}
-
-  leaflet.fullscreen@4.0.0:
-    resolution: {integrity: sha512-wIV7R6yxtlk95/Er31ptCL0MQCmG4OUU4U0SwNeamEb2xBNDIeU8GtWF2S7PaxV/fdfReNmp+QCT9cUPSNIgdw==}
-
-  leaflet.locatecontrol@0.85.1:
-    resolution: {integrity: sha512-aB2qrwZO7Vs4EbWja6pyGy6Y1Mr2yeOqH3PN+Ocnjb4pgpiwYsX1AOI0mppVYzUTO2zwjafxVTOffiwEE32udA==}
-
-  leaflet@1.9.4:
-    resolution: {integrity: sha512-nxS1ynzJOmOlHp+iL3FyWqK89GtNL8U8rvlMOsQdTTssxZwCXh8N2NB3GDQOL+YR3XnWyZAxwQixURb+FA74PA==}
 
   levn@0.4.1:
     resolution: {integrity: sha512-+bT2uH4E5LGE7h/n3evcS/sQlJXCpIp6ym8OWJ5eV6+67Dsql/LaaT7qJBAt2rzfoa/5QBGBhxDix1dMt2kQKQ==}
@@ -2426,18 +2384,6 @@ snapshots:
 
   '@types/json-schema@7.0.15': {}
 
-  '@types/leaflet.fullscreen@3.0.3':
-    dependencies:
-      '@types/leaflet': 1.9.20
-
-  '@types/leaflet.locatecontrol@0.82.1':
-    dependencies:
-      '@types/leaflet': 1.9.20
-
-  '@types/leaflet@1.9.20':
-    dependencies:
-      '@types/geojson': 7946.0.16
-
   '@types/lodash-es@4.17.12':
     dependencies:
       '@types/lodash': 4.17.20
@@ -3069,14 +3015,6 @@ snapshots:
     dependencies:
       picocolors: 1.1.1
       shell-quote: 1.8.3
-
-  leaflet-gesture-handling@1.2.2: {}
-
-  leaflet.fullscreen@4.0.0: {}
-
-  leaflet.locatecontrol@0.85.1: {}
-
-  leaflet@1.9.4: {}
 
   levn@0.4.1:
     dependencies:

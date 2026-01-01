@@ -235,7 +235,7 @@ export function makeNsWeatherData() {
 			const hour = dayjs.tz(ms, timezone).get('hour');
 
 			// Fake precipitation in dev mode:
-			const precipitation = false && dev ? (50 / 23) * hour : (item.precipitation ?? 0);
+			const precipitation = false && dev ? (10 / 23) * hour : (item.precipitation ?? 0);
 
 			newData.set(ms, {
 				msPretty: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),

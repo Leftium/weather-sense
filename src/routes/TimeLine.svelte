@@ -481,7 +481,8 @@
 	}
 
 	function makeTransFormPrecipitation(onlyLinear: boolean) {
-		const LINEAR_MAX = 20;
+		// 80th percentile of hourly precipitation (~20% of rainy hours exceed this)
+		const LINEAR_MAX = 2;
 
 		const LINEAR_SECTION = 70;
 		const CAP_BONUS = 3;
@@ -490,7 +491,7 @@
 			const resultArray = da.map((d) => {
 				const p = d.precipitation;
 
-				// Linear scale maxing at 20mm/hr:
+				// Linear scale maxing at 2mm/hr (80th percentile):
 				let resultValue =
 					LINEAR_MAX > 0 ? (Math.min(p, LINEAR_MAX) / LINEAR_MAX) * LINEAR_SECTION : 0;
 

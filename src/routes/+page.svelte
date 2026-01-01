@@ -23,7 +23,7 @@
 	import { dev } from '$app/environment';
 	import { onDestroy } from 'svelte';
 
-	import { makeNsWeatherData } from '$lib/ns-weather-data.svelte.js';
+	import { FORECAST_DAYS, makeNsWeatherData } from '$lib/ns-weather-data.svelte.js';
 	import { slide } from 'svelte/transition';
 
 	const nsWeatherData = makeNsWeatherData();
@@ -236,13 +236,13 @@
 				</div>
 			{/each}
 		</div>
-		{#if forecastDaysVisible < 16}
+		{#if forecastDaysVisible < FORECAST_DAYS}
 			<center class="pico">
 				<div role="group" style:width="initial">
 					<button class="outline contrast" onclick={() => (forecastDaysVisible *= 2)}>
 						View more days
 					</button>
-					<button class="outline secondary" onclick={() => (forecastDaysVisible = 16)}>
+					<button class="outline secondary" onclick={() => (forecastDaysVisible = FORECAST_DAYS)}>
 						Full forecast
 					</button>
 				</div>

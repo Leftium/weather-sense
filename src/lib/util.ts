@@ -383,3 +383,9 @@ export function getTileGradient(ms: number, sunrise: number, sunset: number): st
 	// 45deg angle - light at top-right, dark at bottom-left
 	return `linear-gradient(45deg, ${colors[2]} 0%, ${colors[1]} 50%, ${colors[0]} 100%)`;
 }
+
+export function getTextColor(ms: number, sunrise: number, sunset: number): string {
+	const colors = getSkyColors(ms, sunrise, sunset);
+	// Use middle color as dominant background color
+	return contrastTextColor(colors[1]);
+}

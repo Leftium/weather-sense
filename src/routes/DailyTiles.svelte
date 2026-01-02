@@ -18,6 +18,7 @@
 		maxForecastDays = 16,
 		skyGradient = 'linear-gradient(135deg, #eee 0%, #a8d8f0 50%, #6bb3e0 100%)',
 		tileGradient = 'linear-gradient(160deg, #6bb3e0 0%, #a8d8f0 50%, #eee 100%)',
+		textColor = '#333',
 		onExpand,
 	}: {
 		nsWeatherData: NsWeatherData;
@@ -25,6 +26,7 @@
 		maxForecastDays?: number;
 		skyGradient?: string;
 		tileGradient?: string;
+		textColor?: string;
 		onExpand?: () => void;
 	} = $props();
 
@@ -319,6 +321,7 @@
 	style:--tile-count={days.length}
 	style:--has-more={canExpand ? 1 : 0}
 	style:--sky-gradient={skyGradient}
+	style:color={textColor}
 	bind:this={containerDiv}
 	use:trackable
 >
@@ -501,6 +504,11 @@
 		touch-action: none;
 		background: var(--sky-gradient, linear-gradient(135deg, #eee 0%, #a8d8f0 50%, #6bb3e0 100%));
 		background-attachment: fixed;
+
+		// Force text to inherit the dynamic color
+		& * {
+			color: inherit;
+		}
 	}
 
 	.tiles {

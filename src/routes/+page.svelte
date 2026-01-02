@@ -19,6 +19,7 @@
 		aqiEuropeToLabel,
 		getSkyGradient,
 		getTileGradient,
+		getTextColor,
 	} from '$lib/util.js';
 	import RadarMapLibre from './RadarMapLibre.svelte';
 
@@ -55,6 +56,15 @@
 		}
 		// Default daytime gradient for tiles
 		return 'linear-gradient(160deg, #6bb3e0 0%, #a8d8f0 50%, #eee 100%)';
+	});
+
+	// Dynamic text color for contrast against sky gradient
+	const textColor = $derived.by(() => {
+		const today = nsWeatherData.daily?.find((d) => d.fromToday === 0);
+		if (today) {
+			return getTextColor(nsWeatherData.ms, today.sunrise, today.sunset);
+		}
+		return '#333'; // Default dark text for daytime
 	});
 
 	emit('weatherdata_requestedSetLocation', {
@@ -94,7 +104,7 @@
 	</span>
 </div>
 
-<div class="pico container sticky-info" style:--sky-gradient={skyGradient}>
+<div class="pico container sticky-info" style:--sky-gradient={skyGradient} style:color={textColor}>
 	<div class="name">
 		{nsWeatherData.name}
 		<span class="accuracy"
@@ -208,6 +218,7 @@
 			{forecastDaysVisible}
 			{skyGradient}
 			{tileGradient}
+			{textColor}
 			maxForecastDays={FORECAST_DAYS}
 			onExpand={() =>
 				(forecastDaysVisible =
@@ -324,6 +335,11 @@
 
 		& > div {
 			padding-block: $size-1;
+		}
+
+		// Force all text to inherit the dynamic color
+		& * {
+			color: inherit;
 		}
 	}
 

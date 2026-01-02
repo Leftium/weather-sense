@@ -12,65 +12,17 @@
 	import { getEmitter } from '$lib/emitter';
 	import { clamp, minBy, maxBy } from 'lodash-es';
 
-	// Sky gradient colors based on time of day
-	function getSkyGradient(ms: number, sunrise: number, sunset: number): string {
-		const MS_IN_HOUR = 3600000;
-
-		// Define time boundaries
-		const dawnStart = sunrise - 2 * MS_IN_HOUR;
-		const dawnEnd = sunrise + MS_IN_HOUR;
-		const duskStart = sunset - MS_IN_HOUR;
-		const duskEnd = sunset + MS_IN_HOUR;
-
-		// Color palettes for each phase
-		const night = ['#1a1a2e', '#16213e'];
-		const dawn = ['#16213e', '#ff6b6b', '#ffd93d'];
-		const day = ['#87ceeb', '#6bb3e0'];
-		const dusk = ['#ffd93d', '#ff6b6b', '#6b5b95', '#16213e'];
-
-		// Determine which phase we're in
-		if (ms < dawnStart || ms > duskEnd) {
-			// Night
-			return `linear-gradient(135deg, ${night[0]} 0%, ${night[1]} 100%)`;
-		} else if (ms >= dawnStart && ms < dawnEnd) {
-			// Dawn - interpolate through dawn colors
-			const progress = (ms - dawnStart) / (dawnEnd - dawnStart);
-			if (progress < 0.5) {
-				return `linear-gradient(135deg, ${dawn[0]} 0%, ${dawn[1]} 100%)`;
-			} else {
-				return `linear-gradient(135deg, ${dawn[1]} 0%, ${dawn[2]} 100%)`;
-			}
-		} else if (ms >= dawnEnd && ms < duskStart) {
-			// Daytime
-			return `linear-gradient(135deg, ${day[0]} 0%, ${day[1]} 100%)`;
-		} else {
-			// Dusk - interpolate through dusk colors
-			const progress = (ms - duskStart) / (duskEnd - duskStart);
-			if (progress < 0.33) {
-				return `linear-gradient(135deg, ${dusk[0]} 0%, ${dusk[1]} 100%)`;
-			} else if (progress < 0.66) {
-				return `linear-gradient(135deg, ${dusk[1]} 0%, ${dusk[2]} 100%)`;
-			} else {
-				return `linear-gradient(135deg, ${dusk[2]} 0%, ${dusk[3]} 100%)`;
-			}
-		}
-	}
-
-	// Get representative time for a day tile (use midday)
-	function getDaySkyGradient(day: { ms: number; sunrise: number; sunset: number }): string {
-		const midday = (day.sunrise + day.sunset) / 2;
-		return getSkyGradient(midday, day.sunrise, day.sunset);
-	}
-
 	let {
 		nsWeatherData,
 		forecastDaysVisible = 5,
 		maxForecastDays = 16,
+		skyGradient = 'linear-gradient(135deg, #eee 0%, #a8d8f0 50%, #6bb3e0 100%)',
 		onExpand,
 	}: {
 		nsWeatherData: NsWeatherData;
 		forecastDaysVisible?: number;
 		maxForecastDays?: number;
+		skyGradient?: string;
 		onExpand?: () => void;
 	} = $props();
 
@@ -364,6 +316,7 @@
 	class="daily-tiles"
 	style:--tile-count={days.length}
 	style:--has-more={canExpand ? 1 : 0}
+	style:--sky-gradient={skyGradient}
 	bind:this={containerDiv}
 	use:trackable
 >
@@ -539,7 +492,7 @@
 		overflow: visible;
 		user-select: none;
 		touch-action: none;
-		background: linear-gradient(135deg, #eee 0%, #a8d8f0 50%, #6bb3e0 100%);
+		background: var(--sky-gradient, linear-gradient(135deg, #eee 0%, #a8d8f0 50%, #6bb3e0 100%));
 		background-attachment: fixed;
 	}
 

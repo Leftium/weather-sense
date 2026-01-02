@@ -17,6 +17,7 @@
 		colors,
 		aqiUsToLabel,
 		aqiEuropeToLabel,
+		getSkyGradient,
 	} from '$lib/util.js';
 	import RadarMapLibre from './RadarMapLibre.svelte';
 
@@ -34,6 +35,16 @@
 
 	let forecastDaysVisible = $state(3);
 	let displayDewPoint = $state(true);
+
+	// Dynamic sky gradient based on current time
+	const skyGradient = $derived.by(() => {
+		const today = nsWeatherData.daily?.find((d) => d.fromToday === 0);
+		if (today) {
+			return getSkyGradient(nsWeatherData.ms, today.sunrise, today.sunset);
+		}
+		// Default daytime gradient
+		return 'linear-gradient(135deg, #eee 0%, #a8d8f0 50%, #6bb3e0 100%)';
+	});
 
 	emit('weatherdata_requestedSetLocation', {
 		source: data.source,
@@ -72,7 +83,7 @@
 	</span>
 </div>
 
-<div class="pico container sticky-info">
+<div class="pico container sticky-info" style:--sky-gradient={skyGradient}>
 	<div class="name">
 		{nsWeatherData.name}
 		<span class="accuracy"
@@ -184,6 +195,7 @@
 		<DailyTiles
 			{nsWeatherData}
 			{forecastDaysVisible}
+			{skyGradient}
 			maxForecastDays={FORECAST_DAYS}
 			onExpand={() =>
 				(forecastDaysVisible =
@@ -294,7 +306,7 @@
 		top: 0;
 		z-index: 100000;
 
-		background: linear-gradient(135deg, #eee 0%, #a8d8f0 50%, #6bb3e0 100%);
+		background: var(--sky-gradient, linear-gradient(135deg, #eee 0%, #a8d8f0 50%, #6bb3e0 100%));
 		background-attachment: fixed;
 		padding: 0.2em 0.3em;
 

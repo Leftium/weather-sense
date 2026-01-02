@@ -55,8 +55,8 @@
 	// SVG dimensions
 	const TILE_WIDTH = 80;
 	const TILE_HEIGHT = 130;
-	const AQI_BAND_HEIGHT = 20;
-	const AQI_BAND_Y = TILE_HEIGHT - AQI_BAND_HEIGHT;
+	const AQI_BAND_HEIGHT = 19; // Leave 1px for bottom border
+	const AQI_BAND_Y = TILE_HEIGHT - AQI_BAND_HEIGHT - 1;
 
 	// Compute daily max AQI from hourly dataAirQuality
 	const dailyAqi = $derived.by(() => {
@@ -308,6 +308,8 @@
 					width={TILE_WIDTH}
 					height={AQI_BAND_HEIGHT}
 					fill={label.color}
+					stroke="#ddd"
+					stroke-width="1"
 				/>
 				<!-- Label shadow -->
 				<text

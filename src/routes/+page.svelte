@@ -181,12 +181,12 @@
 
 <div class="container">
 	<div class="scroll">
+		<DailyTiles {nsWeatherData} />
+
 		<div class="hourly pico">
 			<b>Next 24 hours</b>
 			<TimeLine {nsWeatherData} start={Date.now() - 2 * MS_IN_HOUR} />
 		</div>
-
-		<DailyTiles {nsWeatherData} />
 
 		<div class="map">
 			<RadarMapLibre {nsWeatherData} />

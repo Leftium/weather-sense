@@ -422,7 +422,7 @@ export function getSkyGradient(ms: number, sunrise: number, sunset: number): str
 
 export function getTileGradient(ms: number, sunrise: number, sunset: number): string {
 	const colors = getSkyColors(ms, sunrise, sunset);
-	return `linear-gradient(-135deg, ${colors[0]} 0%, ${colors[1]} 50%, ${colors[2]} 100%)`;
+	return `linear-gradient(135deg, ${colors[0]} 0%, ${colors[1]} 50%, ${colors[2]} 100%)`;
 }
 
 export function getTextColor(ms: number, sunrise: number, sunset: number): string {

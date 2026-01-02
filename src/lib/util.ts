@@ -370,12 +370,66 @@ function interpolatePalettes(palette1: string[], palette2: string[], t: number):
 	});
 }
 
+// Lerp between two color arrays by a factor (for animation)
+export function lerpColors(current: string[], target: string[], factor: number): string[] {
+	return current.map((color1, i) => {
+		const c1 = new Color(color1);
+		const c2 = new Color(target[i]);
+		const mixed = c1.mix(c2, factor, { space: 'oklch' });
+		return mixed.toString({ format: 'hex' });
+	});
+}
+
+// Move colors toward target by a fixed step in OKLCH space (linear animation)
+export function stepColors(current: string[], target: string[], stepSize: number): string[] {
+	return current.map((color1, i) => {
+		const c1 = new Color(color1);
+		const c2 = new Color(target[i]);
+		const delta = c1.deltaEOK(c2);
+
+		if (delta <= stepSize) {
+			// Close enough, snap to target
+			return target[i];
+		}
+
+		// Move stepSize/delta fraction toward target (linear step)
+		const factor = stepSize / delta;
+		const mixed = c1.mix(c2, factor, { space: 'oklch' });
+		return mixed.toString({ format: 'hex' });
+	});
+}
+
+// Check if two color arrays are close enough (for snapping)
+export function colorsAreClose(
+	colors1: string[],
+	colors2: string[],
+	threshold: number = 0.01,
+): boolean {
+	return colors1.every((color1, i) => {
+		const c1 = new Color(color1);
+		const c2 = new Color(colors2[i]);
+		const delta = c1.deltaEOK(c2);
+		return delta < threshold;
+	});
+}
+
+// Get max color delta between two color arrays (in deltaEOK units)
+export function colorsDelta(colors1: string[], colors2: string[]): number {
+	let maxDelta = 0;
+	for (let i = 0; i < colors1.length; i++) {
+		const c1 = new Color(colors1[i]);
+		const c2 = new Color(colors2[i]);
+		maxDelta = Math.max(maxDelta, c1.deltaEOK(c2));
+	}
+	return maxDelta;
+}
+
 // Convert radians to degrees
 function radToDeg(rad: number): number {
 	return (rad * 180) / Math.PI;
 }
 
-function getSkyColors(ms: number, sunrise: number, sunset: number): string[] {
+export function getSkyColors(ms: number, sunrise: number, sunset: number): string[] {
 	const altitudeRad = getSunAltitude(ms, sunrise, sunset);
 	const altitude = radToDeg(altitudeRad);
 	const solarNoon = (sunrise + sunset) / 2;

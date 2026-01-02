@@ -17,10 +17,9 @@
 		colors,
 		aqiUsToLabel,
 		aqiEuropeToLabel,
-		getSkyGradient,
-		getTileGradient,
-		getTextColor,
-		getTextShadowColor,
+		getSkyColors,
+		colorsDelta,
+		contrastTextColor,
 	} from '$lib/util.js';
 	import RadarMapLibre from './RadarMapLibre.svelte';
 
@@ -179,39 +178,255 @@
 		return day || nsWeatherData.daily?.find((d) => d.fromToday === 0);
 	});
 
-	// Dynamic sky gradient based on current time
-	const skyGradient = $derived.by(() => {
-		if (currentDay) {
-			return getSkyGradient(nsWeatherData.ms, currentDay.sunrise, currentDay.sunset);
+	// Dynamic sky gradient with smooth animated transitions
+	// Animates through TIME to ensure you never skip gradients (e.g., must pass through dawn)
+	// Moves at constant COLOR speed for smooth visual transitions
+	// If multiple transitions (dawn+dusk), speeds through early ones, slows for final one
+	const TARGET_COLOR_DELTA_NORMAL = 0.008; // Normal color change per frame
+	const MIN_TIME_STEP = 30000; // Minimum 30 seconds per frame
+	const MAX_TIME_STEP = 3600000; // Maximum 1 hour per frame
+	const MS_IN_DAY = 24 * 60 * 60 * 1000;
+	const DEFAULT_COLORS = ['#f0f8ff', '#a8d8f0', '#6bb3e0']; // Day colors
+
+	let animationFrameId: number | null = null;
+
+	function getTimeOfDay(ms: number): number {
+		const date = new Date(ms);
+		return (
+			date.getHours() * 3600000 +
+			date.getMinutes() * 60000 +
+			date.getSeconds() * 1000 +
+			date.getMilliseconds()
+		);
+	}
+
+	function getDayStart(ms: number): number {
+		const date = new Date(ms);
+		date.setHours(0, 0, 0, 0);
+		return date.getTime();
+	}
+
+	// Count dawn/dusk transitions between two times
+	// Transitions happen around sunrise and sunset (±1 hour is the colorful part)
+	function countTransitions(fromMs: number, toMs: number, sunrise: number, sunset: number): number {
+		const minMs = Math.min(fromMs, toMs);
+		const maxMs = Math.max(fromMs, toMs);
+		let count = 0;
+
+		// Check if sunrise transition is in range (sunrise ± 1 hour)
+		if (sunrise - MS_IN_HOUR < maxMs && sunrise + MS_IN_HOUR > minMs) {
+			count++;
 		}
-		// Default daytime gradient
-		return 'linear-gradient(135deg, #eee 0%, #a8d8f0 50%, #6bb3e0 100%)';
+		// Check if sunset transition is in range (sunset ± 1 hour)
+		if (sunset - MS_IN_HOUR < maxMs && sunset + MS_IN_HOUR > minMs) {
+			count++;
+		}
+		return count;
+	}
+
+	// Check if we're currently in the final transition (closest to target)
+	function isInFinalTransition(
+		displayMs: number,
+		targetMs: number,
+		sunrise: number,
+		sunset: number,
+	): boolean {
+		const direction = targetMs > displayMs ? 1 : -1;
+
+		// Find which transition target is in or just after
+		const targetInSunrise = targetMs >= sunrise - MS_IN_HOUR && targetMs <= sunrise + MS_IN_HOUR;
+		const targetInSunset = targetMs >= sunset - MS_IN_HOUR && targetMs <= sunset + MS_IN_HOUR;
+
+		if (direction > 0) {
+			// Moving forward: final transition is the last one before target
+			if (targetInSunset || targetMs > sunset + MS_IN_HOUR) {
+				// Target is at/past sunset, so sunset is final (if we haven't passed it)
+				return displayMs >= sunset - MS_IN_HOUR;
+			} else if (targetInSunrise || targetMs > sunrise + MS_IN_HOUR) {
+				// Target is at/past sunrise but before sunset
+				return displayMs >= sunrise - MS_IN_HOUR;
+			}
+		} else {
+			// Moving backward: final transition is the last one before target (going back)
+			if (targetInSunrise || targetMs < sunrise - MS_IN_HOUR) {
+				// Target is at/before sunrise
+				return displayMs <= sunrise + MS_IN_HOUR;
+			} else if (targetInSunset || targetMs < sunset - MS_IN_HOUR) {
+				// Target is at/before sunset but after sunrise
+				return displayMs <= sunset + MS_IN_HOUR;
+			}
+		}
+
+		return true; // Default to final (normal speed)
+	}
+
+	// Get the edge of the final transition (where we should stop skipping)
+	function getFinalTransitionEdge(
+		displayMs: number,
+		targetMs: number,
+		sunrise: number,
+		sunset: number,
+	): number | null {
+		const direction = targetMs > displayMs ? 1 : -1;
+
+		const targetInSunrise = targetMs >= sunrise - MS_IN_HOUR && targetMs <= sunrise + MS_IN_HOUR;
+		const targetInSunset = targetMs >= sunset - MS_IN_HOUR && targetMs <= sunset + MS_IN_HOUR;
+
+		if (direction > 0) {
+			// Moving forward: find start of final transition
+			if (targetInSunset || targetMs > sunset + MS_IN_HOUR) {
+				// Final is sunset - return its start edge
+				return sunset - MS_IN_HOUR;
+			} else if (targetInSunrise || targetMs > sunrise + MS_IN_HOUR) {
+				// Final is sunrise - return its start edge
+				return sunrise - MS_IN_HOUR;
+			}
+		} else {
+			// Moving backward: find end of final transition (going back)
+			if (targetInSunrise || targetMs < sunrise - MS_IN_HOUR) {
+				// Final is sunrise - return its end edge
+				return sunrise + MS_IN_HOUR;
+			} else if (targetInSunset || targetMs < sunset - MS_IN_HOUR) {
+				// Final is sunset - return its end edge
+				return sunset + MS_IN_HOUR;
+			}
+		}
+
+		return null; // No transition edge
+	}
+
+	// The display time (absolute ms) that animates toward target - this drives the gradient
+	let displayMs = $state(Date.now());
+	let lastTargetDayStart = $state(getDayStart(Date.now()));
+
+	// Compute colors from displayMs using currentDay's sunrise/sunset
+	const displayColors = $derived.by(() => {
+		if (!currentDay) return DEFAULT_COLORS;
+		return getSkyColors(displayMs, currentDay.sunrise, currentDay.sunset);
 	});
 
-	// Tile gradient - similar colors, different angle
-	const tileGradient = $derived.by(() => {
-		if (currentDay) {
-			return getTileGradient(nsWeatherData.ms, currentDay.sunrise, currentDay.sunset);
+	// Start animation loop - steps through time at constant color speed
+	$effect(() => {
+		function animate() {
+			if (!currentDay) {
+				animationFrameId = requestAnimationFrame(animate);
+				return;
+			}
+
+			const targetMs = nsWeatherData.ms;
+			const targetDayStart = getDayStart(targetMs);
+
+			// If day changed, teleport display to same time-of-day on new day
+			if (targetDayStart !== lastTargetDayStart) {
+				const currentTimeOfDay = getTimeOfDay(displayMs);
+				displayMs = targetDayStart + currentTimeOfDay;
+				lastTargetDayStart = targetDayStart;
+			}
+
+			const diff = targetMs - displayMs;
+			const absDiff = Math.abs(diff);
+
+			// If close enough, snap
+			if (absDiff < MIN_TIME_STEP) {
+				displayMs = targetMs;
+				animationFrameId = requestAnimationFrame(animate);
+				return;
+			}
+
+			const direction = Math.sign(diff);
+
+			// Determine if we should go fast or normal
+			// Fast (skip) if: multiple transitions AND not in final transition yet
+			const numTransitions = countTransitions(
+				displayMs,
+				targetMs,
+				currentDay.sunrise,
+				currentDay.sunset,
+			);
+			const inFinal = isInFinalTransition(
+				displayMs,
+				targetMs,
+				currentDay.sunrise,
+				currentDay.sunset,
+			);
+			const skipIntermediate = numTransitions > 1 && !inFinal;
+
+			// Calculate time step
+			let timeStep: number;
+			if (skipIntermediate) {
+				// Skip intermediate transitions - use max step, but stop at final transition edge
+				timeStep = MAX_TIME_STEP;
+
+				// Don't skip into the final transition
+				const edge = getFinalTransitionEdge(
+					displayMs,
+					targetMs,
+					currentDay.sunrise,
+					currentDay.sunset,
+				);
+				if (edge !== null) {
+					const distToEdge = Math.abs(edge - displayMs);
+					if (distToEdge < timeStep) {
+						timeStep = distToEdge;
+					}
+				}
+			} else {
+				// Calculate color change rate at current position
+				const sampleStep = 60000; // 1 minute sample
+				const sampleMs = displayMs + direction * sampleStep;
+
+				const currentColors = getSkyColors(displayMs, currentDay.sunrise, currentDay.sunset);
+				const sampleColors = getSkyColors(sampleMs, currentDay.sunrise, currentDay.sunset);
+
+				// Calculate max color delta across all 3 stops
+				const maxDelta = colorsDelta(currentColors, sampleColors);
+
+				if (maxDelta < 0.0001) {
+					// Colors barely changing (midday/midnight), use max step
+					timeStep = MAX_TIME_STEP;
+				} else {
+					timeStep = (TARGET_COLOR_DELTA_NORMAL / maxDelta) * sampleStep;
+				}
+			}
+
+			// Clamp time step
+			timeStep = Math.max(MIN_TIME_STEP, Math.min(MAX_TIME_STEP, timeStep));
+
+			// Don't overshoot target
+			if (timeStep > absDiff) {
+				timeStep = absDiff;
+			}
+
+			// Step toward target
+			displayMs = displayMs + direction * timeStep;
+
+			animationFrameId = requestAnimationFrame(animate);
 		}
-		// Default daytime gradient for tiles
-		return 'linear-gradient(160deg, #6bb3e0 0%, #a8d8f0 50%, #eee 100%)';
+
+		animationFrameId = requestAnimationFrame(animate);
+
+		return () => {
+			if (animationFrameId) {
+				cancelAnimationFrame(animationFrameId);
+				animationFrameId = null;
+			}
+		};
 	});
 
-	// Dynamic text color for contrast against sky gradient
-	const textColor = $derived.by(() => {
-		if (currentDay) {
-			return getTextColor(nsWeatherData.ms, currentDay.sunrise, currentDay.sunset);
-		}
-		return '#333'; // Default dark text for daytime
-	});
+	// Build gradients from animated displayColors
+	const skyGradient = $derived(
+		`linear-gradient(-135deg, ${displayColors[0]} 0%, ${displayColors[1]} 50%, ${displayColors[2]} 100%)`,
+	);
 
-	// Dynamic text shadow color (opposite of text color)
-	const textShadowColor = $derived.by(() => {
-		if (currentDay) {
-			return getTextShadowColor(nsWeatherData.ms, currentDay.sunrise, currentDay.sunset);
-		}
-		return 'rgba(255, 255, 255, 0.8)'; // Default white shadow for daytime
-	});
+	const tileGradient = $derived(
+		`linear-gradient(135deg, ${displayColors[0]} 0%, ${displayColors[1]} 50%, ${displayColors[2]} 100%)`,
+	);
+
+	// Text color based on middle color for contrast
+	const textColor = $derived(contrastTextColor(displayColors[1]));
+
+	// Text shadow is opposite of text color
+	const textShadowColor = $derived(contrastTextColor(displayColors[1], true));
 
 	function toggleUnits(node: HTMLElement, options: { temperature: boolean | string }) {
 		function handleClick() {
@@ -491,6 +706,7 @@
 		background-attachment: fixed;
 		pointer-events: none;
 		z-index: -1;
+		transition: background 1s ease-out;
 	}
 
 	.sticky-info {
@@ -501,6 +717,7 @@
 		background: var(--sky-gradient, linear-gradient(135deg, #eee 0%, #a8d8f0 50%, #6bb3e0 100%));
 		background-attachment: fixed;
 		padding: 0.2em 1rem;
+		transition: background 1s ease-out;
 
 		& > div {
 			padding-block: $size-1;

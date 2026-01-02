@@ -551,6 +551,7 @@
 		width: 100%;
 		height: 100%;
 		background: var(--tile-gradient, linear-gradient(160deg, #6bb3e0 0%, #a8d8f0 50%, #eee 100%));
+		transition: background 1s ease-out;
 	}
 
 	// Placeholder/skeleton styles

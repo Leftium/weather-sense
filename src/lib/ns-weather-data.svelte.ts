@@ -40,7 +40,6 @@ export type WeatherDataEvents = {
 
 const DATEFORMAT_MASK = 'MM-DD hh:mma z';
 const PAST_DAYS = 2; // 0 to 92
-const INITIAL_FORECAST_DAYS = 5; // Days to fetch initially (past_days + this = 7 total)
 export const FORECAST_DAYS = 16; // 0 to 16 for forecast; 0 to 7 for air-quality;
 
 const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
@@ -410,109 +409,23 @@ export function makeNsWeatherData() {
 		}
 	}
 
-	function buildForecastUrl(options: {
-		pastDays?: number;
-		forecastDays?: number;
-		startDate?: string;
-		endDate?: string;
-		includeCurrent?: boolean;
-	}) {
-		const { pastDays, forecastDays, startDate, endDate, includeCurrent = true } = options;
-
-		let dateParams = '';
-		if (startDate && endDate) {
-			dateParams = `&start_date=${startDate}&end_date=${endDate}`;
-		} else {
-			dateParams = `&past_days=${pastDays ?? PAST_DAYS}&forecast_days=${forecastDays ?? FORECAST_DAYS}`;
-		}
-
-		const currentParams = includeCurrent
-			? `&current=temperature_2m,relative_humidity_2m,is_day,precipitation,rain,showers,snowfall,weather_code`
-			: '';
-
-		return (
-			`https://api.open-meteo.com/v1/forecast` +
-			`?latitude=${coords!.latitude}&longitude=${coords!.longitude}` +
-			`&timeformat=unixtime&timezone=auto${dateParams}` +
-			`&temperature_unit=fahrenheit` +
-			currentParams +
-			`&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,weather_code,dew_point_2m` +
-			`&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,rain_sum,showers_sum,snowfall_sum,precipitation_hours,precipitation_probability_max`
-		);
-	}
-
-	function parseHourlyData(json: any): HourlyForecast[] {
-		return json.hourly.time
-			.map((unixtime: number, index: number) => {
-				const ms = unixtime * MS_IN_SECOND;
-				const object: Partial<HourlyForecast> = {
-					msPretty: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),
-					ms,
-				};
-
-				forEach(hourlyKeys, (keyData: string, keyOpenMeteo: string | number) => {
-					const value = json.hourly[keyOpenMeteo]?.[index];
-					// Ensure we always have a number, never null/undefined
-					const safeValue = typeof value === 'number' ? value : 0;
-					object[keyData as keyof HourlyForecast] = safeValue;
-				});
-
-				return object as HourlyForecast;
-			})
-			.filter((hourlyForecast: HourlyForecast) => {
-				return hourlyForecast.weatherCode !== null;
-			});
-	}
-
-	function parseDailyData(json: any, dayOffset: number = 0): DailyForecast[] {
-		return json.daily.time
-			.map((unixtime: number, index: number) => {
-				const ms = unixtime * MS_IN_SECOND;
-				const fromToday = index + dayOffset - PAST_DAYS;
-				const compactDate =
-					fromToday === 0
-						? 'Today'
-						: nsWeatherData.tzFormat(ms, fromToday < -7 || fromToday > 7 ? 'MMM-DD' : 'dd-DD');
-
-				const sunrise = json.daily.sunrise[index] * MS_IN_SECOND;
-				const sunset = json.daily.sunset[index] * MS_IN_SECOND;
-
-				const object: Partial<DailyForecast> = {
-					msPretty: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),
-					compactDate,
-					ms,
-					fromToday,
-					sunrise,
-					sunset,
-				};
-
-				forEach(dailyKeys, (newKey: string, openMeteoKey: string | number) => {
-					object[newKey as keyof DailyForecast] = json.daily[openMeteoKey][index];
-				});
-
-				return object as DailyForecast;
-			})
-			.filter((dailyForecast: DailyForecast) => {
-				return dailyForecast.weatherCode !== null;
-			});
-	}
-
 	async function fetchOpenMeteoForecast() {
 		if (!coords) {
 			gg('fetchOpenMeteoForecast: No coordinates available');
 			return;
 		}
 		gg('fetchOpenMeteoForecast:start');
-		console.time('fetchOpenMeteoForecast:initial');
+		console.time('fetchOpenMeteoForecast');
+		const url =
+			`https://api.open-meteo.com/v1/forecast` +
+			`?latitude=${coords.latitude}&longitude=${coords.longitude}` +
+			`&timeformat=unixtime&timezone=auto&past_days=${PAST_DAYS}&forecast_days=${FORECAST_DAYS}` +
+			`&temperature_unit=fahrenheit` +
+			`&current=temperature_2m,relative_humidity_2m,is_day,precipitation,rain,showers,snowfall,weather_code` +
+			`&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,weather_code,dew_point_2m` +
+			`&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,rain_sum,showers_sum,snowfall_sum,precipitation_hours,precipitation_probability_max`;
 
-		// Initial fetch: past days + limited forecast days for faster initial load
-		const initialUrl = buildForecastUrl({
-			pastDays: PAST_DAYS,
-			forecastDays: INITIAL_FORECAST_DAYS,
-			includeCurrent: true,
-		});
-
-		const fetched = await fetch(initialUrl);
+		const fetched = await fetch(url);
 		const json = await fetched.json();
 
 		timezone = json.timezone;
@@ -533,8 +446,59 @@ export function makeNsWeatherData() {
 			snowfall: json.current.snowfall,
 		};
 
-		const hourly = parseHourlyData(json);
-		const daily = parseDailyData(json);
+		const hourly = json.hourly.time
+			.map((unixtime: number, index: number) => {
+				const ms = unixtime * MS_IN_SECOND;
+				const object: Partial<HourlyForecast> = {
+					msPretty: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),
+					ms,
+				};
+
+				forEach(hourlyKeys, (keyData: string, keyOpenMeteo: string | number) => {
+					const value = json.hourly[keyOpenMeteo]?.[index];
+					// Ensure we always have a number, never null/undefined
+					const safeValue = typeof value === 'number' ? value : 0;
+					object[keyData as keyof HourlyForecast] = safeValue;
+				});
+
+				return object as HourlyForecast;
+			})
+			.filter((hourlyForecast: HourlyForecast, index: number) => {
+				return hourlyForecast.weatherCode !== null;
+			});
+
+		const daily = json.daily.time
+			.map((unixtime: number, index: number) => {
+				const ms = unixtime * MS_IN_SECOND;
+				const compactDate =
+					index === PAST_DAYS
+						? 'Today'
+						: nsWeatherData.tzFormat(
+								ms,
+								index < PAST_DAYS - 7 || index > PAST_DAYS + 7 ? 'MMM-DD' : 'dd-DD',
+							);
+
+				const sunrise = json.daily.sunrise[index] * MS_IN_SECOND;
+				const sunset = json.daily.sunset[index] * MS_IN_SECOND;
+
+				const object: Partial<DailyForecast> = {
+					msPretty: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),
+					compactDate,
+					ms,
+					fromToday: index - PAST_DAYS,
+					sunrise,
+					sunset,
+				};
+
+				forEach(dailyKeys, (newKey: string, openMeteoKey: string | number) => {
+					object[newKey as keyof DailyForecast] = json.daily[openMeteoKey][index];
+				});
+
+				return object as DailyForecast;
+			})
+			.filter((dailyForecast: DailyForecast, index: number) => {
+				return dailyForecast.weatherCode !== null;
+			});
 
 		omForecast = {
 			current,
@@ -542,13 +506,12 @@ export function makeNsWeatherData() {
 			hourly,
 		};
 
-		console.timeEnd('fetchOpenMeteoForecast:initial');
+		console.timeEnd('fetchOpenMeteoForecast');
 
 		emit('weatherdata_updatedData');
-		gg('fetchOpenMeteoForecast:initial', {
+		gg('fetchOpenMeteoForecast', {
 			current: $state.snapshot(omForecast.current),
-			dailyCount: daily.length,
-			hourlyCount: hourly.length,
+			json: $state.snapshot(json),
 		});
 
 		// Ensure pretty timestamps are in correct timezone:
@@ -560,78 +523,6 @@ export function makeNsWeatherData() {
 				...frame,
 				msPretty: nsWeatherData.tzFormat(frame.ms),
 			}));
-		}
-
-		// Immediately fetch extended forecast in background
-		fetchExtendedForecast();
-	}
-
-	async function fetchExtendedForecast() {
-		if (!coords) return;
-
-		const extendedDays = FORECAST_DAYS - INITIAL_FORECAST_DAYS;
-		if (extendedDays <= 0) return; // No extended forecast needed
-
-		console.time('fetchOpenMeteoForecast:extended');
-
-		// Fetch full forecast range (no past days, full forecast days)
-		// We'll skip the days we already have
-		const extendedUrl = buildForecastUrl({
-			pastDays: 0,
-			forecastDays: FORECAST_DAYS,
-			includeCurrent: false,
-		});
-
-		try {
-			const fetched = await fetch(extendedUrl);
-			const json = await fetched.json();
-
-			// Skip the days we already fetched (INITIAL_FORECAST_DAYS + 1 for today)
-			const skipDays = INITIAL_FORECAST_DAYS + 1;
-			const skipHours = skipDays * 24;
-
-			// Slice off the data we already have
-			json.hourly.time = json.hourly.time.slice(skipHours);
-			Object.keys(hourlyKeys).forEach((key) => {
-				if (json.hourly[key]) {
-					json.hourly[key] = json.hourly[key].slice(skipHours);
-				}
-			});
-
-			json.daily.time = json.daily.time.slice(skipDays);
-			Object.keys(dailyKeys).forEach((key) => {
-				if (json.daily[key]) {
-					json.daily[key] = json.daily[key].slice(skipDays);
-				}
-			});
-			// Also slice sunrise/sunset
-			json.daily.sunrise = json.daily.sunrise.slice(skipDays);
-			json.daily.sunset = json.daily.sunset.slice(skipDays);
-
-			const extendedHourly = parseHourlyData(json);
-			// Pass the correct offset for fromToday calculation
-			const extendedDaily = parseDailyData(json, PAST_DAYS + skipDays);
-
-			// Merge extended data with existing data
-			if (omForecast) {
-				omForecast = {
-					current: omForecast.current,
-					hourly: [...omForecast.hourly, ...extendedHourly],
-					daily: [...omForecast.daily, ...extendedDaily],
-				};
-			}
-
-			console.timeEnd('fetchOpenMeteoForecast:extended');
-
-			emit('weatherdata_updatedData');
-			gg('fetchOpenMeteoForecast:extended', {
-				extendedDailyCount: extendedDaily.length,
-				extendedHourlyCount: extendedHourly.length,
-				totalDailyCount: omForecast?.daily.length,
-				totalHourlyCount: omForecast?.hourly.length,
-			});
-		} catch (error) {
-			console.error('Failed to fetch extended forecast:', error);
 		}
 	}
 

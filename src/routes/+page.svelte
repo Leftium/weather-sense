@@ -117,15 +117,6 @@
 	});
 </script>
 
-<div class="pico container">
-	<span>
-		<b>WeatherSense</b>
-		<a href="wmo-codes">WMO Codes</a> |
-		<a href="aqi">AQI Levels</a> |
-		<a href="https://blog.leftium.com/2025/05/weathersense.html">About</a>
-	</span>
-</div>
-
 <div class="pico container sticky-info" style:--sky-gradient={skyGradient} style:color={textColor}>
 	<div class="name">
 		{nsWeatherData.name}
@@ -317,12 +308,31 @@
 		</div>
 	</div>
 
-	<center class="pico attribution">
-		<div>
-			Weather/AQI/geocoding by <a href="https://open-meteo.com/">Open-Meteo.com</a>
+	<footer class="pico">
+		<div class="footer-content">
+			<div class="footer-column">
+				<h3>Links</h3>
+				<ul>
+					<li><a href="wmo-codes">WMO Codes</a></li>
+					<li><a href="aqi">AQI Levels</a></li>
+				</ul>
+			</div>
+			<div class="footer-column">
+				<h3>Data</h3>
+				<ul>
+					<li><a href="https://open-meteo.com/">Open-Meteo</a></li>
+					<li><a href="https://openweathermap.org/">OpenWeather</a></li>
+				</ul>
+			</div>
+			<div class="footer-column">
+				<h3>About</h3>
+				<ul>
+					<li><a href="https://github.com/Leftium/weather-sense">GitHub</a></li>
+					<li><a href="https://blog.leftium.com/2025/05/weathersense.html">Blog</a></li>
+				</ul>
+			</div>
 		</div>
-		<div>Reverse geocoding by <a href="https://openweathermap.org/">OpenWeather</a></div>
-	</center>
+	</footer>
 
 	{#if dev}
 		<div class="pico debug">
@@ -681,8 +691,55 @@
 		position: relative;
 	}
 
-	.attribution {
-		margin-block: 1.5em;
+	footer {
+		background: #f5f5f5;
+		border-top: 1px solid #e0e0e0;
+		padding: 1.5em 1em;
+		margin-top: 1em;
+	}
+
+	.footer-content {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 1.5em;
+		max-width: 40em;
+		margin: 0 auto;
+	}
+
+	.footer-column h3 {
+		font-size: 0.9em;
+		font-weight: 600;
+		margin-bottom: 0.5em;
+		color: #333;
+	}
+
+	.footer-column ul {
+		list-style: none;
+		padding: 0;
+		margin: 0;
+	}
+
+	.footer-column li {
+		margin-bottom: 0.3em;
+	}
+
+	.footer-column a {
+		color: #666;
+		text-decoration: none;
+		font-size: 0.85em;
+	}
+
+	.footer-column a:hover {
+		color: #268bd2;
+		text-decoration: underline;
+	}
+
+	@media (max-width: 480px) {
+		.footer-content {
+			grid-template-columns: 1fr;
+			gap: 1em;
+			text-align: center;
+		}
 	}
 
 	.debug {

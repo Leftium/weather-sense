@@ -273,6 +273,15 @@
 		}
 
 		function handlePointerDown(e: PointerEvent) {
+			// Don't start tracking if clicking on a temp label (for toggle units)
+			// SVG elements use className.baseVal, HTML elements use classList
+			const target = e.target as Element;
+			const isTempLabel =
+				target?.classList?.contains('temp-label') ||
+				(target as SVGElement)?.className?.baseVal?.includes('temp-label');
+			if (isTempLabel) {
+				return;
+			}
 			trackUntilMouseUp = true;
 			trackToMouseX(e);
 			emit('weatherdata_requestedTrackingStart', { node });
@@ -601,6 +610,7 @@
 		width: calc(var(--tile-count) * 80px);
 		height: 130px;
 		pointer-events: none;
+		z-index: 10; // Above tile content so temp labels can be clicked
 
 		:global(.temp-label) {
 			pointer-events: auto;

@@ -294,9 +294,7 @@
 		top: 0;
 		z-index: 100000;
 
-		background-color: var(--pico-background-color);
-
-		background-color: #eee;
+		background: linear-gradient(to bottom, #eee 70%, white);
 		padding: 0.2em 0.3em;
 		border-bottom-left-radius: 4.75px;
 		border-bottom-right-radius: 4.75px;

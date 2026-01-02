@@ -172,8 +172,6 @@
 						tiles: [tileUrl],
 						tileSize: 256,
 						maxzoom: 10, // Don't fetch tiles above zoom 10 - will overzoom instead
-						attribution:
-							'<a href="https://www.rainviewer.com/api.html" target="_blank">RainViewer</a>',
 					});
 				}
 

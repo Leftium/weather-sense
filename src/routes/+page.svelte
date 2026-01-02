@@ -325,6 +325,7 @@
 				<ul>
 					<li><a href="https://open-meteo.com/">Open-Meteo</a></li>
 					<li><a href="https://openweathermap.org/">OpenWeather</a></li>
+					<li><a href="https://www.rainviewer.com/api.html">RainViewer</a></li>
 				</ul>
 			</div>
 			<div class="footer-column">

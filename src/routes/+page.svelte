@@ -335,20 +335,32 @@
 				</ul>
 			</div>
 		</div>
+		{#if dev}
+			<div class="debug">
+				<h3>Debug</h3>
+				<div class="debug-item">
+					<span class="debug-label">nsWeatherData.ms</span>
+					<span>{nsWeatherData.ms} ({nsWeatherData.tzFormat(nsWeatherData.ms)})</span>
+				</div>
+				<details>
+					<summary>nsWeatherData.dataAirQuality</summary>
+					<pre>{jsonPretty(summarize(objectFromMap(nsWeatherData.dataAirQuality)))}</pre>
+				</details>
+				<details>
+					<summary>nsWeatherData.current</summary>
+					<pre>{jsonPretty(nsWeatherData.current)}</pre>
+				</details>
+				<details>
+					<summary>nsWeatherData.hourly</summary>
+					<pre>{jsonPretty(summarize(nsWeatherData.hourly))}</pre>
+				</details>
+				<details>
+					<summary>nsWeatherData.daily</summary>
+					<pre>{jsonPretty(summarize(nsWeatherData.daily))}</pre>
+				</details>
+			</div>
+		{/if}
 	</footer>
-
-	{#if dev}
-		<div class="pico debug">
-			<pre>nsWeatherData.ms = {nsWeatherData.ms} ({nsWeatherData.tzFormat(nsWeatherData.ms)})</pre>
-			<pre>nsWeatherData.dataAirQuality = {jsonPretty(
-					summarize(objectFromMap(nsWeatherData.dataAirQuality)),
-				)}</pre>
-
-			<pre>nsWeatherData.current = {jsonPretty(nsWeatherData.current)}</pre>
-			<pre>nsWeatherData.hourly = {jsonPretty(summarize(nsWeatherData.hourly))}</pre>
-			<pre>nsWeatherData.daily = {jsonPretty(summarize(nsWeatherData.daily))}</pre>
-		</div>
-	{/if}
 
 	<div class="pico" hidden>
 		<div role="group">
@@ -763,8 +775,46 @@
 	}
 
 	.debug {
-		margin-top: 1em;
-		overflow-x: scroll;
+		margin-top: 1.5em;
+		padding-top: 1em;
+		border-top: 1px solid #e0e0e0;
+
+		h3 {
+			font-size: 0.9em;
+			font-weight: 600;
+			margin-bottom: 0.5em;
+			color: #333;
+		}
+
+		.debug-item {
+			font-size: 0.8em;
+			margin-bottom: 0.25em;
+		}
+
+		.debug-label {
+			font-family: monospace;
+			color: #666;
+			margin-right: 0.5em;
+		}
+
+		details {
+			margin-bottom: 0.25em;
+		}
+
+		summary {
+			cursor: pointer;
+			font-size: 0.8em;
+			font-family: monospace;
+			color: #666;
+		}
+
+		pre {
+			font-size: 0.75em;
+			margin: 0.5em 0 0.5em 1em;
+			white-space: pre-wrap;
+			word-break: break-all;
+			overflow-x: auto;
+		}
 	}
 
 	@media (max-width: 768px) {

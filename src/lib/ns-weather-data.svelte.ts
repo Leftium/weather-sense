@@ -458,7 +458,7 @@ export function makeNsWeatherData() {
 					const value = json.hourly[keyOpenMeteo]?.[index];
 					// Ensure we always have a number, never null/undefined
 					const safeValue = typeof value === 'number' ? value : 0;
-					object[keyData as keyof HourlyForecast] = safeValue;
+					(object as Record<string, number | string>)[keyData] = safeValue;
 				});
 
 				return object as HourlyForecast;

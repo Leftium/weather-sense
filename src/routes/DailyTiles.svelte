@@ -419,7 +419,10 @@
 						stroke-width="3"
 						paint-order="stroke fill"
 						class="temp-label"
+						role="button"
+						tabindex="0"
 						onclick={toggleUnits}
+						onkeydown={(e) => e.key === 'Enter' && toggleUnits()}
 					>
 						{formatTemp(day.temperatureMax)}
 					</text>
@@ -441,7 +444,10 @@
 						stroke-width="3"
 						paint-order="stroke fill"
 						class="temp-label"
+						role="button"
+						tabindex="0"
 						onclick={toggleUnits}
+						onkeydown={(e) => e.key === 'Enter' && toggleUnits()}
 					>
 						{formatTemp(day.temperatureMin)}
 					</text>

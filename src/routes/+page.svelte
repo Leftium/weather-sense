@@ -26,7 +26,7 @@
 
 	import { clearEvents, getEmitter } from '$lib/emitter.js';
 	import { dev } from '$app/environment';
-	import { onDestroy } from 'svelte';
+	import { onDestroy, untrack } from 'svelte';
 
 	import { FORECAST_DAYS, makeNsWeatherData } from '$lib/ns-weather-data.svelte.js';
 	import { slide } from 'svelte/transition';
@@ -38,6 +38,15 @@
 
 	let forecastDaysVisible = $state(3);
 	let displayDewPoint = $state(true);
+
+	// Initialize location once on mount (untrack to avoid re-running on data changes)
+	untrack(() => {
+		emit('weatherdata_requestedSetLocation', {
+			source: data.source,
+			name: data.name,
+			coords: data.coords,
+		});
+	});
 
 	// Find the day that contains the current ms timestamp
 	const currentDay = $derived.by(() => {
@@ -87,12 +96,6 @@
 			return getTextShadowColor(nsWeatherData.ms, currentDay.sunrise, currentDay.sunset);
 		}
 		return 'rgba(255, 255, 255, 0.8)'; // Default white shadow for daytime
-	});
-
-	emit('weatherdata_requestedSetLocation', {
-		source: data.source,
-		name: data.name,
-		coords: data.coords,
 	});
 
 	function toggleUnits(node: HTMLElement, options: { temperature: boolean | string }) {
@@ -766,10 +769,5 @@
 		.sticky-info {
 			display: none;
 		}
-	}
-
-	.small-buttons button {
-		padding: 0.25em 0.5em;
-		font-size: 0.85em;
 	}
 </style>

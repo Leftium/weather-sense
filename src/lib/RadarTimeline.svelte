@@ -3,6 +3,7 @@
 	import type { RadarLayer } from '$lib/types';
 
 	import { clamp, find } from 'lodash-es';
+	import { untrack } from 'svelte';
 
 	import { getEmitter } from '$lib/emitter';
 	import { gg } from '@leftium/gg';
@@ -17,8 +18,9 @@
 
 	const step = MS_IN_SECOND;
 	const TEN_MINUTES = 10 * MS_IN_MINUTE; // Milliseconds in 10 minutes.
-	let min = $state(TEN_MINUTES * (Math.floor(nsWeatherData.ms / TEN_MINUTES) - 12));
-	let max = $state(TEN_MINUTES * (Math.floor(nsWeatherData.ms / TEN_MINUTES) + 4));
+	const initialMs = untrack(() => nsWeatherData.ms);
+	let min = $state(TEN_MINUTES * (Math.floor(initialMs / TEN_MINUTES) - 12));
+	let max = $state(TEN_MINUTES * (Math.floor(initialMs / TEN_MINUTES) + 4));
 	let range = $derived(makeRange(min, max));
 
 	function makeRange(min: number, max: number) {

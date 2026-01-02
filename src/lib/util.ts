@@ -94,13 +94,13 @@ export function contrastTextColor(
 	return returnValue.toString({ format: 'hex' });
 }
 
-const format = (num, width = 2) => `${Math.round(num)}`.padStart(width, '0');
+const format = (num: number, width = 2) => `${Math.round(num)}`.padStart(width, '0');
 
 export function prettyLch(color: Color) {
 	const [L, C, H] = color.oklch;
 	const A = color.alpha ?? 1;
 
-	return `${format(H || 0, 3)}h ${format(L * 100)}l ${format(A * 100)}a`;
+	return `${format(H || 0, 3)}h ${format((L ?? 0) * 100)}l ${format(A * 100)}a`;
 }
 
 function makeAqiLabel(text: string, color: string, range: string = '', description: string = '') {

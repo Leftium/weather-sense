@@ -1,8 +1,8 @@
 <script lang="ts">
 	import type { NsWeatherData, WeatherDataEvents } from '$lib/ns-weather-data.svelte';
-	import { colors, wmoCode, celcius } from '$lib/util';
+	import { colors, wmoCode, celcius, MS_IN_DAY } from '$lib/util';
 	import { getEmitter } from '$lib/emitter';
-	import { minBy, maxBy } from 'lodash-es';
+	import { clamp, minBy, maxBy } from 'lodash-es';
 
 	let {
 		nsWeatherData,
@@ -85,9 +85,143 @@
 		}
 		return linearHeight;
 	}
+
+	// Ref for trackable container
+	let containerDiv: HTMLDivElement;
+
+	// Tracker state
+	let trackerDayIndex: number | null = $state(null);
+	let trackerX: number | null = $state(null);
+	let trackerColor: string = $state('yellow');
+
+	// Get start of day ms for a given day
+	function getDayStartMs(dayIndex: number): number {
+		const day = days[dayIndex];
+		if (!day) return 0;
+		return day.ms;
+	}
+
+	// Convert ms to day index and X position within tiles
+	function msToPosition(ms: number): { dayIndex: number; x: number } | null {
+		if (!days.length) return null;
+
+		for (let i = 0; i < days.length; i++) {
+			const dayStart = getDayStartMs(i);
+			const dayEnd = dayStart + MS_IN_DAY;
+
+			if (ms >= dayStart && ms < dayEnd) {
+				// Calculate X position within tile
+				const fractionOfDay = (ms - dayStart) / MS_IN_DAY;
+				const x = (i + fractionOfDay) * TILE_WIDTH;
+				return { dayIndex: i, x };
+			}
+		}
+		return null;
+	}
+
+	// Convert X position to timestamp
+	function xToMs(clientX: number): number {
+		const rect = containerDiv.getBoundingClientRect();
+		const tilesWidth = days.length * TILE_WIDTH;
+		const tilesLeft = rect.left + (rect.width - tilesWidth) / 2;
+		const x = clientX - tilesLeft;
+
+		// Clamp to valid range
+		const clampedX = clamp(x, 0, tilesWidth - 1);
+		const dayIndex = Math.floor(clampedX / TILE_WIDTH);
+		const fractionOfDay = (clampedX % TILE_WIDTH) / TILE_WIDTH;
+
+		const day = days[clamp(dayIndex, 0, days.length - 1)];
+		if (!day) return Date.now();
+
+		return day.ms + fractionOfDay * MS_IN_DAY;
+	}
+
+	// Update tracker display based on nsWeatherData.ms
+	function updateTracker(ms: number) {
+		const position = msToPosition(ms);
+
+		if (position) {
+			trackerDayIndex = position.dayIndex;
+			trackerX = position.x;
+			trackerColor = 'yellow';
+		} else {
+			// Ghost tracker: show current time of day in first visible day
+			trackerDayIndex = null;
+			trackerX = null;
+		}
+	}
+
+	// React to nsWeatherData.ms changes
+	$effect(() => {
+		updateTracker(nsWeatherData.ms);
+	});
+
+	// Svelte action for tracking
+	function trackable(node: HTMLElement) {
+		let trackUntilMouseUp = false;
+		let mouseIsOver = false;
+
+		function trackToMouseX(e: PointerEvent | MouseEvent) {
+			const ms = xToMs(e.clientX);
+			emit('weatherdata_requestedSetTime', { ms });
+		}
+
+		function handlePointerMove(e: PointerEvent) {
+			if (nsWeatherData.trackedElement === node) {
+				trackToMouseX(e);
+			} else if (mouseIsOver && nsWeatherData.trackedElement === null) {
+				trackToMouseX(e);
+				emit('weatherdata_requestedTrackingStart', { node });
+			}
+		}
+
+		function handlePointerDown(e: PointerEvent) {
+			trackUntilMouseUp = true;
+			trackToMouseX(e);
+			emit('weatherdata_requestedTrackingStart', { node });
+		}
+
+		function handlePointerUp(e: PointerEvent) {
+			if (nsWeatherData.trackedElement === node) {
+				trackUntilMouseUp = false;
+				emit('weatherdata_requestedTrackingEnd');
+			}
+		}
+
+		function handleMouseEnter(e: MouseEvent) {
+			mouseIsOver = true;
+			if (!nsWeatherData.trackedElement) {
+				trackToMouseX(e);
+				emit('weatherdata_requestedTrackingStart', { node });
+			}
+		}
+
+		function handleMouseLeave(e: MouseEvent) {
+			mouseIsOver = false;
+			if (nsWeatherData.trackedElement === node && !trackUntilMouseUp) {
+				emit('weatherdata_requestedTrackingEnd');
+			}
+		}
+
+		const abortController = new AbortController();
+		const { signal } = abortController;
+
+		window.addEventListener('pointermove', handlePointerMove, { signal });
+		node.addEventListener('pointerdown', handlePointerDown, { signal });
+		window.addEventListener('pointerup', handlePointerUp, { signal });
+		node.addEventListener('mouseenter', handleMouseEnter, { signal });
+		node.addEventListener('mouseleave', handleMouseLeave, { signal });
+
+		return {
+			destroy() {
+				abortController.abort();
+			},
+		};
+	}
 </script>
 
-<div class="daily-tiles" style:--tile-count={days.length}>
+<div class="daily-tiles" style:--tile-count={days.length} bind:this={containerDiv} use:trackable>
 	<!-- Tile backgrounds -->
 	<div class="tiles">
 		{#each days as day}
@@ -189,6 +323,30 @@
 				{formatTemp(day.temperatureMin)}
 			</text>
 		{/each}
+
+		<!-- Tracker highlight -->
+		{#if trackerDayIndex !== null}
+			<rect
+				x={trackerDayIndex * TILE_WIDTH}
+				y="0"
+				width={TILE_WIDTH}
+				height={TILE_HEIGHT}
+				fill={trackerColor}
+				opacity="0.4"
+			/>
+		{/if}
+
+		<!-- Tracker vertical line -->
+		{#if trackerX !== null}
+			<line
+				x1={trackerX}
+				y1="0"
+				x2={trackerX}
+				y2={TILE_HEIGHT}
+				stroke={trackerColor}
+				stroke-width="2"
+			/>
+		{/if}
 	</svg>
 </div>
 
@@ -199,6 +357,8 @@
 		max-width: calc(var(--tile-count) * 80px);
 		margin: 1em auto;
 		overflow: visible;
+		user-select: none;
+		touch-action: none;
 	}
 
 	.tiles {

@@ -379,6 +379,12 @@
 		background-attachment: fixed;
 		padding: 0.2em 0.3em;
 
+		// On mobile, inset gradient from screen edges (matches daily tiles area)
+		@media (max-width: 575px) {
+			width: calc(100% - 2 * var(--pico-block-spacing-horizontal, 1rem));
+			margin-inline: auto;
+		}
+
 		& > div {
 			padding-block: $size-1;
 		}

@@ -11,6 +11,7 @@
 	} from '$lib/util';
 	import { getEmitter } from '$lib/emitter';
 	import { clamp, minBy, maxBy } from 'lodash-es';
+	import { fade } from 'svelte/transition';
 
 	let {
 		nsWeatherData,
@@ -105,7 +106,7 @@
 	});
 
 	// Fixed precipitation scale for daily totals
-	const PRECIP_LINEAR_MAX = 20; // mm/day - linear scale up to this value
+	const PRECIP_LINEAR_MAX = 10; // mm/day - linear scale up to this value (lower = taller bars for small values)
 
 	// SVG dimensions
 	const TILE_WIDTH = 80;
@@ -143,8 +144,8 @@
 	const AQI_BAND_Y = TILE_HEIGHT - 15; // 115px - where AQI band starts
 	const TEMP_AREA_BOTTOM = AQI_BAND_Y - 15; // Above the AQI band with padding
 	const TEMP_AREA_HEIGHT = TEMP_AREA_BOTTOM - TEMP_AREA_TOP;
-	const PRECIP_BAR_MAX_HEIGHT = AQI_BAND_Y - TEMP_AREA_TOP; // Full height from top to AQI band
-	const PRECIP_BAR_BOTTOM = AQI_BAND_Y; // Flush with AQI band
+	const PRECIP_BAR_BOTTOM = AQI_BAND_Y - 2; // Just above the AQI band
+	const PRECIP_BAR_MAX_HEIGHT = PRECIP_BAR_BOTTOM - TEMP_AREA_TOP; // Full height from top to just above AQI band
 	const PRECIP_BAR_WIDTH = 30;
 
 	// Convert temperature to Y coordinate
@@ -339,32 +340,26 @@
 	<!-- Wrapper to constrain trackable area to just the tiles -->
 	<div class="tiles-track-area" use:trackable>
 		<div class="tiles">
-			{#if isLoading}
-				<!-- Skeleton placeholder tiles while loading -->
-				{#each Array(placeholderCount) as _, i}
-					<div class="tile placeholder" style:--tile-gradient={tileGradient}>
-						<div class="tile-bg"></div>
-						<div class="placeholder-content">
-							<div class="placeholder-bar date-bar"></div>
-							<div class="placeholder-bar icon-bar"></div>
-						</div>
-					</div>
-				{/each}
-			{:else}
-				{#each days as day}
-					{@const past = day.fromToday < 0}
-					{@const today = day.fromToday === 0}
-					{@const aqiData = dailyAqi.get(day.ms)}
-					{@const aqiLabel = aqiData?.label}
-					<div
-						class="tile"
-						class:past
-						title={wmoCode(day.weatherCode).description}
-						style:--tile-gradient={tileGradient}
-					>
-						<div class="tile-bg"></div>
-						<img class="tile-icon" src={wmoCode(day.weatherCode).icon} alt="" />
-						<div class="tile-content">
+			{#each isLoading ? Array(placeholderCount) : days as day, i}
+				{@const past = !isLoading && day.fromToday < 0}
+				{@const today = !isLoading && day.fromToday === 0}
+				{@const aqiData = !isLoading ? dailyAqi.get(day.ms) : null}
+				{@const aqiLabel = aqiData?.label}
+				<div
+					class="tile"
+					class:past
+					title={!isLoading ? wmoCode(day.weatherCode).description : ''}
+					style:--tile-gradient={tileGradient}
+				>
+					<div class="tile-bg"></div>
+					{#if !isLoading}
+						<img
+							class="tile-icon"
+							src={wmoCode(day.weatherCode).icon}
+							alt=""
+							in:fade={{ duration: 300 }}
+						/>
+						<div class="tile-content" in:fade={{ duration: 300 }}>
 							<div class="date" class:today>{day.compactDate}</div>
 							{#if day.precipitation > 0}
 								<div class="precip">{day.precipitation.toFixed(1)}mm</div>
@@ -378,123 +373,127 @@
 								style:background-color={aqiLabel.color}
 								style:--aqi-text={aqiTextColor}
 								style:--aqi-shadow={aqiShadowColor}
+								in:fade={{ duration: 300 }}
 							>
 								{aqiLabel.text}
 							</div>
 						{/if}
-					</div>
-				{/each}
-			{/if}
+					{/if}
+				</div>
+			{/each}
 
 			{#if canExpand}
 				<button class="more-tile" onclick={() => onExpand?.()} title="Load more days"> ›› </button>
 			{/if}
 
 			<!-- SVG overlay for temp lines and precip bars -->
-			<svg
-				class="overlay"
-				viewBox="0 0 {days.length * TILE_WIDTH} {TILE_HEIGHT}"
-				preserveAspectRatio="none"
-			>
-				<!-- Precipitation bars -->
-				{#each days as day, i}
-					{@const barHeight = precipHeight(day.precipitation)}
-					{@const barX = (i + 0.5) * TILE_WIDTH - PRECIP_BAR_WIDTH / 2}
-					{@const barY = PRECIP_BAR_BOTTOM - barHeight}
-					{#if day.precipitation > 0}
+			{#if !isLoading}
+				<svg
+					class="overlay"
+					viewBox="0 0 {days.length * TILE_WIDTH} {TILE_HEIGHT}"
+					preserveAspectRatio="none"
+					in:fade={{ duration: 300 }}
+				>
+					<!-- Precipitation bars -->
+					{#each days as day, i}
+						{@const barHeight = precipHeight(day.precipitation)}
+						{@const barX = (i + 0.5) * TILE_WIDTH - PRECIP_BAR_WIDTH / 2}
+						{@const barY = PRECIP_BAR_BOTTOM - barHeight}
+						{#if day.precipitation > 0}
+							<rect
+								x={barX}
+								y={barY}
+								width={PRECIP_BAR_WIDTH}
+								height={barHeight}
+								fill={colors.precipitation}
+								opacity="0.7"
+							/>
+						{/if}
+					{/each}
+
+					<!-- High temperature line -->
+					<path d={generateTempPath('temperatureMax')} fill="none" stroke="red" stroke-width="2" />
+
+					<!-- Low temperature line -->
+					<path d={generateTempPath('temperatureMin')} fill="none" stroke="blue" stroke-width="2" />
+
+					<!-- High temperature dots and labels -->
+					{#each days as day, i}
+						{@const x = (i + 0.5) * TILE_WIDTH}
+						{@const y = tempToY(day.temperatureMax)}
+						<circle cx={x} cy={y} r="4" fill="red" />
+						<text
+							{x}
+							y={y - 8}
+							text-anchor="middle"
+							font-size="11"
+							font-weight="bold"
+							fill="red"
+							stroke="white"
+							stroke-width="3"
+							paint-order="stroke fill"
+							class="temp-label"
+							role="button"
+							tabindex="0"
+							onclick={toggleUnits}
+							onkeydown={(e) => e.key === 'Enter' && toggleUnits()}
+						>
+							{formatTemp(day.temperatureMax)}
+						</text>
+					{/each}
+
+					<!-- Low temperature dots and labels -->
+					{#each days as day, i}
+						{@const x = (i + 0.5) * TILE_WIDTH}
+						{@const y = tempToY(day.temperatureMin)}
+						<circle cx={x} cy={y} r="4" fill="blue" />
+						<text
+							{x}
+							y={y + 14}
+							text-anchor="middle"
+							font-size="11"
+							font-weight="bold"
+							fill="blue"
+							stroke="white"
+							stroke-width="3"
+							paint-order="stroke fill"
+							class="temp-label"
+							role="button"
+							tabindex="0"
+							onclick={toggleUnits}
+							onkeydown={(e) => e.key === 'Enter' && toggleUnits()}
+						>
+							{formatTemp(day.temperatureMin)}
+						</text>
+					{/each}
+
+					<!-- Past time dim overlay for SVG elements (AQI, temp lines, etc) -->
+					{#if pastOverlayWidth > 0}
+						{@const borderInset = 2}
 						<rect
-							x={barX}
-							y={barY}
-							width={PRECIP_BAR_WIDTH}
-							height={barHeight}
-							fill={colors.precipitation}
-							opacity="0.7"
+							x={borderInset}
+							y={borderInset}
+							width={pastOverlayWidth - borderInset * 2}
+							height={TILE_HEIGHT - borderInset * 2}
+							fill="white"
+							opacity="0.5"
+							rx="1"
 						/>
 					{/if}
-				{/each}
 
-				<!-- High temperature line -->
-				<path d={generateTempPath('temperatureMax')} fill="none" stroke="red" stroke-width="2" />
-
-				<!-- Low temperature line -->
-				<path d={generateTempPath('temperatureMin')} fill="none" stroke="blue" stroke-width="2" />
-
-				<!-- High temperature dots and labels -->
-				{#each days as day, i}
-					{@const x = (i + 0.5) * TILE_WIDTH}
-					{@const y = tempToY(day.temperatureMax)}
-					<circle cx={x} cy={y} r="4" fill="red" />
-					<text
-						{x}
-						y={y - 8}
-						text-anchor="middle"
-						font-size="11"
-						font-weight="bold"
-						fill="red"
-						stroke="white"
-						stroke-width="3"
-						paint-order="stroke fill"
-						class="temp-label"
-						role="button"
-						tabindex="0"
-						onclick={toggleUnits}
-						onkeydown={(e) => e.key === 'Enter' && toggleUnits()}
-					>
-						{formatTemp(day.temperatureMax)}
-					</text>
-				{/each}
-
-				<!-- Low temperature dots and labels -->
-				{#each days as day, i}
-					{@const x = (i + 0.5) * TILE_WIDTH}
-					{@const y = tempToY(day.temperatureMin)}
-					<circle cx={x} cy={y} r="4" fill="blue" />
-					<text
-						{x}
-						y={y + 14}
-						text-anchor="middle"
-						font-size="11"
-						font-weight="bold"
-						fill="blue"
-						stroke="white"
-						stroke-width="3"
-						paint-order="stroke fill"
-						class="temp-label"
-						role="button"
-						tabindex="0"
-						onclick={toggleUnits}
-						onkeydown={(e) => e.key === 'Enter' && toggleUnits()}
-					>
-						{formatTemp(day.temperatureMin)}
-					</text>
-				{/each}
-
-				<!-- Past time dim overlay for SVG elements (AQI, temp lines, etc) -->
-				{#if pastOverlayWidth > 0}
-					{@const borderInset = 2}
-					<rect
-						x={borderInset}
-						y={borderInset}
-						width={pastOverlayWidth - borderInset * 2}
-						height={TILE_HEIGHT - borderInset * 2}
-						fill="white"
-						opacity="0.5"
-						rx="1"
-					/>
-				{/if}
-
-				<!-- Tracker vertical line -->
-				{#if trackerX !== null}
-					<line
-						x1={trackerX}
-						y1="0"
-						x2={trackerX}
-						y2={TILE_HEIGHT}
-						stroke={trackerColor}
-						stroke-width="2"
-					/>
-				{/if}
-			</svg>
+					<!-- Tracker vertical line -->
+					{#if trackerX !== null}
+						<line
+							x1={trackerX}
+							y1="0"
+							x2={trackerX}
+							y2={TILE_HEIGHT}
+							stroke={trackerColor}
+							stroke-width="2"
+						/>
+					{/if}
+				</svg>
+			{/if}
 		</div>
 	</div>
 </div>
@@ -552,43 +551,6 @@
 		height: 100%;
 		background: var(--tile-gradient, linear-gradient(160deg, #6bb3e0 0%, #a8d8f0 50%, #eee 100%));
 		transition: background 1s ease-out;
-	}
-
-	// Placeholder/skeleton styles
-	.placeholder-content {
-		display: flex;
-		flex-direction: column;
-		align-items: center;
-		padding: 8px;
-		gap: 12px;
-		z-index: 1;
-	}
-
-	.placeholder-bar {
-		background: rgba(255, 255, 255, 0.4);
-		border-radius: 4px;
-		animation: pulse 1.5s ease-in-out infinite;
-	}
-
-	.date-bar {
-		width: 50px;
-		height: 16px;
-	}
-
-	.icon-bar {
-		width: 40px;
-		height: 40px;
-		border-radius: 50%;
-	}
-
-	@keyframes pulse {
-		0%,
-		100% {
-			opacity: 0.4;
-		}
-		50% {
-			opacity: 0.7;
-		}
 	}
 
 	.tile-icon {

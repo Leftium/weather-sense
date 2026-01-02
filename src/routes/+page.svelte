@@ -183,9 +183,29 @@
 	<div class="scroll">
 		<DailyTiles {nsWeatherData} />
 
-		<div class="hourly pico">
-			<b>Next 24 hours</b>
-			<TimeLine {nsWeatherData} start={Date.now() - 2 * MS_IN_HOUR} />
+		<div class="hourly grid pico">
+			<div class="grid day-label">
+				<div class="grid icon-date">
+					<img
+						class="icon small"
+						src={wmoCode(nsWeatherData.displayWeatherCode).icon}
+						title={wmoCode(nsWeatherData.displayWeatherCode).description}
+						alt=""
+					/>
+					<div class="day today">Next<br />24hrs</div>
+				</div>
+				<div class="grid high-low">
+					<div style:color={SOLARIZED_RED} use:toggleUnits={{ temperature: true }}>
+						{nsWeatherData.format('daily[2].temperatureMax', false)}
+					</div>
+					<div style:color={SOLARIZED_BLUE} use:toggleUnits={{ temperature: true }}>
+						{nsWeatherData.format('daily[2].temperatureMin', false)}
+					</div>
+				</div>
+			</div>
+			<div class="timeline today">
+				<TimeLine {nsWeatherData} start={Date.now() - 2 * MS_IN_HOUR} />
+			</div>
 		</div>
 
 		<div class="map">
@@ -453,20 +473,24 @@
 		margin-bottom: 0.2em;
 	}
 
+	.hourly,
 	.daily {
 		grid-template-columns: auto 1fr;
 	}
 
+	.hourly div.day,
 	.daily div.day {
 		margin: 0 0.1em;
 		text-align: right;
 	}
 
+	.hourly .icon.small,
 	.daily .icon.small {
 		height: 32px;
 		width: 32px;
 	}
 
+	.hourly .day.today,
 	.daily .day.today {
 		font-weight: bold;
 	}
@@ -475,20 +499,24 @@
 		opacity: 0.4;
 	}
 
+	.hourly .grid,
 	.daily .grid {
 		grid-template-columns: auto;
 		grid-template-rows: auto;
 	}
 
+	.hourly .grid .grid,
 	.daily .grid .grid {
 		grid-template-columns: auto auto;
 	}
 
+	.hourly .icon-date,
 	.daily .icon-date {
 		align-items: end;
 		line-height: normal;
 	}
 
+	.hourly .high-low,
 	.daily .high-low {
 		font-size: smaller;
 		align-items: start;

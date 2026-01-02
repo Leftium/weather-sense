@@ -86,6 +86,9 @@
 		return filtered.slice(0, maxTiles);
 	});
 
+	const isLoading = $derived(days.length === 0);
+	const placeholderCount = 5;
+
 	// Calculate temperature range for y-scale
 	const tempStats = $derived.by(() => {
 		if (!days.length) return { min: 0, max: 100, range: 100 };
@@ -328,7 +331,7 @@
 
 <div
 	class="daily-tiles"
-	style:--tile-count={days.length}
+	style:--tile-count={isLoading ? placeholderCount : days.length}
 	style:--has-more={canExpand ? 1 : 0}
 	style:--sky-gradient={skyGradient}
 	bind:this={containerDiv}
@@ -336,39 +339,52 @@
 	<!-- Wrapper to constrain trackable area to just the tiles -->
 	<div class="tiles-track-area" use:trackable>
 		<div class="tiles">
-			{#each days as day}
-				{@const past = day.fromToday < 0}
-				{@const today = day.fromToday === 0}
-				{@const aqiData = dailyAqi.get(day.ms)}
-				{@const aqiLabel = aqiData?.label}
-				<div
-					class="tile"
-					class:past
-					title={wmoCode(day.weatherCode).description}
-					style:--tile-gradient={tileGradient}
-				>
-					<div class="tile-bg"></div>
-					<img class="tile-icon" src={wmoCode(day.weatherCode).icon} alt="" />
-					<div class="tile-content">
-						<div class="date" class:today>{day.compactDate}</div>
-						{#if day.precipitation > 0}
-							<div class="precip">{day.precipitation.toFixed(1)}mm</div>
+			{#if isLoading}
+				<!-- Skeleton placeholder tiles while loading -->
+				{#each Array(placeholderCount) as _, i}
+					<div class="tile placeholder" style:--tile-gradient={tileGradient}>
+						<div class="tile-bg"></div>
+						<div class="placeholder-content">
+							<div class="placeholder-bar date-bar"></div>
+							<div class="placeholder-bar icon-bar"></div>
+						</div>
+					</div>
+				{/each}
+			{:else}
+				{#each days as day}
+					{@const past = day.fromToday < 0}
+					{@const today = day.fromToday === 0}
+					{@const aqiData = dailyAqi.get(day.ms)}
+					{@const aqiLabel = aqiData?.label}
+					<div
+						class="tile"
+						class:past
+						title={wmoCode(day.weatherCode).description}
+						style:--tile-gradient={tileGradient}
+					>
+						<div class="tile-bg"></div>
+						<img class="tile-icon" src={wmoCode(day.weatherCode).icon} alt="" />
+						<div class="tile-content">
+							<div class="date" class:today>{day.compactDate}</div>
+							{#if day.precipitation > 0}
+								<div class="precip">{day.precipitation.toFixed(1)}mm</div>
+							{/if}
+						</div>
+						{#if aqiLabel?.color}
+							{@const aqiTextColor = contrastTextColor(aqiLabel.color)}
+							{@const aqiShadowColor = contrastTextColor(aqiLabel.color, true)}
+							<div
+								class="aqi-band"
+								style:background-color={aqiLabel.color}
+								style:--aqi-text={aqiTextColor}
+								style:--aqi-shadow={aqiShadowColor}
+							>
+								{aqiLabel.text}
+							</div>
 						{/if}
 					</div>
-					{#if aqiLabel?.color}
-						{@const aqiTextColor = contrastTextColor(aqiLabel.color)}
-						{@const aqiShadowColor = contrastTextColor(aqiLabel.color, true)}
-						<div
-							class="aqi-band"
-							style:background-color={aqiLabel.color}
-							style:--aqi-text={aqiTextColor}
-							style:--aqi-shadow={aqiShadowColor}
-						>
-							{aqiLabel.text}
-						</div>
-					{/if}
-				</div>
-			{/each}
+				{/each}
+			{/if}
 
 			{#if canExpand}
 				<button class="more-tile" onclick={() => onExpand?.()} title="Load more days"> ›› </button>
@@ -535,6 +551,43 @@
 		width: 100%;
 		height: 100%;
 		background: var(--tile-gradient, linear-gradient(160deg, #6bb3e0 0%, #a8d8f0 50%, #eee 100%));
+	}
+
+	// Placeholder/skeleton styles
+	.placeholder-content {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		padding: 8px;
+		gap: 12px;
+		z-index: 1;
+	}
+
+	.placeholder-bar {
+		background: rgba(255, 255, 255, 0.4);
+		border-radius: 4px;
+		animation: pulse 1.5s ease-in-out infinite;
+	}
+
+	.date-bar {
+		width: 50px;
+		height: 16px;
+	}
+
+	.icon-bar {
+		width: 40px;
+		height: 40px;
+		border-radius: 50%;
+	}
+
+	@keyframes pulse {
+		0%,
+		100% {
+			opacity: 0.4;
+		}
+		50% {
+			opacity: 0.7;
+		}
 	}
 
 	.tile-icon {

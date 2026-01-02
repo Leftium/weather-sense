@@ -191,23 +191,23 @@
 		/>
 
 		<div class="hourly grid pico">
-			<div class="grid day-label">
-				<div class="grid icon-date">
+			<div class="day-label">
+				<div class="day today">
 					<img
 						class="icon small"
 						src={wmoCode(nsWeatherData.displayWeatherCode).icon}
 						title={wmoCode(nsWeatherData.displayWeatherCode).description}
 						alt=""
 					/>
-					<div class="day today">Next<br />24hrs</div>
+					24hrs
 				</div>
-				<div class="grid high-low">
-					<div style:color={SOLARIZED_RED} use:toggleUnits={{ temperature: true }}>
+				<div class="high-low">
+					<span style:color={SOLARIZED_RED} use:toggleUnits={{ temperature: true }}>
 						{nsWeatherData.format('daily[2].temperatureMax', false)}
-					</div>
-					<div style:color={SOLARIZED_BLUE} use:toggleUnits={{ temperature: true }}>
+					</span>
+					<span style:color={SOLARIZED_BLUE} use:toggleUnits={{ temperature: true }}>
 						{nsWeatherData.format('daily[2].temperatureMin', false)}
-					</div>
+					</span>
 				</div>
 			</div>
 			<div class="timeline today">
@@ -223,26 +223,23 @@
 			{#each (nsWeatherData.daily || []).filter((day) => day.fromToday > -2 && day.fromToday < forecastDaysVisible) as day, index}
 				{@const past = day.fromToday < 0}
 				{@const today = day.fromToday === 0}
-				<div class="grid day-label" transition:slide={{ duration: 1000 }}>
-					<div class="grid icon-date">
+				<div class="day-label" class:past transition:slide={{ duration: 1000 }}>
+					<div class={['day', { today }]}>
 						<img
 							class="icon small"
 							src={wmoCode(day.weatherCode).icon}
 							title={wmoCode(day.weatherCode).description}
 							alt=""
-							class:past
 						/>
-						<div class={['day', { past, today }]}>
-							{day.compactDate}
-						</div>
+						{day.compactDate}
 					</div>
-					<div class="grid high-low">
-						<div style:color={SOLARIZED_RED} class:past use:toggleUnits={{ temperature: true }}>
+					<div class="high-low">
+						<span style:color={SOLARIZED_RED} use:toggleUnits={{ temperature: true }}>
 							{nsWeatherData.format(`daily[${index}].temperatureMax`, false)}
-						</div>
-						<div style:color={SOLARIZED_BLUE} class:past use:toggleUnits={{ temperature: true }}>
+						</span>
+						<span style:color={SOLARIZED_BLUE} use:toggleUnits={{ temperature: true }}>
 							{nsWeatherData.format(`daily[${index}].temperatureMin`, false)}
-						</div>
+						</span>
 					</div>
 				</div>
 				<div class={['timeline', { today }]} transition:slide={{ duration: 1000 }}>
@@ -463,43 +460,54 @@
 		text-align: right;
 	}
 
-	.hourly .icon.small,
-	.daily .icon.small {
-		height: 32px;
-		width: 32px;
-	}
-
-	.hourly .day.today,
-	.daily .day.today {
+	.day.today {
 		font-weight: bold;
 	}
 
-	.past {
-		opacity: 0.4;
-	}
-
-	.hourly .grid,
-	.daily .grid {
-		grid-template-columns: auto;
-		grid-template-rows: auto;
-	}
-
-	.hourly .grid .grid,
-	.daily .grid .grid {
-		grid-template-columns: auto auto;
-	}
-
-	.hourly .icon-date,
-	.daily .icon-date {
-		align-items: end;
-		line-height: normal;
-	}
-
-	.hourly .high-low,
-	.daily .high-low {
-		font-size: smaller;
-		align-items: start;
+	.day-label {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
 		justify-content: center;
+		overflow: visible;
+
+		.day {
+			position: relative;
+			z-index: 1;
+			text-shadow:
+				-1px -1px 0 rgba(255, 255, 255, 0.8),
+				1px -1px 0 rgba(255, 255, 255, 0.8),
+				-1px 1px 0 rgba(255, 255, 255, 0.8),
+				1px 1px 0 rgba(255, 255, 255, 0.8);
+
+			// Position icon behind day label
+			.icon.small {
+				position: absolute;
+				right: -20px;
+				top: 50%;
+				transform: translateY(-80%);
+				z-index: -1;
+				height: 40px;
+				width: 40px;
+				filter: drop-shadow(0 0 10px rgba(135, 206, 235, 0.8));
+			}
+		}
+
+		.high-low {
+			font-size: smaller;
+			text-shadow:
+				-1px -1px 0 rgba(255, 255, 255, 0.8),
+				1px -1px 0 rgba(255, 255, 255, 0.8),
+				-1px 1px 0 rgba(255, 255, 255, 0.8),
+				1px 1px 0 rgba(255, 255, 255, 0.8);
+		}
+
+		&.past {
+			.day,
+			.high-low {
+				opacity: 0.5;
+			}
+		}
 	}
 
 	.timeline {

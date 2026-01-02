@@ -1,6 +1,14 @@
 <script lang="ts">
 	import type { NsWeatherData, WeatherDataEvents } from '$lib/ns-weather-data.svelte';
-	import { colors, wmoCode, celcius, MS_IN_DAY } from '$lib/util';
+	import {
+		colors,
+		wmoCode,
+		celcius,
+		MS_IN_DAY,
+		MS_IN_HOUR,
+		aqiEuropeToLabel,
+		contrastTextColor,
+	} from '$lib/util';
 	import { getEmitter } from '$lib/emitter';
 	import { clamp, minBy, maxBy } from 'lodash-es';
 
@@ -47,11 +55,42 @@
 	// SVG dimensions
 	const TILE_WIDTH = 80;
 	const TILE_HEIGHT = 130;
+	const AQI_BAND_HEIGHT = 20;
+	const AQI_BAND_Y = TILE_HEIGHT - AQI_BAND_HEIGHT;
+
+	// Compute daily max AQI from hourly dataAirQuality
+	const dailyAqi = $derived.by(() => {
+		const result: Map<number, { maxAqi: number; label: ReturnType<typeof aqiEuropeToLabel> }> =
+			new Map();
+
+		if (!nsWeatherData.dataAirQuality.size || !days.length) return result;
+
+		for (const day of days) {
+			const dayStart = day.ms;
+			const dayEnd = dayStart + MS_IN_DAY;
+
+			let maxAqi = 0;
+
+			// Iterate through hours in this day
+			for (let hourMs = dayStart; hourMs < dayEnd; hourMs += MS_IN_HOUR) {
+				const hourData = nsWeatherData.dataAirQuality.get(hourMs);
+				if (hourData && hourData.aqiEurope > maxAqi) {
+					maxAqi = hourData.aqiEurope;
+				}
+			}
+
+			const label = aqiEuropeToLabel(maxAqi || null);
+			result.set(day.ms, { maxAqi, label });
+		}
+
+		return result;
+	});
+
 	const TEMP_AREA_TOP = 60;
-	const TEMP_AREA_BOTTOM = 120;
+	const TEMP_AREA_BOTTOM = AQI_BAND_Y - 15; // Above the AQI band with padding
 	const TEMP_AREA_HEIGHT = TEMP_AREA_BOTTOM - TEMP_AREA_TOP;
-	const PRECIP_BAR_MAX_HEIGHT = TEMP_AREA_HEIGHT;
-	const PRECIP_BAR_BOTTOM = TEMP_AREA_BOTTOM;
+	const PRECIP_BAR_MAX_HEIGHT = AQI_BAND_Y - TEMP_AREA_TOP; // Full height from top to AQI band
+	const PRECIP_BAR_BOTTOM = AQI_BAND_Y; // Flush with AQI band
 	const PRECIP_BAR_WIDTH = 30;
 
 	// Convert temperature to Y coordinate
@@ -254,6 +293,49 @@
 					fill="white"
 					opacity="0.5"
 				/>
+			{/if}
+		{/each}
+
+		<!-- AQI bands at bottom -->
+		{#each days as day, i}
+			{@const aqiData = dailyAqi.get(day.ms)}
+			{@const label = aqiData?.label}
+			{@const fillText = label ? contrastTextColor(label.color) : 'black'}
+			{@const fillShadow = label
+				? contrastTextColor(label.color, true, 'rgba(255 255 255 / 50%)', 'rgba(51 51 51 / 50%)')
+				: 'white'}
+			{#if label && label.color}
+				<rect
+					x={i * TILE_WIDTH}
+					y={AQI_BAND_Y}
+					width={TILE_WIDTH}
+					height={AQI_BAND_HEIGHT}
+					fill={label.color}
+				/>
+				<!-- Label shadow -->
+				<text
+					x={(i + 0.5) * TILE_WIDTH}
+					y={AQI_BAND_Y + AQI_BAND_HEIGHT / 2}
+					text-anchor="middle"
+					dominant-baseline="middle"
+					font-size="10"
+					fill={fillShadow}
+					dx="1"
+					dy="1"
+				>
+					{label.text}
+				</text>
+				<!-- Label text -->
+				<text
+					x={(i + 0.5) * TILE_WIDTH}
+					y={AQI_BAND_Y + AQI_BAND_HEIGHT / 2}
+					text-anchor="middle"
+					dominant-baseline="middle"
+					font-size="10"
+					fill={fillText}
+				>
+					{label.text}
+				</text>
 			{/if}
 		{/each}
 

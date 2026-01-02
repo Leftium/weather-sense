@@ -303,20 +303,6 @@
 		viewBox="0 0 {days.length * TILE_WIDTH} {TILE_HEIGHT}"
 		preserveAspectRatio="none"
 	>
-		<!-- Past day dim overlay -->
-		{#each days as day, i}
-			{#if day.fromToday < 0}
-				<rect
-					x={i * TILE_WIDTH}
-					y="0"
-					width={TILE_WIDTH}
-					height={TILE_HEIGHT}
-					fill="white"
-					opacity="0.5"
-				/>
-			{/if}
-		{/each}
-
 		<!-- AQI bands at bottom -->
 		{#each days as day, i}
 			{@const aqiData = dailyAqi.get(day.ms)}
@@ -332,7 +318,13 @@
 					width={TILE_WIDTH}
 					height={AQI_BAND_HEIGHT}
 					fill={label.color}
-					stroke="#ddd"
+				/>
+				<!-- Border lines (left, bottom, right - no top) -->
+				<path
+					d="M {i * TILE_WIDTH} {AQI_BAND_Y} V {AQI_BAND_Y + AQI_BAND_HEIGHT} H {(i + 1) *
+						TILE_WIDTH} V {AQI_BAND_Y}"
+					fill="none"
+					stroke="#6BB3E0"
 					stroke-width="1"
 				/>
 				<!-- Label shadow -->
@@ -429,6 +421,20 @@
 			</text>
 		{/each}
 
+		<!-- Past day dim overlay (rendered last to cover everything) -->
+		{#each days as day, i}
+			{#if day.fromToday < 0}
+				<rect
+					x={i * TILE_WIDTH}
+					y="0"
+					width={TILE_WIDTH}
+					height={TILE_HEIGHT}
+					fill="white"
+					opacity="0.5"
+				/>
+			{/if}
+		{/each}
+
 		<!-- Tracker vertical line -->
 		{#if trackerX !== null}
 			<line
@@ -467,20 +473,20 @@
 		flex-direction: column;
 		align-items: center;
 		padding-top: 4px;
-		background-color: #f5f5f5;
+		background-color: #87ceeb;
 		background-image: var(--icon-url);
 		background-size: 108px 108px;
 		background-repeat: no-repeat;
 		background-position: -37px -44px;
-		border: 1px solid #ddd;
+		border: 1px solid #6bb3e0;
 		border-right: none;
 
 		&:last-child {
-			border-right: 1px solid #ddd;
+			border-right: 1px solid #6bb3e0;
 		}
 
 		&.past {
-			background-color: #fafafa;
+			opacity: 0.7;
 		}
 	}
 

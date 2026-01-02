@@ -726,13 +726,21 @@
 	}
 
 	.footer-column ul {
-		list-style: none;
-		padding: 0;
-		margin: 0;
+		list-style: none !important;
+		padding: 0 !important;
+		margin: 0 !important;
 	}
 
 	.footer-column li {
 		margin-bottom: 0.3em;
+		padding-left: 0 !important;
+		list-style: none !important;
+	}
+
+	.footer-column li::before,
+	.footer-column li::marker {
+		content: none !important;
+		display: none !important;
 	}
 
 	.footer-column a {

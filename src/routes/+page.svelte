@@ -219,36 +219,39 @@
 			<RadarMapLibre {nsWeatherData} />
 		</div>
 
-		<div class="daily grid pico">
+		<div class="daily pico">
 			{#each (nsWeatherData.daily || []).filter((day) => day.fromToday > -2 && day.fromToday < forecastDaysVisible) as day, index}
 				{@const past = day.fromToday < 0}
 				{@const today = day.fromToday === 0}
-				<div class="day-label" class:past transition:slide={{ duration: 1000 }}>
-					<div class={['day', { today }]}>
-						<img
-							class="icon small"
-							src={wmoCode(day.weatherCode).icon}
-							title={wmoCode(day.weatherCode).description}
-							alt=""
+				<div class={['day-row', { past }]} transition:slide={{ duration: 1000 }}>
+					<div class={['day-label', { today }]}>
+						<div class={['day', { today }]}>
+							<img
+								class="icon small"
+								src={wmoCode(day.weatherCode).icon}
+								title={wmoCode(day.weatherCode).description}
+								alt=""
+							/>
+							{day.compactDate}
+						</div>
+						<div class="high-low">
+							<span style:color={SOLARIZED_RED} use:toggleUnits={{ temperature: true }}>
+								{nsWeatherData.format(`daily[${index}].temperatureMax`, false)}
+							</span>
+							<span style:color={SOLARIZED_BLUE} use:toggleUnits={{ temperature: true }}>
+								{nsWeatherData.format(`daily[${index}].temperatureMin`, false)}
+							</span>
+						</div>
+					</div>
+					<div class={['timeline', { today }]}>
+						<TimeLine
+							{nsWeatherData}
+							start={day.ms}
+							xAxis={day.compactDate == 'Today'}
+							ghostTracker={true}
+							{past}
 						/>
-						{day.compactDate}
 					</div>
-					<div class="high-low">
-						<span style:color={SOLARIZED_RED} use:toggleUnits={{ temperature: true }}>
-							{nsWeatherData.format(`daily[${index}].temperatureMax`, false)}
-						</span>
-						<span style:color={SOLARIZED_BLUE} use:toggleUnits={{ temperature: true }}>
-							{nsWeatherData.format(`daily[${index}].temperatureMin`, false)}
-						</span>
-					</div>
-				</div>
-				<div class={['timeline', { today }]} transition:slide={{ duration: 1000 }}>
-					<TimeLine
-						{nsWeatherData}
-						start={day.ms}
-						xAxis={day.compactDate == 'Today'}
-						ghostTracker={true}
-					/>
 				</div>
 			{/each}
 		</div>
@@ -449,9 +452,24 @@
 		margin-bottom: 0.2em;
 	}
 
-	.hourly,
-	.daily {
+	.hourly {
 		grid-template-columns: auto 1fr;
+	}
+
+	.day-row {
+		display: grid;
+		grid-template-columns: auto 1fr;
+		position: relative;
+
+		&.past::after {
+			content: '';
+			position: absolute;
+			inset: 0;
+			background: white;
+			opacity: 0.5;
+			pointer-events: none;
+			z-index: 10;
+		}
 	}
 
 	.hourly div.day,
@@ -500,13 +518,6 @@
 				1px -1px 0 rgba(255, 255, 255, 0.8),
 				-1px 1px 0 rgba(255, 255, 255, 0.8),
 				1px 1px 0 rgba(255, 255, 255, 0.8);
-		}
-
-		&.past {
-			.day,
-			.high-low {
-				opacity: 0.5;
-			}
 		}
 	}
 

@@ -26,7 +26,7 @@
 
 	import { clearEvents, getEmitter } from '$lib/emitter.js';
 	import { dev } from '$app/environment';
-	import { onDestroy, untrack } from 'svelte';
+	import { onDestroy, onMount, untrack } from 'svelte';
 
 	import { FORECAST_DAYS, makeNsWeatherData } from '$lib/ns-weather-data.svelte.js';
 	import { slide } from 'svelte/transition';
@@ -38,6 +38,121 @@
 
 	let forecastDaysVisible = $state(3);
 	let displayDewPoint = $state(true);
+	let showMoreOptions = $state(false);
+	let isWideCollapsed = $state(false); // 480px+ : 3 columns for collapsed
+	let isWideExpanded = $state(false); // 700px+ : 4 columns for expanded
+
+	// Checkbox configurations
+	type CheckboxConfig = {
+		key: string;
+		label?: string;
+		color: string;
+		checked: boolean;
+		bindKey?: 'displayDewPoint' | 'showMoreOptions';
+		toggleUnits?: boolean;
+		getValue: () => string;
+		getValueEnd?: () => string; // For range display (e.g., "X to Y")
+	};
+
+	const getCheckboxConfigs = (): Record<string, CheckboxConfig> => ({
+		temp: {
+			key: 'temp',
+			label: 'Temp:',
+			color: 'gradient',
+			checked: true,
+			toggleUnits: true,
+			getValue: () => nsWeatherData.format('displayTemperature'),
+		},
+		tempRange: {
+			key: 'tempRange',
+			color: 'gray',
+			checked: true,
+			toggleUnits: true,
+			getValue: () => nsWeatherData.format('daily[2].temperatureMin', false),
+			getValueEnd: () => nsWeatherData.format('daily[2].temperatureMax', false),
+		},
+		dewPoint: {
+			key: 'dewPoint',
+			label: 'Dew Point:',
+			color: colors.dewPoint,
+			checked: displayDewPoint,
+			bindKey: 'displayDewPoint',
+			toggleUnits: true,
+			getValue: () => nsWeatherData.format('displayDewPoint', false),
+		},
+		humidity: {
+			key: 'humidity',
+			label: 'Humidity:',
+			color: colors.humidity,
+			checked: true,
+			getValue: () => `${nsWeatherData.displayHumidity}%`,
+		},
+		precip: {
+			key: 'precip',
+			label: 'Precip:',
+			color: colors.precipitation,
+			checked: true,
+			getValue: () => `${nsWeatherData.displayPrecipitation}mm`,
+		},
+		chance: {
+			key: 'chance',
+			label: 'Chance:',
+			color: colors.precipitationProbability,
+			checked: true,
+			getValue: () => `${nsWeatherData.displayPrecipitationProbability}%`,
+		},
+		euAqi: {
+			key: 'euAqi',
+			label: 'EU AQI:',
+			color: aqiEuropeToLabel(nsWeatherData.displayAqiEurope ?? null).color,
+			checked: true,
+			getValue: () => `${nsWeatherData.displayAqiEurope}`,
+		},
+		usAqi: {
+			key: 'usAqi',
+			label: 'US AQI:',
+			color: aqiUsToLabel(nsWeatherData.displayAqiUs ?? null).color,
+			checked: false,
+			getValue: () => `${nsWeatherData.displayAqiUs}`,
+		},
+		showAll: {
+			key: 'showAll',
+			label: 'Show all',
+			color: 'gray',
+			checked: showMoreOptions,
+			bindKey: 'showMoreOptions',
+			getValue: () => '',
+		},
+	});
+
+	// Layout orders: [narrow/wide] x [collapsed/expanded]
+	const layoutOrders = {
+		narrow: {
+			collapsed: ['temp', 'humidity', 'precip', 'chance', 'euAqi', 'showAll'],
+			expanded: ['temp', 'tempRange', 'dewPoint', 'humidity', 'precip', 'chance', 'euAqi', 'usAqi'],
+		},
+		wide: {
+			collapsed: ['temp', 'precip', 'euAqi', 'humidity', 'chance', 'showAll'],
+			expanded: ['temp', 'dewPoint', 'precip', 'euAqi', 'tempRange', 'humidity', 'chance', 'usAqi'],
+		},
+	};
+
+	const currentOrder = $derived.by(() => {
+		const isExpanded = showMoreOptions;
+		const isWide = isExpanded ? isWideExpanded : isWideCollapsed;
+		return layoutOrders[isWide ? 'wide' : 'narrow'][isExpanded ? 'expanded' : 'collapsed'];
+	});
+
+	const checkboxConfigs = $derived(getCheckboxConfigs());
+
+	function handleCheckboxChange(bindKey: 'displayDewPoint' | 'showMoreOptions', event: Event) {
+		const checked = (event.target as HTMLInputElement).checked;
+		if (bindKey === 'displayDewPoint') {
+			displayDewPoint = checked;
+		} else if (bindKey === 'showMoreOptions') {
+			showMoreOptions = checked;
+		}
+	}
 
 	// Initialize location once on mount (untrack to avoid re-running on data changes)
 	untrack(() => {
@@ -118,6 +233,32 @@
 	onDestroy(() => {
 		clearEvents();
 	});
+
+	// Detect wide layout using matchMedia (separate breakpoints for collapsed vs expanded)
+	const WIDE_COLLAPSED_BREAKPOINT = 480; // px - 3 columns
+	const WIDE_EXPANDED_BREAKPOINT = 700; // px - 4 columns
+	onMount(() => {
+		const mqCollapsed = window.matchMedia(`(min-width: ${WIDE_COLLAPSED_BREAKPOINT}px)`);
+		const mqExpanded = window.matchMedia(`(min-width: ${WIDE_EXPANDED_BREAKPOINT}px)`);
+
+		isWideCollapsed = mqCollapsed.matches;
+		isWideExpanded = mqExpanded.matches;
+
+		const handlerCollapsed = (e: MediaQueryListEvent) => {
+			isWideCollapsed = e.matches;
+		};
+		const handlerExpanded = (e: MediaQueryListEvent) => {
+			isWideExpanded = e.matches;
+		};
+
+		mqCollapsed.addEventListener('change', handlerCollapsed);
+		mqExpanded.addEventListener('change', handlerExpanded);
+
+		return () => {
+			mqCollapsed.removeEventListener('change', handlerCollapsed);
+			mqExpanded.removeEventListener('change', handlerExpanded);
+		};
+	});
 </script>
 
 <div class="pico container sticky-info" style:--sky-gradient={skyGradient} style:color={textColor}>
@@ -143,87 +284,51 @@
 		</div>
 	</div>
 
-	<div class="other-measurements">
+	{#snippet checkbox(config: CheckboxConfig)}
 		<div>
 			<label>
-				<input name="temperature" type="checkbox" checked />
-				Temp:
+				{#if config.key === 'temp'}
+					<input name="temperature" type="checkbox" checked={config.checked} />
+				{:else if config.bindKey}
+					<input
+						type="checkbox"
+						style="--color: {config.color}"
+						checked={config.checked}
+						onchange={(e) => handleCheckboxChange(config.bindKey!, e)}
+					/>
+				{:else}
+					<input type="checkbox" checked={config.checked} style="--color: {config.color}" />
+				{/if}
+				{#if config.label && !config.getValueEnd}
+					{config.label}
+				{/if}
 			</label>
-			<span use:toggleUnits={{ temperature: true }}>
-				{nsWeatherData.format('displayTemperature')}
-			</span>
+			{#if config.getValue() !== ''}
+				{#if config.toggleUnits}
+					<span use:toggleUnits={{ temperature: true }}>
+						{config.getValue()}
+					</span>
+					{#if config.getValueEnd}
+						to
+						<span use:toggleUnits={{ temperature: true }}>
+							{config.getValueEnd()}
+						</span>
+					{/if}
+				{:else}
+					<span>{config.getValue()}</span>
+				{/if}
+			{/if}
 		</div>
+	{/snippet}
 
-		<div>
-			<label>
-				<input type="checkbox" style="--color: {colors.dewPoint}" bind:checked={displayDewPoint} />
-				Dew Point:
-			</label>
-			<span use:toggleUnits={{ temperature: true }}>
-				{nsWeatherData.format('displayDewPoint', false)}
-			</span>
-		</div>
-
-		<div>
-			<label>
-				<input type="checkbox" checked style="--color: {colors.precipitation}" />
-				Precip:
-				<span>{nsWeatherData.displayPrecipitation}mm</span>
-			</label>
-		</div>
-
-		<div>
-			<label>
-				<input
-					type="checkbox"
-					checked
-					style="--color: {aqiEuropeToLabel(nsWeatherData.displayAqiEurope ?? null).color}"
-				/>
-				EU AQI:
-				<span>{nsWeatherData.displayAqiEurope}</span>
-			</label>
-		</div>
-
-		<div>
-			<label>
-				<input type="checkbox" checked style="--color: gray" />
-			</label>
-			<span use:toggleUnits={{ temperature: true }}>
-				{nsWeatherData.format('daily[2].temperatureMin', false)}
-			</span>
-			to
-			<span use:toggleUnits={{ temperature: true }}>
-				{nsWeatherData.format('daily[2].temperatureMax', false)}
-			</span>
-		</div>
-
-		<div>
-			<label>
-				<input type="checkbox" style="--color: {colors.humidity}" />
-				Humidity:
-				<span>{nsWeatherData.displayHumidity}%</span>
-			</label>
-		</div>
-
-		<div>
-			<label>
-				<input type="checkbox" checked style="--color: {colors.precipitationProbability}" />
-				Chance:
-				<span>{nsWeatherData.displayPrecipitationProbability}%</span>
-			</label>
-		</div>
-
-		<div>
-			<label>
-				<input
-					type="checkbox"
-					checked={false}
-					style="--color: {aqiUsToLabel(nsWeatherData.displayAqiUs ?? null).color}"
-				/>
-				US AQI:
-				<span>{nsWeatherData.displayAqiUs}</span>
-			</label>
-		</div>
+	<div
+		class="other-measurements"
+		class:collapsed={!showMoreOptions}
+		class:expanded={showMoreOptions}
+	>
+		{#each currentOrder as key}
+			{@render checkbox(checkboxConfigs[key])}
+		{/each}
 	</div>
 </div>
 
@@ -460,10 +565,10 @@
 
 	.other-measurements {
 		display: grid;
-		grid-template-columns: 1fr 1fr 1fr 1fr;
+		grid-template-columns: 1fr 1fr;
 		column-gap: 1em;
 
-		max-width: 40em;
+		max-width: 22em;
 		width: 100%;
 		margin: auto;
 
@@ -481,6 +586,12 @@
 			--linear-color: linear-gradient(var(--color) 0 0);
 			--linear-white: linear-gradient(white 0 0);
 
+			// Override Pico's checkbox styling
+			appearance: none;
+			-webkit-appearance: none;
+			background-color: transparent !important;
+			background-image: none !important;
+
 			transform: translateY(-0.06em);
 
 			display: inline-grid;
@@ -496,6 +607,11 @@
 
 			&:checked::before {
 				transform: scale(0);
+			}
+
+			&:checked {
+				background-color: transparent !important;
+				background-image: none !important;
 			}
 
 			&::before,
@@ -533,13 +649,24 @@
 		}
 	}
 
-	@media (width < 992px) {
+	@media (width < 480px) {
 		.other-measurements {
-			grid-template-columns: 1fr 1fr;
-			grid-template-rows: 1fr 1fr 1fr 1fr;
-			grid-auto-flow: column;
+			max-width: 18em;
+		}
+	}
 
-			max-width: 20em;
+	// Wide layout: 3 columns for collapsed, 4 columns for expanded (at wider breakpoint)
+	@media (width >= 480px) {
+		.other-measurements.collapsed {
+			grid-template-columns: 1fr 1fr 1fr;
+			max-width: 28em;
+		}
+	}
+
+	@media (width >= 700px) {
+		.other-measurements.expanded {
+			grid-template-columns: 1fr 1fr 1fr 1fr;
+			max-width: 36em;
 		}
 	}
 

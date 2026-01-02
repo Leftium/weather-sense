@@ -455,13 +455,15 @@
 
 				<!-- Past time dim overlay for SVG elements (AQI, temp lines, etc) -->
 				{#if pastOverlayWidth > 0}
+					{@const borderInset = 2}
 					<rect
-						x="0"
-						y="0"
-						width={pastOverlayWidth}
-						height={TILE_HEIGHT}
+						x={borderInset}
+						y={borderInset}
+						width={pastOverlayWidth - borderInset * 2}
+						height={TILE_HEIGHT - borderInset * 2}
 						fill="white"
 						opacity="0.5"
+						rx="1"
 					/>
 				{/if}
 
@@ -504,13 +506,20 @@
 	}
 
 	.tile {
+		box-sizing: border-box;
 		width: 80px;
 		min-width: 80px;
 		flex-shrink: 0;
 		height: 130px;
 		display: grid;
 		grid-template-areas: 'stack';
-		border: 1px solid #6bb3e0;
+		border: 2px solid;
+		border-color: rgba(255, 255, 255, 0.5) rgba(0, 0, 0, 0.15) rgba(0, 0, 0, 0.2)
+			rgba(255, 255, 255, 0.5);
+		box-shadow:
+			inset 1px 1px 0 rgba(255, 255, 255, 0.3),
+			inset -1px -1px 0 rgba(0, 0, 0, 0.1),
+			0 2px 4px rgba(0, 0, 0, 0.15);
 		overflow: hidden;
 
 		> * {
@@ -519,11 +528,6 @@
 
 		&.past > * {
 			opacity: 0.7;
-		}
-
-		// Collapse borders between tiles
-		& + .tile {
-			border-left: none;
 		}
 	}
 
@@ -569,19 +573,26 @@
 		display: flex;
 		align-items: center;
 		justify-content: center;
-		background-color: #6bb3e0;
-		border: 1px solid #6bb3e0;
+		background: rgba(255, 255, 255, 0.25);
+		backdrop-filter: blur(4px);
+		border: 2px solid;
+		border-color: rgba(255, 255, 255, 0.5) rgba(0, 0, 0, 0.15) rgba(0, 0, 0, 0.2)
+			rgba(255, 255, 255, 0.5);
 		border-left: none;
+		box-shadow:
+			inset 1px 1px 0 rgba(255, 255, 255, 0.3),
+			inset -1px -1px 0 rgba(0, 0, 0, 0.1),
+			0 2px 4px rgba(0, 0, 0, 0.15);
 		padding: 0;
 		margin: 0;
 		cursor: pointer;
 		font-size: 18px;
 		font-weight: bold;
-		color: white;
-		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+		color: rgba(0, 0, 0, 0.6);
+		text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
 
 		&:hover {
-			background-color: #5aa3d0;
+			background: rgba(255, 255, 255, 0.35);
 		}
 	}
 

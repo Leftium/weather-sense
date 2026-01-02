@@ -39,11 +39,26 @@
 	let forecastDaysVisible = $state(3);
 	let displayDewPoint = $state(true);
 
+	// Find the day that contains the current ms timestamp
+	const currentDay = $derived.by(() => {
+		const ms = nsWeatherData.ms;
+		// Find day where ms falls between start of day and start of next day
+		const day = nsWeatherData.daily?.find((d, i, arr) => {
+			const nextDay = arr[i + 1];
+			if (nextDay) {
+				return ms >= d.ms && ms < nextDay.ms;
+			}
+			// Last day - check if within 24 hours
+			return ms >= d.ms && ms < d.ms + 24 * 60 * 60 * 1000;
+		});
+		// Fallback to today
+		return day || nsWeatherData.daily?.find((d) => d.fromToday === 0);
+	});
+
 	// Dynamic sky gradient based on current time
 	const skyGradient = $derived.by(() => {
-		const today = nsWeatherData.daily?.find((d) => d.fromToday === 0);
-		if (today) {
-			return getSkyGradient(nsWeatherData.ms, today.sunrise, today.sunset);
+		if (currentDay) {
+			return getSkyGradient(nsWeatherData.ms, currentDay.sunrise, currentDay.sunset);
 		}
 		// Default daytime gradient
 		return 'linear-gradient(135deg, #eee 0%, #a8d8f0 50%, #6bb3e0 100%)';
@@ -51,9 +66,8 @@
 
 	// Tile gradient - similar colors, different angle
 	const tileGradient = $derived.by(() => {
-		const today = nsWeatherData.daily?.find((d) => d.fromToday === 0);
-		if (today) {
-			return getTileGradient(nsWeatherData.ms, today.sunrise, today.sunset);
+		if (currentDay) {
+			return getTileGradient(nsWeatherData.ms, currentDay.sunrise, currentDay.sunset);
 		}
 		// Default daytime gradient for tiles
 		return 'linear-gradient(160deg, #6bb3e0 0%, #a8d8f0 50%, #eee 100%)';
@@ -61,18 +75,16 @@
 
 	// Dynamic text color for contrast against sky gradient
 	const textColor = $derived.by(() => {
-		const today = nsWeatherData.daily?.find((d) => d.fromToday === 0);
-		if (today) {
-			return getTextColor(nsWeatherData.ms, today.sunrise, today.sunset);
+		if (currentDay) {
+			return getTextColor(nsWeatherData.ms, currentDay.sunrise, currentDay.sunset);
 		}
 		return '#333'; // Default dark text for daytime
 	});
 
 	// Dynamic text shadow color (opposite of text color)
 	const textShadowColor = $derived.by(() => {
-		const today = nsWeatherData.daily?.find((d) => d.fromToday === 0);
-		if (today) {
-			return getTextShadowColor(nsWeatherData.ms, today.sunrise, today.sunset);
+		if (currentDay) {
+			return getTextShadowColor(nsWeatherData.ms, currentDay.sunrise, currentDay.sunset);
 		}
 		return 'rgba(255, 255, 255, 0.8)'; // Default white shadow for daytime
 	});
@@ -223,6 +235,7 @@
 
 <div class="container">
 	<div class="scroll">
+		<div class="sky-gradient-bg" style:--sky-gradient={skyGradient}></div>
 		<DailyTiles
 			{nsWeatherData}
 			{forecastDaysVisible}
@@ -334,6 +347,18 @@
 
 <style lang="scss">
 	@use 'open-props-scss' as *;
+
+	.sky-gradient-bg {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 135px; // Only covers daily tiles area (tiles are ~130px tall)
+		background: var(--sky-gradient, linear-gradient(135deg, #eee 0%, #a8d8f0 50%, #6bb3e0 100%));
+		background-attachment: fixed;
+		pointer-events: none;
+		z-index: -1;
+	}
 
 	.sticky-info {
 		position: sticky;
@@ -499,6 +524,7 @@
 		grid-row-gap: 0.1em;
 		grid-column-gap: 0.2em;
 		margin-bottom: 0.2em;
+		background: white; // Cover the gradient below daily tiles
 	}
 
 	// Hourly row (24hrs) - spans all columns, uses subgrid
@@ -652,6 +678,7 @@
 
 	.scroll {
 		overflow: auto;
+		position: relative;
 	}
 
 	.attribution {

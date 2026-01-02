@@ -474,8 +474,7 @@
 		overflow: visible;
 		user-select: none;
 		touch-action: none;
-		background: var(--sky-gradient, linear-gradient(135deg, #eee 0%, #a8d8f0 50%, #6bb3e0 100%));
-		background-attachment: fixed;
+		background: transparent;
 	}
 
 	.tiles {

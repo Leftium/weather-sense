@@ -346,54 +346,57 @@ export function summarize(arrayOrObject: unknown[] | undefined | null) {
 	return arrayOrObject;
 }
 
-// Sky gradient colors based on time of day
-// Color palettes for each phase (3 stops for seamless fixed gradient)
-// Format: [top-left, middle, bottom-right] for 135deg gradient
-const skyPalettes = {
-	night: ['#1a1a2e', '#16213e', '#0f0f1a'],
-	dawn: ['#eee', '#ffb6a3', '#ffd93d'],
-	day: ['#eee', '#a8d8f0', '#6bb3e0'],
-	dusk: ['#ffd93d', '#ff6b6b', '#4a2c5a'],
-};
+// Physically-based sky gradient using horizon library
+import { renderSkyGradient, getSunAltitude, type SkyGradientResult } from './horizon.js';
 
-function getSkyColors(ms: number, sunrise: number, sunset: number): string[] {
-	// Define time boundaries
-	const dawnStart = sunrise - 2 * MS_IN_HOUR;
-	const dawnEnd = sunrise + MS_IN_HOUR;
-	const duskStart = sunset - MS_IN_HOUR;
-	const duskEnd = sunset + MS_IN_HOUR;
+// Cache the sky gradient result to avoid recalculating for each function call
+let cachedSkyResult: SkyGradientResult | null = null;
+let cachedMs: number = 0;
+let cachedSunrise: number = 0;
+let cachedSunset: number = 0;
 
-	// Determine which phase we're in
-	if (ms < dawnStart || ms > duskEnd) {
-		return skyPalettes.night;
-	} else if (ms >= dawnStart && ms < dawnEnd) {
-		return skyPalettes.dawn;
-	} else if (ms >= dawnEnd && ms < duskStart) {
-		return skyPalettes.day;
-	} else {
-		return skyPalettes.dusk;
+function getSkyResult(ms: number, sunrise: number, sunset: number): SkyGradientResult {
+	// Round to nearest minute to reduce recalculations
+	const roundedMs = Math.floor(ms / 60000) * 60000;
+
+	if (
+		cachedSkyResult &&
+		roundedMs === cachedMs &&
+		sunrise === cachedSunrise &&
+		sunset === cachedSunset
+	) {
+		return cachedSkyResult;
 	}
+
+	const altitude = getSunAltitude(ms, sunrise, sunset);
+	cachedSkyResult = renderSkyGradient(altitude);
+	cachedMs = roundedMs;
+	cachedSunrise = sunrise;
+	cachedSunset = sunset;
+
+	return cachedSkyResult;
 }
 
 export function getSkyGradient(ms: number, sunrise: number, sunset: number): string {
-	const colors = getSkyColors(ms, sunrise, sunset);
-	return `linear-gradient(135deg, ${colors[0]} 0%, ${colors[1]} 50%, ${colors[2]} 100%)`;
+	const result = getSkyResult(ms, sunrise, sunset);
+	// Use zenith and horizon colors with 135deg angle
+	return `linear-gradient(135deg, ${result.zenithColor} 0%, ${result.horizonColor} 100%)`;
 }
 
 export function getTileGradient(ms: number, sunrise: number, sunset: number): string {
-	const colors = getSkyColors(ms, sunrise, sunset);
-	// Same gradient for tiles
-	return `linear-gradient(135deg, ${colors[0]} 0%, ${colors[1]} 50%, ${colors[2]} 100%)`;
+	const result = getSkyResult(ms, sunrise, sunset);
+	// 45deg angle - reversed (horizon at top-left, zenith at bottom-right)
+	return `linear-gradient(45deg, ${result.horizonColor} 0%, ${result.zenithColor} 100%)`;
 }
 
 export function getTextColor(ms: number, sunrise: number, sunset: number): string {
-	const colors = getSkyColors(ms, sunrise, sunset);
-	// Use middle color as dominant background color
-	return contrastTextColor(colors[1]);
+	const result = getSkyResult(ms, sunrise, sunset);
+	// Use horizon color (brightest part typically) for contrast calculation
+	return contrastTextColor(result.horizonColor);
 }
 
 export function getTextShadowColor(ms: number, sunrise: number, sunset: number): string {
-	const colors = getSkyColors(ms, sunrise, sunset);
+	const result = getSkyResult(ms, sunrise, sunset);
 	// Shadow is opposite of text color for contrast
-	return contrastTextColor(colors[1], true);
+	return contrastTextColor(result.horizonColor, true);
 }

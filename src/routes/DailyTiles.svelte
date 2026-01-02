@@ -227,6 +227,12 @@
 		updateTracker(nsWeatherData.ms);
 	});
 
+	// Calculate X position for "now" to use in past overlay
+	const pastOverlayWidth = $derived.by(() => {
+		const nowPosition = msToPosition(Date.now());
+		return nowPosition ? nowPosition.x : 0;
+	});
+
 	// Svelte action for tracking
 	function trackable(node: HTMLElement) {
 		let trackUntilMouseUp = false;
@@ -431,19 +437,17 @@
 				</text>
 			{/each}
 
-			<!-- Past day dim overlay (rendered last to cover everything) -->
-			{#each days as day, i}
-				{#if day.fromToday < 0}
-					<rect
-						x={i * TILE_WIDTH}
-						y="0"
-						width={TILE_WIDTH}
-						height={TILE_HEIGHT}
-						fill="white"
-						opacity="0.5"
-					/>
-				{/if}
-			{/each}
+			<!-- Past time dim overlay (covers past days + elapsed portion of today) -->
+			{#if pastOverlayWidth > 0}
+				<rect
+					x="0"
+					y="0"
+					width={pastOverlayWidth}
+					height={TILE_HEIGHT}
+					fill="white"
+					opacity="0.5"
+				/>
+			{/if}
 
 			<!-- Tracker vertical line -->
 			{#if trackerX !== null}

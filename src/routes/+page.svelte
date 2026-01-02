@@ -32,7 +32,7 @@
 
 	let { data } = $props();
 
-	let forecastDaysVisible = $state(4);
+	let forecastDaysVisible = $state(3);
 	let displayDewPoint = $state(true);
 
 	emit('weatherdata_requestedSetLocation', {
@@ -187,7 +187,7 @@
 			maxForecastDays={FORECAST_DAYS}
 			onExpand={() =>
 				(forecastDaysVisible =
-					forecastDaysVisible === 4 ? 6 : Math.min(forecastDaysVisible * 2, FORECAST_DAYS))}
+					forecastDaysVisible === 3 ? 5 : Math.min(forecastDaysVisible * 2, FORECAST_DAYS))}
 		/>
 
 		<div class="timeline-grid">

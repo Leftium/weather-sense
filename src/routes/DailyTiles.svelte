@@ -332,145 +332,146 @@
 	style:--has-more={canExpand ? 1 : 0}
 	style:--sky-gradient={skyGradient}
 	bind:this={containerDiv}
-	use:trackable
 >
-	<!-- Tile backgrounds -->
-	<div class="tiles">
-		{#each days as day}
-			{@const past = day.fromToday < 0}
-			{@const today = day.fromToday === 0}
-			{@const aqiData = dailyAqi.get(day.ms)}
-			{@const aqiLabel = aqiData?.label}
-			<div
-				class="tile"
-				class:past
-				title={wmoCode(day.weatherCode).description}
-				style:--tile-gradient={tileGradient}
-			>
-				<div class="tile-bg"></div>
-				<img class="tile-icon" src={wmoCode(day.weatherCode).icon} alt="" />
-				<div class="tile-content">
-					<div class="date" class:today>{day.compactDate}</div>
-					{#if day.precipitation > 0}
-						<div class="precip">{day.precipitation.toFixed(1)}mm</div>
+	<!-- Wrapper to constrain trackable area to just the tiles -->
+	<div class="tiles-track-area" use:trackable>
+		<div class="tiles">
+			{#each days as day}
+				{@const past = day.fromToday < 0}
+				{@const today = day.fromToday === 0}
+				{@const aqiData = dailyAqi.get(day.ms)}
+				{@const aqiLabel = aqiData?.label}
+				<div
+					class="tile"
+					class:past
+					title={wmoCode(day.weatherCode).description}
+					style:--tile-gradient={tileGradient}
+				>
+					<div class="tile-bg"></div>
+					<img class="tile-icon" src={wmoCode(day.weatherCode).icon} alt="" />
+					<div class="tile-content">
+						<div class="date" class:today>{day.compactDate}</div>
+						{#if day.precipitation > 0}
+							<div class="precip">{day.precipitation.toFixed(1)}mm</div>
+						{/if}
+					</div>
+					{#if aqiLabel?.color}
+						{@const aqiTextColor = contrastTextColor(aqiLabel.color)}
+						{@const aqiShadowColor = contrastTextColor(aqiLabel.color, true)}
+						<div
+							class="aqi-band"
+							style:background-color={aqiLabel.color}
+							style:--aqi-text={aqiTextColor}
+							style:--aqi-shadow={aqiShadowColor}
+						>
+							{aqiLabel.text}
+						</div>
 					{/if}
 				</div>
-				{#if aqiLabel?.color}
-					{@const aqiTextColor = contrastTextColor(aqiLabel.color)}
-					{@const aqiShadowColor = contrastTextColor(aqiLabel.color, true)}
-					<div
-						class="aqi-band"
-						style:background-color={aqiLabel.color}
-						style:--aqi-text={aqiTextColor}
-						style:--aqi-shadow={aqiShadowColor}
+			{/each}
+
+			{#if canExpand}
+				<button class="more-tile" onclick={() => onExpand?.()} title="Load more days"> ›› </button>
+			{/if}
+
+			<!-- SVG overlay for temp lines and precip bars -->
+			<svg
+				class="overlay"
+				viewBox="0 0 {days.length * TILE_WIDTH} {TILE_HEIGHT}"
+				preserveAspectRatio="none"
+			>
+				<!-- Precipitation bars -->
+				{#each days as day, i}
+					{@const barHeight = precipHeight(day.precipitation)}
+					{@const barX = (i + 0.5) * TILE_WIDTH - PRECIP_BAR_WIDTH / 2}
+					{@const barY = PRECIP_BAR_BOTTOM - barHeight}
+					{#if day.precipitation > 0}
+						<rect
+							x={barX}
+							y={barY}
+							width={PRECIP_BAR_WIDTH}
+							height={barHeight}
+							fill={colors.precipitation}
+							opacity="0.7"
+						/>
+					{/if}
+				{/each}
+
+				<!-- High temperature line -->
+				<path d={generateTempPath('temperatureMax')} fill="none" stroke="red" stroke-width="2" />
+
+				<!-- Low temperature line -->
+				<path d={generateTempPath('temperatureMin')} fill="none" stroke="blue" stroke-width="2" />
+
+				<!-- High temperature dots and labels -->
+				{#each days as day, i}
+					{@const x = (i + 0.5) * TILE_WIDTH}
+					{@const y = tempToY(day.temperatureMax)}
+					<circle cx={x} cy={y} r="4" fill="red" />
+					<text
+						{x}
+						y={y - 8}
+						text-anchor="middle"
+						font-size="11"
+						font-weight="bold"
+						fill="red"
+						stroke="white"
+						stroke-width="3"
+						paint-order="stroke fill"
+						class="temp-label"
+						onclick={toggleUnits}
 					>
-						{aqiLabel.text}
-					</div>
-				{/if}
-			</div>
-		{/each}
+						{formatTemp(day.temperatureMax)}
+					</text>
+				{/each}
 
-		{#if canExpand}
-			<button class="more-tile" onclick={() => onExpand?.()} title="Load more days"> ›› </button>
-		{/if}
+				<!-- Low temperature dots and labels -->
+				{#each days as day, i}
+					{@const x = (i + 0.5) * TILE_WIDTH}
+					{@const y = tempToY(day.temperatureMin)}
+					<circle cx={x} cy={y} r="4" fill="blue" />
+					<text
+						{x}
+						y={y + 14}
+						text-anchor="middle"
+						font-size="11"
+						font-weight="bold"
+						fill="blue"
+						stroke="white"
+						stroke-width="3"
+						paint-order="stroke fill"
+						class="temp-label"
+						onclick={toggleUnits}
+					>
+						{formatTemp(day.temperatureMin)}
+					</text>
+				{/each}
 
-		<!-- SVG overlay for temp lines and precip bars -->
-		<svg
-			class="overlay"
-			viewBox="0 0 {days.length * TILE_WIDTH} {TILE_HEIGHT}"
-			preserveAspectRatio="none"
-		>
-			<!-- Precipitation bars -->
-			{#each days as day, i}
-				{@const barHeight = precipHeight(day.precipitation)}
-				{@const barX = (i + 0.5) * TILE_WIDTH - PRECIP_BAR_WIDTH / 2}
-				{@const barY = PRECIP_BAR_BOTTOM - barHeight}
-				{#if day.precipitation > 0}
+				<!-- Past time dim overlay for SVG elements (AQI, temp lines, etc) -->
+				{#if pastOverlayWidth > 0}
 					<rect
-						x={barX}
-						y={barY}
-						width={PRECIP_BAR_WIDTH}
-						height={barHeight}
-						fill={colors.precipitation}
-						opacity="0.7"
+						x="0"
+						y="0"
+						width={pastOverlayWidth}
+						height={TILE_HEIGHT}
+						fill="white"
+						opacity="0.5"
 					/>
 				{/if}
-			{/each}
 
-			<!-- High temperature line -->
-			<path d={generateTempPath('temperatureMax')} fill="none" stroke="red" stroke-width="2" />
-
-			<!-- Low temperature line -->
-			<path d={generateTempPath('temperatureMin')} fill="none" stroke="blue" stroke-width="2" />
-
-			<!-- High temperature dots and labels -->
-			{#each days as day, i}
-				{@const x = (i + 0.5) * TILE_WIDTH}
-				{@const y = tempToY(day.temperatureMax)}
-				<circle cx={x} cy={y} r="4" fill="red" />
-				<text
-					{x}
-					y={y - 8}
-					text-anchor="middle"
-					font-size="11"
-					font-weight="bold"
-					fill="red"
-					stroke="white"
-					stroke-width="3"
-					paint-order="stroke fill"
-					class="temp-label"
-					onclick={toggleUnits}
-				>
-					{formatTemp(day.temperatureMax)}
-				</text>
-			{/each}
-
-			<!-- Low temperature dots and labels -->
-			{#each days as day, i}
-				{@const x = (i + 0.5) * TILE_WIDTH}
-				{@const y = tempToY(day.temperatureMin)}
-				<circle cx={x} cy={y} r="4" fill="blue" />
-				<text
-					{x}
-					y={y + 14}
-					text-anchor="middle"
-					font-size="11"
-					font-weight="bold"
-					fill="blue"
-					stroke="white"
-					stroke-width="3"
-					paint-order="stroke fill"
-					class="temp-label"
-					onclick={toggleUnits}
-				>
-					{formatTemp(day.temperatureMin)}
-				</text>
-			{/each}
-
-			<!-- Past time dim overlay for SVG elements (AQI, temp lines, etc) -->
-			{#if pastOverlayWidth > 0}
-				<rect
-					x="0"
-					y="0"
-					width={pastOverlayWidth}
-					height={TILE_HEIGHT}
-					fill="white"
-					opacity="0.5"
-				/>
-			{/if}
-
-			<!-- Tracker vertical line -->
-			{#if trackerX !== null}
-				<line
-					x1={trackerX}
-					y1="0"
-					x2={trackerX}
-					y2={TILE_HEIGHT}
-					stroke={trackerColor}
-					stroke-width="2"
-				/>
-			{/if}
-		</svg>
+				<!-- Tracker vertical line -->
+				{#if trackerX !== null}
+					<line
+						x1={trackerX}
+						y1="0"
+						x2={trackerX}
+						y2={TILE_HEIGHT}
+						stroke={trackerColor}
+						stroke-width="2"
+					/>
+				{/if}
+			</svg>
+		</div>
 	</div>
 </div>
 
@@ -479,19 +480,21 @@
 		position: relative;
 		width: 100%;
 		overflow: visible;
-		user-select: none;
-		touch-action: none;
 		background: transparent;
 		margin-bottom: 0.75em;
+	}
+
+	.tiles-track-area {
+		width: fit-content;
+		margin-inline: auto;
+		user-select: none;
+		touch-action: none;
 	}
 
 	.tiles {
 		position: relative;
 		display: flex;
-		justify-content: center;
 		overflow: visible;
-		width: fit-content;
-		margin-inline: auto;
 	}
 
 	.tile {

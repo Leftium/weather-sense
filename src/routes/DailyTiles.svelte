@@ -31,8 +31,32 @@
 		return `${Math.round(temp)}°`;
 	}
 
-	// Filter days: 2 past days through future
-	const days = $derived((nsWeatherData.daily || []).filter((day) => day.fromToday >= -2));
+	// Responsive breakpoint for small screens
+	const SMALL_SCREEN_BREAKPOINT = 400; // px
+	let isSmallScreen = $state(false);
+
+	$effect(() => {
+		const mediaQuery = window.matchMedia(`(max-width: ${SMALL_SCREEN_BREAKPOINT}px)`);
+		isSmallScreen = mediaQuery.matches;
+
+		function handleChange(e: MediaQueryListEvent) {
+			isSmallScreen = e.matches;
+		}
+
+		mediaQuery.addEventListener('change', handleChange);
+		return () => mediaQuery.removeEventListener('change', handleChange);
+	});
+
+	// Filter days based on screen size
+	// Small: 1 past day, today, 2 future days (4 tiles max)
+	// Large: 2 past days through all future
+	const days = $derived.by(() => {
+		const allDays = nsWeatherData.daily || [];
+		if (isSmallScreen) {
+			return allDays.filter((day) => day.fromToday >= -1 && day.fromToday <= 2);
+		}
+		return allDays.filter((day) => day.fromToday >= -2);
+	});
 
 	// Calculate temperature range for y-scale
 	const tempStats = $derived.by(() => {

@@ -181,7 +181,20 @@
 
 <div class="container">
 	<div class="scroll">
-		<DailyTiles {nsWeatherData} />
+		<DailyTiles {nsWeatherData} {forecastDaysVisible} />
+
+		{#if forecastDaysVisible < FORECAST_DAYS}
+			<center class="pico">
+				<div role="group" style:width="initial">
+					<button class="outline contrast" onclick={() => (forecastDaysVisible *= 2)}>
+						View more days
+					</button>
+					<button class="outline secondary" onclick={() => (forecastDaysVisible = FORECAST_DAYS)}>
+						Full forecast
+					</button>
+				</div>
+			</center>
+		{/if}
 
 		<div class="hourly grid pico">
 			<div class="grid day-label">
@@ -259,18 +272,6 @@
 				</div>
 			{/each}
 		</div>
-		{#if forecastDaysVisible < FORECAST_DAYS}
-			<center class="pico">
-				<div role="group" style:width="initial">
-					<button class="outline contrast" onclick={() => (forecastDaysVisible *= 2)}>
-						View more days
-					</button>
-					<button class="outline secondary" onclick={() => (forecastDaysVisible = FORECAST_DAYS)}>
-						Full forecast
-					</button>
-				</div>
-			</center>
-		{/if}
 	</div>
 
 	<center class="pico attribution">

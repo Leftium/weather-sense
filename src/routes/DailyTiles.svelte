@@ -14,8 +14,10 @@
 
 	let {
 		nsWeatherData,
+		forecastDaysVisible = 5,
 	}: {
 		nsWeatherData: NsWeatherData;
+		forecastDaysVisible?: number;
 	} = $props();
 
 	const { emit } = getEmitter<WeatherDataEvents>(import.meta);
@@ -53,12 +55,14 @@
 		};
 	});
 
-	// Filter days based on how many tiles can fit
-	// Prioritize: all past days (up to 2), today, then fill with future
+	// Filter days based on how many tiles can fit and forecastDaysVisible
+	// Prioritize: all past days (up to 2), today, then fill with future up to forecastDaysVisible
 	const days = $derived.by(() => {
 		const allDays = nsWeatherData.daily || [];
-		// Start from -2 (2 days ago) through future
-		const filtered = allDays.filter((day) => day.fromToday >= -2);
+		// Start from -2 (2 days ago) through forecastDaysVisible future days
+		const filtered = allDays.filter(
+			(day) => day.fromToday >= -2 && day.fromToday < forecastDaysVisible,
+		);
 
 		if (filtered.length <= maxTiles) {
 			return filtered;

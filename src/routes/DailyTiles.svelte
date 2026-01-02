@@ -512,8 +512,8 @@
 					y="0"
 					width={pastOverlayWidth}
 					height={TILE_HEIGHT}
-					fill="black"
-					opacity="0.3"
+					fill="white"
+					opacity="0.5"
 				/>
 			{/if}
 
@@ -568,7 +568,7 @@
 		}
 
 		&.past {
-			filter: brightness(0.7);
+			opacity: 0.7;
 		}
 	}
 

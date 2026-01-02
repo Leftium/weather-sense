@@ -2,7 +2,7 @@
 	import type { WeatherDataEvents } from '$lib/ns-weather-data.svelte.js';
 
 	import TimeLine from './TimeLine.svelte';
-	import Overview from './Overview.svelte';
+
 	import DailyTiles from './DailyTiles.svelte';
 
 	import {
@@ -219,17 +219,6 @@
 			<RadarMapLibre {nsWeatherData} />
 		</div>
 
-		<div class="overview" hidden>
-			<Overview
-				{nsWeatherData}
-				start={nsWeatherData.daily?.[0]?.ms}
-				hours={24 * 9}
-				xAxis={false}
-				height={104}
-				ghostTracker={true}
-			/>
-		</div>
-
 		<div class="daily grid pico">
 			{#each (nsWeatherData.daily || []).filter((day) => day.fromToday > -2 && day.fromToday < forecastDaysVisible) as day, index}
 				{@const past = day.fromToday < 0}
@@ -298,11 +287,6 @@
 
 <style lang="scss">
 	@use 'open-props-scss' as *;
-
-	.overview {
-		margin-block: 1em;
-		height: calc(104px + $size-3);
-	}
 
 	.sticky-info {
 		position: sticky;

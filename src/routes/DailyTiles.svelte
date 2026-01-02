@@ -487,11 +487,10 @@
 	.daily-tiles {
 		position: relative;
 		width: 100%;
-		max-width: calc(var(--tile-count) * 80px + var(--has-more) * 24px);
-		margin: 1em auto 0.5em;
 		overflow: visible;
 		user-select: none;
 		touch-action: none;
+		background: linear-gradient(135deg, #fff 0%, #d0d0d0 50%, #fff 100%);
 	}
 
 	.tiles {
@@ -499,6 +498,8 @@
 		display: flex;
 		justify-content: center;
 		overflow: visible;
+		width: fit-content;
+		margin-inline: auto;
 	}
 
 	.tile {

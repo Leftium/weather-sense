@@ -94,7 +94,7 @@
 	});
 
 	// Fixed precipitation scale for daily totals
-	const PRECIP_LINEAR_MAX = 10; // mm/day - linear scale up to this value
+	const PRECIP_LINEAR_MAX = 20; // mm/day - linear scale up to this value
 
 	// SVG dimensions
 	const TILE_WIDTH = 80;
@@ -329,6 +329,9 @@
 				title={wmoCode(day.weatherCode).description}
 			>
 				<div class="date" class:today>{day.compactDate}</div>
+				{#if day.precipitation > 0}
+					<div class="precip">{day.precipitation.toFixed(1)}mm</div>
+				{/if}
 			</div>
 		{/each}
 
@@ -557,6 +560,17 @@
 		&.today {
 			font-weight: 900;
 		}
+	}
+
+	.precip {
+		font-size: 11px;
+		font-weight: 600;
+		color: #268bd2;
+		text-shadow:
+			-1px -1px 0 rgba(255, 255, 255, 0.9),
+			1px -1px 0 rgba(255, 255, 255, 0.9),
+			-1px 1px 0 rgba(255, 255, 255, 0.9),
+			1px 1px 0 rgba(255, 255, 255, 0.9);
 	}
 
 	.overlay {

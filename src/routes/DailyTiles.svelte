@@ -31,31 +31,41 @@
 		return `${Math.round(temp)}°`;
 	}
 
-	// Responsive breakpoint for small screens
-	const SMALL_SCREEN_BREAKPOINT = 400; // px
-	let isSmallScreen = $state(false);
+	// Calculate max tiles that can fit based on viewport width
+	// Initialize conservatively - will be updated by effect
+	let maxTiles = $state(
+		typeof window !== 'undefined' ? Math.max(3, Math.floor((window.innerWidth - 150) / 80)) : 8,
+	);
 
 	$effect(() => {
-		const mediaQuery = window.matchMedia(`(max-width: ${SMALL_SCREEN_BREAKPOINT}px)`);
-		isSmallScreen = mediaQuery.matches;
-
-		function handleChange(e: MediaQueryListEvent) {
-			isSmallScreen = e.matches;
+		function updateMaxTiles() {
+			// Account for container padding, margins, and borders (~150px buffer)
+			const availableWidth = window.innerWidth - 150;
+			maxTiles = Math.max(3, Math.floor(availableWidth / 80));
 		}
 
-		mediaQuery.addEventListener('change', handleChange);
-		return () => mediaQuery.removeEventListener('change', handleChange);
+		updateMaxTiles();
+		window.addEventListener('resize', updateMaxTiles);
+		window.addEventListener('orientationchange', updateMaxTiles);
+		return () => {
+			window.removeEventListener('resize', updateMaxTiles);
+			window.removeEventListener('orientationchange', updateMaxTiles);
+		};
 	});
 
-	// Filter days based on screen size
-	// Small: 1 past day, today, 2 future days (4 tiles max)
-	// Large: 2 past days through all future
+	// Filter days based on how many tiles can fit
+	// Prioritize: all past days (up to 2), today, then fill with future
 	const days = $derived.by(() => {
 		const allDays = nsWeatherData.daily || [];
-		if (isSmallScreen) {
-			return allDays.filter((day) => day.fromToday >= -1 && day.fromToday <= 2);
+		// Start from -2 (2 days ago) through future
+		const filtered = allDays.filter((day) => day.fromToday >= -2);
+
+		if (filtered.length <= maxTiles) {
+			return filtered;
 		}
-		return allDays.filter((day) => day.fromToday >= -2);
+
+		// Need to trim - keep all past days and today, trim future
+		return filtered.slice(0, maxTiles);
 	});
 
 	// Calculate temperature range for y-scale
@@ -296,158 +306,158 @@
 				<div class="date" class:today>{day.compactDate}</div>
 			</div>
 		{/each}
+
+		<!-- SVG overlay for temp lines and precip bars -->
+		<svg
+			class="overlay"
+			viewBox="0 0 {days.length * TILE_WIDTH} {TILE_HEIGHT}"
+			preserveAspectRatio="none"
+		>
+			<!-- AQI bands at bottom -->
+			{#each days as day, i}
+				{@const aqiData = dailyAqi.get(day.ms)}
+				{@const label = aqiData?.label}
+				{@const fillText = label ? contrastTextColor(label.color) : 'black'}
+				{@const fillShadow = label
+					? contrastTextColor(label.color, true, 'rgba(255 255 255 / 50%)', 'rgba(51 51 51 / 50%)')
+					: 'white'}
+				{#if label && label.color}
+					<rect
+						x={i * TILE_WIDTH}
+						y={AQI_BAND_Y}
+						width={TILE_WIDTH}
+						height={AQI_BAND_HEIGHT}
+						fill={label.color}
+					/>
+					<!-- Border lines (left, bottom, right - no top) -->
+					<path
+						d="M {i * TILE_WIDTH} {AQI_BAND_Y} V {AQI_BAND_Y + AQI_BAND_HEIGHT} H {(i + 1) *
+							TILE_WIDTH} V {AQI_BAND_Y}"
+						fill="none"
+						stroke="#6BB3E0"
+						stroke-width="1"
+					/>
+					<!-- Label shadow -->
+					<text
+						x={(i + 0.5) * TILE_WIDTH}
+						y={AQI_BAND_Y + AQI_BAND_HEIGHT / 2}
+						text-anchor="middle"
+						dominant-baseline="middle"
+						font-size="10"
+						fill={fillShadow}
+						dx="1"
+						dy="1"
+					>
+						{label.text}
+					</text>
+					<!-- Label text -->
+					<text
+						x={(i + 0.5) * TILE_WIDTH}
+						y={AQI_BAND_Y + AQI_BAND_HEIGHT / 2}
+						text-anchor="middle"
+						dominant-baseline="middle"
+						font-size="10"
+						fill={fillText}
+					>
+						{label.text}
+					</text>
+				{/if}
+			{/each}
+
+			<!-- Precipitation bars -->
+			{#each days as day, i}
+				{@const barHeight = precipHeight(day.precipitation)}
+				{@const barX = (i + 0.5) * TILE_WIDTH - PRECIP_BAR_WIDTH / 2}
+				{@const barY = PRECIP_BAR_BOTTOM - barHeight}
+				{#if day.precipitation > 0}
+					<rect
+						x={barX}
+						y={barY}
+						width={PRECIP_BAR_WIDTH}
+						height={barHeight}
+						fill={colors.precipitation}
+						opacity="0.7"
+					/>
+				{/if}
+			{/each}
+
+			<!-- High temperature line -->
+			<path d={generateTempPath('temperatureMax')} fill="none" stroke="red" stroke-width="2" />
+
+			<!-- Low temperature line -->
+			<path d={generateTempPath('temperatureMin')} fill="none" stroke="blue" stroke-width="2" />
+
+			<!-- High temperature dots and labels -->
+			{#each days as day, i}
+				{@const x = (i + 0.5) * TILE_WIDTH}
+				{@const y = tempToY(day.temperatureMax)}
+				<circle cx={x} cy={y} r="4" fill="red" />
+				<text
+					{x}
+					y={y - 8}
+					text-anchor="middle"
+					font-size="11"
+					font-weight="bold"
+					fill="red"
+					stroke="white"
+					stroke-width="3"
+					paint-order="stroke fill"
+					class="temp-label"
+					onclick={toggleUnits}
+				>
+					{formatTemp(day.temperatureMax)}
+				</text>
+			{/each}
+
+			<!-- Low temperature dots and labels -->
+			{#each days as day, i}
+				{@const x = (i + 0.5) * TILE_WIDTH}
+				{@const y = tempToY(day.temperatureMin)}
+				<circle cx={x} cy={y} r="4" fill="blue" />
+				<text
+					{x}
+					y={y + 14}
+					text-anchor="middle"
+					font-size="11"
+					font-weight="bold"
+					fill="blue"
+					stroke="white"
+					stroke-width="3"
+					paint-order="stroke fill"
+					class="temp-label"
+					onclick={toggleUnits}
+				>
+					{formatTemp(day.temperatureMin)}
+				</text>
+			{/each}
+
+			<!-- Past day dim overlay (rendered last to cover everything) -->
+			{#each days as day, i}
+				{#if day.fromToday < 0}
+					<rect
+						x={i * TILE_WIDTH}
+						y="0"
+						width={TILE_WIDTH}
+						height={TILE_HEIGHT}
+						fill="white"
+						opacity="0.5"
+					/>
+				{/if}
+			{/each}
+
+			<!-- Tracker vertical line -->
+			{#if trackerX !== null}
+				<line
+					x1={trackerX}
+					y1="0"
+					x2={trackerX}
+					y2={TILE_HEIGHT}
+					stroke={trackerColor}
+					stroke-width="2"
+				/>
+			{/if}
+		</svg>
 	</div>
-
-	<!-- SVG overlay for temp lines and precip bars -->
-	<svg
-		class="overlay"
-		viewBox="0 0 {days.length * TILE_WIDTH} {TILE_HEIGHT}"
-		preserveAspectRatio="none"
-	>
-		<!-- AQI bands at bottom -->
-		{#each days as day, i}
-			{@const aqiData = dailyAqi.get(day.ms)}
-			{@const label = aqiData?.label}
-			{@const fillText = label ? contrastTextColor(label.color) : 'black'}
-			{@const fillShadow = label
-				? contrastTextColor(label.color, true, 'rgba(255 255 255 / 50%)', 'rgba(51 51 51 / 50%)')
-				: 'white'}
-			{#if label && label.color}
-				<rect
-					x={i * TILE_WIDTH}
-					y={AQI_BAND_Y}
-					width={TILE_WIDTH}
-					height={AQI_BAND_HEIGHT}
-					fill={label.color}
-				/>
-				<!-- Border lines (left, bottom, right - no top) -->
-				<path
-					d="M {i * TILE_WIDTH} {AQI_BAND_Y} V {AQI_BAND_Y + AQI_BAND_HEIGHT} H {(i + 1) *
-						TILE_WIDTH} V {AQI_BAND_Y}"
-					fill="none"
-					stroke="#6BB3E0"
-					stroke-width="1"
-				/>
-				<!-- Label shadow -->
-				<text
-					x={(i + 0.5) * TILE_WIDTH}
-					y={AQI_BAND_Y + AQI_BAND_HEIGHT / 2}
-					text-anchor="middle"
-					dominant-baseline="middle"
-					font-size="10"
-					fill={fillShadow}
-					dx="1"
-					dy="1"
-				>
-					{label.text}
-				</text>
-				<!-- Label text -->
-				<text
-					x={(i + 0.5) * TILE_WIDTH}
-					y={AQI_BAND_Y + AQI_BAND_HEIGHT / 2}
-					text-anchor="middle"
-					dominant-baseline="middle"
-					font-size="10"
-					fill={fillText}
-				>
-					{label.text}
-				</text>
-			{/if}
-		{/each}
-
-		<!-- Precipitation bars -->
-		{#each days as day, i}
-			{@const barHeight = precipHeight(day.precipitation)}
-			{@const barX = (i + 0.5) * TILE_WIDTH - PRECIP_BAR_WIDTH / 2}
-			{@const barY = PRECIP_BAR_BOTTOM - barHeight}
-			{#if day.precipitation > 0}
-				<rect
-					x={barX}
-					y={barY}
-					width={PRECIP_BAR_WIDTH}
-					height={barHeight}
-					fill={colors.precipitation}
-					opacity="0.7"
-				/>
-			{/if}
-		{/each}
-
-		<!-- High temperature line -->
-		<path d={generateTempPath('temperatureMax')} fill="none" stroke="red" stroke-width="2" />
-
-		<!-- Low temperature line -->
-		<path d={generateTempPath('temperatureMin')} fill="none" stroke="blue" stroke-width="2" />
-
-		<!-- High temperature dots and labels -->
-		{#each days as day, i}
-			{@const x = (i + 0.5) * TILE_WIDTH}
-			{@const y = tempToY(day.temperatureMax)}
-			<circle cx={x} cy={y} r="4" fill="red" />
-			<text
-				{x}
-				y={y - 8}
-				text-anchor="middle"
-				font-size="11"
-				font-weight="bold"
-				fill="red"
-				stroke="white"
-				stroke-width="3"
-				paint-order="stroke fill"
-				class="temp-label"
-				onclick={toggleUnits}
-			>
-				{formatTemp(day.temperatureMax)}
-			</text>
-		{/each}
-
-		<!-- Low temperature dots and labels -->
-		{#each days as day, i}
-			{@const x = (i + 0.5) * TILE_WIDTH}
-			{@const y = tempToY(day.temperatureMin)}
-			<circle cx={x} cy={y} r="4" fill="blue" />
-			<text
-				{x}
-				y={y + 14}
-				text-anchor="middle"
-				font-size="11"
-				font-weight="bold"
-				fill="blue"
-				stroke="white"
-				stroke-width="3"
-				paint-order="stroke fill"
-				class="temp-label"
-				onclick={toggleUnits}
-			>
-				{formatTemp(day.temperatureMin)}
-			</text>
-		{/each}
-
-		<!-- Past day dim overlay (rendered last to cover everything) -->
-		{#each days as day, i}
-			{#if day.fromToday < 0}
-				<rect
-					x={i * TILE_WIDTH}
-					y="0"
-					width={TILE_WIDTH}
-					height={TILE_HEIGHT}
-					fill="white"
-					opacity="0.5"
-				/>
-			{/if}
-		{/each}
-
-		<!-- Tracker vertical line -->
-		{#if trackerX !== null}
-			<line
-				x1={trackerX}
-				y1="0"
-				x2={trackerX}
-				y2={TILE_HEIGHT}
-				stroke={trackerColor}
-				stroke-width="2"
-			/>
-		{/if}
-	</svg>
 </div>
 
 <style lang="scss">
@@ -462,6 +472,7 @@
 	}
 
 	.tiles {
+		position: relative;
 		display: flex;
 		justify-content: center;
 		overflow: visible;
@@ -469,6 +480,8 @@
 
 	.tile {
 		width: 80px;
+		min-width: 80px;
+		flex-shrink: 0;
 		height: 130px;
 		display: flex;
 		flex-direction: column;
@@ -509,9 +522,8 @@
 	.overlay {
 		position: absolute;
 		top: 0;
-		left: 50%;
-		transform: translateX(-50%);
-		width: calc(var(--tile-count) * 80px);
+		left: 0;
+		width: 100%;
 		height: 130px;
 		pointer-events: none;
 

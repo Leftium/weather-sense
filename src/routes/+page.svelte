@@ -568,6 +568,12 @@
 		}
 	}
 
+	@media (max-height: 500px) and (orientation: landscape) {
+		.sticky-info {
+			display: none;
+		}
+	}
+
 	.grid {
 		grid-row-gap: 0.1em;
 		grid-column-gap: 0.2em;

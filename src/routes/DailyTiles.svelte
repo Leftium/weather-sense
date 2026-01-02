@@ -490,7 +490,7 @@
 		overflow: visible;
 		user-select: none;
 		touch-action: none;
-		background: linear-gradient(135deg, #fff 0%, #d0d0d0 50%, #fff 100%);
+		background: linear-gradient(135deg, #a8d8f0 0%, #6bb3e0 50%, #a8d8f0 100%);
 	}
 
 	.tiles {

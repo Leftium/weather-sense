@@ -4,6 +4,17 @@
 
 /* Write your global styles here, in SCSS syntax. Variables and mixins from the src/variables.scss file are available here without importing */
 
+// Step 1: Remove all PicoCSS container padding at all breakpoints
+// This gives us a clean slate to control padding ourselves
+// Reference: https://github.com/Yohn/PicoCSS/pull/55
+// PicoCSS uses padding-right/padding-left via --pico-spacing variable
+// Need !important to override PicoCSS's scoped rules
+.container,
+.container-fluid {
+	padding-right: 0 !important;
+	padding-left: 0 !important;
+}
+
 html,
 body,
 html > div .full-height {

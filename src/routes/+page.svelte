@@ -377,7 +377,7 @@
 
 		background: var(--sky-gradient, linear-gradient(135deg, #eee 0%, #a8d8f0 50%, #6bb3e0 100%));
 		background-attachment: fixed;
-		padding: 0.2em 0.3em;
+		padding: 0.2em 1rem;
 
 		& > div {
 			padding-block: $size-1;
@@ -517,7 +517,7 @@
 		}
 	}
 
-	@media (width < 768px) {
+	@media (width < 992px) {
 		.other-measurements {
 			grid-template-columns: 1fr 1fr;
 			grid-template-rows: 1fr 1fr 1fr 1fr;
@@ -535,6 +535,15 @@
 		grid-column-gap: 0.2em;
 		margin-bottom: 0.2em;
 		background: white; // Cover the gradient below daily tiles
+	}
+
+	// Step 2: Add right padding on mobile for scroll gesture safety
+	// Left side has natural gap from day labels; daily tiles need edge-to-edge
+	@media (max-width: 575px) {
+		.timeline-grid,
+		footer {
+			padding-right: 1rem;
+		}
 	}
 
 	// Hourly row (24hrs) - spans all columns, uses subgrid

@@ -190,40 +190,42 @@
 					forecastDaysVisible === 4 ? 6 : Math.min(forecastDaysVisible * 2, FORECAST_DAYS))}
 		/>
 
-		<div class="hourly grid pico">
-			<div class="day-label">
-				<div class="day today">
-					<img
-						class="icon small"
-						src={wmoCode(nsWeatherData.displayWeatherCode).icon}
-						title={wmoCode(nsWeatherData.displayWeatherCode).description}
-						alt=""
-					/>
-					24hrs
+		<div class="timeline-grid">
+			<div class="hourly-row pico">
+				<div class="day-label">
+					<div class="day today">
+						<img
+							class="icon small"
+							src={wmoCode(nsWeatherData.displayWeatherCode).icon}
+							title={wmoCode(nsWeatherData.displayWeatherCode).description}
+							alt=""
+						/>
+						24hrs
+					</div>
+					<div class="high-low">
+						<span style:color={SOLARIZED_RED} use:toggleUnits={{ temperature: true }}>
+							{nsWeatherData.format('daily[2].temperatureMax', false)}
+						</span>
+						<span style:color={SOLARIZED_BLUE} use:toggleUnits={{ temperature: true }}>
+							{nsWeatherData.format('daily[2].temperatureMin', false)}
+						</span>
+					</div>
 				</div>
-				<div class="high-low">
-					<span style:color={SOLARIZED_RED} use:toggleUnits={{ temperature: true }}>
-						{nsWeatherData.format('daily[2].temperatureMax', false)}
-					</span>
-					<span style:color={SOLARIZED_BLUE} use:toggleUnits={{ temperature: true }}>
-						{nsWeatherData.format('daily[2].temperatureMin', false)}
-					</span>
+				<div class="timeline today">
+					<TimeLine {nsWeatherData} start={Date.now() - 2 * MS_IN_HOUR} />
 				</div>
 			</div>
-			<div class="timeline today">
-				<TimeLine {nsWeatherData} start={Date.now() - 2 * MS_IN_HOUR} />
+
+			<div class="map-row">
+				<div class="map">
+					<RadarMapLibre {nsWeatherData} />
+				</div>
 			</div>
-		</div>
 
-		<div class="map">
-			<RadarMapLibre {nsWeatherData} />
-		</div>
-
-		<div class="daily pico">
 			{#each (nsWeatherData.daily || []).filter((day) => day.fromToday > -2 && day.fromToday < forecastDaysVisible) as day, index}
 				{@const past = day.fromToday < 0}
 				{@const today = day.fromToday === 0}
-				<div class={['day-row', { past }]} transition:slide={{ duration: 1000 }}>
+				<div class={['day-row', 'pico', { past }]} transition:slide={{ duration: 1000 }}>
 					<div class="day-label">
 						<div class={['day', { today }]}>
 							<img
@@ -317,7 +319,8 @@
 
 	.container,
 	.scroll,
-	.hourly {
+	.timeline-grid,
+	.hourly-row {
 		overflow-y: visible !important;
 	}
 
@@ -441,26 +444,59 @@
 		}
 	}
 
-	.hourly {
-		font-family: Lato, sans-serif;
-		margin-top: 0.2em;
-		margin-bottom: 0.5em;
-	}
-
-	.daily {
+	// Parent grid container for hourly, map, and daily sections
+	.timeline-grid {
 		display: grid;
 		grid-template-columns: auto auto 1fr;
+		grid-row-gap: 0.1em;
+		grid-column-gap: 0.2em;
 		margin-bottom: 0.2em;
 	}
 
-	.hourly {
-		grid-template-columns: auto 1fr;
+	// Hourly row (24hrs) - spans all columns, uses subgrid
+	.hourly-row {
+		display: grid;
+		grid-template-columns: subgrid;
+		grid-column: 1 / -1;
+		align-items: center;
+		font-family: Lato, sans-serif;
+		margin-top: 0.2em;
+		margin-bottom: 0.5em;
+
+		.day-label {
+			grid-column: span 2;
+			display: flex;
+			flex-direction: column;
+			align-items: flex-end;
+			justify-content: center;
+		}
+
+		.timeline {
+			grid-column: 3;
+		}
+
+		div.day {
+			margin: 0 0.1em;
+			text-align: right;
+		}
 	}
 
+	// Map row - spans all columns, map goes in timeline column
+	.map-row {
+		grid-column: 1 / -1;
+		display: grid;
+		grid-template-columns: subgrid;
+
+		> .map {
+			grid-column: 3;
+		}
+	}
+
+	// Daily rows - span all columns, use subgrid
 	.day-row {
 		display: grid;
 		grid-template-columns: subgrid;
-		grid-column: span 3;
+		grid-column: 1 / -1;
 		position: relative;
 		align-items: center;
 
@@ -473,12 +509,32 @@
 			pointer-events: none;
 			z-index: 10;
 		}
-	}
 
-	.hourly div.day,
-	.daily div.day {
-		margin: 0 0.1em;
-		text-align: right;
+		div.day {
+			margin: 0 0.1em;
+			text-align: right;
+		}
+
+		// Daily section uses subgrid for aligned temps
+		.day-label {
+			display: grid;
+			grid-template-columns: subgrid;
+			grid-column: span 2;
+
+			.day {
+				grid-column: span 2;
+			}
+
+			.high-low {
+				display: grid;
+				grid-template-columns: subgrid;
+				grid-column: span 2;
+
+				span {
+					text-align: right;
+				}
+			}
+		}
 	}
 
 	.day.today {
@@ -520,35 +576,6 @@
 		}
 	}
 
-	// Hourly section uses flex layout
-	.hourly .day-label {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-end;
-		justify-content: center;
-	}
-
-	// Daily section uses subgrid for aligned temps
-	.daily .day-label {
-		display: grid;
-		grid-template-columns: subgrid;
-		grid-column: span 2;
-
-		.day {
-			grid-column: span 2;
-		}
-
-		.high-low {
-			display: grid;
-			grid-template-columns: subgrid;
-			grid-column: span 2;
-
-			span {
-				text-align: right;
-			}
-		}
-	}
-
 	.timeline {
 		flex-grow: 1;
 		height: calc(64px + $size-3);
@@ -567,7 +594,7 @@
 		opacity: 60%;
 	}
 
-	.map {
+	.map-row .map {
 		height: 368px;
 	}
 
@@ -589,7 +616,7 @@
 	}
 
 	@media (max-width: 768px) {
-		.map {
+		.map-row .map {
 			height: 290px;
 		}
 	}
@@ -603,10 +630,5 @@
 	.small-buttons button {
 		padding: 0.25em 0.5em;
 		font-size: 0.85em;
-	}
-
-	.grid {
-		grid-row-gap: 0.1em;
-		grid-column-gap: 0.2em;
 	}
 </style>

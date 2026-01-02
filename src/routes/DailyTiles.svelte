@@ -15,10 +15,16 @@
 	let {
 		nsWeatherData,
 		forecastDaysVisible = 5,
+		maxForecastDays = 16,
+		onExpand,
 	}: {
 		nsWeatherData: NsWeatherData;
 		forecastDaysVisible?: number;
+		maxForecastDays?: number;
+		onExpand?: () => void;
 	} = $props();
+
+	const canExpand = $derived(forecastDaysVisible < maxForecastDays && onExpand);
 
 	const { emit } = getEmitter<WeatherDataEvents>(import.meta);
 
@@ -304,7 +310,13 @@
 	}
 </script>
 
-<div class="daily-tiles" style:--tile-count={days.length} bind:this={containerDiv} use:trackable>
+<div
+	class="daily-tiles"
+	style:--tile-count={days.length}
+	style:--has-more={canExpand ? 1 : 0}
+	bind:this={containerDiv}
+	use:trackable
+>
 	<!-- Tile backgrounds -->
 	<div class="tiles">
 		{#each days as day}
@@ -319,6 +331,10 @@
 				<div class="date" class:today>{day.compactDate}</div>
 			</div>
 		{/each}
+
+		{#if canExpand}
+			<button class="more-tile" onclick={() => onExpand?.()} title="Load more days"> ›› </button>
+		{/if}
 
 		<!-- SVG overlay for temp lines and precip bars -->
 		<svg
@@ -468,7 +484,7 @@
 	.daily-tiles {
 		position: relative;
 		width: 100%;
-		max-width: calc(var(--tile-count) * 80px);
+		max-width: calc(var(--tile-count) * 80px + var(--has-more) * 24px);
 		margin: 1em auto;
 		overflow: visible;
 		user-select: none;
@@ -499,12 +515,32 @@
 		border: 1px solid #6bb3e0;
 		border-right: none;
 
-		&:last-child {
-			border-right: 1px solid #6bb3e0;
-		}
-
 		&.past {
 			opacity: 0.7;
+		}
+	}
+
+	.more-tile {
+		width: 24px;
+		min-width: 24px;
+		flex-shrink: 0;
+		height: 130px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background-color: #6bb3e0;
+		border: 1px solid #6bb3e0;
+		border-left: none;
+		padding: 0;
+		margin: 0;
+		cursor: pointer;
+		font-size: 18px;
+		font-weight: bold;
+		color: white;
+		text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+
+		&:hover {
+			background-color: #5aa3d0;
 		}
 	}
 
@@ -527,7 +563,7 @@
 		position: absolute;
 		top: 0;
 		left: 0;
-		width: 100%;
+		width: calc(var(--tile-count) * 80px);
 		height: 130px;
 		pointer-events: none;
 

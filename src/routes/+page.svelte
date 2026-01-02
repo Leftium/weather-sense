@@ -181,20 +181,14 @@
 
 <div class="container">
 	<div class="scroll">
-		<DailyTiles {nsWeatherData} {forecastDaysVisible} />
-
-		{#if forecastDaysVisible < FORECAST_DAYS}
-			<center class="pico">
-				<div role="group" style:width="initial" class="small-buttons">
-					<button class="outline contrast" onclick={() => (forecastDaysVisible *= 2)}>
-						View more days
-					</button>
-					<button class="outline secondary" onclick={() => (forecastDaysVisible = FORECAST_DAYS)}>
-						Full forecast
-					</button>
-				</div>
-			</center>
-		{/if}
+		<DailyTiles
+			{nsWeatherData}
+			{forecastDaysVisible}
+			maxForecastDays={FORECAST_DAYS}
+			onExpand={() =>
+				(forecastDaysVisible =
+					forecastDaysVisible === 4 ? 6 : Math.min(forecastDaysVisible * 2, FORECAST_DAYS))}
+		/>
 
 		<div class="hourly grid pico">
 			<div class="grid day-label">

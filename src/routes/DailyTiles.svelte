@@ -231,10 +231,13 @@
 		updateTracker(nsWeatherData.ms);
 	});
 
-	// Calculate X position for "now" to use in past overlay
+	// Calculate X position for past overlay (full past days only, not partial today)
 	const pastOverlayWidth = $derived.by(() => {
-		const nowPosition = msToPosition(Date.now());
-		return nowPosition ? nowPosition.x : 0;
+		// Find today's tile index
+		const todayIndex = days.findIndex((day) => day.fromToday === 0);
+		if (todayIndex <= 0) return 0;
+		// Cover all tiles before today
+		return todayIndex * TILE_WIDTH;
 	});
 
 	// Svelte action for tracking

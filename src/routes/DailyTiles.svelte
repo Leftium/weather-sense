@@ -12,6 +12,56 @@
 	import { getEmitter } from '$lib/emitter';
 	import { clamp, minBy, maxBy } from 'lodash-es';
 
+	// Sky gradient colors based on time of day
+	function getSkyGradient(ms: number, sunrise: number, sunset: number): string {
+		const MS_IN_HOUR = 3600000;
+
+		// Define time boundaries
+		const dawnStart = sunrise - 2 * MS_IN_HOUR;
+		const dawnEnd = sunrise + MS_IN_HOUR;
+		const duskStart = sunset - MS_IN_HOUR;
+		const duskEnd = sunset + MS_IN_HOUR;
+
+		// Color palettes for each phase
+		const night = ['#1a1a2e', '#16213e'];
+		const dawn = ['#16213e', '#ff6b6b', '#ffd93d'];
+		const day = ['#87ceeb', '#6bb3e0'];
+		const dusk = ['#ffd93d', '#ff6b6b', '#6b5b95', '#16213e'];
+
+		// Determine which phase we're in
+		if (ms < dawnStart || ms > duskEnd) {
+			// Night
+			return `linear-gradient(135deg, ${night[0]} 0%, ${night[1]} 100%)`;
+		} else if (ms >= dawnStart && ms < dawnEnd) {
+			// Dawn - interpolate through dawn colors
+			const progress = (ms - dawnStart) / (dawnEnd - dawnStart);
+			if (progress < 0.5) {
+				return `linear-gradient(135deg, ${dawn[0]} 0%, ${dawn[1]} 100%)`;
+			} else {
+				return `linear-gradient(135deg, ${dawn[1]} 0%, ${dawn[2]} 100%)`;
+			}
+		} else if (ms >= dawnEnd && ms < duskStart) {
+			// Daytime
+			return `linear-gradient(135deg, ${day[0]} 0%, ${day[1]} 100%)`;
+		} else {
+			// Dusk - interpolate through dusk colors
+			const progress = (ms - duskStart) / (duskEnd - duskStart);
+			if (progress < 0.33) {
+				return `linear-gradient(135deg, ${dusk[0]} 0%, ${dusk[1]} 100%)`;
+			} else if (progress < 0.66) {
+				return `linear-gradient(135deg, ${dusk[1]} 0%, ${dusk[2]} 100%)`;
+			} else {
+				return `linear-gradient(135deg, ${dusk[2]} 0%, ${dusk[3]} 100%)`;
+			}
+		}
+	}
+
+	// Get representative time for a day tile (use midday)
+	function getDaySkyGradient(day: { ms: number; sunrise: number; sunset: number }): string {
+		const midday = (day.sunrise + day.sunset) / 2;
+		return getSkyGradient(midday, day.sunrise, day.sunset);
+	}
+
 	let {
 		nsWeatherData,
 		forecastDaysVisible = 5,
@@ -322,16 +372,15 @@
 		{#each days as day}
 			{@const past = day.fromToday < 0}
 			{@const today = day.fromToday === 0}
-			<div
-				class="tile"
-				class:past
-				style:--icon-url="url({wmoCode(day.weatherCode).icon})"
-				title={wmoCode(day.weatherCode).description}
-			>
-				<div class="date" class:today>{day.compactDate}</div>
-				{#if day.precipitation > 0}
-					<div class="precip">{day.precipitation.toFixed(1)}mm</div>
-				{/if}
+			<div class="tile" class:past title={wmoCode(day.weatherCode).description}>
+				<div class="tile-bg"></div>
+				<img class="tile-icon" src={wmoCode(day.weatherCode).icon} alt="" />
+				<div class="tile-content">
+					<div class="date" class:today>{day.compactDate}</div>
+					{#if day.precipitation > 0}
+						<div class="precip">{day.precipitation.toFixed(1)}mm</div>
+					{/if}
+				</div>
 			</div>
 		{/each}
 
@@ -456,15 +505,15 @@
 				</text>
 			{/each}
 
-			<!-- Past time dim overlay (covers past days + elapsed portion of today) -->
+			<!-- Past time dim overlay for SVG elements (AQI, temp lines, etc) -->
 			{#if pastOverlayWidth > 0}
 				<rect
 					x="0"
 					y="0"
 					width={pastOverlayWidth}
 					height={TILE_HEIGHT}
-					fill="white"
-					opacity="0.5"
+					fill="black"
+					opacity="0.3"
 				/>
 			{/if}
 
@@ -490,7 +539,8 @@
 		overflow: visible;
 		user-select: none;
 		touch-action: none;
-		background: linear-gradient(135deg, #a8d8f0 0%, #6bb3e0 50%, #a8d8f0 100%);
+		background: linear-gradient(135deg, #eee 0%, #a8d8f0 50%, #6bb3e0 100%);
+		background-attachment: fixed;
 	}
 
 	.tiles {
@@ -507,21 +557,40 @@
 		min-width: 80px;
 		flex-shrink: 0;
 		height: 130px;
+		display: grid;
+		grid-template-areas: 'stack';
+		border: 1px solid rgba(0, 0, 0, 0.15);
+		border-right: none;
+		overflow: hidden;
+
+		> * {
+			grid-area: stack;
+		}
+
+		&.past {
+			filter: brightness(0.7);
+		}
+	}
+
+	.tile-bg {
+		width: 100%;
+		height: 100%;
+		background: linear-gradient(45deg, #7bc0e8 0%, #e0f4ff 100%);
+	}
+
+	.tile-icon {
+		width: 108px;
+		height: 108px;
+		margin: -44px 0 0 -37px;
+		pointer-events: none;
+	}
+
+	.tile-content {
 		display: flex;
 		flex-direction: column;
 		align-items: center;
 		padding-top: 4px;
-		background-color: #87ceeb;
-		background-image: var(--icon-url);
-		background-size: 108px 108px;
-		background-repeat: no-repeat;
-		background-position: -37px -44px;
-		border: 1px solid #6bb3e0;
-		border-right: none;
-
-		&.past {
-			opacity: 0.7;
-		}
+		z-index: 1;
 	}
 
 	.more-tile {

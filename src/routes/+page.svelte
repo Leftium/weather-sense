@@ -294,10 +294,9 @@
 		top: 0;
 		z-index: 100000;
 
-		background: linear-gradient(to bottom, #eee 70%, white);
+		background: linear-gradient(135deg, #eee 0%, #a8d8f0 50%, #6bb3e0 100%);
+		background-attachment: fixed;
 		padding: 0.2em 0.3em;
-		border-bottom-left-radius: 4.75px;
-		border-bottom-right-radius: 4.75px;
 
 		& > div {
 			padding-block: $size-1;

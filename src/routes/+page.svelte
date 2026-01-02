@@ -461,7 +461,7 @@
 	.hourly {
 		font-family: Lato, sans-serif;
 		margin-top: 0.2em;
-		margin-bottom: 1.5em;
+		margin-bottom: 0.5em;
 	}
 
 	.daily {

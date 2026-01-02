@@ -485,7 +485,7 @@
 		position: relative;
 		width: 100%;
 		max-width: calc(var(--tile-count) * 80px + var(--has-more) * 24px);
-		margin: 1em auto;
+		margin: 1em auto 0.5em;
 		overflow: visible;
 		user-select: none;
 		touch-action: none;

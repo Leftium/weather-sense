@@ -801,71 +801,46 @@
 
 		/*************************************************************************************/
 		/*Based on: https://moderncss.dev/pure-css-custom-checkbox-style/ */
-		input[type='checkbox'] {
-			--linear-color: linear-gradient(var(--color) 0 0);
-			--linear-white: linear-gradient(white 0 0);
-
+		input[type='checkbox']:not([name='temperature']) {
 			// Override Pico's checkbox styling
 			appearance: none;
 			-webkit-appearance: none;
-			background-color: transparent !important;
-			background-image: none !important;
+			background-color: #fff !important;
+			margin: 0;
+
+			font: inherit;
+			width: 1.2em;
+			height: 1.2em;
 
 			transform: translateY(-0.06em);
 
 			display: inline-grid;
 			place-content: center;
 
-			&::before {
-				width: inherit;
-				height: inherit;
-
-				transform: scale(1);
-				transition: 250ms transform ease-in-out;
-			}
-
-			&:checked::before {
-				transform: scale(0);
-			}
-
-			&:checked {
-				background-color: transparent !important;
-				background-image: none !important;
-			}
-
-			&::before,
-			&::after {
-				grid-row: 1;
-				grid-column: 1;
-
-				content: '';
-				border-radius: inherit;
-
-				border: calc(var(--pico-border-radius) / 2) solid transparent;
-				background-origin: border-box;
-				background-clip: padding-box, border-box;
-
-				background-image: var(--linear-white), var(--linear-color);
-			}
-
-			&::after {
-				background-image: var(--linear-color), var(--linear-color);
-			}
-
-			/*************************************************************************************/
-
-			&[name='temperature'] {
-				--gradient: linear-gradient(20deg, blue 20%, red 85%);
-
-				&::before {
-					background-image: var(--linear-white), var(--gradient);
-				}
-
-				&::after {
-					background-image: var(--gradient), var(--gradient);
-				}
-			}
+			border: 3px solid var(--color) !important;
+			border-radius: var(--pico-border-radius);
 		}
+
+		input[type='checkbox']:not([name='temperature'])::before {
+			content: '' !important;
+			width: 1.2em !important;
+			height: 1.2em !important;
+			border-radius: inherit;
+
+			transform: scale(0) !important;
+			transition: 200ms transform ease-in-out !important;
+
+			background: var(--color) !important;
+			background-image: none !important;
+			box-shadow: none !important;
+		}
+
+		input[type='checkbox']:not([name='temperature']):checked::before {
+			transform: scale(1) !important;
+		}
+
+		/*************************************************************************************/
+		// Temperature checkbox styles are in app.scss (global) to prevent Svelte from stripping ::before
 	}
 
 	@media (width < 480px) {

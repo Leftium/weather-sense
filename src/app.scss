@@ -26,3 +26,39 @@ html > div .full-height {
 	display: flex;
 	flex-direction: column;
 }
+
+// Temperature checkbox gradient animation
+.other-measurements input[type='checkbox'][name='temperature'] {
+	--gradient: linear-gradient(20deg, blue 20%, red 85%);
+	appearance: none !important;
+	-webkit-appearance: none !important;
+	margin: 0 !important;
+	font: inherit;
+	width: 1.2em !important;
+	height: 1.2em !important;
+	transform: translateY(-0.06em);
+	display: inline-grid !important;
+	place-content: center !important;
+	border: 3px solid transparent !important;
+	border-radius: var(--pico-border-radius);
+	background:
+		linear-gradient(white, white) padding-box,
+		var(--gradient) border-box !important;
+}
+
+.other-measurements input[type='checkbox'][name='temperature']::before {
+	content: '' !important;
+	display: block !important;
+	width: calc(1.2em - 4px) !important;
+	height: calc(1.2em - 4px) !important;
+	border-radius: 2px !important;
+	background: linear-gradient(20deg, blue 20%, red 85%) !important;
+	box-shadow: none !important;
+	transform: scale(0) !important;
+	transition: 200ms transform ease-in-out !important;
+	pointer-events: none !important;
+}
+
+.other-measurements input[type='checkbox'][name='temperature']:checked::before {
+	transform: scale(1) !important;
+}

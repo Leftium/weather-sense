@@ -303,12 +303,14 @@
 					{config.label}
 				{/if}
 			</label>
-			{#if config.getValue() !== ''}
+			{#if config.getValue() && !config.getValue().includes('undefined')}
 				{#if config.toggleUnits}
 					<span use:toggleUnits={{ temperature: true }}>
 						{config.getValue()}
 					</span>
-					{#if config.getValueEnd}
+					{#if config.getValueEnd && config.getValueEnd() && !config
+							.getValueEnd()
+							.includes('undefined')}
 						to
 						<span use:toggleUnits={{ temperature: true }}>
 							{config.getValueEnd()}

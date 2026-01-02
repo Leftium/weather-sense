@@ -19,6 +19,7 @@
 		skyGradient = 'linear-gradient(135deg, #eee 0%, #a8d8f0 50%, #6bb3e0 100%)',
 		tileGradient = 'linear-gradient(160deg, #6bb3e0 0%, #a8d8f0 50%, #eee 100%)',
 		textColor = '#333',
+		textShadowColor = 'rgba(255, 255, 255, 0.8)',
 		onExpand,
 	}: {
 		nsWeatherData: NsWeatherData;
@@ -27,6 +28,7 @@
 		skyGradient?: string;
 		tileGradient?: string;
 		textColor?: string;
+		textShadowColor?: string;
 		onExpand?: () => void;
 	} = $props();
 
@@ -105,8 +107,6 @@
 	// SVG dimensions
 	const TILE_WIDTH = 80;
 	const TILE_HEIGHT = 130;
-	const AQI_BAND_HEIGHT = 15; // Leave 1px for bottom border
-	const AQI_BAND_Y = TILE_HEIGHT - AQI_BAND_HEIGHT - 1;
 
 	// Compute daily max AQI from hourly dataAirQuality
 	const dailyAqi = $derived.by(() => {
@@ -137,6 +137,7 @@
 	});
 
 	const TEMP_AREA_TOP = 60;
+	const AQI_BAND_Y = TILE_HEIGHT - 15; // 115px - where AQI band starts
 	const TEMP_AREA_BOTTOM = AQI_BAND_Y - 15; // Above the AQI band with padding
 	const TEMP_AREA_HEIGHT = TEMP_AREA_BOTTOM - TEMP_AREA_TOP;
 	const PRECIP_BAR_MAX_HEIGHT = AQI_BAND_Y - TEMP_AREA_TOP; // Full height from top to AQI band
@@ -321,6 +322,7 @@
 	style:--tile-count={days.length}
 	style:--has-more={canExpand ? 1 : 0}
 	style:--sky-gradient={skyGradient}
+	style:--text-shadow-color={textShadowColor}
 	style:color={textColor}
 	bind:this={containerDiv}
 	use:trackable
@@ -330,6 +332,8 @@
 		{#each days as day}
 			{@const past = day.fromToday < 0}
 			{@const today = day.fromToday === 0}
+			{@const aqiData = dailyAqi.get(day.ms)}
+			{@const aqiLabel = aqiData?.label}
 			<div
 				class="tile"
 				class:past
@@ -344,6 +348,18 @@
 						<div class="precip">{day.precipitation.toFixed(1)}mm</div>
 					{/if}
 				</div>
+				{#if aqiLabel?.color}
+					{@const aqiTextColor = contrastTextColor(aqiLabel.color)}
+					{@const aqiShadowColor = contrastTextColor(aqiLabel.color, true)}
+					<div
+						class="aqi-band"
+						style:background-color={aqiLabel.color}
+						style:--aqi-text={aqiTextColor}
+						style:--aqi-shadow={aqiShadowColor}
+					>
+						{aqiLabel.text}
+					</div>
+				{/if}
 			</div>
 		{/each}
 
@@ -357,50 +373,6 @@
 			viewBox="0 0 {days.length * TILE_WIDTH} {TILE_HEIGHT}"
 			preserveAspectRatio="none"
 		>
-			<!-- AQI bands at bottom -->
-			{#each days as day, i}
-				{@const aqiData = dailyAqi.get(day.ms)}
-				{@const label = aqiData?.label}
-				{@const fillText = label ? contrastTextColor(label.color) : 'black'}
-				{@const fillShadow = label
-					? contrastTextColor(label.color, true, 'rgba(255 255 255 / 50%)', 'rgba(51 51 51 / 50%)')
-					: 'white'}
-				{#if label && label.color}
-					<!-- Inset rect to reveal tile borders (1px on sides, 1px on bottom) -->
-					<rect
-						x={i * TILE_WIDTH + 1}
-						y={AQI_BAND_Y}
-						width={TILE_WIDTH - 2}
-						height={AQI_BAND_HEIGHT - 1}
-						fill={label.color}
-					/>
-					<!-- Label shadow -->
-					<text
-						x={(i + 0.5) * TILE_WIDTH}
-						y={AQI_BAND_Y + AQI_BAND_HEIGHT / 2}
-						text-anchor="middle"
-						dominant-baseline="middle"
-						font-size="10"
-						fill={fillShadow}
-						dx="1"
-						dy="1"
-					>
-						{label.text}
-					</text>
-					<!-- Label text -->
-					<text
-						x={(i + 0.5) * TILE_WIDTH}
-						y={AQI_BAND_Y + AQI_BAND_HEIGHT / 2}
-						text-anchor="middle"
-						dominant-baseline="middle"
-						font-size="10"
-						fill={fillText}
-					>
-						{label.text}
-					</text>
-				{/if}
-			{/each}
-
 			<!-- Precipitation bars -->
 			{#each days as day, i}
 				{@const barHeight = precipHeight(day.precipitation)}
@@ -504,11 +476,6 @@
 		touch-action: none;
 		background: var(--sky-gradient, linear-gradient(135deg, #eee 0%, #a8d8f0 50%, #6bb3e0 100%));
 		background-attachment: fixed;
-
-		// Force text to inherit the dynamic color
-		& * {
-			color: inherit;
-		}
 	}
 
 	.tiles {
@@ -527,16 +494,20 @@
 		height: 130px;
 		display: grid;
 		grid-template-areas: 'stack';
-		border: 1px solid rgba(0, 0, 0, 0.15);
-		border-right: none;
+		border: 1px solid #6bb3e0;
 		overflow: hidden;
 
 		> * {
 			grid-area: stack;
 		}
 
-		&.past {
+		&.past > * {
 			opacity: 0.7;
+		}
+
+		// Collapse borders between tiles
+		& + .tile {
+			border-left: none;
 		}
 	}
 
@@ -559,6 +530,19 @@
 		align-items: center;
 		padding-top: 4px;
 		z-index: 1;
+	}
+
+	.aqi-band {
+		align-self: end;
+		width: 100%;
+		height: 15px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		font-size: 10px;
+		font-weight: 600;
+		color: var(--aqi-text);
+		text-shadow: 1px 1px 0 var(--aqi-shadow);
 	}
 
 	.more-tile {
@@ -590,10 +574,10 @@
 		font-weight: 600;
 		margin-bottom: 0;
 		text-shadow:
-			-1px -1px 0 rgba(255, 255, 255, 0.8),
-			1px -1px 0 rgba(255, 255, 255, 0.8),
-			-1px 1px 0 rgba(255, 255, 255, 0.8),
-			1px 1px 0 rgba(255, 255, 255, 0.8);
+			-1px -1px 0 var(--text-shadow-color, rgba(255, 255, 255, 0.8)),
+			1px -1px 0 var(--text-shadow-color, rgba(255, 255, 255, 0.8)),
+			-1px 1px 0 var(--text-shadow-color, rgba(255, 255, 255, 0.8)),
+			1px 1px 0 var(--text-shadow-color, rgba(255, 255, 255, 0.8));
 
 		&.today {
 			font-weight: 900;
@@ -605,10 +589,10 @@
 		font-weight: 600;
 		color: #268bd2;
 		text-shadow:
-			-1px -1px 0 rgba(255, 255, 255, 0.9),
-			1px -1px 0 rgba(255, 255, 255, 0.9),
-			-1px 1px 0 rgba(255, 255, 255, 0.9),
-			1px 1px 0 rgba(255, 255, 255, 0.9);
+			-1px -1px 0 var(--text-shadow-color, rgba(255, 255, 255, 0.9)),
+			1px -1px 0 var(--text-shadow-color, rgba(255, 255, 255, 0.9)),
+			-1px 1px 0 var(--text-shadow-color, rgba(255, 255, 255, 0.9)),
+			1px 1px 0 var(--text-shadow-color, rgba(255, 255, 255, 0.9));
 	}
 
 	.overlay {

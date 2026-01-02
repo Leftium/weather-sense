@@ -389,3 +389,9 @@ export function getTextColor(ms: number, sunrise: number, sunset: number): strin
 	// Use middle color as dominant background color
 	return contrastTextColor(colors[1]);
 }
+
+export function getTextShadowColor(ms: number, sunrise: number, sunset: number): string {
+	const colors = getSkyColors(ms, sunrise, sunset);
+	// Shadow is opposite of text color for contrast
+	return contrastTextColor(colors[1], true);
+}

@@ -20,6 +20,7 @@
 		getSkyGradient,
 		getTileGradient,
 		getTextColor,
+		getTextShadowColor,
 	} from '$lib/util.js';
 	import RadarMapLibre from './RadarMapLibre.svelte';
 
@@ -65,6 +66,15 @@
 			return getTextColor(nsWeatherData.ms, today.sunrise, today.sunset);
 		}
 		return '#333'; // Default dark text for daytime
+	});
+
+	// Dynamic text shadow color (opposite of text color)
+	const textShadowColor = $derived.by(() => {
+		const today = nsWeatherData.daily?.find((d) => d.fromToday === 0);
+		if (today) {
+			return getTextShadowColor(nsWeatherData.ms, today.sunrise, today.sunset);
+		}
+		return 'rgba(255, 255, 255, 0.8)'; // Default white shadow for daytime
 	});
 
 	emit('weatherdata_requestedSetLocation', {
@@ -219,6 +229,7 @@
 			{skyGradient}
 			{tileGradient}
 			{textColor}
+			{textShadowColor}
 			maxForecastDays={FORECAST_DAYS}
 			onExpand={() =>
 				(forecastDaysVisible =
@@ -337,8 +348,8 @@
 			padding-block: $size-1;
 		}
 
-		// Force all text to inherit the dynamic color
-		& * {
+		// Force text elements to inherit the dynamic color
+		:where(span, div, label, a) {
 			color: inherit;
 		}
 	}

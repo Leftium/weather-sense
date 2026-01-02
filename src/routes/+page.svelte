@@ -185,7 +185,7 @@
 
 		{#if forecastDaysVisible < FORECAST_DAYS}
 			<center class="pico">
-				<div role="group" style:width="initial">
+				<div role="group" style:width="initial" class="small-buttons">
 					<button class="outline contrast" onclick={() => (forecastDaysVisible *= 2)}>
 						View more days
 					</button>
@@ -573,6 +573,11 @@
 		.sticky-info {
 			display: none;
 		}
+	}
+
+	.small-buttons button {
+		padding: 0.25em 0.5em;
+		font-size: 0.85em;
 	}
 
 	.grid {

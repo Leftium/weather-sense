@@ -286,13 +286,14 @@
 	<div class="tiles">
 		{#each days as day}
 			{@const past = day.fromToday < 0}
+			{@const today = day.fromToday === 0}
 			<div
 				class="tile"
 				class:past
 				style:--icon-url="url({wmoCode(day.weatherCode).icon})"
 				title={wmoCode(day.weatherCode).description}
 			>
-				<div class="date">{day.compactDate}</div>
+				<div class="date" class:today>{day.compactDate}</div>
 			</div>
 		{/each}
 	</div>
@@ -499,6 +500,10 @@
 			1px -1px 0 rgba(255, 255, 255, 0.8),
 			-1px 1px 0 rgba(255, 255, 255, 0.8),
 			1px 1px 0 rgba(255, 255, 255, 0.8);
+
+		&.today {
+			font-weight: 900;
+		}
 	}
 
 	.overlay {

@@ -445,7 +445,7 @@
 		background-image: var(--icon-url);
 		background-size: 108px 108px;
 		background-repeat: no-repeat;
-		background-position: -36px -27px;
+		background-position: -37px -44px;
 		border: 1px solid #ddd;
 		border-right: none;
 

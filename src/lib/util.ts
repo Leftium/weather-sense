@@ -298,12 +298,15 @@ export function summarize(arrayOrObject: unknown[] | undefined | null) {
 			if (length > 1) {
 				summary.push(array[1]);
 			}
-			if (length > 2) {
-				summary.push('... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ...');
-				summary.push(array[length - 1]);
+			if (length > 4) {
+				const skipped = length - 4;
+				summary.push(`... (${skipped} skipped) ...`);
 			}
 			if (length > 3) {
 				summary.push(array[length - 2]);
+			}
+			if (length > 2) {
+				summary.push(array[length - 1]);
 			}
 
 			return summary;
@@ -323,13 +326,16 @@ export function summarize(arrayOrObject: unknown[] | undefined | null) {
 				const key = keys[1];
 				summary[key] = object[key];
 			}
-			if (numKeys > 2) {
-				summary._ = '... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ... ...';
-				const key = keys[numKeys - 1];
-				summary[key] = object[key];
+			if (numKeys > 4) {
+				const skipped = numKeys - 4;
+				summary._ = `... (${skipped} skipped) ...`;
 			}
 			if (numKeys > 3) {
 				const key = keys[numKeys - 2];
+				summary[key] = object[key];
+			}
+			if (numKeys > 2) {
+				const key = keys[numKeys - 1];
 				summary[key] = object[key];
 			}
 

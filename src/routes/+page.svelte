@@ -18,6 +18,7 @@
 		aqiUsToLabel,
 		aqiEuropeToLabel,
 		getSkyGradient,
+		getTileGradient,
 	} from '$lib/util.js';
 	import RadarMapLibre from './RadarMapLibre.svelte';
 
@@ -44,6 +45,16 @@
 		}
 		// Default daytime gradient
 		return 'linear-gradient(135deg, #eee 0%, #a8d8f0 50%, #6bb3e0 100%)';
+	});
+
+	// Tile gradient - similar colors, different angle
+	const tileGradient = $derived.by(() => {
+		const today = nsWeatherData.daily?.find((d) => d.fromToday === 0);
+		if (today) {
+			return getTileGradient(nsWeatherData.ms, today.sunrise, today.sunset);
+		}
+		// Default daytime gradient for tiles
+		return 'linear-gradient(160deg, #6bb3e0 0%, #a8d8f0 50%, #eee 100%)';
 	});
 
 	emit('weatherdata_requestedSetLocation', {
@@ -196,6 +207,7 @@
 			{nsWeatherData}
 			{forecastDaysVisible}
 			{skyGradient}
+			{tileGradient}
 			maxForecastDays={FORECAST_DAYS}
 			onExpand={() =>
 				(forecastDaysVisible =

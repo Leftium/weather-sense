@@ -347,15 +347,15 @@ export function summarize(arrayOrObject: unknown[] | undefined | null) {
 }
 
 // Sky gradient colors based on time of day
-export function getSkyGradient(ms: number, sunrise: number, sunset: number): string {
+// Get sky colors for a given time
+function getSkyColors(ms: number, sunrise: number, sunset: number): string[] {
 	// Define time boundaries
 	const dawnStart = sunrise - 2 * MS_IN_HOUR;
 	const dawnEnd = sunrise + MS_IN_HOUR;
 	const duskStart = sunset - MS_IN_HOUR;
 	const duskEnd = sunset + MS_IN_HOUR;
 
-	// Color palettes for each phase (3 stops for seamless fixed gradient)
-	// Format: [top-left, middle, bottom-right] for 135deg gradient
+	// Color palettes for each phase (3 stops)
 	const night = ['#1a1a2e', '#16213e', '#0f0f1a'];
 	const dawn = ['#eee', '#ffb6a3', '#ffd93d'];
 	const day = ['#eee', '#a8d8f0', '#6bb3e0'];
@@ -363,16 +363,23 @@ export function getSkyGradient(ms: number, sunrise: number, sunset: number): str
 
 	// Determine which phase we're in
 	if (ms < dawnStart || ms > duskEnd) {
-		// Night
-		return `linear-gradient(135deg, ${night[0]} 0%, ${night[1]} 50%, ${night[2]} 100%)`;
+		return night;
 	} else if (ms >= dawnStart && ms < dawnEnd) {
-		// Dawn
-		return `linear-gradient(135deg, ${dawn[0]} 0%, ${dawn[1]} 50%, ${dawn[2]} 100%)`;
+		return dawn;
 	} else if (ms >= dawnEnd && ms < duskStart) {
-		// Daytime
-		return `linear-gradient(135deg, ${day[0]} 0%, ${day[1]} 50%, ${day[2]} 100%)`;
+		return day;
 	} else {
-		// Dusk
-		return `linear-gradient(135deg, ${dusk[0]} 0%, ${dusk[1]} 50%, ${dusk[2]} 100%)`;
+		return dusk;
 	}
+}
+
+export function getSkyGradient(ms: number, sunrise: number, sunset: number): string {
+	const colors = getSkyColors(ms, sunrise, sunset);
+	return `linear-gradient(135deg, ${colors[0]} 0%, ${colors[1]} 50%, ${colors[2]} 100%)`;
+}
+
+export function getTileGradient(ms: number, sunrise: number, sunset: number): string {
+	const colors = getSkyColors(ms, sunrise, sunset);
+	// 45deg angle - light at top-right, dark at bottom-left
+	return `linear-gradient(45deg, ${colors[2]} 0%, ${colors[1]} 50%, ${colors[0]} 100%)`;
 }

@@ -17,12 +17,14 @@
 		forecastDaysVisible = 5,
 		maxForecastDays = 16,
 		skyGradient = 'linear-gradient(135deg, #eee 0%, #a8d8f0 50%, #6bb3e0 100%)',
+		tileGradient = 'linear-gradient(160deg, #6bb3e0 0%, #a8d8f0 50%, #eee 100%)',
 		onExpand,
 	}: {
 		nsWeatherData: NsWeatherData;
 		forecastDaysVisible?: number;
 		maxForecastDays?: number;
 		skyGradient?: string;
+		tileGradient?: string;
 		onExpand?: () => void;
 	} = $props();
 
@@ -325,7 +327,12 @@
 		{#each days as day}
 			{@const past = day.fromToday < 0}
 			{@const today = day.fromToday === 0}
-			<div class="tile" class:past title={wmoCode(day.weatherCode).description}>
+			<div
+				class="tile"
+				class:past
+				title={wmoCode(day.weatherCode).description}
+				style:--tile-gradient={tileGradient}
+			>
 				<div class="tile-bg"></div>
 				<img class="tile-icon" src={wmoCode(day.weatherCode).icon} alt="" />
 				<div class="tile-content">
@@ -528,7 +535,7 @@
 	.tile-bg {
 		width: 100%;
 		height: 100%;
-		background: linear-gradient(45deg, #7bc0e8 0%, #e0f4ff 100%);
+		background: var(--tile-gradient, linear-gradient(160deg, #6bb3e0 0%, #a8d8f0 50%, #eee 100%));
 	}
 
 	.tile-icon {

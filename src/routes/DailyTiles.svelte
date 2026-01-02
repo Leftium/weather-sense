@@ -129,7 +129,6 @@
 	let containerDiv: HTMLDivElement;
 
 	// Tracker state
-	let trackerDayIndex: number | null = $state(null);
 	let trackerX: number | null = $state(null);
 	let trackerColor: string = $state('yellow');
 
@@ -181,12 +180,10 @@
 		const position = msToPosition(ms);
 
 		if (position) {
-			trackerDayIndex = position.dayIndex;
 			trackerX = position.x;
 			trackerColor = 'yellow';
 		} else {
 			// Ghost tracker: show current time of day in first visible day
-			trackerDayIndex = null;
 			trackerX = null;
 		}
 	}
@@ -405,18 +402,6 @@
 				{formatTemp(day.temperatureMin)}
 			</text>
 		{/each}
-
-		<!-- Tracker highlight -->
-		{#if trackerDayIndex !== null}
-			<rect
-				x={trackerDayIndex * TILE_WIDTH}
-				y="0"
-				width={TILE_WIDTH}
-				height={TILE_HEIGHT}
-				fill={trackerColor}
-				opacity="0.4"
-			/>
-		{/if}
 
 		<!-- Tracker vertical line -->
 		{#if trackerX !== null}

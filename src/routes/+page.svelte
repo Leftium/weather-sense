@@ -3,6 +3,7 @@
 
 	import TimeLine from './TimeLine.svelte';
 	import Overview from './Overview.svelte';
+	import DailyTiles from './DailyTiles.svelte';
 
 	import {
 		MS_IN_HOUR,
@@ -184,6 +185,8 @@
 			<b>Next 24 hours</b>
 			<TimeLine {nsWeatherData} start={Date.now() - 2 * MS_IN_HOUR} />
 		</div>
+
+		<DailyTiles {nsWeatherData} />
 
 		<div class="map">
 			<RadarMapLibre {nsWeatherData} />

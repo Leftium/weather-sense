@@ -224,7 +224,7 @@
 				{@const past = day.fromToday < 0}
 				{@const today = day.fromToday === 0}
 				<div class={['day-row', { past }]} transition:slide={{ duration: 1000 }}>
-					<div class={['day-label', { today }]}>
+					<div class="day-label">
 						<div class={['day', { today }]}>
 							<img
 								class="icon small"
@@ -235,12 +235,11 @@
 							{day.compactDate}
 						</div>
 						<div class="high-low">
-							<span style:color={SOLARIZED_RED} use:toggleUnits={{ temperature: true }}>
-								{nsWeatherData.format(`daily[${index}].temperatureMax`, false)}
-							</span>
-							<span style:color={SOLARIZED_BLUE} use:toggleUnits={{ temperature: true }}>
-								{nsWeatherData.format(`daily[${index}].temperatureMin`, false)}
-							</span>
+							<span style:color={SOLARIZED_RED} use:toggleUnits={{ temperature: true }}
+								>{nsWeatherData.format(`daily[${index}].temperatureMax`, false)}</span
+							><span style:color={SOLARIZED_BLUE} use:toggleUnits={{ temperature: true }}
+								>{nsWeatherData.format(`daily[${index}].temperatureMin`, false)}</span
+							>
 						</div>
 					</div>
 					<div class={['timeline', { today }]}>
@@ -449,6 +448,8 @@
 	}
 
 	.daily {
+		display: grid;
+		grid-template-columns: auto auto 1fr;
 		margin-bottom: 0.2em;
 	}
 
@@ -458,8 +459,10 @@
 
 	.day-row {
 		display: grid;
-		grid-template-columns: auto 1fr;
+		grid-template-columns: subgrid;
+		grid-column: span 3;
 		position: relative;
+		align-items: center;
 
 		&.past::after {
 			content: '';
@@ -482,11 +485,8 @@
 		font-weight: bold;
 	}
 
+	// Shared .day and .high-low styles
 	.day-label {
-		display: flex;
-		flex-direction: column;
-		align-items: flex-end;
-		justify-content: center;
 		overflow: visible;
 
 		.day {
@@ -498,12 +498,11 @@
 				-1px 1px 0 rgba(255, 255, 255, 0.8),
 				1px 1px 0 rgba(255, 255, 255, 0.8);
 
-			// Position icon behind day label
 			.icon.small {
 				position: absolute;
 				right: -20px;
 				top: 50%;
-				transform: translateY(-80%);
+				transform: translateY(-50%);
 				z-index: -1;
 				height: 40px;
 				width: 40px;
@@ -518,6 +517,35 @@
 				1px -1px 0 rgba(255, 255, 255, 0.8),
 				-1px 1px 0 rgba(255, 255, 255, 0.8),
 				1px 1px 0 rgba(255, 255, 255, 0.8);
+		}
+	}
+
+	// Hourly section uses flex layout
+	.hourly .day-label {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-end;
+		justify-content: center;
+	}
+
+	// Daily section uses subgrid for aligned temps
+	.daily .day-label {
+		display: grid;
+		grid-template-columns: subgrid;
+		grid-column: span 2;
+
+		.day {
+			grid-column: span 2;
+		}
+
+		.high-low {
+			display: grid;
+			grid-template-columns: subgrid;
+			grid-column: span 2;
+
+			span {
+				text-align: right;
+			}
 		}
 	}
 

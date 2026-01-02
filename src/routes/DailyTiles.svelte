@@ -335,20 +335,13 @@
 					? contrastTextColor(label.color, true, 'rgba(255 255 255 / 50%)', 'rgba(51 51 51 / 50%)')
 					: 'white'}
 				{#if label && label.color}
+					<!-- Inset rect to reveal tile borders (1px on sides, 1px on bottom) -->
 					<rect
-						x={i * TILE_WIDTH}
+						x={i * TILE_WIDTH + 1}
 						y={AQI_BAND_Y}
-						width={TILE_WIDTH}
-						height={AQI_BAND_HEIGHT}
+						width={TILE_WIDTH - 2}
+						height={AQI_BAND_HEIGHT - 1}
 						fill={label.color}
-					/>
-					<!-- Border lines (left, bottom, right - no top) -->
-					<path
-						d="M {i * TILE_WIDTH} {AQI_BAND_Y} V {AQI_BAND_Y + AQI_BAND_HEIGHT} H {(i + 1) *
-							TILE_WIDTH} V {AQI_BAND_Y}"
-						fill="none"
-						stroke="#6BB3E0"
-						stroke-width="1"
 					/>
 					<!-- Label shadow -->
 					<text

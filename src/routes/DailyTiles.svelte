@@ -322,8 +322,6 @@
 	style:--tile-count={days.length}
 	style:--has-more={canExpand ? 1 : 0}
 	style:--sky-gradient={skyGradient}
-	style:--text-shadow-color={textShadowColor}
-	style:color={textColor}
 	bind:this={containerDiv}
 	use:trackable
 >
@@ -475,6 +473,7 @@
 		user-select: none;
 		touch-action: none;
 		background: transparent;
+		margin-bottom: 0.75em;
 	}
 
 	.tiles {
@@ -572,11 +571,12 @@
 		font-size: 16px;
 		font-weight: 600;
 		margin-bottom: 0;
+		color: #333;
 		text-shadow:
-			-1px -1px 0 var(--text-shadow-color, rgba(255, 255, 255, 0.8)),
-			1px -1px 0 var(--text-shadow-color, rgba(255, 255, 255, 0.8)),
-			-1px 1px 0 var(--text-shadow-color, rgba(255, 255, 255, 0.8)),
-			1px 1px 0 var(--text-shadow-color, rgba(255, 255, 255, 0.8));
+			-1px -1px 0 rgba(255, 255, 255, 0.8),
+			1px -1px 0 rgba(255, 255, 255, 0.8),
+			-1px 1px 0 rgba(255, 255, 255, 0.8),
+			1px 1px 0 rgba(255, 255, 255, 0.8);
 
 		&.today {
 			font-weight: 900;
@@ -588,10 +588,10 @@
 		font-weight: 600;
 		color: #268bd2;
 		text-shadow:
-			-1px -1px 0 var(--text-shadow-color, rgba(255, 255, 255, 0.9)),
-			1px -1px 0 var(--text-shadow-color, rgba(255, 255, 255, 0.9)),
-			-1px 1px 0 var(--text-shadow-color, rgba(255, 255, 255, 0.9)),
-			1px 1px 0 var(--text-shadow-color, rgba(255, 255, 255, 0.9));
+			-1px -1px 0 rgba(255, 255, 255, 0.9),
+			1px -1px 0 rgba(255, 255, 255, 0.9),
+			-1px 1px 0 rgba(255, 255, 255, 0.9),
+			1px 1px 0 rgba(255, 255, 255, 0.9);
 	}
 
 	.overlay {

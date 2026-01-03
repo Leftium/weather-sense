@@ -39,6 +39,11 @@ export const load = async (loadEvent) => {
 		}
 	}
 
+	// Get timezone from Vercel's IP geolocation (available immediately, before any API calls)
+	// Only use IP timezone if no location was passed via query param (otherwise it won't match)
+	// Falls back to America/Chicago (matches hardcoded St Paul, MN location for local dev)
+	const timezone = paramName ? null : headers.get('x-vercel-ip-timezone') || 'America/Chicago';
+
 	if (source === 'hardcoded') {
 		const city = decodeURIComponent(headers.get('x-vercel-ip-city') || '');
 		const region = decodeURIComponent(headers.get('x-vercel-ip-country-region') || '');
@@ -63,5 +68,6 @@ export const load = async (loadEvent) => {
 		name,
 		coords,
 		mapStyle,
+		timezone,
 	};
 };

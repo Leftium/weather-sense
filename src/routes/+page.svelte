@@ -34,6 +34,12 @@
 
 	import { FORECAST_DAYS, makeNsWeatherData } from '$lib/ns-weather-data.svelte.js';
 	import { slide } from 'svelte/transition';
+	import dayjs from 'dayjs';
+	import utc from 'dayjs/plugin/utc';
+	import timezonePlugin from 'dayjs/plugin/timezone';
+
+	dayjs.extend(utc);
+	dayjs.extend(timezonePlugin);
 
 	const nsWeatherData = makeNsWeatherData();
 	const { emit } = getEmitter<WeatherDataEvents>(import.meta);
@@ -231,7 +237,21 @@
 	const MIN_TIME_STEP = 30000; // Minimum 30 seconds per frame
 	const MAX_TIME_STEP = 3600000; // Maximum 1 hour per frame
 	const MS_IN_DAY = 24 * 60 * 60 * 1000;
-	const DEFAULT_COLORS = ['#f0f8ff', '#a8d8f0', '#6bb3e0']; // Day colors
+
+	// Calculate initial sky colors based on timezone from request
+	// Estimate sunrise ~6am and sunset ~6pm local time
+	// Returns null if no timezone available (e.g., location passed via query param)
+	function getInitialColors(timezone: string | null): string[] | null {
+		if (!timezone) return null;
+		const now = dayjs().tz(timezone);
+		const todayStart = now.startOf('day');
+		const estimatedSunrise = todayStart.add(6, 'hour').valueOf(); // 6:00 AM
+		const estimatedSunset = todayStart.add(18, 'hour').valueOf(); // 6:00 PM
+		return getSkyColors(now.valueOf(), estimatedSunrise, estimatedSunset);
+	}
+
+	const DAY_COLORS = ['#f0f8ff', '#a8d8f0', '#6bb3e0']; // Fallback daytime colors
+	const DEFAULT_COLORS = getInitialColors(data.timezone) ?? DAY_COLORS;
 
 	let animationFrameId: number | null = null;
 

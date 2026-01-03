@@ -1120,7 +1120,7 @@
 	}
 
 	.map-row .map {
-		height: 276px;
+		height: 280px;
 		width: 100%;
 
 		:global(main) {

@@ -1,8 +1,6 @@
 <script lang="ts">
 	import maplibregl from 'maplibre-gl';
 	import 'maplibre-gl/dist/maplibre-gl.css';
-	import { circle } from '@turf/circle';
-	import { featureCollection } from '@turf/helpers';
 	import 'iconify-icon';
 	import haversine from 'haversine-distance';
 
@@ -48,17 +46,6 @@
 		return clamp(index, 0, Math.min(15, nsWeatherData.radar.frames.length - 1));
 	});
 
-	function makeCircleFeaturesCollection(center: [number, number]) {
-		return featureCollection(
-			[...Array(10).keys()].map((n) =>
-				circle(center, (n + 1) * 10, {
-					steps: 64,
-					units: 'kilometers',
-				}),
-			),
-		);
-	}
-
 	let map: maplibregl.Map;
 	onMount(async () => {
 		const lat = nsWeatherData.coords?.latitude ?? 0;
@@ -95,11 +82,6 @@
 				},
 			});
 
-			if (map) {
-				const source = map.getSource('circles') as maplibregl.GeoJSONSource;
-				source.setData(makeCircleFeaturesCollection([longitude, latitude]));
-			}
-
 			map.flyTo({
 				center: [longitude, latitude],
 				zoom: dev ? 5 : 10, // Can use zoom 10+ with overzoom enabled
@@ -117,17 +99,6 @@
 			.addControl(geolocateControl, 'top-right');
 
 		map.on('load', () => {
-			map.addSource('circles', { type: 'geojson', data: makeCircleFeaturesCollection([lon, lat]) });
-			map.addLayer({
-				id: 'circles',
-				type: 'line',
-				source: 'circles',
-				paint: {
-					'line-color': 'rgba(0, 0, 0, 20%)',
-					'line-width': 3,
-				},
-			});
-
 			// Initialize radar layers if data is already available
 			if (nsWeatherData.radar?.frames?.length) {
 				const radarFrame = nsWeatherData.radar.frames[radarFrameIndex];

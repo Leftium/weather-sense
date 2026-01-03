@@ -144,11 +144,11 @@
 	// Layout orders: [narrow/wide] x [collapsed/expanded]
 	const layoutOrders = {
 		narrow: {
-			collapsed: ['temp', 'humidity', 'precip', 'chance', 'euAqi', 'showAll'],
+			collapsed: ['temp', 'dewPoint', 'precip', 'chance', 'euAqi', 'showAll'],
 			expanded: ['temp', 'tempRange', 'dewPoint', 'humidity', 'precip', 'chance', 'euAqi', 'usAqi'],
 		},
 		wide: {
-			collapsed: ['temp', 'precip', 'euAqi', 'humidity', 'chance', 'showAll'],
+			collapsed: ['temp', 'precip', 'euAqi', 'dewPoint', 'chance', 'showAll'],
 			expanded: ['temp', 'dewPoint', 'precip', 'euAqi', 'tempRange', 'humidity', 'chance', 'usAqi'],
 		},
 	};
@@ -568,7 +568,7 @@
 		class:collapsed={!showMoreOptions}
 		class:expanded={showMoreOptions}
 	>
-		{#each currentOrder as key}
+		{#each currentOrder as key (key)}
 			{@render checkbox(checkboxConfigs[key])}
 		{/each}
 	</div>

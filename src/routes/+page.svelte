@@ -24,8 +24,11 @@
 	import RadarMapLibre from './RadarMapLibre.svelte';
 
 	import { clearEvents, getEmitter } from '$lib/emitter.js';
-	import { dev } from '$app/environment';
+	import { browser, dev } from '$app/environment';
 	import { onDestroy, onMount, untrack } from 'svelte';
+
+	const STORAGE_KEY_PLOT_VISIBILITY = 'weather-sense:plotVisibility';
+	const STORAGE_KEY_UNITS = 'weather-sense:units';
 
 	import { FORECAST_DAYS, makeNsWeatherData } from '$lib/ns-weather-data.svelte.js';
 	import { slide } from 'svelte/transition';
@@ -49,6 +52,18 @@
 		chance: true,
 		euAqi: true,
 		usAqi: false,
+	});
+
+	// Flag to prevent saving until preferences are loaded
+	let prefsLoaded = $state(false);
+
+	// Save plotVisibility to localStorage when it changes (after initial load)
+	$effect(() => {
+		// Read plotVisibility to track changes
+		const _ = JSON.stringify(plotVisibility);
+		if (browser && prefsLoaded) {
+			localStorage.setItem(STORAGE_KEY_PLOT_VISIBILITY, JSON.stringify(plotVisibility));
+		}
 	});
 
 	// Checkbox configurations
@@ -465,6 +480,15 @@
 		};
 	}
 
+	// Save temperature unit to localStorage when it changes (after initial load)
+	$effect(() => {
+		// Read units to track changes
+		const unit = nsWeatherData.units.temperature;
+		if (browser && prefsLoaded) {
+			localStorage.setItem(STORAGE_KEY_UNITS, JSON.stringify({ temperature: unit }));
+		}
+	});
+
 	onDestroy(() => {
 		clearEvents();
 	});
@@ -473,6 +497,28 @@
 	const WIDE_COLLAPSED_BREAKPOINT = 480; // px - 3 columns
 	const WIDE_EXPANDED_BREAKPOINT = 700; // px - 4 columns
 	onMount(() => {
+		// Load saved preferences from localStorage
+		try {
+			const savedPlotVisibility = localStorage.getItem(STORAGE_KEY_PLOT_VISIBILITY);
+			if (savedPlotVisibility) {
+				const parsed = JSON.parse(savedPlotVisibility);
+				Object.assign(plotVisibility, parsed);
+			}
+
+			const savedUnits = localStorage.getItem(STORAGE_KEY_UNITS);
+			if (savedUnits) {
+				const parsed = JSON.parse(savedUnits);
+				if (parsed.temperature) {
+					emit('weatherdata_requestedToggleUnits', { temperature: parsed.temperature });
+				}
+			}
+		} catch (e) {
+			console.warn('Failed to load preferences from localStorage:', e);
+		}
+
+		// Enable saving preferences after loading
+		prefsLoaded = true;
+
 		const mqCollapsed = window.matchMedia(`(min-width: ${WIDE_COLLAPSED_BREAKPOINT}px)`);
 		const mqExpanded = window.matchMedia(`(min-width: ${WIDE_EXPANDED_BREAKPOINT}px)`);
 

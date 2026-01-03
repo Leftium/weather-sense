@@ -1019,6 +1019,7 @@
 
 	// Timeline grid - parent container for hourly and daily sections
 	.timeline-grid {
+		overflow-x: hidden;
 		display: grid;
 		grid-template-columns: 12px auto auto minmax(0, 1fr);
 		grid-row-gap: 0.1em;

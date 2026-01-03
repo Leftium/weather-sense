@@ -20,6 +20,7 @@
 		getSkyColors,
 		colorsDelta,
 		contrastTextColor,
+		celcius,
 	} from '$lib/util.js';
 	import RadarMapLibre from './RadarMapLibre.svelte';
 
@@ -37,6 +38,13 @@
 	const { emit } = getEmitter<WeatherDataEvents>(import.meta);
 
 	let { data } = $props();
+
+	function formatTemp(temp: number): string {
+		if (nsWeatherData.units.temperature === 'C') {
+			return `${celcius(temp)?.toFixed(1)}°`;
+		}
+		return `${Math.round(temp)}°`;
+	}
 
 	let forecastDaysVisible = $state(3);
 	let showMoreOptions = $state(false);
@@ -705,9 +713,9 @@
 						</div>
 						<div class="high-low">
 							<span style:color={SOLARIZED_RED} use:toggleUnits={{ temperature: true }}
-								>{nsWeatherData.format(`daily[${index}].temperatureMax`, false)}</span
+								>{formatTemp(day.temperatureMax)}</span
 							><span style:color={SOLARIZED_BLUE} use:toggleUnits={{ temperature: true }}
-								>{nsWeatherData.format(`daily[${index}].temperatureMin`, false)}</span
+								>{formatTemp(day.temperatureMin)}</span
 							>
 						</div>
 					</div>

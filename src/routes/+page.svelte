@@ -56,6 +56,7 @@
 
 	let forecastDaysVisible = $state(3);
 	let showMoreOptions = $state(false);
+	let groupIcons = $state(true);
 
 	// Actual max forecast days based on available data (daily getter removes incomplete last day)
 	const maxForecastDays = $derived(
@@ -734,12 +735,13 @@
 				<div class="day-label">
 					<div class="day today">
 						{#if wmoCode(hourly24WmoCode ?? undefined).icon}
-							<img
-								class="icon small"
-								src={wmoCode(hourly24WmoCode ?? undefined).icon}
-								title={wmoCode(hourly24WmoCode ?? undefined).description}
-								alt=""
-							/>
+							<button
+								class="icon-toggle"
+								onclick={() => (groupIcons = !groupIcons)}
+								title={`${wmoCode(hourly24WmoCode ?? undefined).description} (click to ${groupIcons ? 'ungroup' : 'group'} icons)`}
+							>
+								<img class="icon small" src={wmoCode(hourly24WmoCode ?? undefined).icon} alt="" />
+							</button>
 						{/if}
 						24hrs
 					</div>
@@ -756,6 +758,7 @@
 					<TimeLine
 						{nsWeatherData}
 						{plotVisibility}
+						{groupIcons}
 						start={Date.now() - 2 * MS_IN_HOUR}
 						trackerColor={targetColors[1]}
 					/>
@@ -779,12 +782,13 @@
 					></div>
 					<div class="day-label">
 						<div class={['day', { today }]}>
-							<img
-								class="icon small"
-								src={wmoCode(day.weatherCode).icon}
-								title={wmoCode(day.weatherCode).description}
-								alt=""
-							/>
+							<button
+								class="icon-toggle"
+								onclick={() => (groupIcons = !groupIcons)}
+								title={`${wmoCode(day.weatherCode).description} (click to ${groupIcons ? 'ungroup' : 'group'} icons)`}
+							>
+								<img class="icon small" src={wmoCode(day.weatherCode).icon} alt="" />
+							</button>
 							{day.compactDate}
 						</div>
 						<div class="high-low">
@@ -799,6 +803,7 @@
 						<TimeLine
 							{nsWeatherData}
 							{plotVisibility}
+							{groupIcons}
 							start={day.ms}
 							xAxis={day.compactDate == 'Today'}
 							ghostTracker={true}
@@ -1248,6 +1253,21 @@
 				z-index: -1; // Below day label text and temp-gradient-bar
 				height: 40px;
 				width: 40px;
+			}
+
+			// Transparent button wrapper for clickable icon toggle
+			.icon-toggle {
+				all: unset;
+				cursor: pointer;
+				display: inline;
+
+				&:hover .icon.small {
+					filter: brightness(1.1);
+				}
+
+				&:active .icon.small {
+					filter: brightness(0.9);
+				}
 			}
 		}
 

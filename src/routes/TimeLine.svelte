@@ -58,6 +58,7 @@
 		ghostTracker = false,
 		past = false,
 		trackerColor = 'yellow',
+		groupIcons = true,
 	}: {
 		nsWeatherData: NsWeatherData;
 		plotVisibility: PlotVisibility;
@@ -67,6 +68,7 @@
 		ghostTracker?: boolean;
 		past?: boolean;
 		trackerColor?: string;
+		groupIcons?: boolean;
 	} = $props();
 
 	const labelElements: Record<string, HTMLElement> = $state({});
@@ -290,6 +292,10 @@
 			};
 
 			function precipitationGroup(code: number) {
+				// When groupIcons is false, return unique value per code to prevent grouping
+				if (!groupIcons) {
+					return code;
+				}
 				if (WMO_CODES[code]?.wsCode !== undefined) {
 					return Math.floor(WMO_CODES[code].wsCode / 1000) % 10;
 				}

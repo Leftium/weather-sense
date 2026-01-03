@@ -482,13 +482,13 @@
 		position: relative;
 		z-index: 1;
 		width: 100%;
-		overflow: visible;
+		overflow: clip;
 		background: transparent;
 		margin-bottom: 0.75em;
 	}
 
 	.tiles-track-area {
-		width: fit-content;
+		width: calc(var(--tile-count) * 70px + var(--has-more) * 24px);
 		margin-inline: auto;
 		user-select: none;
 		touch-action: none;

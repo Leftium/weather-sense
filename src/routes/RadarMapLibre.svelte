@@ -48,6 +48,7 @@
 
 	let map: maplibregl.Map;
 	let scaleControl: maplibregl.ScaleControl;
+	let locationMarker: maplibregl.Marker;
 
 	onMount(async () => {
 		const lat = nsWeatherData.coords?.latitude ?? 0;
@@ -64,6 +65,13 @@
 			zoom: (dev ? 5 : 9) + 0.7725, // Can zoom past 10 thanks to overzoom
 			attributionControl: false,
 		});
+
+		// Add location marker with pulsing dot
+		const markerEl = document.createElement('div');
+		markerEl.className = 'pulsing-marker';
+		locationMarker = new maplibregl.Marker({ element: markerEl, anchor: 'center' })
+			.setLngLat([lon, lat])
+			.addTo(map);
 
 		let geolocateControl = new maplibregl.GeolocateControl({
 			positionOptions: {
@@ -279,6 +287,14 @@
 		scaleControl.setUnit(newUnit);
 	});
 
+	// Update location marker when coordinates change
+	$effect(() => {
+		if (!locationMarker || !nsWeatherData.coords) return;
+		const lat = nsWeatherData.coords.latitude;
+		const lon = nsWeatherData.coords.longitude;
+		locationMarker.setLngLat([lon, lat]);
+	});
+
 	onDestroy(() => {
 		if (map) {
 			map.remove();
@@ -304,5 +320,14 @@
 
 	main > div {
 		width: 100%;
+	}
+
+	:global(.pulsing-marker) {
+		width: 14px;
+		height: 14px;
+		background: #3b82f6;
+		border: 2px solid white;
+		border-radius: 50%;
+		box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
 	}
 </style>

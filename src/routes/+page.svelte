@@ -34,6 +34,7 @@
 
 	import { FORECAST_DAYS, makeNsWeatherData } from '$lib/ns-weather-data.svelte.js';
 	import { slide } from 'svelte/transition';
+	import { maxBy } from 'lodash-es';
 	import dayjs from 'dayjs';
 	import utc from 'dayjs/plugin/utc';
 	import timezonePlugin from 'dayjs/plugin/timezone';
@@ -227,6 +228,25 @@
 		});
 		// Fallback to today
 		return day || nsWeatherData.daily?.find((d) => d.fromToday === 0);
+	});
+
+	// Get most severe WMO code for the 24-hour hourly plot
+	// Uses wsCode from WMO_CODES which orders by severity (higher = more severe)
+	const hourly24WmoCode = $derived.by(() => {
+		const hourlyStart = Date.now() - 2 * MS_IN_HOUR;
+		const hourlyEnd = hourlyStart + 24 * MS_IN_HOUR;
+
+		// Filter hourly data to the 24-hour window
+		const hourlyInRange = nsWeatherData.hourly?.filter(
+			(h) => h.ms >= hourlyStart && h.ms < hourlyEnd,
+		);
+
+		if (!hourlyInRange?.length) return null;
+
+		// Find the most severe weather code (highest wsCode value)
+		const mostSevere = maxBy(hourlyInRange, (h) => wmoCode(h.weatherCode).wsCode ?? 0);
+
+		return mostSevere?.weatherCode ?? null;
 	});
 
 	// Dynamic sky gradient with smooth animated transitions
@@ -708,11 +728,11 @@
 				></div>
 				<div class="day-label">
 					<div class="day today">
-						{#if wmoCode(nsWeatherData.displayWeatherCode).icon}
+						{#if wmoCode(hourly24WmoCode ?? undefined).icon}
 							<img
 								class="icon small"
-								src={wmoCode(nsWeatherData.displayWeatherCode).icon}
-								title={wmoCode(nsWeatherData.displayWeatherCode).description}
+								src={wmoCode(hourly24WmoCode ?? undefined).icon}
+								title={wmoCode(hourly24WmoCode ?? undefined).description}
 								alt=""
 							/>
 						{/if}
@@ -1116,12 +1136,25 @@
 		margin-top: 0.2em;
 		margin-bottom: 0.5em;
 
+		// Match daily row structure for consistent icon positioning
 		.day-label {
+			display: grid;
+			grid-template-columns: subgrid;
 			grid-column: 2 / span 2;
-			display: flex;
-			flex-direction: column;
-			align-items: flex-end;
-			justify-content: center;
+
+			.day {
+				grid-column: span 2;
+			}
+
+			.high-low {
+				display: grid;
+				grid-template-columns: subgrid;
+				grid-column: span 2;
+
+				span {
+					text-align: right;
+				}
+			}
 		}
 
 		.timeline {

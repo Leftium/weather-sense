@@ -62,6 +62,7 @@
 </div>
 
 <style lang="scss">
+	@use 'sass:color';
 	@use '../../variables' as *;
 
 	// Color values for dividers
@@ -106,7 +107,7 @@
 		transition: background 0.15s;
 
 		&:hover {
-			background: darken($color-link-hover, 10%);
+			background: color.adjust($color-link-hover, $lightness: -10%);
 		}
 	}
 

@@ -717,7 +717,7 @@
 				</ul>
 			</div>
 			<div class="footer-column">
-				<h3>Data</h3>
+				<h3>Data powered by</h3>
 				<ul>
 					<li><a href="https://open-meteo.com/">Open-Meteo</a></li>
 					<li><a href="https://openweathermap.org/">OpenWeather</a></li>

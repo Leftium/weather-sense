@@ -51,13 +51,13 @@
 	// Calculate max tiles that can fit based on viewport width
 	// Initialize conservatively - will be updated by effect
 	let maxTiles = $state(
-		typeof window !== 'undefined' ? Math.max(3, Math.floor((window.innerWidth - 150) / 80)) : 8,
+		typeof window !== 'undefined' ? Math.max(3, Math.floor((window.innerWidth - 70) / 80)) : 8,
 	);
 
 	$effect(() => {
 		function updateMaxTiles() {
-			// Account for container padding, margins, and borders (~150px buffer)
-			const availableWidth = window.innerWidth - 150;
+			// Account for container padding, margins, and borders (~70px buffer)
+			const availableWidth = window.innerWidth - 70;
 			maxTiles = Math.max(3, Math.floor(availableWidth / 80));
 		}
 
@@ -71,19 +71,19 @@
 	});
 
 	// Filter days based on how many tiles can fit and forecastDaysVisible
-	// Prioritize: all past days (up to 2), today, then fill with future up to forecastDaysVisible
+	// Prioritize: yesterday (-1), today (0), then future days
 	const days = $derived.by(() => {
 		const allDays = nsWeatherData.daily || [];
-		// Start from -2 (2 days ago) through forecastDaysVisible future days
+		// Start from -1 (yesterday) through forecastDaysVisible future days
 		const filtered = allDays.filter(
-			(day) => day.fromToday >= -2 && day.fromToday < forecastDaysVisible,
+			(day) => day.fromToday >= -1 && day.fromToday < forecastDaysVisible,
 		);
 
 		if (filtered.length <= maxTiles) {
 			return filtered;
 		}
 
-		// Need to trim - keep all past days and today, trim future
+		// Need to trim - keep yesterday and today, trim future days
 		return filtered.slice(0, maxTiles);
 	});
 

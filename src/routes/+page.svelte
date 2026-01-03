@@ -46,6 +46,7 @@
 	// Controls which plots are visible on the timeline
 	let plotVisibility = $state({
 		temp: true,
+		tempRange: true,
 		dewPoint: true,
 		humidity: false,
 		precip: true,
@@ -91,8 +92,8 @@
 		tempRange: {
 			key: 'tempRange',
 			color: 'gray',
-			checked: plotVisibility.temp,
-			bindKey: 'temp',
+			checked: plotVisibility.tempRange,
+			bindKey: 'tempRange',
 			toggleUnits: true,
 			getValue: () => nsWeatherData.format('daily[2].temperatureMin', false),
 			getValueEnd: () => nsWeatherData.format('daily[2].temperatureMax', false),

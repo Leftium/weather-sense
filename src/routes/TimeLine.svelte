@@ -37,6 +37,7 @@
 
 	type PlotVisibility = {
 		temp: boolean;
+		tempRange: boolean;
 		dewPoint: boolean;
 		humidity: boolean;
 		precip: boolean;
@@ -82,6 +83,7 @@
 		precipitation: plotVisibility.precip,
 		dewPoint: plotVisibility.dewPoint,
 		temperature: plotVisibility.temp,
+		tempRange: plotVisibility.tempRange,
 		solarEvents: true,
 		aqiEurope: plotVisibility.euAqi,
 		aqiUs: plotVisibility.usAqi,
@@ -890,7 +892,9 @@
 						strokeWidth: 2,
 					}),
 				);
+			}
 
+			if (draw.tempRange) {
 				marks.push(
 					// High/low temp marks:
 					Plot.dot([dataForecast.low], {

@@ -120,7 +120,7 @@
 	});
 
 	// Fixed precipitation scale for daily totals
-	const PRECIP_LINEAR_MAX = 10; // mm/day - linear scale up to this value (lower = taller bars for small values)
+	const PRECIP_LINEAR_MAX = 16; // mm/day - linear scale up to this value (~80th percentile of rainy days)
 
 	// SVG dimensions
 	const TILE_WIDTH = 70;

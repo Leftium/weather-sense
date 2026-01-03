@@ -482,13 +482,14 @@
 						/>
 					{/if}
 
-					<!-- Tracker vertical line -->
+					<!-- Tracker vertical line (inset to fit inside tile bevels) -->
 					{#if trackerX !== null}
+						{@const BEVEL_INSET = 2}
 						<line
 							x1={trackerX}
-							y1="0"
+							y1={BEVEL_INSET}
 							x2={trackerX}
-							y2={TILE_HEIGHT}
+							y2={TILE_HEIGHT - BEVEL_INSET}
 							stroke={trackerColor}
 							stroke-width="2"
 						/>

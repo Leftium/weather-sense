@@ -47,6 +47,8 @@
 	});
 
 	let map: maplibregl.Map;
+	let scaleControl: maplibregl.ScaleControl;
+
 	onMount(async () => {
 		const lat = nsWeatherData.coords?.latitude ?? 0;
 		const lon = nsWeatherData.coords?.longitude ?? 0;
@@ -89,13 +91,15 @@
 			});
 		});
 
+		const scaleUnit = nsWeatherData.units.temperature === 'C' ? 'metric' : 'imperial';
+		scaleControl = new maplibregl.ScaleControl({ unit: scaleUnit });
+
 		map
 			.addControl(geolocateControl, 'bottom-right')
 			.addControl(new maplibregl.FullscreenControl({ container: mainElement }), 'bottom-right')
 			.addControl(new maplibregl.GlobeControl(), 'top-left')
 			.addControl(new maplibregl.NavigationControl(), 'top-right')
-			.addControl(new maplibregl.ScaleControl({ unit: 'imperial' }))
-			.addControl(new maplibregl.ScaleControl());
+			.addControl(scaleControl);
 
 		map.on('load', () => {
 			// Initialize radar layers if data is already available
@@ -266,6 +270,13 @@
 			document.documentElement.scrollTop = 0;
 			document.body.scrollTop = 0; // Fallback for Safari
 		}
+	});
+
+	// Update scale control when temperature units change
+	$effect(() => {
+		if (!map || !scaleControl) return;
+		const newUnit = nsWeatherData.units.temperature === 'C' ? 'metric' : 'imperial';
+		scaleControl.setUnit(newUnit);
 	});
 
 	onDestroy(() => {

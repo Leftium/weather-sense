@@ -672,19 +672,20 @@
 
 <div class="container main-content">
 	<div class="scroll">
-		<div class="sky-gradient-bg" style:--sky-gradient={skyGradient}></div>
-		<DailyTiles
-			{nsWeatherData}
-			{forecastDaysVisible}
-			{skyGradient}
-			{tileGradient}
-			{textColor}
-			{textShadowColor}
-			maxForecastDays={FORECAST_DAYS}
-			onExpand={() =>
-				(forecastDaysVisible =
-					forecastDaysVisible === 3 ? 5 : Math.min(forecastDaysVisible * 2, FORECAST_DAYS))}
-		/>
+		<div class="sky-gradient-bg" style:--sky-gradient={skyGradient}>
+			<DailyTiles
+				{nsWeatherData}
+				{forecastDaysVisible}
+				{skyGradient}
+				{tileGradient}
+				{textColor}
+				{textShadowColor}
+				maxForecastDays={FORECAST_DAYS}
+				onMore={() => (forecastDaysVisible = Math.min(forecastDaysVisible + 2, FORECAST_DAYS))}
+				onAll={() => (forecastDaysVisible = FORECAST_DAYS)}
+				onReset={() => (forecastDaysVisible = 3)}
+			/>
+		</div>
 
 		<div class="timeline-grid">
 			<div class="hourly-row">
@@ -880,15 +881,8 @@
 	$size-3: 1rem;
 
 	.sky-gradient-bg {
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 126px; // Covers daily tiles area (tiles are 114px) plus margin below
 		background: var(--sky-gradient, $gradient-sky-default);
 		background-attachment: fixed;
-		pointer-events: none;
-		z-index: 0;
 		transition: background 1s ease-out;
 	}
 

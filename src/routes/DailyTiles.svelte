@@ -13,7 +13,9 @@
 		tileGradient = 'linear-gradient(160deg, #6bb3e0 0%, #a8d8f0 50%, #eee 100%)',
 		textColor = '#333',
 		textShadowColor = 'rgba(248, 248, 255, 0.8)',
-		onExpand,
+		onMore,
+		onAll,
+		onReset,
 	}: {
 		nsWeatherData: NsWeatherData;
 		forecastDaysVisible?: number;
@@ -22,10 +24,13 @@
 		tileGradient?: string;
 		textColor?: string;
 		textShadowColor?: string;
-		onExpand?: () => void;
+		onMore?: () => void;
+		onAll?: () => void;
+		onReset?: () => void;
 	} = $props();
 
-	const canExpand = $derived(forecastDaysVisible < maxForecastDays && onExpand);
+	const canExpand = $derived(forecastDaysVisible < maxForecastDays);
+	const canReset = $derived(forecastDaysVisible > 3);
 
 	const { emit } = getEmitter<WeatherDataEvents>(import.meta);
 
@@ -52,8 +57,7 @@
 	function calcMaxTiles() {
 		if (typeof window === 'undefined') return 5;
 		const containerWidth = getContainerWidth();
-		const moreButtonWidth = forecastDaysVisible < maxForecastDays ? 16 : 0;
-		return Math.max(3, Math.floor((containerWidth - moreButtonWidth) / 70));
+		return Math.max(3, Math.floor(containerWidth / 70));
 	}
 
 	// Default to 3 for SSR, update on mount
@@ -420,7 +424,6 @@
 <div
 	class="daily-tiles"
 	style:--tile-count={isLoading ? placeholderCount : days.length}
-	style:--has-more={canExpand ? 1 : 0}
 	style:--sky-gradient={skyGradient}
 	bind:this={containerDiv}
 >
@@ -450,17 +453,6 @@
 					{/if}
 				</div>
 			{/each}
-
-			{#if canExpand}
-				<button
-					class="more-tile"
-					onclick={() => onExpand?.()}
-					title="Load more days"
-					disabled={isLoading}
-				>
-					›
-				</button>
-			{/if}
 
 			<!-- Tracker line (behind labels, above icons) -->
 			{#if !isLoading && trackerX !== null}
@@ -595,6 +587,21 @@
 			{/if}
 		</div>
 	</div>
+
+	<div class="button-bar">
+		<div class="button-group">
+			<button class="day-count" onclick={() => onMore?.()} disabled={isLoading || !canExpand}>
+				{forecastDaysVisible} day forecast
+			</button>
+
+			<button class="tile-btn" onclick={() => onAll?.()} disabled={isLoading || !canExpand}
+				>All</button
+			>
+			<button class="tile-btn" onclick={() => onReset?.()} disabled={isLoading || !canReset}>
+				Reset
+			</button>
+		</div>
+	</div>
 </div>
 
 <style lang="scss">
@@ -604,11 +611,10 @@
 		width: 100%;
 		overflow: clip;
 		background: transparent;
-		margin-bottom: 0.75em;
 	}
 
 	.tiles-track-area {
-		width: calc(var(--tile-count) * 70px + var(--has-more) * 16px);
+		width: calc(var(--tile-count) * 70px);
 		margin-inline: auto;
 		user-select: none;
 		/* pan-y for native vertical scroll; horizontal gestures captured for scrubbing */
@@ -669,34 +675,73 @@
 		z-index: 6; // Above tracker-line (5)
 	}
 
-	.more-tile {
-		width: 16px;
-		min-width: 16px;
-		flex-shrink: 0;
-		height: 114px;
+	.button-bar {
 		display: flex;
-		align-items: center;
 		justify-content: center;
-		background: rgba(255, 255, 255, 0.25);
-		backdrop-filter: blur(4px);
-		border: 2px solid;
-		border-color: rgba(255, 255, 255, 0.5) rgba(0, 0, 0, 0.15) rgba(0, 0, 0, 0.2)
-			rgba(255, 255, 255, 0.5);
-		border-left: none;
-		box-shadow:
-			inset 1px 1px 0 rgba(255, 255, 255, 0.3),
-			inset -1px -1px 0 rgba(0, 0, 0, 0.1),
-			0 2px 4px rgba(0, 0, 0, 0.15);
-		padding: 0;
-		margin: 0;
-		cursor: pointer;
-		font-size: 18px;
-		font-weight: bold;
-		color: rgba(0, 0, 0, 0.6);
-		text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+		margin-top: 3px;
+		padding-bottom: 3px;
 
-		&:hover {
-			background: rgba(255, 255, 255, 0.35);
+		.button-group {
+			display: flex;
+			align-items: stretch;
+			background: rgba(255, 255, 255, 0.3);
+			backdrop-filter: blur(4px);
+			border: 1px solid rgba(0, 0, 0, 0.1);
+			border-radius: 4px;
+			overflow: hidden;
+		}
+
+		.day-count {
+			padding: 0.3em 0.6em;
+			margin: 0;
+			font-size: 11px;
+			font-weight: 500;
+			color: rgba(0, 0, 0, 0.5);
+			background: transparent;
+			border: none;
+			border-right: 1px solid rgba(0, 0, 0, 0.08);
+			border-radius: 0;
+			cursor: pointer;
+			transition: background 0.15s;
+
+			&:hover:not(:disabled) {
+				background: rgba(255, 255, 255, 0.3);
+			}
+
+			&:disabled {
+				cursor: default;
+			}
+		}
+
+		button.tile-btn {
+			padding: 0.3em 0.6em;
+			margin: 0;
+			font-size: 11px;
+			font-weight: 500;
+			color: rgba(0, 0, 0, 0.5);
+			background: transparent;
+			border: none;
+			border-right: 1px solid rgba(0, 0, 0, 0.08);
+			border-radius: 0;
+			cursor: pointer;
+			transition: background 0.15s;
+
+			&:last-child {
+				border-right: none;
+			}
+
+			&:hover:not(:disabled) {
+				background: rgba(255, 255, 255, 0.3);
+			}
+
+			&:active:not(:disabled) {
+				background: rgba(0, 0, 0, 0.05);
+			}
+
+			&:disabled {
+				opacity: 0.4;
+				cursor: not-allowed;
+			}
 		}
 	}
 

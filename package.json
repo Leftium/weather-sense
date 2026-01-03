@@ -60,5 +60,8 @@
 		"vite": "^7.3.0",
 		"vite-plugin-devtools-json": "^1.0.0"
 	},
-	"packageManager": "pnpm@10.12.1"
+	"packageManager": "pnpm@10.12.1",
+	"dependencies": {
+		"sanitize.css": "^13.0.0"
+	}
 }

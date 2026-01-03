@@ -278,9 +278,12 @@
 <style>
 	main {
 		display: grid;
-		grid-auto-flow: column;
 		grid-template-rows: 1fr auto;
-
 		height: 100%;
+		width: 100%;
+	}
+
+	main > div {
+		width: 100%;
 	}
 </style>

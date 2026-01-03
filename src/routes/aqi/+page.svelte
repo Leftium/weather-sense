@@ -3,7 +3,7 @@
 	import { AQI_INDEX_US, AQI_INDEX_EUROPE } from '$lib/util';
 </script>
 
-<div class="pico container">
+<div class="container">
 	<center>
 		<a href="/">Back to WeatherSense</a>
 	</center>
@@ -53,8 +53,6 @@
 </div>
 
 <style lang="scss">
-	@use '@picocss/pico/scss/colors' as *;
-
 	summary {
 		span:first-child {
 			display: inline-block;

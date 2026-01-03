@@ -548,7 +548,7 @@
 	</div>
 </div>
 
-<div class="pico container sticky-info" style:--sky-gradient={skyGradient} style:color={textColor}>
+<div class="container sticky-info" style:--sky-gradient={skyGradient} style:color={textColor}>
 	<div class="name">
 		{nsWeatherData.name}
 		<span class="accuracy"
@@ -626,7 +626,7 @@
 	</div>
 </div>
 
-<div class="container">
+<div class="container main-content">
 	<div class="scroll">
 		<div class="sky-gradient-bg" style:--sky-gradient={skyGradient}></div>
 		<DailyTiles
@@ -643,7 +643,7 @@
 		/>
 
 		<div class="timeline-grid">
-			<div class="hourly-row pico">
+			<div class="hourly-row">
 				<div class="day-label">
 					<div class="day today">
 						<img
@@ -707,7 +707,7 @@
 		</div>
 	</div>
 
-	<footer class="pico">
+	<footer>
 		<div class="footer-content">
 			<div class="footer-column">
 				<h3>Useful Info</h3>
@@ -786,7 +786,7 @@
 		{/if}
 	</footer>
 
-	<div class="pico" hidden>
+	<div hidden>
 		<div role="group">
 			<input type="text" value={`${nsWeatherData.name}`} />
 			<button>Search</button>
@@ -817,7 +817,7 @@
 
 		background: var(--sky-gradient, linear-gradient(135deg, #eee 0%, #a8d8f0 50%, #6bb3e0 100%));
 		background-attachment: fixed;
-		padding: 0.2em 1rem;
+		padding-block: 0.2em;
 		transition: background 1s ease-out;
 
 		& > div {
@@ -841,11 +841,14 @@
 		font-size: small;
 	}
 
-	.container,
 	.scroll,
 	.timeline-grid,
 	.hourly-row {
-		overflow-y: visible !important;
+		overflow-y: visible;
+	}
+
+	.main-content {
+		overflow-x: hidden;
 	}
 
 	.current {
@@ -925,7 +928,7 @@
 			place-content: center;
 
 			border: 3px solid var(--color) !important;
-			border-radius: var(--pico-border-radius);
+			border-radius: 4px;
 		}
 
 		input[type='checkbox']:not([name='temperature'])::before {
@@ -989,14 +992,8 @@
 		border-top: 1px solid #e0e0e0;
 	}
 
-	// Step 2: Add right padding on mobile for scroll gesture safety
-	// Left side has natural gap from day labels; daily tiles need edge-to-edge
-	@media (max-width: 575px) {
-		.timeline-grid,
-		footer {
-			padding-right: 1rem;
-		}
-	}
+	// Mobile: timeline-grid and footer inherit container padding
+	// No extra padding needed since container now has padding-inline: 1rem
 
 	// Hourly row (24hrs) - spans all columns, uses subgrid
 	.hourly-row {
@@ -1026,12 +1023,17 @@
 		}
 	}
 
-	// Map row - spans all columns, map goes in timeline column
+	// Map row - no padding even on mobile
 	.map-row {
-		width: 100%;
+		overflow: hidden;
+		padding-inline: 0;
+	}
 
-		> .map {
-			width: 100%;
+	// Timeline content needs right padding on mobile for scroll gesture safety
+	@media (max-width: 576px) {
+		.timeline-grid,
+		footer {
+			padding-right: 1rem;
 		}
 	}
 
@@ -1130,6 +1132,7 @@
 
 	.name {
 		font-weight: bold;
+		text-align: center;
 	}
 
 	.accuracy {
@@ -1139,10 +1142,17 @@
 
 	.map-row .map {
 		height: 276px; // Match sticky header (~150px) + daily tiles (~126px)
+		width: 100%;
+
+		// Ensure child component fills width
+		:global(main) {
+			width: 100%;
+		}
 	}
 
-	.container {
+	.main-content {
 		display: grid;
+		padding-inline: 0; // No padding on main content container
 	}
 
 	.scroll {

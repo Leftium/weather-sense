@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      sanitize.css:
+        specifier: ^13.0.0
+        version: 13.0.0
     devDependencies:
       '@eslint/compat':
         specifier: ^2.0.0
@@ -1578,6 +1582,9 @@ packages:
 
   safer-buffer@2.1.2:
     resolution: {integrity: sha512-YZo3K82SD7Riyi0E1EQPojLz7kpepnSQI9IyPbHHg1XXXevb5dJI7tpyN2ADxGcQbHG7vcyRHk0cbwqcQriUtg==}
+
+  sanitize.css@13.0.0:
+    resolution: {integrity: sha512-ZRwKbh/eQ6w9vmTjkuG0Ioi3HBwPFce0O+v//ve+aOq1oeCy7jMV2qzzAlpsNuqpqCBjjriM1lbtZbF/Q8jVyA==}
 
   sass@1.97.1:
     resolution: {integrity: sha512-uf6HoO8fy6ClsrShvMgaKUn14f2EHQLQRtpsZZLeU/Mv0Q1K5P0+x2uvH6Cub39TVVbWNSrraUhDAoFph6vh0A==}
@@ -3177,6 +3184,8 @@ snapshots:
       mri: 1.2.0
 
   safer-buffer@2.1.2: {}
+
+  sanitize.css@13.0.0: {}
 
   sass@1.97.1:
     dependencies:

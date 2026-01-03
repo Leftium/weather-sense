@@ -24,7 +24,7 @@
 	});
 </script>
 
-<div class="pico container-fluid flex-column {mode}" bind:offsetWidth bind:offsetHeight>
+<div class="container-fluid flex-column {mode}" bind:offsetWidth bind:offsetHeight>
 	<center
 		><a href="/">Back to WeatherSense</a> |
 		<a href="https://blog.leftium.com/2024/07/wmo-codes.html">About this Table</a>
@@ -62,7 +62,13 @@
 </div>
 
 <style lang="scss">
-	@use '@picocss/pico/scss/colors' as *;
+	// Color values (formerly from PicoCSS)
+	$amber-200: #ffbf00;
+	$grey-450: #808080;
+	$blue-550: #2060df;
+	$violet-550: #8352c5;
+	$fuchsia-450: #ed2aac;
+	$pink-450: #f42c6f;
 
 	article {
 		padding: 0;

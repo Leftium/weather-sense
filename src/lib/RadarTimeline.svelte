@@ -48,7 +48,7 @@
 	}
 </script>
 
-<div class="pico">
+<div class="radar-timeline">
 	<div class="range-wrapper">
 		{#key [min, max]}
 			<input type="range" {min} {max} value={clamp(nsWeatherData.ms, min, max)} {step} {oninput} />
@@ -78,7 +78,7 @@
 </div>
 
 <style>
-	.pico {
+	.radar-timeline {
 		display: flex;
 		align-items: center;
 		padding: 0.125em;

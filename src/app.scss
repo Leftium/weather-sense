@@ -1,18 +1,21 @@
-@use '@picocss/pico/scss/pico' with (
-	$parent-selector: '.pico'
-);
+@import 'sanitize.css';
+@import 'sanitize.css/forms.css';
 
 /* Write your global styles here, in SCSS syntax. Variables and mixins from the src/variables.scss file are available here without importing */
 
-// Step 1: Remove all PicoCSS container padding at all breakpoints
-// This gives us a clean slate to control padding ourselves
-// Reference: https://github.com/Yohn/PicoCSS/pull/55
-// PicoCSS uses padding-right/padding-left via --pico-spacing variable
-// Need !important to override PicoCSS's scoped rules
+// Fluid centered layout
 .container,
 .container-fluid {
-	padding-right: 0 !important;
-	padding-left: 0 !important;
+	box-sizing: border-box;
+	width: 100%;
+	max-width: 960px;
+	margin-inline: auto;
+	padding-inline: 0;
+
+	// Add padding on mobile for touch safety
+	@media (max-width: 576px) {
+		padding-inline: 1rem;
+	}
 }
 
 html,
@@ -44,7 +47,7 @@ body {
 	display: inline-grid !important;
 	place-content: center !important;
 	border: 3px solid transparent !important;
-	border-radius: var(--pico-border-radius);
+	border-radius: 4px;
 	background:
 		linear-gradient(white, white) padding-box,
 		var(--gradient) border-box !important;

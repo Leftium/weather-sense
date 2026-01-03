@@ -86,7 +86,7 @@
 	}
 </script>
 
-<div class="pico container-fluid">
+<div class="container-fluid">
 	<center>
 		<a href="/">Back to WeatherSense</a>
 	</center>
@@ -172,8 +172,6 @@
 </div>
 
 <style lang="scss">
-	@use '@picocss/pico/scss/colors' as *;
-
 	main {
 		position: relative;
 

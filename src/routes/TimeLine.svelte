@@ -481,11 +481,24 @@
 	});
 
 	// Svelte action for timeline.
+	// Supports both mouse hover (desktop) and touch scrubbing (mobile).
+	// On mobile: direction detection - horizontal = scrub, vertical = scroll.
+	// Uses touch-action: none with manual scroll handling for consistent behavior.
 	function trackable(node: HTMLElement) {
 		let trackUntilMouseUp = false;
 		let mouseIsOver = false;
 
-		function trackToMouseX(e: PointerEvent | MouseEvent) {
+		// Touch gesture state
+		let touchStartX = 0;
+		let touchStartY = 0;
+		let lastTouchY = 0;
+		let savedScrollTop = 0;
+		let gestureDecided = false;
+		let isScrubbing = false;
+		let activePointerId: number | null = null;
+		const GESTURE_THRESHOLD = 8; // pixels to move before deciding gesture type
+
+		function trackToMouseX(e: PointerEvent | MouseEvent | Touch) {
 			const svgNode = d3.select(div).select('svg').select('g[aria-label=rect]').node();
 			if (xScale.invert) {
 				const [x] = d3.pointer(e, svgNode);
@@ -496,6 +509,9 @@
 		}
 
 		function handlePointerMove(e: PointerEvent) {
+			// Skip touch events - handled separately for gesture detection
+			if (e.pointerType === 'touch') return;
+
 			if (nsWeatherData.trackedElement === node) {
 				trackToMouseX(e);
 			} else if (mouseIsOver && nsWeatherData.trackedElement === null) {
@@ -505,6 +521,9 @@
 		}
 
 		function handlePointerDown(e: PointerEvent) {
+			// Skip touch events - handled separately
+			if (e.pointerType === 'touch') return;
+
 			gg('handlePointerDown');
 			trackUntilMouseUp = true;
 			trackToMouseX(e);
@@ -512,6 +531,9 @@
 		}
 
 		function handlePointerUp(e: PointerEvent) {
+			// Skip touch events - handled separately
+			if (e.pointerType === 'touch') return;
+
 			if (nsWeatherData.trackedElement === node) {
 				gg('handlePointerUp');
 				trackUntilMouseUp = false;
@@ -536,6 +558,74 @@
 			}
 		}
 
+		// Touch pointer event handlers - direction detection for scrub vs scroll
+		// Uses touch-action: pan-y for native scroll, captures pointer only for horizontal scrub
+		function handleTouchPointerDown(e: PointerEvent) {
+			if (e.pointerType !== 'touch') return;
+
+			touchStartX = e.clientX;
+			touchStartY = e.clientY;
+			savedScrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+			gestureDecided = false;
+			isScrubbing = false;
+			activePointerId = e.pointerId;
+		}
+
+		function handleTouchPointerMove(e: PointerEvent) {
+			if (e.pointerType !== 'touch') return;
+			if (activePointerId === null) return;
+
+			const deltaX = e.clientX - touchStartX;
+			const deltaY = e.clientY - touchStartY;
+			const absDeltaX = Math.abs(deltaX);
+			const absDeltaY = Math.abs(deltaY);
+
+			// If already scrubbing, continue scrubbing
+			if (isScrubbing) {
+				trackToMouseX(e);
+				// Lock scroll position
+				document.documentElement.scrollTop = savedScrollTop;
+				document.body.scrollTop = savedScrollTop;
+				return;
+			}
+
+			// If already decided to scroll, let native scroll handle it
+			if (gestureDecided && !isScrubbing) {
+				return;
+			}
+
+			// Decide gesture type once threshold is reached
+			if (!gestureDecided && (absDeltaX > GESTURE_THRESHOLD || absDeltaY > GESTURE_THRESHOLD)) {
+				gestureDecided = true;
+
+				if (absDeltaX > absDeltaY) {
+					// More horizontal = scrubbing - capture pointer and set touch-action
+					isScrubbing = true;
+					div.style.touchAction = 'none';
+					div.setPointerCapture(e.pointerId);
+					trackToMouseX(e);
+					emit('weatherdata_requestedTrackingStart', { node });
+				} else {
+					// More vertical = scrolling - let native scroll handle it
+					isScrubbing = false;
+					activePointerId = null;
+				}
+			}
+		}
+
+		function handleTouchPointerUp(e: PointerEvent) {
+			if (e.pointerType !== 'touch') return;
+
+			if (isScrubbing) {
+				emit('weatherdata_requestedTrackingEnd');
+				div.style.touchAction = ''; // Restore native scroll for next gesture
+			}
+
+			gestureDecided = false;
+			isScrubbing = false;
+			activePointerId = null;
+		}
+
 		const abortController = new AbortController();
 		const { signal } = abortController;
 
@@ -546,6 +636,11 @@
 
 		div.addEventListener('mouseenter', handleMMouseEnter, { signal });
 		div.addEventListener('mouseleave', handleMMouseLeave, { signal });
+
+		// Touch pointer events for mobile
+		div.addEventListener('pointerdown', handleTouchPointerDown, { signal });
+		window.addEventListener('pointermove', handleTouchPointerMove, { signal });
+		window.addEventListener('pointerup', handleTouchPointerUp, { signal });
 
 		return {
 			destroy() {
@@ -1119,7 +1214,9 @@
 		height: 100%;
 
 		user-select: none;
-		touch-action: none;
+		/* pan-y for native vertical scroll; horizontal gestures captured for scrubbing
+		   (touch-action dynamically set to 'none' when scrub detected) */
+		touch-action: pan-y;
 	}
 
 	.labels-for-widths {

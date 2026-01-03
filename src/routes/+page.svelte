@@ -1020,7 +1020,7 @@
 	// Timeline grid - parent container for hourly and daily sections
 	.timeline-grid {
 		display: grid;
-		grid-template-columns: 6px auto auto minmax(0, 1fr);
+		grid-template-columns: 12px auto auto minmax(0, 1fr);
 		grid-row-gap: 0.1em;
 		grid-column-gap: 0.2em;
 		margin-bottom: 0.2em;
@@ -1030,9 +1030,9 @@
 	// Temperature gradient bar - shows day's temp range relative to global range
 	.temp-gradient-bar {
 		grid-column: 1;
-		width: 6px;
+		width: 12px;
 		height: 64px; // Match TimeLine plot height (without x-axis)
-		background: linear-gradient(to bottom, var(--color-high), var(--color-low));
+		background: linear-gradient(to right, var(--color-high), var(--color-low));
 		border-radius: 2px 0 0 2px;
 		align-self: center; // Vertically center with plot
 		position: relative;

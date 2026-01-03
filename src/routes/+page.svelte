@@ -817,7 +817,7 @@
 	.sticky-info {
 		position: sticky;
 		top: 0;
-		z-index: 100000;
+		z-index: 100;
 
 		background: var(--sky-gradient, $gradient-sky-default);
 		background-attachment: fixed;
@@ -1248,5 +1248,11 @@
 		.sticky-info {
 			display: none;
 		}
+	}
+
+	// Hide sticky info when any element is fullscreen
+	:global(body:has(:fullscreen)) .sticky-info,
+	:global(body:has(:-webkit-full-screen)) .sticky-info {
+		display: none;
 	}
 </style>

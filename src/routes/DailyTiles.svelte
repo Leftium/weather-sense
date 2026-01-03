@@ -171,7 +171,7 @@
 
 	// Tracker state
 	let trackerX: number | null = $state(null);
-	let trackerColor: string = $state('yellow');
+	let trackerColor: string = $state('#FFEE00');
 
 	// Get start of day ms for a given day
 	function getDayStartMs(dayIndex: number): number {
@@ -361,6 +361,15 @@
 				</button>
 			{/if}
 
+			<!-- Tracker line (behind labels, above icons) -->
+			{#if !isLoading && trackerX !== null}
+				<div
+					class="tracker-line"
+					style:left="{trackerX}px"
+					style:background-color={trackerColor}
+				></div>
+			{/if}
+
 			<!-- SVG overlay for temp lines and precip bars -->
 			{#if !isLoading}
 				<svg
@@ -481,19 +490,6 @@
 							rx="1"
 						/>
 					{/if}
-
-					<!-- Tracker vertical line (inset to fit inside tile bevels) -->
-					{#if trackerX !== null}
-						{@const BEVEL_INSET = 2}
-						<line
-							x1={trackerX}
-							y1={BEVEL_INSET}
-							x2={trackerX}
-							y2={TILE_HEIGHT - BEVEL_INSET}
-							stroke={trackerColor}
-							stroke-width="2"
-						/>
-					{/if}
 				</svg>
 			{/if}
 		</div>
@@ -568,7 +564,7 @@
 		flex-direction: column;
 		align-items: center;
 		padding-top: 4px;
-		z-index: 1;
+		z-index: 6; // Above tracker-line (5)
 	}
 
 	.more-tile {
@@ -616,6 +612,16 @@
 		&.today {
 			font-weight: 900;
 		}
+	}
+
+	.tracker-line {
+		position: absolute;
+		top: 2px;
+		bottom: 2px;
+		width: 2px;
+		transform: translateX(-1px); // Center the line on the position
+		pointer-events: none;
+		z-index: 5; // Above icons, below tile-content labels
 	}
 
 	.overlay {

@@ -590,7 +590,7 @@
 					.attr('y', y1)
 					.attr('width', x2 - x1)
 					.attr('height', y2 - y1)
-					.attr('fill', 'yellow')
+					.attr('fill', '#FFEE00')
 					.attr('opacity', 0.4);
 			}
 		}

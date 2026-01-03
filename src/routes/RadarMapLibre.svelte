@@ -90,7 +90,6 @@
 		});
 
 		map
-			.addControl(new maplibregl.AttributionControl({ compact: false }), 'bottom-left')
 			.addControl(new maplibregl.FullscreenControl({ container: mainElement }))
 			.addControl(new maplibregl.GlobeControl(), 'top-left')
 			.addControl(new maplibregl.NavigationControl(), 'bottom-right')
@@ -244,6 +243,21 @@
 		}
 
 		animationFrameId = requestAnimationFrame(step);
+	});
+
+	// Resize map when container size changes (e.g., when day labels change width)
+	let resizeObserver: ResizeObserver;
+	$effect(() => {
+		if (!mapElement) return;
+
+		resizeObserver = new ResizeObserver(() => {
+			map?.resize();
+		});
+		resizeObserver.observe(mapElement);
+
+		return () => {
+			resizeObserver?.disconnect();
+		};
 	});
 
 	onDestroy(() => {

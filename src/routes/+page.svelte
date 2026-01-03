@@ -966,7 +966,7 @@
 	// Parent grid container for hourly, map, and daily sections
 	.timeline-grid {
 		display: grid;
-		grid-template-columns: auto auto 1fr;
+		grid-template-columns: auto auto minmax(0, 1fr);
 		grid-row-gap: 0.1em;
 		grid-column-gap: 0.2em;
 		margin-bottom: 0.2em;
@@ -1013,11 +1013,15 @@
 	// Map row - spans all columns, map goes in timeline column
 	.map-row {
 		grid-column: 1 / -1;
-		display: grid;
-		grid-template-columns: subgrid;
 
 		> .map {
-			grid-column: 3;
+			width: 100%;
+		}
+	}
+
+	@media (max-width: 575px) {
+		.map-row {
+			padding-left: 1rem;
 		}
 	}
 

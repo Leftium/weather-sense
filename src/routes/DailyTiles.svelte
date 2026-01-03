@@ -348,7 +348,7 @@
 					title="Load more days"
 					disabled={isLoading}
 				>
-					››
+					›
 				</button>
 			{/if}
 
@@ -488,7 +488,7 @@
 	}
 
 	.tiles-track-area {
-		width: calc(var(--tile-count) * 70px + var(--has-more) * 24px);
+		width: calc(var(--tile-count) * 70px + var(--has-more) * 16px);
 		margin-inline: auto;
 		user-select: none;
 		touch-action: none;
@@ -549,8 +549,8 @@
 	}
 
 	.more-tile {
-		width: 24px;
-		min-width: 24px;
+		width: 16px;
+		min-width: 16px;
 		flex-shrink: 0;
 		height: 114px;
 		display: flex;

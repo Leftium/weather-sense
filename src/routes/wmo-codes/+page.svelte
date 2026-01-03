@@ -78,7 +78,7 @@
 		align-items: center;
 		gap: 0.5em;
 		padding: 0.75rem 1rem;
-		background: white;
+		background: $color-ghost-white;
 		border-bottom: 1px solid $color-border-light;
 
 		a {

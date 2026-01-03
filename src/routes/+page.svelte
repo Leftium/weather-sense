@@ -913,7 +913,7 @@
 		input[type='checkbox']:not([name='temperature']) {
 			appearance: none;
 			-webkit-appearance: none;
-			background-color: #fff;
+			background-color: $color-ghost-white;
 			margin: 0;
 			font: inherit;
 			width: 1.2em;

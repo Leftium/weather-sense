@@ -81,7 +81,7 @@
 	}
 
 	article {
-		background: white;
+		background: $color-ghost-white;
 		border-radius: 8px;
 		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 		padding: 1.5rem;

@@ -12,7 +12,7 @@
 		skyGradient = 'linear-gradient(135deg, #eee 0%, #a8d8f0 50%, #6bb3e0 100%)',
 		tileGradient = 'linear-gradient(160deg, #6bb3e0 0%, #a8d8f0 50%, #eee 100%)',
 		textColor = '#333',
-		textShadowColor = 'rgba(255, 255, 255, 0.8)',
+		textShadowColor = 'rgba(248, 248, 255, 0.8)',
 		onExpand,
 	}: {
 		nsWeatherData: NsWeatherData;
@@ -594,10 +594,10 @@
 		margin-bottom: 0;
 		color: #333;
 		text-shadow:
-			-1px -1px 0 rgba(255, 255, 255, 0.8),
-			1px -1px 0 rgba(255, 255, 255, 0.8),
-			-1px 1px 0 rgba(255, 255, 255, 0.8),
-			1px 1px 0 rgba(255, 255, 255, 0.8);
+			-1px -1px 0 rgba(248, 248, 255, 0.8),
+			1px -1px 0 rgba(248, 248, 255, 0.8),
+			-1px 1px 0 rgba(248, 248, 255, 0.8),
+			1px 1px 0 rgba(248, 248, 255, 0.8);
 
 		&.today {
 			font-weight: 900;

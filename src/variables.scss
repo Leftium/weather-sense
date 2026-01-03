@@ -18,10 +18,10 @@ $breakpoint-tablet: 768px;
 // Mixins
 @mixin text-outline-white {
 	text-shadow:
-		-1px -1px 0 rgba(255, 255, 255, 0.8),
-		1px -1px 0 rgba(255, 255, 255, 0.8),
-		-1px 1px 0 rgba(255, 255, 255, 0.8),
-		1px 1px 0 rgba(255, 255, 255, 0.8);
+		-1px -1px 0 rgba(248, 248, 255, 0.8),
+		1px -1px 0 rgba(248, 248, 255, 0.8),
+		-1px 1px 0 rgba(248, 248, 255, 0.8),
+		1px 1px 0 rgba(248, 248, 255, 0.8);
 }
 
 @mixin mobile-only {

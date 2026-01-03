@@ -77,13 +77,15 @@
 	</div>
 </div>
 
-<style>
+<style lang="scss">
+	@use '../variables' as *;
+
 	.radar-timeline {
 		display: flex;
 		align-items: flex-start;
 		padding: 1px 0.5em 2px;
 		gap: 0.5em;
-		background-color: whitesmoke;
+		background-color: $color-ghost-white;
 	}
 
 	.play-pause {

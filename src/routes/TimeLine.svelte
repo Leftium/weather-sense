@@ -156,12 +156,17 @@
 					prevItem.xMiddle = (Number(prevItem.x1) + x2) / 2;
 				} else {
 					const fill = currLabel.color;
-					const fillText = contrastTextColor(fill);
+					const fillText = contrastTextColor(
+						fill,
+						false,
+						`rgba(248 248 255 / 80%)`,
+						`rgba(51 51 51 / 80%)`,
+					);
 					const fillShadow = contrastTextColor(
 						fill,
 						true,
-						`rgba(255 255 255 / 50%)`,
-						`rgba(51 51 51 / 50%)`,
+						`rgba(248 248 255 / 80%)`,
+						`rgba(51 51 51 / 80%)`,
 					);
 
 					accumulator.push({
@@ -196,12 +201,17 @@
 					prevItem.ms = prevItem.xMiddle = (Number(prevItem.x1) + x2) / 2;
 				} else {
 					const fill = currLabel.color;
-					const fillText = contrastTextColor(fill);
+					const fillText = contrastTextColor(
+						fill,
+						false,
+						`rgba(248 248 255 / 80%)`,
+						`rgba(51 51 51 / 80%)`,
+					);
 					const fillShadow = contrastTextColor(
 						fill,
 						true,
-						`rgba(255 255 255 / 50%)`,
-						`rgba(51 51 51 / 50%)`,
+						`rgba(248 248 255 / 80%)`,
+						`rgba(51 51 51 / 80%)`,
 					);
 
 					accumulator.push({
@@ -337,12 +347,17 @@
 					x2,
 					xMiddle: (Number(x1) + Number(x2)) / 2,
 					fill: WMO_CODES[nextCode].color,
-					fillText: contrastTextColor(fill),
+					fillText: contrastTextColor(
+						fill,
+						false,
+						`rgba(248 248 255 / 80%)`,
+						`rgba(51 51 51 / 80%)`,
+					),
 					fillShadow: contrastTextColor(
 						fill,
 						true,
-						`rgba(255 255 255 / 50%)`,
-						`rgba(51 51 51 / 50%)`,
+						`rgba(248 248 255 / 80%)`,
+						`rgba(51 51 51 / 80%)`,
 					),
 					counts: {},
 				};

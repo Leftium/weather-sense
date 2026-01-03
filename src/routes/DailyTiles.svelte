@@ -588,7 +588,11 @@
 		</div>
 	</div>
 
-	<div class="button-bar">
+	<div
+		class="button-bar"
+		style:--btn-text-color={textColor}
+		style:--btn-text-shadow={textShadowColor}
+	>
 		<div class="button-group">
 			<button class="day-count" onclick={() => onMore?.()} disabled={isLoading || !canExpand}>
 				{forecastDaysVisible} day forecast
@@ -696,7 +700,8 @@
 			margin: 0;
 			font-size: 11px;
 			font-weight: 500;
-			color: rgba(0, 0, 0, 0.5);
+			color: color-mix(in srgb, var(--btn-text-color, #333) 70%, transparent);
+			text-shadow: 0 1px 1px color-mix(in srgb, var(--btn-text-shadow, #f8f8ff) 60%, transparent);
 			background: transparent;
 			border: none;
 			border-right: 1px solid rgba(0, 0, 0, 0.08);
@@ -718,7 +723,8 @@
 			margin: 0;
 			font-size: 11px;
 			font-weight: 500;
-			color: rgba(0, 0, 0, 0.5);
+			color: color-mix(in srgb, var(--btn-text-color, #333) 70%, transparent);
+			text-shadow: 0 1px 1px color-mix(in srgb, var(--btn-text-shadow, #f8f8ff) 60%, transparent);
 			background: transparent;
 			border: none;
 			border-right: 1px solid rgba(0, 0, 0, 0.08);

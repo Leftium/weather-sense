@@ -1,14 +1,6 @@
 <script lang="ts">
 	import type { NsWeatherData, WeatherDataEvents } from '$lib/ns-weather-data.svelte';
-	import {
-		colors,
-		wmoCode,
-		celcius,
-		MS_IN_DAY,
-		MS_IN_HOUR,
-		aqiEuropeToLabel,
-		contrastTextColor,
-	} from '$lib/util';
+	import { colors, wmoCode, celcius, MS_IN_DAY } from '$lib/util';
 	import { getEmitter } from '$lib/emitter';
 	import { clamp, minBy, maxBy } from 'lodash-es';
 	import { fade } from 'svelte/transition';
@@ -49,46 +41,59 @@
 	}
 
 	// Calculate max tiles that can fit based on viewport width
-	// Initialize conservatively - will be updated by effect
-	let maxTiles = $state(
-		typeof window !== 'undefined' ? Math.max(3, Math.floor((window.innerWidth - 70) / 80)) : 8,
-	);
+	function calcMaxTiles() {
+		if (typeof window === 'undefined') return 5;
+		const availableWidth = window.innerWidth - 40;
+		return Math.max(3, Math.floor(availableWidth / 70));
+	}
+
+	// Default to 3 for SSR, update on mount
+	let maxTiles = $state(3);
 
 	$effect(() => {
-		function updateMaxTiles() {
-			// Account for container padding, margins, and borders (~70px buffer)
-			const availableWidth = window.innerWidth - 70;
-			maxTiles = Math.max(3, Math.floor(availableWidth / 80));
+		maxTiles = calcMaxTiles();
+
+		function handleResize() {
+			maxTiles = calcMaxTiles();
 		}
 
-		updateMaxTiles();
-		window.addEventListener('resize', updateMaxTiles);
-		window.addEventListener('orientationchange', updateMaxTiles);
+		window.addEventListener('resize', handleResize);
+		window.addEventListener('orientationchange', handleResize);
 		return () => {
-			window.removeEventListener('resize', updateMaxTiles);
-			window.removeEventListener('orientationchange', updateMaxTiles);
+			window.removeEventListener('resize', handleResize);
+			window.removeEventListener('orientationchange', handleResize);
 		};
 	});
 
+	// Effective max tiles capped by what we'd actually show
+	const effectiveMaxTiles = $derived(Math.min(maxTiles, forecastDaysVisible + 3));
+
 	// Filter days based on how many tiles can fit and forecastDaysVisible
-	// Prioritize: yesterday (-1), today (0), then future days
+	// Prioritize: yesterday (-1), today (0), then future days, then older past days
 	const days = $derived.by(() => {
 		const allDays = nsWeatherData.daily || [];
 		// Start from -1 (yesterday) through forecastDaysVisible future days
-		const filtered = allDays.filter(
+		const primary = allDays.filter(
 			(day) => day.fromToday >= -1 && day.fromToday < forecastDaysVisible,
 		);
 
-		if (filtered.length <= maxTiles) {
-			return filtered;
+		if (primary.length >= effectiveMaxTiles) {
+			// Need to trim - keep yesterday and today, trim future days
+			return primary.slice(0, effectiveMaxTiles);
 		}
 
-		// Need to trim - keep yesterday and today, trim future days
-		return filtered.slice(0, maxTiles);
+		// Have room for more - add older past days
+		const remaining = effectiveMaxTiles - primary.length;
+		const older = allDays
+			.filter((day) => day.fromToday < -1)
+			.sort((a, b) => b.fromToday - a.fromToday) // most recent first (-2 before -3)
+			.slice(0, remaining);
+
+		return [...older, ...primary];
 	});
 
 	const isLoading = $derived(days.length === 0);
-	const placeholderCount = 5;
+	const placeholderCount = $derived(Math.min(5, maxTiles));
 
 	// Calculate temperature range for y-scale
 	const tempStats = $derived.by(() => {
@@ -109,44 +114,16 @@
 	const PRECIP_LINEAR_MAX = 10; // mm/day - linear scale up to this value (lower = taller bars for small values)
 
 	// SVG dimensions
-	const TILE_WIDTH = 80;
-	const TILE_HEIGHT = 130;
+	const TILE_WIDTH = 70;
+	const TILE_HEIGHT = 114;
 
-	// Compute daily max AQI from hourly dataAirQuality
-	const dailyAqi = $derived.by(() => {
-		const result: Map<number, { maxAqi: number; label: ReturnType<typeof aqiEuropeToLabel> }> =
-			new Map();
-
-		if (!nsWeatherData.dataAirQuality.size || !days.length) return result;
-
-		for (const day of days) {
-			const dayStart = day.ms;
-			const dayEnd = dayStart + MS_IN_DAY;
-
-			let maxAqi = 0;
-
-			// Iterate through hours in this day
-			for (let hourMs = dayStart; hourMs < dayEnd; hourMs += MS_IN_HOUR) {
-				const hourData = nsWeatherData.dataAirQuality.get(hourMs);
-				if (hourData && hourData.aqiEurope > maxAqi) {
-					maxAqi = hourData.aqiEurope;
-				}
-			}
-
-			const label = aqiEuropeToLabel(maxAqi || null);
-			result.set(day.ms, { maxAqi, label });
-		}
-
-		return result;
-	});
-
-	const TEMP_AREA_TOP = 60;
-	const AQI_BAND_Y = TILE_HEIGHT - 15; // 115px - where AQI band starts
-	const TEMP_AREA_BOTTOM = AQI_BAND_Y - 15; // Above the AQI band with padding
+	const TEMP_AREA_TOP = 50;
+	const TEMP_AREA_BOTTOM = TILE_HEIGHT - 30; // Leave room for min temp labels and precip
 	const TEMP_AREA_HEIGHT = TEMP_AREA_BOTTOM - TEMP_AREA_TOP;
-	const PRECIP_BAR_BOTTOM = AQI_BAND_Y - 2; // Just above the AQI band
-	const PRECIP_BAR_MAX_HEIGHT = PRECIP_BAR_BOTTOM - TEMP_AREA_TOP; // Full height from top to just above AQI band
-	const PRECIP_BAR_WIDTH = 30;
+	const PRECIP_BAR_BOTTOM = TILE_HEIGHT - 2; // Near bottom of tile
+	const PRECIP_BAR_MAX_HEIGHT = PRECIP_BAR_BOTTOM - TEMP_AREA_TOP;
+	const PRECIP_BAR_WIDTH = 26;
+	const PRECIP_LABEL_Y = TILE_HEIGHT - 6; // Above bottom edge
 
 	// Convert temperature to Y coordinate
 	function tempToY(temp: number): number {
@@ -343,8 +320,6 @@
 			{#each isLoading ? Array(placeholderCount) : days as day, i}
 				{@const past = !isLoading && day.fromToday < 0}
 				{@const today = !isLoading && day.fromToday === 0}
-				{@const aqiData = !isLoading ? dailyAqi.get(day.ms) : null}
-				{@const aqiLabel = aqiData?.label}
 				<div
 					class="tile"
 					class:past
@@ -361,34 +336,20 @@
 						/>
 						<div class="tile-content" in:fade={{ duration: 300 }}>
 							<div class="date" class:today>{day.compactDate}</div>
-							{#if day.precipitation > 0}
-								<div class="precip">{day.precipitation.toFixed(1)}mm</div>
-							{/if}
 						</div>
-						{#if aqiLabel?.color}
-							{@const aqiTextColor = contrastTextColor(aqiLabel.color)}
-							{@const aqiShadowColor = contrastTextColor(
-								aqiLabel.color,
-								true,
-								'rgba(255 255 255 / 50%)',
-								'rgba(51 51 51 / 50%)',
-							)}
-							<div
-								class="aqi-band"
-								style:background-color={aqiLabel.color}
-								style:--aqi-text={aqiTextColor}
-								style:--aqi-shadow={aqiShadowColor}
-								in:fade={{ duration: 300 }}
-							>
-								{aqiLabel.text}
-							</div>
-						{/if}
 					{/if}
 				</div>
 			{/each}
 
 			{#if canExpand}
-				<button class="more-tile" onclick={() => onExpand?.()} title="Load more days"> ›› </button>
+				<button
+					class="more-tile"
+					onclick={() => onExpand?.()}
+					title="Load more days"
+					disabled={isLoading}
+				>
+					››
+				</button>
 			{/if}
 
 			<!-- SVG overlay for temp lines and precip bars -->
@@ -399,7 +360,7 @@
 					preserveAspectRatio="none"
 					in:fade={{ duration: 300 }}
 				>
-					<!-- Precipitation bars -->
+					<!-- Precipitation bars and labels -->
 					{#each days as day, i}
 						{@const barHeight = precipHeight(day.precipitation)}
 						{@const barX = (i + 0.5) * TILE_WIDTH - PRECIP_BAR_WIDTH / 2}
@@ -413,6 +374,19 @@
 								fill={colors.precipitation}
 								opacity="0.7"
 							/>
+							<text
+								x={(i + 0.5) * TILE_WIDTH}
+								y={PRECIP_LABEL_Y}
+								text-anchor="middle"
+								font-size="10"
+								font-weight="600"
+								fill="#268bd2"
+								stroke="white"
+								stroke-width="2"
+								paint-order="stroke fill"
+							>
+								{day.precipitation.toFixed(1)}mm
+							</text>
 						{/if}
 					{/each}
 
@@ -528,10 +502,10 @@
 
 	.tile {
 		box-sizing: border-box;
-		width: 80px;
-		min-width: 80px;
+		width: 70px;
+		min-width: 70px;
 		flex-shrink: 0;
-		height: 130px;
+		height: 114px;
 		display: grid;
 		grid-template-areas: 'stack';
 		border: 2px solid;
@@ -560,9 +534,9 @@
 	}
 
 	.tile-icon {
-		width: 108px;
-		height: 108px;
-		margin: -44px 0 0 -37px;
+		width: 94px;
+		height: 94px;
+		margin: -38px 0 0 -32px;
 		pointer-events: none;
 	}
 
@@ -574,24 +548,11 @@
 		z-index: 1;
 	}
 
-	.aqi-band {
-		align-self: end;
-		width: 100%;
-		height: 15px;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		font-size: 10px;
-		font-weight: 400;
-		color: var(--aqi-text);
-		text-shadow: 1px 1px 1px var(--aqi-shadow);
-	}
-
 	.more-tile {
 		width: 24px;
 		min-width: 24px;
 		flex-shrink: 0;
-		height: 130px;
+		height: 114px;
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -619,7 +580,7 @@
 	}
 
 	.date {
-		font-size: 16px;
+		font-size: 14px;
 		font-weight: 600;
 		margin-bottom: 0;
 		color: #333;
@@ -634,23 +595,12 @@
 		}
 	}
 
-	.precip {
-		font-size: 11px;
-		font-weight: 600;
-		color: #268bd2;
-		text-shadow:
-			-1px -1px 0 rgba(255, 255, 255, 0.9),
-			1px -1px 0 rgba(255, 255, 255, 0.9),
-			-1px 1px 0 rgba(255, 255, 255, 0.9),
-			1px 1px 0 rgba(255, 255, 255, 0.9);
-	}
-
 	.overlay {
 		position: absolute;
 		top: 0;
 		left: 0;
-		width: calc(var(--tile-count) * 80px);
-		height: 130px;
+		width: calc(var(--tile-count) * 70px);
+		height: 114px;
 		pointer-events: none;
 		z-index: 10; // Above tile content so temp labels can be clicked
 

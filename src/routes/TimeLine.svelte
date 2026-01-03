@@ -35,8 +35,19 @@
 	import type { Markish } from '@observablehq/plot';
 	import dayjs from 'dayjs';
 
+	type PlotVisibility = {
+		temp: boolean;
+		dewPoint: boolean;
+		humidity: boolean;
+		precip: boolean;
+		chance: boolean;
+		euAqi: boolean;
+		usAqi: boolean;
+	};
+
 	let {
 		nsWeatherData,
+		plotVisibility,
 		start = Date.now(),
 		hours = 24,
 		xAxis = true,
@@ -44,6 +55,7 @@
 		past = false,
 	}: {
 		nsWeatherData: NsWeatherData;
+		plotVisibility: PlotVisibility;
 		start?: number;
 		hours?: number;
 		xAxis?: boolean;
@@ -61,17 +73,17 @@
 	const MARGIN_RIGHT = 0;
 	const ICON_LABEL_PADDING = 16;
 
-	const draw: Record<string, boolean | string> = {
-		weatherCode: true, // true, 'icon', 'text', 'color'
-		humidity: false,
-		precipitationProbability: true,
-		precipitation: true,
-		dewPoint: true,
-		temperature: true,
+	const draw = $derived({
+		weatherCode: true as boolean | string, // true, 'icon', 'text', 'color'
+		humidity: plotVisibility.humidity,
+		precipitationProbability: plotVisibility.chance,
+		precipitation: plotVisibility.precip,
+		dewPoint: plotVisibility.dewPoint,
+		temperature: plotVisibility.temp,
 		solarEvents: true,
-		aqiEurope: true,
-		aqiUs: false,
-	};
+		aqiEurope: plotVisibility.euAqi,
+		aqiUs: plotVisibility.usAqi,
+	});
 
 	const msStart = $derived(+dayjs.tz(start, nsWeatherData.timezone).startOf('hour'));
 	const msEnd = $derived(msStart + hours * MS_IN_HOUR);
@@ -947,6 +959,13 @@
 	$effect(() => {
 		//gg('EFFECT');
 		updateTracker(nsWeatherData.ms);
+	});
+
+	// Update entire plot when plotVisibility changes.
+	$effect(() => {
+		// Track the draw object (derived from plotVisibility)
+		draw;
+		plotData();
 	});
 
 	// Update entire plot.

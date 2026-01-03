@@ -36,10 +36,20 @@
 	let { data } = $props();
 
 	let forecastDaysVisible = $state(3);
-	let displayDewPoint = $state(true);
 	let showMoreOptions = $state(false);
 	let isWideCollapsed = $state(false); // 480px+ : 3 columns for collapsed
 	let isWideExpanded = $state(false); // 700px+ : 4 columns for expanded
+
+	// Controls which plots are visible on the timeline
+	let plotVisibility = $state({
+		temp: true,
+		dewPoint: true,
+		humidity: false,
+		precip: true,
+		chance: true,
+		euAqi: true,
+		usAqi: false,
+	});
 
 	// Checkbox configurations
 	type CheckboxConfig = {
@@ -47,7 +57,7 @@
 		label?: string;
 		color: string;
 		checked: boolean;
-		bindKey?: 'displayDewPoint' | 'showMoreOptions';
+		bindKey?: keyof typeof plotVisibility | 'showMoreOptions';
 		toggleUnits?: boolean;
 		getValue: () => string;
 		getValueEnd?: () => string; // For range display (e.g., "X to Y")
@@ -58,14 +68,16 @@
 			key: 'temp',
 			label: 'Temp:',
 			color: 'gradient',
-			checked: true,
+			checked: plotVisibility.temp,
+			bindKey: 'temp',
 			toggleUnits: true,
 			getValue: () => nsWeatherData.format('displayTemperature'),
 		},
 		tempRange: {
 			key: 'tempRange',
 			color: 'gray',
-			checked: true,
+			checked: plotVisibility.temp,
+			bindKey: 'temp',
 			toggleUnits: true,
 			getValue: () => nsWeatherData.format('daily[2].temperatureMin', false),
 			getValueEnd: () => nsWeatherData.format('daily[2].temperatureMax', false),
@@ -74,8 +86,8 @@
 			key: 'dewPoint',
 			label: 'Dew Point:',
 			color: colors.dewPoint,
-			checked: displayDewPoint,
-			bindKey: 'displayDewPoint',
+			checked: plotVisibility.dewPoint,
+			bindKey: 'dewPoint',
 			toggleUnits: true,
 			getValue: () => nsWeatherData.format('displayDewPoint', false),
 		},
@@ -83,35 +95,40 @@
 			key: 'humidity',
 			label: 'Humidity:',
 			color: colors.humidity,
-			checked: true,
+			checked: plotVisibility.humidity,
+			bindKey: 'humidity',
 			getValue: () => `${nsWeatherData.displayHumidity}%`,
 		},
 		precip: {
 			key: 'precip',
 			label: 'Precip:',
 			color: colors.precipitation,
-			checked: true,
+			checked: plotVisibility.precip,
+			bindKey: 'precip',
 			getValue: () => `${nsWeatherData.displayPrecipitation}mm`,
 		},
 		chance: {
 			key: 'chance',
 			label: 'Chance:',
 			color: colors.precipitationProbability,
-			checked: true,
+			checked: plotVisibility.chance,
+			bindKey: 'chance',
 			getValue: () => `${nsWeatherData.displayPrecipitationProbability}%`,
 		},
 		euAqi: {
 			key: 'euAqi',
 			label: 'EU AQI:',
 			color: aqiEuropeToLabel(nsWeatherData.displayAqiEurope ?? null).color,
-			checked: true,
+			checked: plotVisibility.euAqi,
+			bindKey: 'euAqi',
 			getValue: () => `${nsWeatherData.displayAqiEurope}`,
 		},
 		usAqi: {
 			key: 'usAqi',
 			label: 'US AQI:',
 			color: aqiUsToLabel(nsWeatherData.displayAqiUs ?? null).color,
-			checked: false,
+			checked: plotVisibility.usAqi,
+			bindKey: 'usAqi',
 			getValue: () => `${nsWeatherData.displayAqiUs}`,
 		},
 		showAll: {
@@ -144,12 +161,15 @@
 
 	const checkboxConfigs = $derived(getCheckboxConfigs());
 
-	function handleCheckboxChange(bindKey: 'displayDewPoint' | 'showMoreOptions', event: Event) {
+	function handleCheckboxChange(
+		bindKey: keyof typeof plotVisibility | 'showMoreOptions',
+		event: Event,
+	) {
 		const checked = (event.target as HTMLInputElement).checked;
-		if (bindKey === 'displayDewPoint') {
-			displayDewPoint = checked;
-		} else if (bindKey === 'showMoreOptions') {
+		if (bindKey === 'showMoreOptions') {
 			showMoreOptions = checked;
+		} else if (bindKey in plotVisibility) {
+			plotVisibility[bindKey] = checked;
 		}
 	}
 
@@ -503,7 +523,12 @@
 		<div>
 			<label>
 				{#if config.key === 'temp'}
-					<input name="temperature" type="checkbox" checked={config.checked} />
+					<input
+						name="temperature"
+						type="checkbox"
+						checked={config.checked}
+						onchange={(e) => handleCheckboxChange(config.bindKey!, e)}
+					/>
 				{:else if config.bindKey}
 					<input
 						type="checkbox"
@@ -587,7 +612,7 @@
 					</div>
 				</div>
 				<div class="timeline today">
-					<TimeLine {nsWeatherData} start={Date.now() - 2 * MS_IN_HOUR} />
+					<TimeLine {nsWeatherData} {plotVisibility} start={Date.now() - 2 * MS_IN_HOUR} />
 				</div>
 			</div>
 
@@ -622,6 +647,7 @@
 					<div class={['timeline', { today }]}>
 						<TimeLine
 							{nsWeatherData}
+							{plotVisibility}
 							start={day.ms}
 							xAxis={day.compactDate == 'Today'}
 							ghostTracker={true}

@@ -454,24 +454,15 @@
 				</div>
 			{/each}
 
-			<!-- Tracker line (behind labels, above icons) -->
-			{#if !isLoading && trackerX !== null}
-				<div
-					class="tracker-line"
-					style:left="{trackerX}px"
-					style:background-color={trackerColor}
-				></div>
-			{/if}
-
-			<!-- SVG overlay for temp lines and precip bars -->
+			<!-- SVG underlay for precipitation bars and temp lines/dots (behind tracker) -->
 			{#if !isLoading}
 				<svg
-					class="overlay"
+					class="precip-underlay"
 					viewBox="0 0 {days.length * TILE_WIDTH} {TILE_HEIGHT}"
 					preserveAspectRatio="none"
 					in:fade={{ duration: 300 }}
 				>
-					<!-- Precipitation bars and labels -->
+					<!-- Precipitation bars -->
 					{#each days as day, i}
 						{@const barHeight = precipHeight(day.precipitation)}
 						{@const barX = (i + 0.5) * TILE_WIDTH - PRECIP_BAR_WIDTH / 2}
@@ -485,20 +476,6 @@
 								fill={colors.precipitation}
 								opacity="0.7"
 							/>
-							<text
-								x={(i + 0.5) * TILE_WIDTH}
-								y={PRECIP_LABEL_Y}
-								text-anchor="middle"
-								font-size="10"
-								font-weight="600"
-								fill={TEMP_COLOR_COLD}
-								stroke="#f8f8ff"
-								stroke-opacity="0.85"
-								stroke-width="2"
-								paint-order="stroke fill"
-							>
-								{day.precipitation.toFixed(1)}mm
-							</text>
 						{/if}
 					{/each}
 
@@ -518,11 +495,63 @@
 						stroke-width="2"
 					/>
 
-					<!-- High temperature dots and labels -->
+					<!-- High temperature dots -->
 					{#each days as day, i}
 						{@const x = (i + 0.5) * TILE_WIDTH}
 						{@const y = tempToY(day.temperatureMax)}
 						<circle cx={x} cy={y} r="3" fill={TEMP_COLOR_HOT} />
+					{/each}
+
+					<!-- Low temperature dots -->
+					{#each days as day, i}
+						{@const x = (i + 0.5) * TILE_WIDTH}
+						{@const y = tempToY(day.temperatureMin)}
+						<circle cx={x} cy={y} r="3" fill={TEMP_COLOR_COLD} />
+					{/each}
+				</svg>
+			{/if}
+
+			<!-- Tracker line (in front of precip bars, behind temp lines/labels) -->
+			{#if !isLoading && trackerX !== null}
+				<div
+					class="tracker-line"
+					style:left="{trackerX}px"
+					style:background-color={trackerColor}
+				></div>
+			{/if}
+
+			<!-- SVG overlay for temp lines, labels, and precip labels -->
+			{#if !isLoading}
+				<svg
+					class="overlay"
+					viewBox="0 0 {days.length * TILE_WIDTH} {TILE_HEIGHT}"
+					preserveAspectRatio="none"
+					in:fade={{ duration: 300 }}
+				>
+					<!-- Precipitation labels -->
+					{#each days as day, i}
+						{#if day.precipitation > 0}
+							<text
+								x={(i + 0.5) * TILE_WIDTH}
+								y={PRECIP_LABEL_Y}
+								text-anchor="middle"
+								font-size="10"
+								font-weight="600"
+								fill={TEMP_COLOR_COLD}
+								stroke="#f8f8ff"
+								stroke-opacity="0.85"
+								stroke-width="2"
+								paint-order="stroke fill"
+							>
+								{day.precipitation.toFixed(1)}mm
+							</text>
+						{/if}
+					{/each}
+
+					<!-- High temperature labels -->
+					{#each days as day, i}
+						{@const x = (i + 0.5) * TILE_WIDTH}
+						{@const y = tempToY(day.temperatureMax)}
 						<text
 							{x}
 							y={y - 8}
@@ -544,11 +573,10 @@
 						</text>
 					{/each}
 
-					<!-- Low temperature dots and labels -->
+					<!-- Low temperature labels -->
 					{#each days as day, i}
 						{@const x = (i + 0.5) * TILE_WIDTH}
 						{@const y = tempToY(day.temperatureMin)}
-						<circle cx={x} cy={y} r="3" fill={TEMP_COLOR_COLD} />
 						<text
 							{x}
 							y={y + 14}
@@ -767,6 +795,16 @@
 		}
 	}
 
+	.precip-underlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: calc(var(--tile-count) * 70px);
+		height: 114px;
+		pointer-events: none;
+		z-index: 4; // Behind tracker line
+	}
+
 	.tracker-line {
 		position: absolute;
 		top: 2px;
@@ -774,7 +812,7 @@
 		width: 2px;
 		transform: translateX(-1px); // Center the line on the position
 		pointer-events: none;
-		z-index: 5; // Above icons, below tile-content labels
+		z-index: 5; // In front of precip bars, behind temp lines/labels
 	}
 
 	.overlay {

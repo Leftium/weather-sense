@@ -290,6 +290,75 @@ export function wmoCode(code: number | undefined) {
 	};
 }
 
+// Get the precipitation group for a WMO code (used for grouping similar weather types)
+// Group 0 = clear/cloudy, 1 = fog, 2 = rain/drizzle, 3 = freezing rain, 4 = snow, 5 = thunderstorm
+export function precipitationGroup(code: number): number {
+	if (WMO_CODES[code]?.wsCode !== undefined) {
+		return Math.floor(WMO_CODES[code].wsCode / 1000) % 10;
+	}
+	return -1;
+}
+
+// Get the most severe WMO code from grouped hourly data
+// Replicates TimeLine's grouping logic: groups consecutive hours by precipitation type,
+// picks the most severe code within each group (or most common for clear/cloudy),
+// then returns the most severe among all group representatives
+export function getGroupedWmoCode(
+	hourlyData: { weatherCode: number }[],
+	maxByFn: <T>(arr: T[], fn: (item: T) => number) => T | undefined,
+): number | null {
+	if (!hourlyData?.length) return null;
+
+	function determineNextCode(prevCode: number | undefined, currCode: number) {
+		if (prevCode !== undefined) {
+			if (precipitationGroup(prevCode) === precipitationGroup(currCode)) {
+				return WMO_CODES[prevCode].wsCode > WMO_CODES[currCode].wsCode ? prevCode : currCode;
+			}
+		}
+		return currCode;
+	}
+
+	// Build grouped codes
+	type GroupedCode = { weatherCode: number; counts: Record<number, number> };
+	const groupedCodes = hourlyData.reduce((accumulator: GroupedCode[], current, index, array) => {
+		const prevItem = accumulator.at(-1);
+		const prevCode = prevItem?.weatherCode;
+		const prevPrecipGroup =
+			prevCode !== undefined
+				? precipitationGroup(prevCode)
+				: precipitationGroup(current.weatherCode);
+
+		let nextCode = determineNextCode(prevCode, current.weatherCode);
+		const counts =
+			prevItem !== undefined && prevPrecipGroup === precipitationGroup(nextCode)
+				? prevItem.counts
+				: {};
+		counts[current.weatherCode] = counts[current.weatherCode] || 0;
+
+		if (index < array.length - 1) {
+			counts[current.weatherCode] += 1;
+		}
+
+		// For clear/cloudy group (0), pick most common code
+		if (precipitationGroup(nextCode) === 0) {
+			nextCode = Number(
+				maxByFn(Object.keys(counts), (code) => counts[Number(code)] + Number(code) / 100),
+			);
+		}
+
+		if (prevItem && prevPrecipGroup === precipitationGroup(nextCode)) {
+			accumulator[accumulator.length - 1] = { weatherCode: nextCode, counts };
+		} else {
+			accumulator.push({ weatherCode: nextCode, counts });
+		}
+		return accumulator;
+	}, [] as GroupedCode[]);
+
+	// Pick the most severe from the group representatives
+	const mostSevereGroup = maxByFn(groupedCodes, (g) => wmoCode(g.weatherCode).wsCode ?? 0);
+	return mostSevereGroup?.weatherCode ?? null;
+}
+
 export function startOf(ms: number, unit: number | dayjs.OpUnitType, timezone?: string) {
 	if (typeof unit === 'number') {
 		return Math.floor(ms / unit) * unit;
@@ -302,6 +371,35 @@ export function celcius(f: number | undefined) {
 		return undefined;
 	}
 	return (f - 32) * (5 / 9);
+}
+
+// Format temperature with unit conversion
+// tempUnit: 'C' for Celsius, 'F' for Fahrenheit
+export function formatTemp(temp: number, tempUnit: 'C' | 'F'): string {
+	if (tempUnit === 'C') {
+		return `${celcius(temp)?.toFixed(1)}°`;
+	}
+	return `${Math.round(temp)}°`;
+}
+
+// Get representative WMO code for a day's hourly data
+// When groupIcons=true: uses grouped logic (most severe group representative)
+// When groupIcons=false: returns the fallback code (typically from daily data)
+export function getDayWmoCode(
+	dayMs: number,
+	fallbackCode: number,
+	hourlyData: { ms: number; weatherCode: number }[] | undefined,
+	groupIcons: boolean,
+	maxByFn: <T>(arr: T[], fn: (item: T) => number) => T | undefined,
+): number {
+	if (!groupIcons) {
+		return fallbackCode;
+	}
+
+	const dayEnd = dayMs + 24 * MS_IN_HOUR;
+	const hourlyInRange = hourlyData?.filter((h) => h.ms >= dayMs && h.ms < dayEnd);
+
+	return getGroupedWmoCode(hourlyInRange ?? [], maxByFn) ?? fallbackCode;
 }
 
 export function summarize(arrayOrObject: unknown[] | undefined | null) {

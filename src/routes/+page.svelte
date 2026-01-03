@@ -14,14 +14,15 @@
 		humanDistance,
 		objectFromMap,
 		wmoCode,
-		WMO_CODES,
+		getGroupedWmoCode,
+		getDayWmoCode,
 		colors,
 		aqiUsToLabel,
 		aqiEuropeToLabel,
 		getSkyColors,
 		colorsDelta,
 		contrastTextColor,
-		celcius,
+		formatTemp,
 		temperatureToColor,
 	} from '$lib/util.js';
 	import RadarMapLibre from './RadarMapLibre.svelte';
@@ -47,13 +48,6 @@
 	const { emit } = getEmitter<WeatherDataEvents>(import.meta);
 
 	let { data } = $props();
-
-	function formatTemp(temp: number): string {
-		if (nsWeatherData.units.temperature === 'C') {
-			return `${celcius(temp)?.toFixed(1)}°`;
-		}
-		return `${Math.round(temp)}°`;
-	}
 
 	let forecastDaysVisible = $state(3);
 	let showMoreOptions = $state(false);
@@ -237,81 +231,6 @@
 		return day || nsWeatherData.daily?.find((d) => d.fromToday === 0);
 	});
 
-	// Helper: get most severe WMO code from grouped hourly data (replicates TimeLine's grouping logic)
-	function getGroupedWmoCode(hourlyData: { ms: number; weatherCode: number }[]): number | null {
-		if (!hourlyData?.length) return null;
-
-		function precipitationGroup(code: number) {
-			if (WMO_CODES[code]?.wsCode !== undefined) {
-				return Math.floor(WMO_CODES[code].wsCode / 1000) % 10;
-			}
-			return -1;
-		}
-
-		function determineNextCode(prevCode: number | undefined, currCode: number) {
-			if (prevCode !== undefined) {
-				if (precipitationGroup(prevCode) === precipitationGroup(currCode)) {
-					return WMO_CODES[prevCode].wsCode > WMO_CODES[currCode].wsCode ? prevCode : currCode;
-				}
-			}
-			return currCode;
-		}
-
-		// Build grouped codes (simplified version of TimeLine's logic)
-		type GroupedCode = { weatherCode: number; counts: Record<number, number> };
-		const groupedCodes = hourlyData.reduce((accumulator: GroupedCode[], current, index, array) => {
-			const prevItem = accumulator.at(-1);
-			const prevCode = prevItem?.weatherCode;
-			const prevPrecipGroup =
-				prevCode !== undefined
-					? precipitationGroup(prevCode)
-					: precipitationGroup(current.weatherCode);
-
-			let nextCode = determineNextCode(prevCode, current.weatherCode);
-			const counts =
-				prevItem !== undefined && prevPrecipGroup === precipitationGroup(nextCode)
-					? prevItem.counts
-					: {};
-			counts[current.weatherCode] = counts[current.weatherCode] || 0;
-
-			if (index < array.length - 1) {
-				counts[current.weatherCode] += 1;
-			}
-
-			// For clear/cloudy group (0), pick most common code
-			if (precipitationGroup(nextCode) === 0) {
-				nextCode = Number(
-					maxBy(Object.keys(counts), (code) => counts[Number(code)] + Number(code) / 100),
-				);
-			}
-
-			if (prevItem && prevPrecipGroup === precipitationGroup(nextCode)) {
-				accumulator[accumulator.length - 1] = { weatherCode: nextCode, counts };
-			} else {
-				accumulator.push({ weatherCode: nextCode, counts });
-			}
-			return accumulator;
-		}, [] as GroupedCode[]);
-
-		// Pick the most severe from the group representatives
-		const mostSevereGroup = maxBy(groupedCodes, (g) => wmoCode(g.weatherCode).wsCode ?? 0);
-		return mostSevereGroup?.weatherCode ?? null;
-	}
-
-	// Helper: get representative WMO code for a day's hourly plot
-	// When groupIcons=true: uses grouped logic (most severe group representative)
-	// When groupIcons=false: returns the fallback code (typically from daily data)
-	function getDayWmoCode(dayMs: number, fallbackCode: number): number {
-		if (!groupIcons) {
-			return fallbackCode;
-		}
-
-		const dayEnd = dayMs + 24 * MS_IN_HOUR;
-		const hourlyInRange = nsWeatherData.hourly?.filter((h) => h.ms >= dayMs && h.ms < dayEnd);
-
-		return getGroupedWmoCode(hourlyInRange ?? []) ?? fallbackCode;
-	}
-
 	// Get representative WMO code for the 24-hour hourly plot
 	// When groupIcons=true: groups codes like TimeLine does, then picks most severe group representative
 	// When groupIcons=false: picks most severe code overall (highest wsCode value)
@@ -332,7 +251,7 @@
 			return mostSevere?.weatherCode ?? null;
 		}
 
-		return getGroupedWmoCode(hourlyInRange);
+		return getGroupedWmoCode(hourlyInRange, maxBy);
 	});
 
 	// Dynamic sky gradient with smooth animated transitions
@@ -855,7 +774,13 @@
 				{@const globalMax = nsWeatherData.temperatureStats.maxTemperature}
 				{@const colorHigh = temperatureToColor(day.temperatureMax, globalMin, globalMax)}
 				{@const colorLow = temperatureToColor(day.temperatureMin, globalMin, globalMax)}
-				{@const dayWmoCode = getDayWmoCode(day.ms, day.weatherCode)}
+				{@const dayWmoCode = getDayWmoCode(
+					day.ms,
+					day.weatherCode,
+					nsWeatherData.hourly,
+					groupIcons,
+					maxBy,
+				)}
 				<div class={['day-row', 'pico', { past }]} transition:slide={{ duration: 1000 }}>
 					<div
 						class={['temp-gradient-bar', { today }]}
@@ -875,9 +800,9 @@
 						</div>
 						<div class="high-low">
 							<span style:color={TEMP_COLOR_HOT} use:toggleUnits={{ temperature: true }}
-								>{formatTemp(day.temperatureMax)}</span
+								>{formatTemp(day.temperatureMax, nsWeatherData.units.temperature)}</span
 							><span style:color={TEMP_COLOR_COLD} use:toggleUnits={{ temperature: true }}
-								>{formatTemp(day.temperatureMin)}</span
+								>{formatTemp(day.temperatureMin, nsWeatherData.units.temperature)}</span
 							>
 						</div>
 					</div>

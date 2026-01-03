@@ -17,6 +17,7 @@
 	import * as Plot from '@observablehq/plot';
 	import * as htl from 'htl';
 	import { getEmitter } from '$lib/emitter';
+	import { trackable } from '$lib/trackable';
 	import { onMount, tick } from 'svelte';
 	import {
 		AQI_INDEX_EUROPE,
@@ -31,6 +32,7 @@
 		MS_IN_MINUTE,
 		startOf,
 		WMO_CODES,
+		precipitationGroup,
 		temperatureToColor,
 		TEMP_COLOR_HOT,
 		TEMP_COLOR_COLD,
@@ -142,95 +144,64 @@
 				fillShadow: string;
 			};
 
-			const aqiUsLevels = filteredAirQuality.reduce((accumulator: AqiItem[], currItem) => {
-				const prevItem = accumulator.at(-1);
+			// Generic AQI level grouping function
+			function groupAqiLevels(
+				getLabelFn: (item: AqiItem) => { text: string; color: string },
+				getPrevValueFn: (item: AqiItem) => number,
+			) {
+				return filteredAirQuality.reduce((accumulator: AqiItem[], currItem) => {
+					const prevItem = accumulator.at(-1);
+					const prevText = prevItem ? getLabelFn(prevItem).text : '';
+					const currLabel = getLabelFn(currItem as unknown as AqiItem);
 
-				const prevText = prevItem ? aqiUsToLabel(prevItem.aqiUs).text : '';
+					const x1 = currItem.ms;
+					const x2 = Math.min(currItem.ms + MS_IN_HOUR + 2 * MS_IN_MINUTE, msEnd);
+					const xMiddle = (Number(x1) + Number(x2)) / 2;
 
-				const currLabel = aqiUsToLabel(currItem.aqiUs);
+					if (prevItem && prevText === currLabel.text) {
+						prevItem.ms = prevItem.x2 = x2;
+						prevItem.xMiddle = (Number(prevItem.x1) + x2) / 2;
+					} else {
+						const fill = currLabel.color;
+						const fillText = contrastTextColor(
+							fill,
+							false,
+							`rgba(248 248 255 / 80%)`,
+							`rgba(51 51 51 / 80%)`,
+						);
+						const fillShadow = contrastTextColor(
+							fill,
+							true,
+							`rgba(248 248 255 / 80%)`,
+							`rgba(51 51 51 / 80%)`,
+						);
 
-				const x1 = currItem.ms;
-				const x2 = Math.min(currItem.ms + MS_IN_HOUR + 2 * MS_IN_MINUTE, msEnd);
-				const xMiddle = (Number(x1) + Number(x2)) / 2;
+						accumulator.push({
+							ms: x2,
+							aqiUs: currItem.aqiUs,
+							aqiEurope: currItem.aqiEurope,
+							text: currLabel.text,
+							x1,
+							x2,
+							xMiddle,
+							fill,
+							fillText,
+							fillShadow,
+						});
+					}
+					return accumulator;
+				}, [] as AqiItem[]);
+			}
 
-				if (prevItem && prevText === currLabel.text) {
-					prevItem.ms = prevItem.x2 = x2;
-					prevItem.xMiddle = (Number(prevItem.x1) + x2) / 2;
-				} else {
-					const fill = currLabel.color;
-					const fillText = contrastTextColor(
-						fill,
-						false,
-						`rgba(248 248 255 / 80%)`,
-						`rgba(51 51 51 / 80%)`,
-					);
-					const fillShadow = contrastTextColor(
-						fill,
-						true,
-						`rgba(248 248 255 / 80%)`,
-						`rgba(51 51 51 / 80%)`,
-					);
+			const aqiUsLevels = groupAqiLevels(
+				(item) => aqiUsToLabel(item.aqiUs),
+				(item) => item.aqiUs,
+			);
 
-					accumulator.push({
-						ms: x2,
-						aqiUs: currItem.aqiUs,
-						aqiEurope: currItem.aqiEurope,
-						text: currLabel.text,
-						x1,
-						x2,
-						xMiddle,
-						fill,
-						fillText,
-						fillShadow,
-					});
-				}
-				return accumulator;
-			}, [] as AqiItem[]);
-
-			const aqiEuropeLevels = filteredAirQuality.reduce((accumulator: AqiItem[], currItem) => {
-				const prevItem = accumulator.at(-1);
-
-				const prevText = prevItem ? aqiEuropeToLabel(prevItem.aqiEurope).text : '';
-
-				const currLabel = aqiEuropeToLabel(currItem.aqiEurope);
-
-				const x1 = currItem.ms;
-				const x2 = Math.min(currItem.ms + MS_IN_HOUR + 2 * MS_IN_MINUTE, msEnd);
-				const xMiddle = (Number(x1) + Number(x2)) / 2;
-
-				if (prevItem && prevText === currLabel.text) {
-					prevItem.x2 = x2;
-					prevItem.ms = prevItem.xMiddle = (Number(prevItem.x1) + x2) / 2;
-				} else {
-					const fill = currLabel.color;
-					const fillText = contrastTextColor(
-						fill,
-						false,
-						`rgba(248 248 255 / 80%)`,
-						`rgba(51 51 51 / 80%)`,
-					);
-					const fillShadow = contrastTextColor(
-						fill,
-						true,
-						`rgba(248 248 255 / 80%)`,
-						`rgba(51 51 51 / 80%)`,
-					);
-
-					accumulator.push({
-						ms: x2,
-						aqiUs: currItem.aqiUs,
-						aqiEurope: currItem.aqiEurope,
-						text: currLabel.text,
-						x1,
-						x2,
-						xMiddle,
-						fill,
-						fillText,
-						fillShadow,
-					});
-				}
-				return accumulator;
-			}, [] as AqiItem[]);
+			const aqiEuropeLevels = groupAqiLevels(
+				(item) => aqiEuropeToLabel(item.aqiEurope),
+				(item) => item.aqiEurope,
+			);
 
 			return {
 				aqiUsLevels,
@@ -291,20 +262,17 @@
 				counts: Record<number, number>;
 			};
 
-			function precipitationGroup(code: number) {
-				// When groupIcons is false, return unique value per code to prevent grouping
+			// Local wrapper that returns unique value per code when groupIcons is disabled
+			function getPrecipGroup(code: number) {
 				if (!groupIcons) {
-					return code;
+					return code; // Prevent grouping by returning unique value
 				}
-				if (WMO_CODES[code]?.wsCode !== undefined) {
-					return Math.floor(WMO_CODES[code].wsCode / 1000) % 10;
-				}
-				return -1;
+				return precipitationGroup(code);
 			}
 
 			function determineNextCode(prevCode: number | undefined, currCode: number) {
 				if (prevCode !== undefined) {
-					if (precipitationGroup(prevCode) === precipitationGroup(currCode)) {
+					if (getPrecipGroup(prevCode) === getPrecipGroup(currCode)) {
 						return WMO_CODES[prevCode].wsCode > WMO_CODES[currCode].wsCode ? prevCode : currCode;
 					}
 				}
@@ -314,14 +282,12 @@
 			const codes = metrics.reduce((accumulator: CodesItem[], current, index, array) => {
 				const prevItem = accumulator.at(-1);
 				const prevCode = prevItem?.weatherCode;
-				const prevPrecipitationGroup =
-					prevCode !== undefined
-						? precipitationGroup(prevCode)
-						: precipitationGroup(current.weatherCode);
+				const prevPrecipGroup =
+					prevCode !== undefined ? getPrecipGroup(prevCode) : getPrecipGroup(current.weatherCode);
 
 				let nextCode = determineNextCode(prevCode, current.weatherCode);
 				const counts =
-					prevItem !== undefined && prevPrecipitationGroup === precipitationGroup(nextCode)
+					prevItem !== undefined && prevPrecipGroup === getPrecipGroup(nextCode)
 						? prevItem.counts
 						: {};
 				counts[current.weatherCode] = counts[current.weatherCode] || 0;
@@ -331,7 +297,7 @@
 					counts[current.weatherCode] += 1;
 				}
 
-				if (precipitationGroup(nextCode) === 0) {
+				if (getPrecipGroup(nextCode) === 0) {
 					nextCode = Number(
 						maxBy(Object.keys(counts), (code) => counts[Number(code)] + Number(code) / 100),
 					);
@@ -368,7 +334,7 @@
 					counts: {},
 				};
 
-				if (prevItem && prevPrecipitationGroup === precipitationGroup(nextCode)) {
+				if (prevItem && prevPrecipGroup === getPrecipGroup(nextCode)) {
 					accumulator[accumulator.length - 1] = {
 						...draftItem,
 						x1: prevItem.x1,
@@ -501,174 +467,24 @@
 		return null;
 	});
 
-	// Svelte action for timeline.
-	// Supports both mouse hover (desktop) and touch scrubbing (mobile).
-	// On mobile: direction detection - horizontal = scrub, vertical = scroll.
-	// Uses touch-action: none with manual scroll handling for consistent behavior.
-	function trackable(node: HTMLElement) {
-		let trackUntilMouseUp = false;
-		let mouseIsOver = false;
-
-		// Touch gesture state
-		let touchStartX = 0;
-		let touchStartY = 0;
-		let lastTouchY = 0;
-		let savedScrollTop = 0;
-		let gestureDecided = false;
-		let isScrubbing = false;
-		let activePointerId: number | null = null;
-		const GESTURE_THRESHOLD = 8; // pixels to move before deciding gesture type
-
-		function trackToMouseX(e: PointerEvent | MouseEvent | Touch) {
-			const svgNode = d3.select(div).select('svg').select('g[aria-label=rect]').node();
-			if (xScale.invert) {
-				const [x] = d3.pointer(e, svgNode);
-				const ms = clamp(xScale.invert(x), msStart, msEnd);
-
-				emit('weatherdata_requestedSetTime', { ms });
-			}
+	// Convert pointer position to timestamp using d3 and the SVG scale
+	function pointerToMs(e: PointerEvent | MouseEvent): number {
+		const svgNode = d3.select(div).select('svg').select('g[aria-label=rect]').node();
+		if (xScale.invert) {
+			const [x] = d3.pointer(e, svgNode);
+			return clamp(xScale.invert(x), msStart, msEnd);
 		}
-
-		function handlePointerMove(e: PointerEvent) {
-			// Skip touch events - handled separately for gesture detection
-			if (e.pointerType === 'touch') return;
-
-			if (nsWeatherData.trackedElement === node) {
-				trackToMouseX(e);
-			} else if (mouseIsOver && nsWeatherData.trackedElement === null) {
-				trackToMouseX(e);
-				emit('weatherdata_requestedTrackingStart', { node });
-			}
-		}
-
-		function handlePointerDown(e: PointerEvent) {
-			// Skip touch events - handled separately
-			if (e.pointerType === 'touch') return;
-
-			gg('handlePointerDown');
-			trackUntilMouseUp = true;
-			trackToMouseX(e);
-			emit('weatherdata_requestedTrackingStart', { node });
-		}
-
-		function handlePointerUp(e: PointerEvent) {
-			// Skip touch events - handled separately
-			if (e.pointerType === 'touch') return;
-
-			if (nsWeatherData.trackedElement === node) {
-				gg('handlePointerUp');
-				trackUntilMouseUp = false;
-				emit('weatherdata_requestedTrackingEnd');
-			}
-		}
-
-		function handleMMouseEnter(e: MouseEvent) {
-			mouseIsOver = true;
-			if (!nsWeatherData.trackedElement) {
-				gg('handleMMouseEnter', nsWeatherData.trackedElement);
-				trackToMouseX(e);
-				emit('weatherdata_requestedTrackingStart', { node });
-			}
-		}
-
-		function handleMMouseLeave(e: MouseEvent) {
-			mouseIsOver = false;
-			if (nsWeatherData.trackedElement === node && !trackUntilMouseUp) {
-				gg('handleMMouseLeave');
-				emit('weatherdata_requestedTrackingEnd');
-			}
-		}
-
-		// Touch pointer event handlers - direction detection for scrub vs scroll
-		// Uses touch-action: pan-y for native scroll, captures pointer only for horizontal scrub
-		function handleTouchPointerDown(e: PointerEvent) {
-			if (e.pointerType !== 'touch') return;
-
-			touchStartX = e.clientX;
-			touchStartY = e.clientY;
-			savedScrollTop = document.documentElement.scrollTop || document.body.scrollTop;
-			gestureDecided = false;
-			isScrubbing = false;
-			activePointerId = e.pointerId;
-		}
-
-		function handleTouchPointerMove(e: PointerEvent) {
-			if (e.pointerType !== 'touch') return;
-			if (activePointerId === null) return;
-
-			const deltaX = e.clientX - touchStartX;
-			const deltaY = e.clientY - touchStartY;
-			const absDeltaX = Math.abs(deltaX);
-			const absDeltaY = Math.abs(deltaY);
-
-			// If already scrubbing, continue scrubbing
-			if (isScrubbing) {
-				trackToMouseX(e);
-				// Lock scroll position
-				document.documentElement.scrollTop = savedScrollTop;
-				document.body.scrollTop = savedScrollTop;
-				return;
-			}
-
-			// If already decided to scroll, let native scroll handle it
-			if (gestureDecided && !isScrubbing) {
-				return;
-			}
-
-			// Decide gesture type once threshold is reached
-			if (!gestureDecided && (absDeltaX > GESTURE_THRESHOLD || absDeltaY > GESTURE_THRESHOLD)) {
-				gestureDecided = true;
-
-				if (absDeltaX > absDeltaY) {
-					// More horizontal = scrubbing - capture pointer and set touch-action
-					isScrubbing = true;
-					div.style.touchAction = 'none';
-					div.setPointerCapture(e.pointerId);
-					trackToMouseX(e);
-					emit('weatherdata_requestedTrackingStart', { node });
-				} else {
-					// More vertical = scrolling - let native scroll handle it
-					isScrubbing = false;
-					activePointerId = null;
-				}
-			}
-		}
-
-		function handleTouchPointerUp(e: PointerEvent) {
-			if (e.pointerType !== 'touch') return;
-
-			if (isScrubbing) {
-				emit('weatherdata_requestedTrackingEnd');
-				div.style.touchAction = ''; // Restore native scroll for next gesture
-			}
-
-			gestureDecided = false;
-			isScrubbing = false;
-			activePointerId = null;
-		}
-
-		const abortController = new AbortController();
-		const { signal } = abortController;
-
-		window.addEventListener('pointermove', handlePointerMove, { signal });
-
-		div.addEventListener('pointerdown', handlePointerDown, { signal });
-		window.addEventListener('pointerup', handlePointerUp, { signal });
-
-		div.addEventListener('mouseenter', handleMMouseEnter, { signal });
-		div.addEventListener('mouseleave', handleMMouseLeave, { signal });
-
-		// Touch pointer events for mobile
-		div.addEventListener('pointerdown', handleTouchPointerDown, { signal });
-		window.addEventListener('pointermove', handleTouchPointerMove, { signal });
-		window.addEventListener('pointerup', handleTouchPointerUp, { signal });
-
-		return {
-			destroy() {
-				abortController.abort();
-			},
-		};
+		return msStart;
 	}
+
+	// Trackable options for this component
+	const trackableOptions = {
+		getMs: pointerToMs,
+		getTrackedElement: () => nsWeatherData.trackedElement,
+		onTimeChange: (ms: number) => emit('weatherdata_requestedSetTime', { ms }),
+		onTrackingStart: (node: HTMLElement) => emit('weatherdata_requestedTrackingStart', { node }),
+		onTrackingEnd: () => emit('weatherdata_requestedTrackingEnd'),
+	};
 
 	function makeTransFormPrecipitation(onlyLinear: boolean) {
 		// 80th percentile of hourly precipitation (~20% of rainy hours exceed this)
@@ -1221,7 +1037,7 @@
 	</div>
 {/if}
 
-<div bind:this={div} bind:clientWidth use:trackable role="img"></div>
+<div bind:this={div} bind:clientWidth use:trackable={trackableOptions} role="img"></div>
 
 <style>
 	div,

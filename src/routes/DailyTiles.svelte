@@ -3,13 +3,13 @@
 	import {
 		colors,
 		wmoCode,
-		WMO_CODES,
-		celcius,
+		getDayWmoCode,
+		formatTemp,
 		MS_IN_DAY,
-		MS_IN_HOUR,
 		TEMP_COLOR_HOT,
 		TEMP_COLOR_COLD,
 	} from '$lib/util';
+	import { trackable, isTempLabel } from '$lib/trackable';
 	import { getEmitter } from '$lib/emitter';
 	import { clamp, minBy, maxBy } from 'lodash-es';
 	import { fade } from 'svelte/transition';
@@ -47,88 +47,6 @@
 
 	function toggleUnits() {
 		emit('weatherdata_requestedToggleUnits', { temperature: true });
-	}
-
-	function formatTemp(temp: number): string {
-		if (nsWeatherData.units.temperature === 'C') {
-			return `${celcius(temp)?.toFixed(1)}°`;
-		}
-		return `${Math.round(temp)}°`;
-	}
-
-	// Helper: get most severe WMO code from grouped hourly data (replicates TimeLine's grouping logic)
-	function getGroupedWmoCode(hourlyData: { ms: number; weatherCode: number }[]): number | null {
-		if (!hourlyData?.length) return null;
-
-		function precipitationGroup(code: number) {
-			if (WMO_CODES[code]?.wsCode !== undefined) {
-				return Math.floor(WMO_CODES[code].wsCode / 1000) % 10;
-			}
-			return -1;
-		}
-
-		function determineNextCode(prevCode: number | undefined, currCode: number) {
-			if (prevCode !== undefined) {
-				if (precipitationGroup(prevCode) === precipitationGroup(currCode)) {
-					return WMO_CODES[prevCode].wsCode > WMO_CODES[currCode].wsCode ? prevCode : currCode;
-				}
-			}
-			return currCode;
-		}
-
-		// Build grouped codes (simplified version of TimeLine's logic)
-		type GroupedCode = { weatherCode: number; counts: Record<number, number> };
-		const groupedCodes = hourlyData.reduce((accumulator: GroupedCode[], current, index, array) => {
-			const prevItem = accumulator.at(-1);
-			const prevCode = prevItem?.weatherCode;
-			const prevPrecipGroup =
-				prevCode !== undefined
-					? precipitationGroup(prevCode)
-					: precipitationGroup(current.weatherCode);
-
-			let nextCode = determineNextCode(prevCode, current.weatherCode);
-			const counts =
-				prevItem !== undefined && prevPrecipGroup === precipitationGroup(nextCode)
-					? prevItem.counts
-					: {};
-			counts[current.weatherCode] = counts[current.weatherCode] || 0;
-
-			if (index < array.length - 1) {
-				counts[current.weatherCode] += 1;
-			}
-
-			// For clear/cloudy group (0), pick most common code
-			if (precipitationGroup(nextCode) === 0) {
-				nextCode = Number(
-					maxBy(Object.keys(counts), (code) => counts[Number(code)] + Number(code) / 100),
-				);
-			}
-
-			if (prevItem && prevPrecipGroup === precipitationGroup(nextCode)) {
-				accumulator[accumulator.length - 1] = { weatherCode: nextCode, counts };
-			} else {
-				accumulator.push({ weatherCode: nextCode, counts });
-			}
-			return accumulator;
-		}, [] as GroupedCode[]);
-
-		// Pick the most severe from the group representatives
-		const mostSevereGroup = maxBy(groupedCodes, (g) => wmoCode(g.weatherCode).wsCode ?? 0);
-		return mostSevereGroup?.weatherCode ?? null;
-	}
-
-	// Helper: get representative WMO code for a day's tile
-	// When groupIcons=true: uses grouped logic (most severe group representative)
-	// When groupIcons=false: returns the fallback code (from daily data)
-	function getDayWmoCode(dayMs: number, fallbackCode: number): number {
-		if (!groupIcons) {
-			return fallbackCode;
-		}
-
-		const dayEnd = dayMs + 24 * MS_IN_HOUR;
-		const hourlyInRange = nsWeatherData.hourly?.filter((h) => h.ms >= dayMs && h.ms < dayEnd);
-
-		return getGroupedWmoCode(hourlyInRange ?? []) ?? fallbackCode;
 	}
 
 	// Calculate max tiles that can fit based on viewport width
@@ -333,178 +251,15 @@
 		return todayIndex * TILE_WIDTH;
 	});
 
-	// Svelte action for tracking
-	// Supports both mouse hover (desktop) and touch scrubbing (mobile).
-	// On mobile: direction detection - horizontal = scrub, vertical = scroll.
-	function trackable(node: HTMLElement) {
-		let trackUntilMouseUp = false;
-		let mouseIsOver = false;
-
-		// Touch gesture state
-		let touchStartX = 0;
-		let touchStartY = 0;
-		let savedScrollTop = 0;
-		let gestureDecided = false;
-		let isScrubbing = false;
-		let activePointerId: number | null = null;
-		const GESTURE_THRESHOLD = 8; // pixels to move before deciding gesture type
-
-		function trackToMouseX(e: PointerEvent | MouseEvent) {
-			const ms = xToMs(e.clientX);
-			emit('weatherdata_requestedSetTime', { ms });
-		}
-
-		function handlePointerMove(e: PointerEvent) {
-			// Skip touch events - handled separately
-			if (e.pointerType === 'touch') return;
-
-			if (nsWeatherData.trackedElement === node) {
-				trackToMouseX(e);
-			} else if (mouseIsOver && nsWeatherData.trackedElement === null) {
-				trackToMouseX(e);
-				emit('weatherdata_requestedTrackingStart', { node });
-			}
-		}
-
-		function handlePointerDown(e: PointerEvent) {
-			// Skip touch events - handled separately
-			if (e.pointerType === 'touch') return;
-
-			// Don't start tracking if clicking on a temp label (for toggle units)
-			// SVG elements use className.baseVal, HTML elements use classList
-			const target = e.target as Element;
-			const isTempLabel =
-				target?.classList?.contains('temp-label') ||
-				(target as SVGElement)?.className?.baseVal?.includes('temp-label');
-			if (isTempLabel) {
-				return;
-			}
-			trackUntilMouseUp = true;
-			trackToMouseX(e);
-			emit('weatherdata_requestedTrackingStart', { node });
-		}
-
-		function handlePointerUp(e: PointerEvent) {
-			// Skip touch events - handled separately
-			if (e.pointerType === 'touch') return;
-
-			if (nsWeatherData.trackedElement === node) {
-				trackUntilMouseUp = false;
-				emit('weatherdata_requestedTrackingEnd');
-			}
-		}
-
-		function handleMouseEnter(e: MouseEvent) {
-			mouseIsOver = true;
-			if (!nsWeatherData.trackedElement) {
-				trackToMouseX(e);
-				emit('weatherdata_requestedTrackingStart', { node });
-			}
-		}
-
-		function handleMouseLeave(e: MouseEvent) {
-			mouseIsOver = false;
-			if (nsWeatherData.trackedElement === node && !trackUntilMouseUp) {
-				emit('weatherdata_requestedTrackingEnd');
-			}
-		}
-
-		// Touch pointer event handlers - direction detection for scrub vs scroll
-		function handleTouchPointerDown(e: PointerEvent) {
-			if (e.pointerType !== 'touch') return;
-
-			// Don't start tracking if touching a temp label (for toggle units)
-			const target = e.target as Element;
-			const isTempLabel =
-				target?.classList?.contains('temp-label') ||
-				(target as SVGElement)?.className?.baseVal?.includes('temp-label');
-			if (isTempLabel) {
-				return;
-			}
-
-			touchStartX = e.clientX;
-			touchStartY = e.clientY;
-			savedScrollTop = document.documentElement.scrollTop || document.body.scrollTop;
-			gestureDecided = false;
-			isScrubbing = false;
-			activePointerId = e.pointerId;
-		}
-
-		function handleTouchPointerMove(e: PointerEvent) {
-			if (e.pointerType !== 'touch') return;
-			if (activePointerId === null) return;
-
-			const deltaX = e.clientX - touchStartX;
-			const deltaY = e.clientY - touchStartY;
-			const absDeltaX = Math.abs(deltaX);
-			const absDeltaY = Math.abs(deltaY);
-
-			// If already scrubbing, continue scrubbing
-			if (isScrubbing) {
-				trackToMouseX(e);
-				// Lock scroll position
-				document.documentElement.scrollTop = savedScrollTop;
-				document.body.scrollTop = savedScrollTop;
-				return;
-			}
-
-			// If already decided to scroll, let native scroll handle it
-			if (gestureDecided && !isScrubbing) {
-				return;
-			}
-
-			// Decide gesture type once threshold is reached
-			if (!gestureDecided && (absDeltaX > GESTURE_THRESHOLD || absDeltaY > GESTURE_THRESHOLD)) {
-				gestureDecided = true;
-
-				if (absDeltaX > absDeltaY) {
-					// More horizontal = scrubbing - capture pointer and set touch-action
-					isScrubbing = true;
-					node.style.touchAction = 'none';
-					node.setPointerCapture(e.pointerId);
-					trackToMouseX(e);
-					emit('weatherdata_requestedTrackingStart', { node });
-				} else {
-					// More vertical = scrolling - let native scroll handle it
-					isScrubbing = false;
-					activePointerId = null;
-				}
-			}
-		}
-
-		function handleTouchPointerUp(e: PointerEvent) {
-			if (e.pointerType !== 'touch') return;
-
-			if (isScrubbing) {
-				emit('weatherdata_requestedTrackingEnd');
-				node.style.touchAction = ''; // Restore native scroll for next gesture
-			}
-
-			gestureDecided = false;
-			isScrubbing = false;
-			activePointerId = null;
-		}
-
-		const abortController = new AbortController();
-		const { signal } = abortController;
-
-		window.addEventListener('pointermove', handlePointerMove, { signal });
-		node.addEventListener('pointerdown', handlePointerDown, { signal });
-		window.addEventListener('pointerup', handlePointerUp, { signal });
-		node.addEventListener('mouseenter', handleMouseEnter, { signal });
-		node.addEventListener('mouseleave', handleMouseLeave, { signal });
-
-		// Touch pointer events for mobile
-		node.addEventListener('pointerdown', handleTouchPointerDown, { signal });
-		window.addEventListener('pointermove', handleTouchPointerMove, { signal });
-		window.addEventListener('pointerup', handleTouchPointerUp, { signal });
-
-		return {
-			destroy() {
-				abortController.abort();
-			},
-		};
-	}
+	// Trackable options for this component
+	const trackableOptions = {
+		getMs: (e: PointerEvent | MouseEvent) => xToMs(e.clientX),
+		getTrackedElement: () => nsWeatherData.trackedElement,
+		onTimeChange: (ms: number) => emit('weatherdata_requestedSetTime', { ms }),
+		onTrackingStart: (node: HTMLElement) => emit('weatherdata_requestedTrackingStart', { node }),
+		onTrackingEnd: () => emit('weatherdata_requestedTrackingEnd'),
+		shouldIgnoreTarget: isTempLabel,
+	};
 </script>
 
 <div
@@ -514,12 +269,14 @@
 	bind:this={containerDiv}
 >
 	<!-- Wrapper to constrain trackable area to just the tiles -->
-	<div class="tiles-track-area" use:trackable>
+	<div class="tiles-track-area" use:trackable={trackableOptions}>
 		<div class="tiles">
 			{#each isLoading ? Array(placeholderCount) : days as day, i}
 				{@const past = !isLoading && day.fromToday < 0}
 				{@const today = !isLoading && day.fromToday === 0}
-				{@const tileWmoCode = !isLoading ? getDayWmoCode(day.ms, day.weatherCode) : 0}
+				{@const tileWmoCode = !isLoading
+					? getDayWmoCode(day.ms, day.weatherCode, nsWeatherData.hourly, groupIcons, maxBy)
+					: 0}
 				<div
 					class="tile"
 					class:past
@@ -656,7 +413,7 @@
 							onclick={toggleUnits}
 							onkeydown={(e) => e.key === 'Enter' && toggleUnits()}
 						>
-							{formatTemp(day.temperatureMax)}
+							{formatTemp(day.temperatureMax, nsWeatherData.units.temperature)}
 						</text>
 					{/each}
 
@@ -681,7 +438,7 @@
 							onclick={toggleUnits}
 							onkeydown={(e) => e.key === 'Enter' && toggleUnits()}
 						>
-							{formatTemp(day.temperatureMin)}
+							{formatTemp(day.temperatureMin, nsWeatherData.units.temperature)}
 						</text>
 					{/each}
 

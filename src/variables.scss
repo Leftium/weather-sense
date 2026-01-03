@@ -1,2 +1,37 @@
-/* Variables and mixins declared here will be available in all other SCSS files */ /* https://github.com/picocss/pico/issues/201 */
-// $semantic-root-element: 'body div:first-child';
+// Shared variables and mixins available in all SCSS files
+
+// Colors
+$color-ghost-white: #f8f8ff;
+$color-ghost-white-dark: #f0f0f8;
+$color-border-light: #e0e0e0;
+$color-text-primary: #333;
+$color-text-secondary: #666;
+$color-link-hover: #268bd2; // Solarized blue
+
+// Default sky gradient (fallback)
+$gradient-sky-default: linear-gradient(135deg, #eee 0%, #a8d8f0 50%, #6bb3e0 100%);
+
+// Breakpoints
+$breakpoint-mobile: 576px;
+$breakpoint-tablet: 768px;
+
+// Mixins
+@mixin text-outline-white {
+	text-shadow:
+		-1px -1px 0 rgba(255, 255, 255, 0.8),
+		1px -1px 0 rgba(255, 255, 255, 0.8),
+		-1px 1px 0 rgba(255, 255, 255, 0.8),
+		1px 1px 0 rgba(255, 255, 255, 0.8);
+}
+
+@mixin mobile-only {
+	@media (max-width: $breakpoint-mobile) {
+		@content;
+	}
+}
+
+@mixin tablet-up {
+	@media (min-width: $breakpoint-mobile + 1) {
+		@content;
+	}
+}

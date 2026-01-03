@@ -795,7 +795,11 @@
 </div>
 
 <style lang="scss">
-	@use 'open-props-scss' as *;
+	@use '../variables' as *;
+
+	// Size variables from open-props (only using these two)
+	$size-1: 0.25rem;
+	$size-3: 1rem;
 
 	.sky-gradient-bg {
 		position: absolute;
@@ -803,7 +807,7 @@
 		left: 0;
 		width: 100%;
 		height: 126px; // Covers daily tiles area (tiles are 114px) plus margin below
-		background: var(--sky-gradient, linear-gradient(135deg, #eee 0%, #a8d8f0 50%, #6bb3e0 100%));
+		background: var(--sky-gradient, $gradient-sky-default);
 		background-attachment: fixed;
 		pointer-events: none;
 		z-index: 0;
@@ -815,7 +819,7 @@
 		top: 0;
 		z-index: 100000;
 
-		background: var(--sky-gradient, linear-gradient(135deg, #eee 0%, #a8d8f0 50%, #6bb3e0 100%));
+		background: var(--sky-gradient, $gradient-sky-default);
 		background-attachment: fixed;
 		padding-block: 0.2em;
 		transition: background 1s ease-out;
@@ -854,7 +858,6 @@
 	.current {
 		display: grid;
 		grid-template-columns: 1fr auto 1fr;
-
 		line-height: 1.3;
 	}
 
@@ -869,28 +872,24 @@
 
 	.current .time {
 		width: 100%;
-
 		text-align: left;
-
 		margin-left: $size-1;
 	}
 
 	.current .condition {
 		display: flex;
 		flex-direction: column;
-
 		margin-right: $size-1;
-
 		justify-content: center;
 		font-size: large;
 		line-height: 1.2;
 	}
 
+	// Measurement checkboxes grid
 	.other-measurements {
 		display: grid;
 		grid-template-columns: 1fr 1fr;
 		column-gap: 1em;
-
 		max-width: 22em;
 		width: 100%;
 		margin: auto;
@@ -909,91 +908,79 @@
 			display: inline;
 		}
 
-		/*************************************************************************************/
-		/*Based on: https://moderncss.dev/pure-css-custom-checkbox-style/ */
+		// Custom colored checkboxes
+		// Based on: https://moderncss.dev/pure-css-custom-checkbox-style/
 		input[type='checkbox']:not([name='temperature']) {
-			// Override Pico's checkbox styling
 			appearance: none;
 			-webkit-appearance: none;
-			background-color: #fff !important;
+			background-color: #fff;
 			margin: 0;
-
 			font: inherit;
 			width: 1.2em;
 			height: 1.2em;
-
 			transform: translateY(-0.06em);
-
 			display: inline-grid;
 			place-content: center;
-
-			border: 3px solid var(--color) !important;
+			border: 3px solid var(--color);
 			border-radius: 4px;
 		}
 
 		input[type='checkbox']:not([name='temperature'])::before {
-			content: '' !important;
-			width: 1.2em !important;
-			height: 1.2em !important;
+			content: '';
+			width: 1.2em;
+			height: 1.2em;
 			border-radius: inherit;
-
-			transform: scale(0) !important;
-			transition: 200ms transform ease-in-out !important;
-
-			background: var(--color) !important;
-			background-image: none !important;
-			box-shadow: none !important;
+			transform: scale(0);
+			transition: 200ms transform ease-in-out;
+			background: var(--color);
 		}
 
 		input[type='checkbox']:not([name='temperature']):checked::before {
-			transform: scale(1) !important;
+			transform: scale(1);
 		}
 
-		/*************************************************************************************/
-		// Temperature checkbox styles are in app.scss (global) to prevent Svelte from stripping ::before
+		// Temperature checkbox styles in app.scss (global) to prevent Svelte stripping ::before
 	}
 
-	@media (width < 480px) {
+	@media (max-width: 480px) {
 		.other-measurements {
 			max-width: 100%;
 			padding-inline: 1em;
 		}
 	}
 
-	// Wide layout: 3 columns for collapsed, 4 columns for expanded (at wider breakpoint)
-	@media (width >= 480px) {
+	// Wide layout: 3 columns for collapsed
+	@media (min-width: 480px) {
 		.other-measurements.collapsed {
 			grid-template-columns: 1fr 1fr 1fr;
 			max-width: 28em;
 		}
 	}
 
-	@media (width >= 700px) {
+	// Wide layout: 4 columns for expanded
+	@media (min-width: 700px) {
 		.other-measurements.expanded {
 			grid-template-columns: 1fr 1fr 1fr 1fr;
 			max-width: 36em;
 		}
 	}
 
-	// Parent grid container for hourly, map, and daily sections
+	// Timeline grid - parent container for hourly and daily sections
 	.timeline-grid {
 		display: grid;
 		grid-template-columns: auto auto minmax(0, 1fr);
 		grid-row-gap: 0.1em;
 		grid-column-gap: 0.2em;
 		margin-bottom: 0.2em;
-		background: #f8f8ff; // Ghost White - cover the gradient below daily tiles
+		background: $color-ghost-white;
 	}
 
 	.timeline-divider {
 		grid-column: 1 / -1;
 		margin: 0.5em 0;
 		border: none;
-		border-top: 1px solid #e0e0e0;
+		border-top: 1px solid $color-border-light;
 	}
-
-	// Mobile: timeline-grid and footer inherit container padding
-	// No extra padding needed since container now has padding-inline: 1rem
 
 	// Hourly row (24hrs) - spans all columns, uses subgrid
 	.hourly-row {
@@ -1023,14 +1010,14 @@
 		}
 	}
 
-	// Map row - no padding even on mobile
+	// Map row - edge-to-edge, no padding
 	.map-row {
 		overflow: hidden;
 		padding-inline: 0;
 	}
 
-	// Timeline content needs right padding on mobile for scroll gesture safety
-	@media (max-width: 576px) {
+	// Mobile: right padding for scroll gesture safety
+	@include mobile-only {
 		.timeline-grid,
 		footer {
 			padding-right: 1rem;
@@ -1049,7 +1036,7 @@
 			content: '';
 			position: absolute;
 			inset: 0;
-			background: #f8f8ff; // Ghost White
+			background: $color-ghost-white;
 			opacity: 0.5;
 			pointer-events: none;
 			z-index: 10;
@@ -1086,18 +1073,14 @@
 		font-weight: bold;
 	}
 
-	// Shared .day and .high-low styles
+	// Day label styles with text outline
 	.day-label {
 		overflow: visible;
 
 		.day {
 			position: relative;
 			z-index: 1;
-			text-shadow:
-				-1px -1px 0 rgba(255, 255, 255, 0.8),
-				1px -1px 0 rgba(255, 255, 255, 0.8),
-				-1px 1px 0 rgba(255, 255, 255, 0.8),
-				1px 1px 0 rgba(255, 255, 255, 0.8);
+			@include text-outline-white;
 
 			.icon.small {
 				position: absolute;
@@ -1113,11 +1096,7 @@
 
 		.high-low {
 			font-size: smaller;
-			text-shadow:
-				-1px -1px 0 rgba(255, 255, 255, 0.8),
-				1px -1px 0 rgba(255, 255, 255, 0.8),
-				-1px 1px 0 rgba(255, 255, 255, 0.8),
-				1px 1px 0 rgba(255, 255, 255, 0.8);
+			@include text-outline-white;
 		}
 	}
 
@@ -1141,10 +1120,9 @@
 	}
 
 	.map-row .map {
-		height: 276px; // Match sticky header (~150px) + daily tiles (~126px)
+		height: 276px;
 		width: 100%;
 
-		// Ensure child component fills width
 		:global(main) {
 			width: 100%;
 		}
@@ -1152,7 +1130,7 @@
 
 	.main-content {
 		display: grid;
-		padding-inline: 0; // No padding on main content container
+		padding-inline: 0;
 	}
 
 	.scroll {
@@ -1160,9 +1138,10 @@
 		position: relative;
 	}
 
+	// Footer
 	footer {
-		background: #f0f0f8; // Slightly darker Ghost White
-		border-top: 1px solid #e0e0e0;
+		background: $color-ghost-white-dark;
+		border-top: 1px solid $color-border-light;
 		padding: 1.5em 1em;
 		margin-top: 1em;
 	}
@@ -1179,35 +1158,35 @@
 		font-size: 0.9em;
 		font-weight: 600;
 		margin-bottom: 0.5em;
-		color: #333;
+		color: $color-text-primary;
 	}
 
 	.footer-column ul {
-		list-style: none !important;
-		padding: 0 !important;
-		margin: 0 !important;
+		list-style: none;
+		padding: 0;
+		margin: 0;
 	}
 
 	.footer-column li {
 		margin-bottom: 0.3em;
-		padding-left: 0 !important;
-		list-style: none !important;
+		padding-left: 0;
+		list-style: none;
 	}
 
 	.footer-column li::before,
 	.footer-column li::marker {
-		content: none !important;
-		display: none !important;
+		content: none;
+		display: none;
 	}
 
 	.footer-column a {
-		color: #666;
+		color: $color-text-secondary;
 		text-decoration: none;
 		font-size: 0.85em;
 	}
 
 	.footer-column a:hover {
-		color: #268bd2;
+		color: $color-link-hover;
 		text-decoration: underline;
 	}
 
@@ -1219,16 +1198,17 @@
 		}
 	}
 
+	// Debug section (dev only)
 	.debug {
 		margin-top: 1.5em;
 		padding-top: 1em;
-		border-top: 1px solid #e0e0e0;
+		border-top: 1px solid $color-border-light;
 
 		h3 {
 			font-size: 0.9em;
 			font-weight: 600;
 			margin-bottom: 0.5em;
-			color: #333;
+			color: $color-text-primary;
 		}
 
 		.debug-item {
@@ -1238,7 +1218,7 @@
 
 		.debug-label {
 			font-family: monospace;
-			color: #666;
+			color: $color-text-secondary;
 			margin-right: 0.5em;
 		}
 
@@ -1250,7 +1230,7 @@
 			cursor: pointer;
 			font-size: 0.8em;
 			font-family: monospace;
-			color: #666;
+			color: $color-text-secondary;
 		}
 
 		pre {
@@ -1262,6 +1242,7 @@
 		}
 	}
 
+	// Hide sticky info in landscape mobile
 	@media (max-height: 500px) and (orientation: landscape) {
 		.sticky-info {
 			display: none;

@@ -1,7 +1,7 @@
+@use 'variables' as *;
+
 @import 'sanitize.css';
 @import 'sanitize.css/forms.css';
-
-/* Write your global styles here, in SCSS syntax. Variables and mixins from the src/variables.scss file are available here without importing */
 
 // Fluid centered layout
 .container,
@@ -12,8 +12,7 @@
 	margin-inline: auto;
 	padding-inline: 0;
 
-	// Add padding on mobile for touch safety
-	@media (max-width: 576px) {
+	@include mobile-only {
 		padding-inline: 1rem;
 	}
 }
@@ -26,7 +25,7 @@ html > div .full-height {
 }
 
 body {
-	background-color: #f8f8ff; // Ghost White
+	background-color: $color-ghost-white;
 }
 
 .flex-column {
@@ -34,38 +33,38 @@ body {
 	flex-direction: column;
 }
 
-// Temperature checkbox gradient animation
+// Temperature checkbox with gradient border
 .other-measurements input[type='checkbox'][name='temperature'] {
 	--gradient: linear-gradient(20deg, blue 20%, red 85%);
-	appearance: none !important;
-	-webkit-appearance: none !important;
-	margin: 0 !important;
+	appearance: none;
+	-webkit-appearance: none;
+	margin: 0;
 	font: inherit;
-	width: 1.2em !important;
-	height: 1.2em !important;
+	width: 1.2em;
+	height: 1.2em;
 	transform: translateY(-0.06em);
-	display: inline-grid !important;
-	place-content: center !important;
-	border: 3px solid transparent !important;
+	display: inline-grid;
+	place-content: center;
+	border: 3px solid transparent;
 	border-radius: 4px;
 	background:
 		linear-gradient(white, white) padding-box,
-		var(--gradient) border-box !important;
+		var(--gradient) border-box;
 }
 
 .other-measurements input[type='checkbox'][name='temperature']::before {
-	content: '' !important;
-	display: block !important;
-	width: calc(1.2em - 4px) !important;
-	height: calc(1.2em - 4px) !important;
-	border-radius: 2px !important;
-	background: linear-gradient(20deg, blue 20%, red 85%) !important;
-	box-shadow: none !important;
-	transform: scale(0) !important;
-	transition: 200ms transform ease-in-out !important;
-	pointer-events: none !important;
+	content: '';
+	display: block;
+	width: calc(1.2em - 4px);
+	height: calc(1.2em - 4px);
+	border-radius: 2px;
+	background: linear-gradient(20deg, blue 20%, red 85%);
+	box-shadow: none;
+	transform: scale(0);
+	transition: 200ms transform ease-in-out;
+	pointer-events: none;
 }
 
 .other-measurements input[type='checkbox'][name='temperature']:checked::before {
-	transform: scale(1) !important;
+	transform: scale(1);
 }

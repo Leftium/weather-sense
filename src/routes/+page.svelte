@@ -99,7 +99,7 @@
 		},
 		dewPoint: {
 			key: 'dewPoint',
-			label: 'Dew Point:',
+			label: 'Dew Pt:',
 			color: colors.dewPoint,
 			checked: plotVisibility.dewPoint,
 			bindKey: 'dewPoint',
@@ -897,7 +897,7 @@
 		display: grid;
 		grid-template-columns: 1fr 1fr;
 		column-gap: 1em;
-		max-width: 22em;
+		max-width: 24em;
 		width: 100%;
 		margin: auto;
 

@@ -260,6 +260,14 @@
 		};
 	});
 
+	// Scroll map into view when radar starts playing
+	$effect(() => {
+		if (nsWeatherData.radarPlaying && mainElement) {
+			document.documentElement.scrollTop = 0;
+			document.body.scrollTop = 0; // Fallback for Safari
+		}
+	});
+
 	onDestroy(() => {
 		if (map) {
 			map.remove();

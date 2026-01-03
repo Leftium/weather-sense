@@ -1052,16 +1052,6 @@
 		position: relative;
 		align-items: center;
 
-		&.past::after {
-			content: '';
-			position: absolute;
-			inset: 0;
-			background: $color-ghost-white;
-			opacity: 0.5;
-			pointer-events: none;
-			z-index: 10;
-		}
-
 		div.day {
 			margin: 0 0.1em;
 			text-align: right;

@@ -927,19 +927,17 @@
 				);
 			}
 
-			// Skip internal past overlay when parent handles it via row overlay
-			if (!past) {
-				marks.push(
-					Plot.rectY([0], {
-						x1: msStart,
-						x2: Math.min(msEnd, Math.max(msStart, Date.now())),
-						y1: yDomainTop,
-						y2: yDomainBottom,
-						fill: 'white',
-						opacity: 0.5,
-					}),
-				);
-			}
+			// Past overlay - mutes portion before current time
+			marks.push(
+				Plot.rectY([0], {
+					x1: msStart,
+					x2: Math.min(msEnd, Math.max(msStart, Date.now())),
+					y1: yDomainTop,
+					y2: yDomainBottom,
+					fill: 'white',
+					opacity: 0.5,
+				}),
+			);
 
 			marks.push(
 				() => htl.svg`

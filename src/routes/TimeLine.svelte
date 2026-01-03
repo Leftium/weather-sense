@@ -25,7 +25,7 @@
 		aqiEuropeToLabel,
 		aqiUsToLabel,
 		colors,
-		contrastTextColor,
+		getContrastColors,
 		MS_IN_10_MINUTES,
 		MS_IN_DAY,
 		MS_IN_HOUR,
@@ -163,18 +163,7 @@
 						prevItem.xMiddle = (Number(prevItem.x1) + x2) / 2;
 					} else {
 						const fill = currLabel.color;
-						const fillText = contrastTextColor(
-							fill,
-							false,
-							`rgba(248 248 255 / 80%)`,
-							`rgba(51 51 51 / 80%)`,
-						);
-						const fillShadow = contrastTextColor(
-							fill,
-							true,
-							`rgba(248 248 255 / 80%)`,
-							`rgba(51 51 51 / 80%)`,
-						);
+						const { fillText, fillShadow } = getContrastColors(fill);
 
 						accumulator.push({
 							ms: x2,
@@ -310,6 +299,7 @@
 
 				const fill = WMO_CODES[nextCode].color;
 
+				const { fillText, fillShadow } = getContrastColors(fill);
 				const draftItem = {
 					ms: x2,
 					weatherCode: nextCode,
@@ -319,18 +309,8 @@
 					x2,
 					xMiddle: (Number(x1) + Number(x2)) / 2,
 					fill: WMO_CODES[nextCode].color,
-					fillText: contrastTextColor(
-						fill,
-						false,
-						`rgba(248 248 255 / 80%)`,
-						`rgba(51 51 51 / 80%)`,
-					),
-					fillShadow: contrastTextColor(
-						fill,
-						true,
-						`rgba(248 248 255 / 80%)`,
-						`rgba(51 51 51 / 80%)`,
-					),
+					fillText,
+					fillShadow,
 					counts: {},
 				};
 

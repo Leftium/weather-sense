@@ -113,6 +113,18 @@ export function contrastTextColor(
 	return returnValue.toString({ format: 'hex' });
 }
 
+// Default colors for text/shadow contrast (used throughout the app)
+const CONTRAST_LIGHT = `rgba(248 248 255 / 80%)`;
+const CONTRAST_DARK = `rgba(51 51 51 / 80%)`;
+
+// Get both fillText and fillShadow colors for a given background
+export function getContrastColors(fill: string): { fillText: string; fillShadow: string } {
+	return {
+		fillText: contrastTextColor(fill, false, CONTRAST_LIGHT, CONTRAST_DARK),
+		fillShadow: contrastTextColor(fill, true, CONTRAST_LIGHT, CONTRAST_DARK),
+	};
+}
+
 const format = (num: number, width = 2) => `${Math.round(num)}`.padStart(width, '0');
 
 export function prettyLch(color: Color) {

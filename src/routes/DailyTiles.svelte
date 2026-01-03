@@ -367,7 +367,12 @@
 						</div>
 						{#if aqiLabel?.color}
 							{@const aqiTextColor = contrastTextColor(aqiLabel.color)}
-							{@const aqiShadowColor = contrastTextColor(aqiLabel.color, true)}
+							{@const aqiShadowColor = contrastTextColor(
+								aqiLabel.color,
+								true,
+								'rgba(255 255 255 / 50%)',
+								'rgba(51 51 51 / 50%)',
+							)}
 							<div
 								class="aqi-band"
 								style:background-color={aqiLabel.color}
@@ -576,9 +581,9 @@
 		align-items: center;
 		justify-content: center;
 		font-size: 10px;
-		font-weight: 600;
+		font-weight: 400;
 		color: var(--aqi-text);
-		text-shadow: 1px 1px 0 var(--aqi-shadow);
+		text-shadow: 1px 1px 1px var(--aqi-shadow);
 	}
 
 	.more-tile {

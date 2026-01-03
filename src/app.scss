@@ -43,8 +43,9 @@ body {
 }
 
 // Temperature checkbox with gradient border
+// NOTE: These colors should match TEMP_COLOR_COLD and TEMP_COLOR_HOT in util.ts
 .other-measurements input[type='checkbox'][name='temperature'] {
-	--gradient: linear-gradient(20deg, #268bd2 20%, #dc322f 85%);
+	--gradient: linear-gradient(20deg, #3366ff 20%, #ff4444 85%);
 	appearance: none;
 	-webkit-appearance: none;
 	margin: 0;
@@ -68,7 +69,7 @@ body {
 	width: calc(1.2em - 4px);
 	height: calc(1.2em - 4px);
 	border-radius: 2px;
-	background: linear-gradient(20deg, #268bd2 20%, #dc322f 85%);
+	background: linear-gradient(20deg, #3366ff 20%, #ff4444 85%);
 	box-shadow: none;
 	transform: scale(0);
 	transition: 200ms transform ease-in-out;

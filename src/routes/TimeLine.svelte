@@ -32,6 +32,8 @@
 		startOf,
 		WMO_CODES,
 		temperatureToColor,
+		TEMP_COLOR_HOT,
+		TEMP_COLOR_COLD,
 	} from '$lib/util';
 	import type { Markish } from '@observablehq/plot';
 	import dayjs from 'dayjs';
@@ -993,7 +995,7 @@
 						y: {
 							transform: makeTransformTemperature('temperature', localMin, localMax),
 						},
-						fill: '#268bd2',
+						fill: TEMP_COLOR_COLD,
 					}),
 				);
 
@@ -1003,7 +1005,7 @@
 						y: {
 							transform: makeTransformTemperature('temperature', localMin, localMax),
 						},
-						fill: '#dc322f',
+						fill: TEMP_COLOR_HOT,
 					}),
 				);
 			}

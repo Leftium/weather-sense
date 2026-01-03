@@ -1,6 +1,6 @@
 <script lang="ts">
 	import type { NsWeatherData, WeatherDataEvents } from '$lib/ns-weather-data.svelte';
-	import { colors, wmoCode, celcius, MS_IN_DAY } from '$lib/util';
+	import { colors, wmoCode, celcius, MS_IN_DAY, TEMP_COLOR_HOT, TEMP_COLOR_COLD } from '$lib/util';
 	import { getEmitter } from '$lib/emitter';
 	import { clamp, minBy, maxBy } from 'lodash-es';
 	import { fade } from 'svelte/transition';
@@ -398,7 +398,7 @@
 								text-anchor="middle"
 								font-size="10"
 								font-weight="600"
-								fill="#268bd2"
+								fill={TEMP_COLOR_COLD}
 								stroke="#f8f8ff"
 								stroke-opacity="0.85"
 								stroke-width="2"
@@ -413,7 +413,7 @@
 					<path
 						d={generateTempPath('temperatureMax')}
 						fill="none"
-						stroke="#dc322f"
+						stroke={TEMP_COLOR_HOT}
 						stroke-width="2"
 					/>
 
@@ -421,7 +421,7 @@
 					<path
 						d={generateTempPath('temperatureMin')}
 						fill="none"
-						stroke="#268bd2"
+						stroke={TEMP_COLOR_COLD}
 						stroke-width="2"
 					/>
 
@@ -429,14 +429,14 @@
 					{#each days as day, i}
 						{@const x = (i + 0.5) * TILE_WIDTH}
 						{@const y = tempToY(day.temperatureMax)}
-						<circle cx={x} cy={y} r="3" fill="#dc322f" />
+						<circle cx={x} cy={y} r="3" fill={TEMP_COLOR_HOT} />
 						<text
 							{x}
 							y={y - 8}
 							text-anchor="middle"
 							font-size="11"
 							font-weight="bold"
-							fill="#dc322f"
+							fill={TEMP_COLOR_HOT}
 							stroke="#f8f8ff"
 							stroke-opacity="0.85"
 							stroke-width="3"
@@ -455,14 +455,14 @@
 					{#each days as day, i}
 						{@const x = (i + 0.5) * TILE_WIDTH}
 						{@const y = tempToY(day.temperatureMin)}
-						<circle cx={x} cy={y} r="3" fill="#268bd2" />
+						<circle cx={x} cy={y} r="3" fill={TEMP_COLOR_COLD} />
 						<text
 							{x}
 							y={y + 14}
 							text-anchor="middle"
 							font-size="11"
 							font-weight="bold"
-							fill="#268bd2"
+							fill={TEMP_COLOR_COLD}
 							stroke="#f8f8ff"
 							stroke-opacity="0.85"
 							stroke-width="3"

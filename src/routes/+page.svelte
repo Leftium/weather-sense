@@ -7,8 +7,8 @@
 
 	import {
 		MS_IN_HOUR,
-		SOLARIZED_BLUE,
-		SOLARIZED_RED,
+		TEMP_COLOR_HOT,
+		TEMP_COLOR_COLD,
 		jsonPretty,
 		summarize,
 		humanDistance,
@@ -691,10 +691,10 @@
 						24hrs
 					</div>
 					<div class="high-low">
-						<span style:color={SOLARIZED_RED} use:toggleUnits={{ temperature: true }}>
+						<span style:color={TEMP_COLOR_HOT} use:toggleUnits={{ temperature: true }}>
 							{nsWeatherData.format('daily[2].temperatureMax', false)}
 						</span>
-						<span style:color={SOLARIZED_BLUE} use:toggleUnits={{ temperature: true }}>
+						<span style:color={TEMP_COLOR_COLD} use:toggleUnits={{ temperature: true }}>
 							{nsWeatherData.format('daily[2].temperatureMin', false)}
 						</span>
 					</div>
@@ -735,9 +735,9 @@
 							{day.compactDate}
 						</div>
 						<div class="high-low">
-							<span style:color={SOLARIZED_RED} use:toggleUnits={{ temperature: true }}
+							<span style:color={TEMP_COLOR_HOT} use:toggleUnits={{ temperature: true }}
 								>{formatTemp(day.temperatureMax)}</span
-							><span style:color={SOLARIZED_BLUE} use:toggleUnits={{ temperature: true }}
+							><span style:color={TEMP_COLOR_COLD} use:toggleUnits={{ temperature: true }}
 								>{formatTemp(day.temperatureMin)}</span
 							>
 						</div>

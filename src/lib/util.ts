@@ -12,6 +12,10 @@ export const SOLARIZED_BLUE = '#268bd2';
 export const SOLARIZED_CYAN = '#2aa198';
 export const SOLARIZED_GREEN = '#859900';
 
+// Temperature colors (softer red/blue for hot/cold)
+export const TEMP_COLOR_HOT = '#ff4444';
+export const TEMP_COLOR_COLD = '#3366ff';
+
 export const MS_IN_SECOND = 1000;
 export const MS_IN_MINUTE = 60 * MS_IN_SECOND;
 export const MS_IN_HOUR = 60 * MS_IN_MINUTE;
@@ -30,14 +34,14 @@ export const colors = {
 // Returns a color between blue (cold) and red (hot) based on temperature position in range
 export function temperatureToColor(temp: number, minTemp: number, maxTemp: number): string {
 	const range = maxTemp - minTemp;
-	if (range === 0) return SOLARIZED_BLUE;
+	if (range === 0) return TEMP_COLOR_COLD;
 
 	// Normalize to 0-1 range
 	const t = Math.max(0, Math.min(1, (temp - minTemp) / range));
 
 	// Interpolate from blue (cold) to red (hot) using colorjs.io
-	const blue = new Color(SOLARIZED_BLUE);
-	const red = new Color(SOLARIZED_RED);
+	const blue = new Color(TEMP_COLOR_COLD);
+	const red = new Color(TEMP_COLOR_HOT);
 
 	return blue.range(red, { space: 'oklch' })(t).toString({ format: 'hex' });
 }

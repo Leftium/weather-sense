@@ -636,6 +636,7 @@
 		:global(.temp-label) {
 			pointer-events: auto;
 			cursor: pointer;
+			outline: none;
 		}
 	}
 </style>

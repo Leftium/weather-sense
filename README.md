@@ -13,7 +13,6 @@ The main API used is [Open-Meteo](https://open-meteo.com/), where API keys are o
 Extra optional API keys:
 
 - https://openweathermap.org/api (For reverse geocoding)
-- https://stadiamaps.com/ (For maps on non-localhost domains)
 
 Copy `.env.example` to `.env`, add your own keys
 

@@ -1085,6 +1085,7 @@
 		border-radius: 2px 0 0 2px;
 		align-self: center; // Vertically center with plot
 		position: relative;
+		z-index: 2; // Above weather icon so icon appears to come from behind
 
 		// Subtle connector strip extending to the right
 		&::after {
@@ -1213,13 +1214,12 @@
 
 			.icon.small {
 				position: absolute;
-				right: -20px;
+				left: -20px; // Position so ~2/3 of 40px icon is visible (~13px hidden)
 				top: 50%;
-				transform: translateY(-50%);
-				z-index: -1;
+				transform: translateY(calc(-50% - 10px));
+				z-index: -1; // Below day label text and temp-gradient-bar
 				height: 40px;
 				width: 40px;
-				filter: drop-shadow(0 0 10px rgba(135, 206, 235, 0.8));
 			}
 		}
 

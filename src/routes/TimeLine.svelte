@@ -890,7 +890,7 @@
 						y: {
 							transform: makeTransformTemperature(),
 						},
-						fill: 'blue',
+						fill: '#268bd2',
 					}),
 				);
 
@@ -900,7 +900,7 @@
 						y: {
 							transform: makeTransformTemperature(),
 						},
-						fill: 'red',
+						fill: '#dc322f',
 					}),
 				);
 			}
@@ -937,8 +937,8 @@
 				() => htl.svg`
                   <defs>
                     <linearGradient id="gradient" gradientTransform="rotate(90)">
-                      <stop offset="0%" stop-color="red" />
-                      <stop offset="100%" stop-color="blue" />
+                      <stop offset="0%" stop-color="#dc322f" />
+                      <stop offset="100%" stop-color="#268bd2" />
                     </linearGradient>
                   </defs>`,
 			);

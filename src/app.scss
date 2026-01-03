@@ -42,7 +42,7 @@ body {
 
 // Temperature checkbox with gradient border
 .other-measurements input[type='checkbox'][name='temperature'] {
-	--gradient: linear-gradient(20deg, blue 20%, red 85%);
+	--gradient: linear-gradient(20deg, #268bd2 20%, #dc322f 85%);
 	appearance: none;
 	-webkit-appearance: none;
 	margin: 0;
@@ -65,7 +65,7 @@ body {
 	width: calc(1.2em - 4px);
 	height: calc(1.2em - 4px);
 	border-radius: 2px;
-	background: linear-gradient(20deg, blue 20%, red 85%);
+	background: linear-gradient(20deg, #268bd2 20%, #dc322f 85%);
 	box-shadow: none;
 	transform: scale(0);
 	transition: 200ms transform ease-in-out;

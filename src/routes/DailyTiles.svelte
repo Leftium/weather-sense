@@ -390,7 +390,8 @@
 								font-size="10"
 								font-weight="600"
 								fill="#268bd2"
-								stroke="white"
+								stroke="#f8f8ff"
+								stroke-opacity="0.85"
 								stroke-width="2"
 								paint-order="stroke fill"
 							>
@@ -400,24 +401,35 @@
 					{/each}
 
 					<!-- High temperature line -->
-					<path d={generateTempPath('temperatureMax')} fill="none" stroke="red" stroke-width="2" />
+					<path
+						d={generateTempPath('temperatureMax')}
+						fill="none"
+						stroke="#dc322f"
+						stroke-width="2"
+					/>
 
 					<!-- Low temperature line -->
-					<path d={generateTempPath('temperatureMin')} fill="none" stroke="blue" stroke-width="2" />
+					<path
+						d={generateTempPath('temperatureMin')}
+						fill="none"
+						stroke="#268bd2"
+						stroke-width="2"
+					/>
 
 					<!-- High temperature dots and labels -->
 					{#each days as day, i}
 						{@const x = (i + 0.5) * TILE_WIDTH}
 						{@const y = tempToY(day.temperatureMax)}
-						<circle cx={x} cy={y} r="4" fill="red" />
+						<circle cx={x} cy={y} r="4" fill="#dc322f" />
 						<text
 							{x}
 							y={y - 8}
 							text-anchor="middle"
 							font-size="11"
 							font-weight="bold"
-							fill="red"
-							stroke="white"
+							fill="#dc322f"
+							stroke="#f8f8ff"
+							stroke-opacity="0.85"
 							stroke-width="3"
 							paint-order="stroke fill"
 							class="temp-label"
@@ -434,15 +446,16 @@
 					{#each days as day, i}
 						{@const x = (i + 0.5) * TILE_WIDTH}
 						{@const y = tempToY(day.temperatureMin)}
-						<circle cx={x} cy={y} r="4" fill="blue" />
+						<circle cx={x} cy={y} r="4" fill="#268bd2" />
 						<text
 							{x}
 							y={y + 14}
 							text-anchor="middle"
 							font-size="11"
 							font-weight="bold"
-							fill="blue"
-							stroke="white"
+							fill="#268bd2"
+							stroke="#f8f8ff"
+							stroke-opacity="0.85"
 							stroke-width="3"
 							paint-order="stroke fill"
 							class="temp-label"

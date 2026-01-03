@@ -25,12 +25,13 @@
 </script>
 
 <div class="container-fluid flex-column {mode}" bind:offsetWidth bind:offsetHeight>
-	<center
-		><a href="/">Back to WeatherSense</a> |
+	<nav>
+		<a href="/">← Back to WeatherSense</a>
+		<span class="separator">|</span>
 		<a href="https://blog.leftium.com/2024/07/wmo-codes.html">About this Table</a>
-		|
-		<button class="outline secondary" {onclick}>Transpose</button></center
-	>
+		<span class="separator">|</span>
+		<button {onclick}>Transpose</button>
+	</nav>
 	{#if mode}
 		<div class="grid-container">
 			<div class="wmo-grid">
@@ -46,7 +47,6 @@
 						<div class="label">
 							{wmo.description}
 						</div>
-						{wmo.picoColor.replace('.', '-')}
 					</article>
 				{/each}
 				{#each ['No Precipitation', 'Rain', 'Freezing Rain', 'Snow', 'Thunder Storm'] as title, index}
@@ -62,7 +62,9 @@
 </div>
 
 <style lang="scss">
-	// Color values (formerly from PicoCSS)
+	@use '../../variables' as *;
+
+	// Color values for dividers
 	$amber-200: #ffbf00;
 	$grey-450: #808080;
 	$blue-550: #2060df;
@@ -70,18 +72,48 @@
 	$fuchsia-450: #ed2aac;
 	$pink-450: #f42c6f;
 
-	article {
-		padding: 0;
+	nav {
+		display: flex;
+		justify-content: center;
+		align-items: center;
+		gap: 0.5em;
+		padding: 0.75rem 1rem;
+		background: white;
+		border-bottom: 1px solid $color-border-light;
+
+		a {
+			color: $color-link-hover;
+			text-decoration: none;
+
+			&:hover {
+				text-decoration: underline;
+			}
+		}
+
+		.separator {
+			color: $color-border-light;
+		}
 	}
 
 	button {
-		padding: 0.4em 0.7em;
-		line-height: 0.8;
+		padding: 0.4em 0.8em;
+		font-size: 0.9em;
+		background: $color-link-hover;
+		color: white;
+		border: none;
+		border-radius: 4px;
+		cursor: pointer;
+		transition: background 0.15s;
+
+		&:hover {
+			background: darken($color-link-hover, 10%);
+		}
 	}
 
 	.container-fluid {
 		height: 100vh;
 		padding: 0;
+		background: $color-ghost-white;
 	}
 
 	.grid-container {
@@ -90,22 +122,19 @@
 
 	.wmo-grid {
 		display: grid;
-
 		justify-content: center;
-
 		flex-grow: 1;
-
 		gap: 0.3em;
 
 		.wmo-item {
 			position: relative;
-
 			margin: 0;
-
 			display: flex;
 			flex-direction: column;
 			justify-content: center;
 			align-items: center;
+			border-radius: 6px;
+			box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
 
 			img {
 				width: 50%;
@@ -115,19 +144,21 @@
 		.ghost-item {
 			border: 1px dashed #d4d4d4;
 			box-shadow: none;
+			background: transparent;
 		}
 
 		.code {
 			position: absolute;
 			top: 0.3em;
 			left: 0.5em;
-
 			font-weight: bold;
 		}
 
 		.label {
 			font-weight: bold;
 			text-align: center;
+			padding: 0 0.25em;
+			font-size: 0.85em;
 		}
 	}
 
@@ -187,16 +218,13 @@
 				font-size: 1.2em;
 				font-weight: bold;
 				margin-bottom: 0;
-
 				padding: 1em 0;
-
 				writing-mode: vertical-lr;
 				grid-row: 1 / 4;
-
 				text-align: center;
 				margin-left: 1em;
-
 				color: white;
+				border-radius: 6px;
 			}
 
 			.divider-0 {
@@ -308,16 +336,17 @@
 				font-size: 1.2em;
 				font-weight: bold;
 				margin-bottom: 0;
-
 				grid-column: 1 / 4;
-
 				align-self: end;
 				width: 100%;
 				height: 2em;
 				text-align: center;
 				margin-top: 2em;
-
 				color: white;
+				border-radius: 6px;
+				display: flex;
+				align-items: center;
+				justify-content: center;
 			}
 
 			.divider-0 {

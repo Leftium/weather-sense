@@ -41,10 +41,25 @@
 	}
 
 	// Calculate max tiles that can fit based on viewport width
+	// Pico CSS container max-widths at breakpoints
+	function getContainerWidth() {
+		if (typeof window === 'undefined') return 350;
+		const vw = window.innerWidth;
+		// Pico breakpoints: container max-width values
+		if (vw >= 1536) return 1450;
+		if (vw >= 1280) return 1200;
+		if (vw >= 1024) return 950;
+		if (vw >= 768) return 700;
+		if (vw >= 576) return 510;
+		// Below 576px: full width minus padding (2 * 1rem = 32px)
+		return vw - 32;
+	}
+
 	function calcMaxTiles() {
 		if (typeof window === 'undefined') return 5;
-		const availableWidth = window.innerWidth - 25;
-		return Math.max(3, Math.floor(availableWidth / 70));
+		const containerWidth = getContainerWidth();
+		const moreButtonWidth = forecastDaysVisible < maxForecastDays ? 16 : 0;
+		return Math.max(3, Math.floor((containerWidth - moreButtonWidth) / 70));
 	}
 
 	// Default to 3 for SSR, update on mount

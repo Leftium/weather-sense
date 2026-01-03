@@ -800,7 +800,7 @@
 		top: 0;
 		left: 0;
 		width: 100%;
-		height: 138px; // Covers daily tiles area (tiles are ~130px) plus padding below
+		height: 126px; // Covers daily tiles area (tiles are 114px) plus margin below
 		background: var(--sky-gradient, linear-gradient(135deg, #eee 0%, #a8d8f0 50%, #6bb3e0 100%));
 		background-attachment: fixed;
 		pointer-events: none;

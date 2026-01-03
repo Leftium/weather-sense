@@ -1151,6 +1151,12 @@
 		footer {
 			padding-right: 1rem;
 		}
+
+		// Timeline plots extend edge-to-edge (scrub works well now)
+		.hourly-row,
+		.day-row {
+			margin-right: -1rem;
+		}
 	}
 
 	// Daily rows - span all columns, use subgrid

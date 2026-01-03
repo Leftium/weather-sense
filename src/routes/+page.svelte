@@ -542,6 +542,12 @@
 	});
 </script>
 
+<div class="map-row container">
+	<div class="map">
+		<RadarMapLibre {nsWeatherData} />
+	</div>
+</div>
+
 <div class="pico container sticky-info" style:--sky-gradient={skyGradient} style:color={textColor}>
 	<div class="name">
 		{nsWeatherData.name}
@@ -635,12 +641,6 @@
 				(forecastDaysVisible =
 					forecastDaysVisible === 3 ? 5 : Math.min(forecastDaysVisible * 2, FORECAST_DAYS))}
 		/>
-
-		<div class="map-row">
-			<div class="map">
-				<RadarMapLibre {nsWeatherData} />
-			</div>
-		</div>
 
 		<div class="timeline-grid">
 			<div class="hourly-row pico">

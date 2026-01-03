@@ -21,6 +21,7 @@
 		colorsDelta,
 		contrastTextColor,
 		celcius,
+		temperatureToColor,
 	} from '$lib/util.js';
 	import RadarMapLibre from './RadarMapLibre.svelte';
 
@@ -666,6 +667,19 @@
 
 		<div class="timeline-grid">
 			<div class="hourly-row">
+				<div
+					class="temp-gradient-bar"
+					style:--color-high={temperatureToColor(
+						nsWeatherData.daily?.[2]?.temperatureMax ?? 0,
+						nsWeatherData.temperatureStats.minTemperatureOnly,
+						nsWeatherData.temperatureStats.maxTemperature,
+					)}
+					style:--color-low={temperatureToColor(
+						nsWeatherData.daily?.[2]?.temperatureMin ?? 0,
+						nsWeatherData.temperatureStats.minTemperatureOnly,
+						nsWeatherData.temperatureStats.maxTemperature,
+					)}
+				></div>
 				<div class="day-label">
 					<div class="day today">
 						<img
@@ -700,7 +714,16 @@
 			{#each (nsWeatherData.daily || []).filter((day) => day.fromToday > -2 && day.fromToday < forecastDaysVisible) as day, index}
 				{@const past = day.fromToday < 0}
 				{@const today = day.fromToday === 0}
+				{@const globalMin = nsWeatherData.temperatureStats.minTemperatureOnly}
+				{@const globalMax = nsWeatherData.temperatureStats.maxTemperature}
+				{@const colorHigh = temperatureToColor(day.temperatureMax, globalMin, globalMax)}
+				{@const colorLow = temperatureToColor(day.temperatureMin, globalMin, globalMax)}
 				<div class={['day-row', 'pico', { past }]} transition:slide={{ duration: 1000 }}>
+					<div
+						class={['temp-gradient-bar', { today }]}
+						style:--color-high={colorHigh}
+						style:--color-low={colorLow}
+					></div>
 					<div class="day-label">
 						<div class={['day', { today }]}>
 							<img
@@ -997,11 +1020,39 @@
 	// Timeline grid - parent container for hourly and daily sections
 	.timeline-grid {
 		display: grid;
-		grid-template-columns: auto auto minmax(0, 1fr);
+		grid-template-columns: 6px auto auto minmax(0, 1fr);
 		grid-row-gap: 0.1em;
 		grid-column-gap: 0.2em;
 		margin-bottom: 0.2em;
 		background: $color-ghost-white;
+	}
+
+	// Temperature gradient bar - shows day's temp range relative to global range
+	.temp-gradient-bar {
+		grid-column: 1;
+		width: 6px;
+		height: 64px; // Match TimeLine plot height (without x-axis)
+		background: linear-gradient(to bottom, var(--color-high), var(--color-low));
+		border-radius: 2px 0 0 2px;
+		align-self: center; // Vertically center with plot
+		position: relative;
+
+		// Subtle connector strip extending to the right
+		&::after {
+			content: '';
+			position: absolute;
+			top: 0;
+			left: 100%;
+			width: 100vw;
+			height: 100%;
+			background: rgba(0, 0, 0, 0.03);
+			pointer-events: none;
+		}
+	}
+
+	.hourly-row .temp-gradient-bar,
+	.temp-gradient-bar.today {
+		height: 104px; // Match TimeLine plot height (with x-axis)
 	}
 
 	.timeline-divider {
@@ -1022,7 +1073,7 @@
 		margin-bottom: 0.5em;
 
 		.day-label {
-			grid-column: span 2;
+			grid-column: 2 / span 2;
 			display: flex;
 			flex-direction: column;
 			align-items: flex-end;
@@ -1030,7 +1081,7 @@
 		}
 
 		.timeline {
-			grid-column: 3;
+			grid-column: 4;
 		}
 
 		div.day {
@@ -1070,7 +1121,7 @@
 		.day-label {
 			display: grid;
 			grid-template-columns: subgrid;
-			grid-column: span 2;
+			grid-column: 2 / span 2;
 
 			.day {
 				grid-column: span 2;
@@ -1085,6 +1136,10 @@
 					text-align: right;
 				}
 			}
+		}
+
+		.timeline {
+			grid-column: 4;
 		}
 	}
 

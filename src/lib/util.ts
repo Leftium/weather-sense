@@ -27,6 +27,21 @@ export const colors = {
 	temperature: 'url(#gradient)', // picoColors.blue[950],
 };
 
+// Returns a color between blue (cold) and red (hot) based on temperature position in range
+export function temperatureToColor(temp: number, minTemp: number, maxTemp: number): string {
+	const range = maxTemp - minTemp;
+	if (range === 0) return SOLARIZED_BLUE;
+
+	// Normalize to 0-1 range
+	const t = Math.max(0, Math.min(1, (temp - minTemp) / range));
+
+	// Interpolate from blue (cold) to red (hot) using colorjs.io
+	const blue = new Color(SOLARIZED_BLUE);
+	const red = new Color(SOLARIZED_RED);
+
+	return blue.range(red, { space: 'oklch' })(t).toString({ format: 'hex' });
+}
+
 export function jsonPretty(json: any) {
 	return JSON5.stringify(json, { space: 4, quote: '', replacer });
 }

@@ -172,6 +172,7 @@ export function makeNsWeatherData() {
 		hourly: AirQuality[];
 	} = $state(null);
 
+	// Min/max including dew point (for y-axis scaling to fit all temp-like data)
 	const minTemperature = $derived.by(() => {
 		return !omForecast
 			? 0
@@ -189,7 +190,20 @@ export function makeNsWeatherData() {
 
 	const temperatureRange = $derived(maxTemperature - minTemperature);
 
-	const temperatureStats = $derived({ minTemperature, maxTemperature, temperatureRange });
+	// Temperature-only min (for gradient coloring - excludes dew point)
+	const minTemperatureOnly = $derived.by(() => {
+		return !omForecast
+			? 0
+			: (minBy(omForecast.hourly, 'temperature')?.temperature ?? Number.MAX_VALUE);
+	});
+
+	const temperatureStats = $derived({
+		minTemperature,
+		maxTemperature,
+		temperatureRange,
+		// Temperature-only range for gradient coloring
+		minTemperatureOnly,
+	});
 
 	const dataAirQuality = $derived.by(() => {
 		gg('dataAirQuality:derive');

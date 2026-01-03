@@ -31,6 +31,7 @@
 		MS_IN_MINUTE,
 		startOf,
 		WMO_CODES,
+		temperatureToColor,
 	} from '$lib/util';
 	import type { Markish } from '@observablehq/plot';
 	import dayjs from 'dayjs';
@@ -91,6 +92,9 @@
 
 	const msStart = $derived(+dayjs.tz(start, nsWeatherData.timezone).startOf('hour'));
 	const msEnd = $derived(msStart + hours * MS_IN_HOUR);
+
+	// Unique gradient ID for this TimeLine instance
+	const gradientId = $derived(`temp-gradient-${msStart}`);
 
 	let div: HTMLDivElement;
 	let clientWidth: number = $state(0);
@@ -385,6 +389,11 @@
 				};
 			});
 
+			// Track actual min/max temps (for gradient coloring)
+			let actualLowTemp = Number.MAX_VALUE;
+			let actualHighTemp = Number.MIN_VALUE;
+
+			// Track positions for dot markers
 			let low = {
 				ms: 0,
 				temperature: Number.MAX_VALUE,
@@ -392,29 +401,74 @@
 
 			let high = {
 				ms: 0,
-				temperature: 0,
+				temperature: Number.MIN_VALUE,
 			};
 
-			forEachRight(metrics, (item, index) => {
+			// Find actual min/max temperatures and their positions
+			metrics.forEach((item) => {
 				if (item.temperature > high.temperature) {
 					high = {
 						ms: item.ms,
 						temperature: item.temperature,
 					};
 				}
+				if (item.temperature > actualHighTemp) {
+					actualHighTemp = item.temperature;
+				}
 
-				if (item.temperature < low.temperature || (ghostTracker && low.ms >= high.ms)) {
+				if (item.temperature < low.temperature) {
 					low = {
 						ms: item.ms,
 						temperature: item.temperature,
 					};
 				}
+				if (item.temperature < actualLowTemp) {
+					actualLowTemp = item.temperature;
+				}
+			});
+
+			// For ghostTracker mode, try to place low dot BEFORE high dot
+			// (typical daily pattern: coolest in morning → warmest in afternoon)
+			// But keep actualLowTemp/actualHighTemp unchanged for gradient coloring
+			if (ghostTracker && low.ms > high.ms) {
+				// Try to find the lowest temp that occurs before the high
+				const itemsBeforeHigh = metrics.filter((item) => item.ms < high.ms);
+
+				if (itemsBeforeHigh.length > 0) {
+					// Found items before high - use the lowest one
+					const lowBeforeHigh = itemsBeforeHigh.reduce(
+						(min, item) => (item.temperature < min.temperature ? item : min),
+						itemsBeforeHigh[0],
+					);
+					low = lowBeforeHigh;
+				}
+				// Otherwise keep the actual low position (after the high)
+			}
+
+			// Calculate local min/max across all temperature-like fields for y-axis scaling
+			let localTempMin = Number.MAX_VALUE;
+			let localTempMax = Number.MIN_VALUE;
+
+			metrics.forEach((item) => {
+				// Include temperature
+				if (item.temperature < localTempMin) localTempMin = item.temperature;
+				if (item.temperature > localTempMax) localTempMax = item.temperature;
+
+				// Include dew point
+				if (item.dewPoint < localTempMin) localTempMin = item.dewPoint;
+				if (item.dewPoint > localTempMax) localTempMax = item.dewPoint;
+
+				// Add other temperature-like fields here in the future
 			});
 
 			return {
 				metrics,
 				low,
 				high,
+				actualLowTemp,
+				actualHighTemp,
+				localTempMin,
+				localTempMax,
 				rain,
 				precipitationProbability,
 				codes,
@@ -530,10 +584,14 @@
 		};
 	}
 
-	function makeTransformTemperature(keyName = 'temperature') {
+	function makeTransformTemperature(keyName = 'temperature', localMin?: number, localMax?: number) {
 		return function (da: any[]) {
-			const { minTemperature, temperatureRange } = nsWeatherData.temperatureStats;
-			return da.map((d) => (100 * (d[keyName] - minTemperature)) / temperatureRange);
+			// Use local (day's) range if provided, otherwise fall back to global
+			const minTemp = localMin ?? nsWeatherData.temperatureStats.minTemperature;
+			const maxTemp = localMax ?? nsWeatherData.temperatureStats.maxTemperature;
+			const range = maxTemp - minTemp;
+			if (range === 0) return da.map(() => 50); // Flat line in middle if no range
+			return da.map((d) => (100 * (d[keyName] - minTemp)) / range);
 		};
 	}
 
@@ -861,6 +919,39 @@
 				);
 			}
 
+			// Local (day's) temperature range for y-axis normalization (includes all temp-like fields)
+			const localMin = dataForecast.localTempMin;
+			const localMax = dataForecast.localTempMax;
+
+			// Calculate gradient colors based on where day's temps fall in global TEMPERATURE range
+			// Use temperature-only range (excludes dew point) so cold days show blue
+			// Use actualHighTemp/actualLowTemp (not affected by ghostTracker dot positioning)
+			const { minTemperatureOnly: globalMin, maxTemperature: globalMax } =
+				nsWeatherData.temperatureStats;
+
+			// Colors for temperature high/low based on global temp range
+			const colorAtHigh = temperatureToColor(dataForecast.actualHighTemp, globalMin, globalMax);
+			const colorAtLow = temperatureToColor(dataForecast.actualLowTemp, globalMin, globalMax);
+
+			// Calculate where temp high/low actually sit on the y-axis (scaled to localMin/localMax)
+			// Y-axis: 0% = top = localMax, 100% = bottom = localMin
+			const localRange = localMax - localMin;
+			const highOffset =
+				localRange > 0 ? ((localMax - dataForecast.actualHighTemp) / localRange) * 100 : 0;
+			const lowOffset =
+				localRange > 0 ? ((localMax - dataForecast.actualLowTemp) / localRange) * 100 : 100;
+
+			// Define gradient before using it
+			marks.push(
+				() => htl.svg`
+                  <defs>
+                    <linearGradient id="${gradientId}" gradientTransform="rotate(90)">
+                      <stop offset="${highOffset}%" stop-color="${colorAtHigh}" />
+                      <stop offset="${lowOffset}%" stop-color="${colorAtLow}" />
+                    </linearGradient>
+                  </defs>`,
+			);
+
 			if (draw.dewPoint) {
 				marks.push(
 					// The dew point plotted as line:
@@ -869,7 +960,7 @@
 
 						x: 'ms',
 						y: {
-							transform: makeTransformTemperature('dewPoint'),
+							transform: makeTransformTemperature('dewPoint', localMin, localMax),
 						},
 
 						stroke: colors.dewPoint,
@@ -886,9 +977,9 @@
 						strokeOpacity: 1,
 						x: 'ms',
 						y: {
-							transform: makeTransformTemperature(),
+							transform: makeTransformTemperature('temperature', localMin, localMax),
 						},
-						stroke: colors.temperature,
+						stroke: `url(#${gradientId})`,
 						strokeWidth: 2,
 					}),
 				);
@@ -900,7 +991,7 @@
 					Plot.dot([dataForecast.low], {
 						x: 'ms',
 						y: {
-							transform: makeTransformTemperature(),
+							transform: makeTransformTemperature('temperature', localMin, localMax),
 						},
 						fill: '#268bd2',
 					}),
@@ -910,7 +1001,7 @@
 					Plot.dot([dataForecast.high], {
 						x: 'ms',
 						y: {
-							transform: makeTransformTemperature(),
+							transform: makeTransformTemperature('temperature', localMin, localMax),
 						},
 						fill: '#dc322f',
 					}),
@@ -941,16 +1032,6 @@
 					fill: 'white',
 					opacity: 0.5,
 				}),
-			);
-
-			marks.push(
-				() => htl.svg`
-                  <defs>
-                    <linearGradient id="gradient" gradientTransform="rotate(90)">
-                      <stop offset="0%" stop-color="#dc322f" />
-                      <stop offset="100%" stop-color="#268bd2" />
-                    </linearGradient>
-                  </defs>`,
 			);
 		}
 

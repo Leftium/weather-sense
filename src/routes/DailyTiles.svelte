@@ -43,7 +43,7 @@
 	// Calculate max tiles that can fit based on viewport width
 	function calcMaxTiles() {
 		if (typeof window === 'undefined') return 5;
-		const availableWidth = window.innerWidth - 40;
+		const availableWidth = window.innerWidth - 25;
 		return Math.max(3, Math.floor(availableWidth / 70));
 	}
 

@@ -420,7 +420,7 @@
 					{#each days as day, i}
 						{@const x = (i + 0.5) * TILE_WIDTH}
 						{@const y = tempToY(day.temperatureMax)}
-						<circle cx={x} cy={y} r="4" fill="#dc322f" />
+						<circle cx={x} cy={y} r="3" fill="#dc322f" />
 						<text
 							{x}
 							y={y - 8}
@@ -446,7 +446,7 @@
 					{#each days as day, i}
 						{@const x = (i + 0.5) * TILE_WIDTH}
 						{@const y = tempToY(day.temperatureMin)}
-						<circle cx={x} cy={y} r="4" fill="#268bd2" />
+						<circle cx={x} cy={y} r="3" fill="#268bd2" />
 						<text
 							{x}
 							y={y + 14}

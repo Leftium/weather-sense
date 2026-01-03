@@ -669,25 +669,31 @@
 			<div class="hourly-row">
 				<div
 					class="temp-gradient-bar"
-					style:--color-high={temperatureToColor(
-						nsWeatherData.daily?.[2]?.temperatureMax ?? 0,
-						nsWeatherData.temperatureStats.minTemperatureOnly,
-						nsWeatherData.temperatureStats.maxTemperature,
-					)}
-					style:--color-low={temperatureToColor(
-						nsWeatherData.daily?.[2]?.temperatureMin ?? 0,
-						nsWeatherData.temperatureStats.minTemperatureOnly,
-						nsWeatherData.temperatureStats.maxTemperature,
-					)}
+					style:--color-high={nsWeatherData.daily?.[2]
+						? temperatureToColor(
+								nsWeatherData.daily[2].temperatureMax,
+								nsWeatherData.temperatureStats.minTemperatureOnly,
+								nsWeatherData.temperatureStats.maxTemperature,
+							)
+						: '#ccc'}
+					style:--color-low={nsWeatherData.daily?.[2]
+						? temperatureToColor(
+								nsWeatherData.daily[2].temperatureMin,
+								nsWeatherData.temperatureStats.minTemperatureOnly,
+								nsWeatherData.temperatureStats.maxTemperature,
+							)
+						: '#ccc'}
 				></div>
 				<div class="day-label">
 					<div class="day today">
-						<img
-							class="icon small"
-							src={wmoCode(nsWeatherData.displayWeatherCode).icon}
-							title={wmoCode(nsWeatherData.displayWeatherCode).description}
-							alt=""
-						/>
+						{#if wmoCode(nsWeatherData.displayWeatherCode).icon}
+							<img
+								class="icon small"
+								src={wmoCode(nsWeatherData.displayWeatherCode).icon}
+								title={wmoCode(nsWeatherData.displayWeatherCode).description}
+								alt=""
+							/>
+						{/if}
 						24hrs
 					</div>
 					<div class="high-low">

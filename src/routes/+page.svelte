@@ -1129,7 +1129,7 @@
 	}
 
 	.map-row .map {
-		height: 368px;
+		height: 276px; // Match sticky header (~150px) + daily tiles (~126px)
 	}
 
 	.container {
@@ -1240,12 +1240,6 @@
 			white-space: pre-wrap;
 			word-break: break-all;
 			overflow-x: auto;
-		}
-	}
-
-	@media (max-width: 768px) {
-		.map-row .map {
-			height: 290px;
 		}
 	}
 

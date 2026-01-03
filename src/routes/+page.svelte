@@ -1037,25 +1037,21 @@
 			transform: scale(1);
 		}
 
-		// "Show all" checkbox - liquid glass style with outset look
+		// "Show all" checkbox - subtle beveled glass style matching forecast buttons
 		input[type='checkbox'][name='showAll'] {
-			background: rgba(255, 255, 255, 0.25);
+			background: rgba(255, 255, 255, 0.3);
 			backdrop-filter: blur(4px);
-			border: 2px solid;
-			// Outset bevel: light top/left, dark bottom/right
-			border-color: rgba(255, 255, 255, 0.5) rgba(0, 0, 0, 0.15) rgba(0, 0, 0, 0.2)
-				rgba(255, 255, 255, 0.5);
+			border: 1px solid;
+			border-color: rgba(255, 255, 255, 0.35) rgba(0, 0, 0, 0.1) rgba(0, 0, 0, 0.12)
+				rgba(255, 255, 255, 0.35);
 			box-shadow:
-				inset 1px 1px 0 rgba(255, 255, 255, 0.3),
-				inset -1px -1px 0 rgba(0, 0, 0, 0.1),
-				0 2px 4px rgba(0, 0, 0, 0.15);
+				inset 1px 1px 0 rgba(255, 255, 255, 0.2),
+				inset -1px -1px 0 rgba(0, 0, 0, 0.05);
 		}
 
 		input[type='checkbox'][name='showAll']::before {
-			background: linear-gradient(135deg, rgba(80, 80, 80, 0.6) 0%, rgba(80, 80, 80, 0.3) 100%);
-			box-shadow:
-				inset 1px 1px 2px rgba(255, 255, 255, 0.4),
-				0 1px 3px rgba(0, 0, 0, 0.2);
+			background: rgba(0, 0, 0, 0.2);
+			box-shadow: inset 1px 1px 1px rgba(255, 255, 255, 0.2);
 		}
 
 		// Temperature checkbox styles in app.scss (global) to prevent Svelte stripping ::before

@@ -7,6 +7,7 @@
 
 	import {
 		MS_IN_HOUR,
+		MS_IN_DAY,
 		TEMP_COLOR_HOT,
 		TEMP_COLOR_COLD,
 		jsonPretty,
@@ -261,7 +262,6 @@
 	const TARGET_COLOR_DELTA_NORMAL = 0.008; // Normal color change per frame
 	const MIN_TIME_STEP = 30000; // Minimum 30 seconds per frame
 	const MAX_TIME_STEP = 3600000; // Maximum 1 hour per frame
-	const MS_IN_DAY = 24 * 60 * 60 * 1000;
 
 	// Calculate initial sky colors based on timezone from request
 	// Estimate sunrise ~6am and sunset ~6pm local time
@@ -781,7 +781,7 @@
 					groupIcons,
 					maxBy,
 				)}
-				<div class={['day-row', 'pico', { past }]} transition:slide={{ duration: 1000 }}>
+				<div class={['day-row', { past }]} transition:slide={{ duration: 1000 }}>
 					<div
 						class={['temp-gradient-bar', { today }]}
 						style:--color-high={colorHigh}

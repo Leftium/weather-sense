@@ -7,10 +7,7 @@ import { gg } from '@leftium/gg';
 import picoColors from '$lib/pico-color-palette.json';
 import dayjs from 'dayjs';
 
-export const SOLARIZED_RED = '#dc322f';
 export const SOLARIZED_BLUE = '#268bd2';
-export const SOLARIZED_CYAN = '#2aa198';
-export const SOLARIZED_GREEN = '#859900';
 
 // Temperature colors (softer red/blue for hot/cold)
 export const TEMP_COLOR_HOT = '#ff4444';

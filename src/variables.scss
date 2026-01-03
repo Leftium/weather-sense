@@ -29,9 +29,3 @@ $breakpoint-tablet: 768px;
 		@content;
 	}
 }
-
-@mixin tablet-up {
-	@media (min-width: $breakpoint-mobile + 1) {
-		@content;
-	}
-}

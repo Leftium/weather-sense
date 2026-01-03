@@ -56,6 +56,11 @@
 
 	let forecastDaysVisible = $state(3);
 	let showMoreOptions = $state(false);
+
+	// Actual max forecast days based on available data (daily getter removes incomplete last day)
+	const maxForecastDays = $derived(
+		Math.max(0, ...(nsWeatherData.daily?.map((d) => d.fromToday + 1) ?? [FORECAST_DAYS])),
+	);
 	let isWideCollapsed = $state(false); // 480px+ : 3 columns for collapsed
 	let isWideExpanded = $state(false); // 700px+ : 4 columns for expanded
 
@@ -700,9 +705,9 @@
 				{tileGradient}
 				{textColor}
 				{textShadowColor}
-				maxForecastDays={FORECAST_DAYS}
-				onMore={() => (forecastDaysVisible = Math.min(forecastDaysVisible + 2, FORECAST_DAYS))}
-				onAll={() => (forecastDaysVisible = FORECAST_DAYS)}
+				{maxForecastDays}
+				onMore={() => (forecastDaysVisible = Math.min(forecastDaysVisible + 2, maxForecastDays))}
+				onAll={() => (forecastDaysVisible = maxForecastDays)}
 				onReset={() => (forecastDaysVisible = 3)}
 			/>
 		</div>

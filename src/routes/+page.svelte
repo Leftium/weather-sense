@@ -636,6 +636,12 @@
 					forecastDaysVisible === 3 ? 5 : Math.min(forecastDaysVisible * 2, FORECAST_DAYS))}
 		/>
 
+		<div class="map-row">
+			<div class="map">
+				<RadarMapLibre {nsWeatherData} />
+			</div>
+		</div>
+
 		<div class="timeline-grid">
 			<div class="hourly-row pico">
 				<div class="day-label">
@@ -659,12 +665,6 @@
 				</div>
 				<div class="timeline today">
 					<TimeLine {nsWeatherData} {plotVisibility} start={Date.now() - 2 * MS_IN_HOUR} />
-				</div>
-			</div>
-
-			<div class="map-row">
-				<div class="map">
-					<RadarMapLibre {nsWeatherData} />
 				</div>
 			</div>
 
@@ -890,6 +890,12 @@
 		width: 100%;
 		margin: auto;
 
+		> div {
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
 		input {
 			margin: 0;
 		}
@@ -944,7 +950,8 @@
 
 	@media (width < 480px) {
 		.other-measurements {
-			max-width: 18em;
+			max-width: 100%;
+			padding-inline: 1em;
 		}
 	}
 
@@ -1012,16 +1019,10 @@
 
 	// Map row - spans all columns, map goes in timeline column
 	.map-row {
-		grid-column: 1 / -1;
+		width: 100%;
 
 		> .map {
 			width: 100%;
-		}
-	}
-
-	@media (max-width: 575px) {
-		.map-row {
-			padding-left: 1rem;
 		}
 	}
 

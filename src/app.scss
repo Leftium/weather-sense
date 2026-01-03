@@ -33,6 +33,8 @@ body {
 		Roboto,
 		sans-serif;
 	background-color: $color-ghost-white;
+	user-select: none;
+	-webkit-user-select: none;
 }
 
 .flex-column {

@@ -90,12 +90,12 @@
 		});
 
 		map
-			.addControl(new maplibregl.FullscreenControl({ container: mainElement }))
+			.addControl(geolocateControl, 'bottom-right')
+			.addControl(new maplibregl.FullscreenControl({ container: mainElement }), 'bottom-right')
 			.addControl(new maplibregl.GlobeControl(), 'top-left')
-			.addControl(new maplibregl.NavigationControl(), 'bottom-right')
+			.addControl(new maplibregl.NavigationControl(), 'top-right')
 			.addControl(new maplibregl.ScaleControl({ unit: 'imperial' }))
-			.addControl(new maplibregl.ScaleControl())
-			.addControl(geolocateControl, 'top-right');
+			.addControl(new maplibregl.ScaleControl());
 
 		map.on('load', () => {
 			// Initialize radar layers if data is already available

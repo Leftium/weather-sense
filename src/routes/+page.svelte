@@ -519,6 +519,13 @@
 		// Enable saving preferences after loading
 		prefsLoaded = true;
 
+		// Scroll map partially out of view on initial load (1/3 of 280px map height hidden)
+		// Use setTimeout to ensure content is fully rendered
+		setTimeout(() => {
+			document.documentElement.scrollTop = 93;
+			document.body.scrollTop = 93; // Fallback for Safari
+		}, 0);
+
 		const mqCollapsed = window.matchMedia(`(min-width: ${WIDE_COLLAPSED_BREAKPOINT}px)`);
 		const mqExpanded = window.matchMedia(`(min-width: ${WIDE_EXPANDED_BREAKPOINT}px)`);
 

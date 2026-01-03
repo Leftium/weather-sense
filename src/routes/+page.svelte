@@ -918,7 +918,8 @@
 			font: inherit;
 			width: 1.2em;
 			height: 1.2em;
-			transform: translateY(-0.06em);
+			vertical-align: middle;
+			transform: translateY(-0.1em);
 			display: inline-grid;
 			place-content: center;
 			border: 3px solid var(--color);

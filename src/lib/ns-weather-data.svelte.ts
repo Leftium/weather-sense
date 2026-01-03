@@ -320,7 +320,7 @@ export function makeNsWeatherData() {
 	});
 
 	let units = $state({
-		temperature: 'F',
+		temperature: 'F' as 'C' | 'F',
 	});
 
 	let trackedElement: HTMLElement | null = $state(null);
@@ -645,7 +645,10 @@ export function makeNsWeatherData() {
 
 		on('weatherdata_requestedToggleUnits', function (params) {
 			if (params.temperature) {
-				if (typeof params.temperature === 'string' && ['C', 'F'].includes(params.temperature)) {
+				if (
+					typeof params.temperature === 'string' &&
+					(params.temperature === 'C' || params.temperature === 'F')
+				) {
 					units.temperature = params.temperature;
 				} else {
 					units.temperature = units.temperature === 'F' ? 'C' : 'F';

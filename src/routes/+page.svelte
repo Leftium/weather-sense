@@ -787,6 +787,7 @@
 				{textColor}
 				{textShadowColor}
 				{maxForecastDays}
+				{groupIcons}
 				onMore={() => (forecastDaysVisible = Math.min(forecastDaysVisible + 2, maxForecastDays))}
 				onAll={() => (forecastDaysVisible = maxForecastDays)}
 				onReset={() => (forecastDaysVisible = 3)}

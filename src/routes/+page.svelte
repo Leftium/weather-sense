@@ -668,6 +668,8 @@
 				</div>
 			</div>
 
+			<hr class="timeline-divider" />
+
 			{#each (nsWeatherData.daily || []).filter((day) => day.fromToday > -2 && day.fromToday < forecastDaysVisible) as day, index}
 				{@const past = day.fromToday < 0}
 				{@const today = day.fromToday === 0}
@@ -978,6 +980,13 @@
 		grid-column-gap: 0.2em;
 		margin-bottom: 0.2em;
 		background: #f8f8ff; // Ghost White - cover the gradient below daily tiles
+	}
+
+	.timeline-divider {
+		grid-column: 1 / -1;
+		margin: 0.5em 0;
+		border: none;
+		border-top: 1px solid #e0e0e0;
 	}
 
 	// Step 2: Add right padding on mobile for scroll gesture safety

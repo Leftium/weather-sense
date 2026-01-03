@@ -1150,7 +1150,7 @@
 	footer {
 		background: $color-ghost-white-dark;
 		border-top: 1px solid $color-border-light;
-		padding: 1.5em 1em;
+		padding: 0.75em 1em;
 		margin-top: 1em;
 	}
 
@@ -1165,6 +1165,7 @@
 	.footer-column h3 {
 		font-size: 0.9em;
 		font-weight: 600;
+		margin-top: 0;
 		margin-bottom: 0.5em;
 		color: $color-text-primary;
 	}
@@ -1202,7 +1203,16 @@
 		.footer-content {
 			grid-template-columns: 1fr;
 			gap: 1em;
-			text-align: center;
+		}
+
+		.footer-column {
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+		}
+
+		.footer-column ul {
+			text-align: left;
 		}
 	}
 

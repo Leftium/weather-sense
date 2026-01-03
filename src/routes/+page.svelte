@@ -340,6 +340,12 @@
 		return getSkyColors(displayMs, currentDay.sunrise, currentDay.sunset);
 	});
 
+	// Immediate colors (no animation) for tracker
+	const targetColors = $derived.by(() => {
+		if (!currentDay) return DEFAULT_COLORS;
+		return getSkyColors(nsWeatherData.ms, currentDay.sunrise, currentDay.sunset);
+	});
+
 	// Start animation loop - steps through time at constant color speed
 	$effect(() => {
 		function animate() {
@@ -671,7 +677,12 @@
 					</div>
 				</div>
 				<div class="timeline today">
-					<TimeLine {nsWeatherData} {plotVisibility} start={Date.now() - 2 * MS_IN_HOUR} />
+					<TimeLine
+						{nsWeatherData}
+						{plotVisibility}
+						start={Date.now() - 2 * MS_IN_HOUR}
+						trackerColor={targetColors[1]}
+					/>
 				</div>
 			</div>
 
@@ -707,6 +718,7 @@
 							xAxis={day.compactDate == 'Today'}
 							ghostTracker={true}
 							{past}
+							trackerColor={targetColors[1]}
 						/>
 					</div>
 				</div>

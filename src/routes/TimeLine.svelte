@@ -53,6 +53,7 @@
 		xAxis = true,
 		ghostTracker = false,
 		past = false,
+		trackerColor = 'yellow',
 	}: {
 		nsWeatherData: NsWeatherData;
 		plotVisibility: PlotVisibility;
@@ -61,6 +62,7 @@
 		xAxis?: boolean;
 		ghostTracker?: boolean;
 		past?: boolean;
+		trackerColor?: string;
 	} = $props();
 
 	const labelElements: Record<string, HTMLElement> = $state({});
@@ -559,7 +561,13 @@
 		const pg = d3.select(div).select('svg');
 		pg.select('.tracker-rect').remove();
 
-		function drawTracker(ms: number, msIntervalStart: number, length: number, color: string) {
+		function drawTracker(
+			ms: number,
+			msIntervalStart: number,
+			length: number,
+			lineColor: string,
+			showRect: boolean,
+		) {
 			const ig = pg.append('g').attr('class', 'tracker-rect');
 
 			const x = xScale.apply(ms);
@@ -573,16 +581,16 @@
 				.attr('x2', x)
 				.attr('y1', y1)
 				.attr('y2', y2)
-				.attr('stroke', color)
+				.attr('stroke', lineColor)
 				.attr('stroke-width', 2);
 
-			if (color === 'yellow') {
+			if (showRect) {
 				ig.append('rect')
 					.attr('x', x1)
 					.attr('y', y1)
 					.attr('width', x2 - x1)
 					.attr('height', y2 - y1)
-					.attr('fill', color)
+					.attr('fill', 'yellow')
 					.attr('opacity', 0.4);
 			}
 		}
@@ -597,12 +605,12 @@
 		const length = interval ? interval.x2 - interval.ms : 1;
 
 		if (msIntervalStart >= msStart && msIntervalStart < msEnd) {
-			drawTracker(ms, msIntervalStart, length, 'yellow');
+			drawTracker(ms, msIntervalStart, length, trackerColor, true);
 		} else if (ghostTracker) {
 			const msGhost = msStart + ((ms + nsWeatherData.utcOffsetMs) % MS_IN_DAY);
 			const msGhostInterval = msStart + ((msIntervalStart + nsWeatherData.utcOffsetMs) % MS_IN_DAY);
 
-			drawTracker(msGhost, msGhostInterval, length, 'white');
+			drawTracker(msGhost, msGhostInterval, length, 'white', false);
 		}
 	}
 

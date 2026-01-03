@@ -22,6 +22,10 @@ html > div .full-height {
 	overflow: auto;
 }
 
+body {
+	background-color: #f8f8ff; // Ghost White
+}
+
 .flex-column {
 	display: flex;
 	flex-direction: column;

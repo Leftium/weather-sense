@@ -506,6 +506,7 @@
 <style lang="scss">
 	.daily-tiles {
 		position: relative;
+		z-index: 1;
 		width: 100%;
 		overflow: visible;
 		background: transparent;

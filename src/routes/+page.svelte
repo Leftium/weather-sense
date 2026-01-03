@@ -804,7 +804,7 @@
 		background: var(--sky-gradient, linear-gradient(135deg, #eee 0%, #a8d8f0 50%, #6bb3e0 100%));
 		background-attachment: fixed;
 		pointer-events: none;
-		z-index: -1;
+		z-index: 0;
 		transition: background 1s ease-out;
 	}
 
@@ -970,7 +970,7 @@
 		grid-row-gap: 0.1em;
 		grid-column-gap: 0.2em;
 		margin-bottom: 0.2em;
-		background: white; // Cover the gradient below daily tiles
+		background: #f8f8ff; // Ghost White - cover the gradient below daily tiles
 	}
 
 	// Step 2: Add right padding on mobile for scroll gesture safety
@@ -1033,7 +1033,7 @@
 			content: '';
 			position: absolute;
 			inset: 0;
-			background: white;
+			background: #f8f8ff; // Ghost White
 			opacity: 0.5;
 			pointer-events: none;
 			z-index: 10;
@@ -1137,7 +1137,7 @@
 	}
 
 	footer {
-		background: #f5f5f5;
+		background: #f0f0f8; // Slightly darker Ghost White
 		border-top: 1px solid #e0e0e0;
 		padding: 1.5em 1em;
 		margin-top: 1em;

@@ -22,6 +22,7 @@
 		tileGradient = 'linear-gradient(160deg, #6bb3e0 0%, #a8d8f0 50%, #eee 100%)',
 		textColor = '#333',
 		textShadowColor = 'rgba(248, 248, 255, 0.8)',
+		pastOverlayColor = 'white',
 		groupIcons = true,
 		onMore,
 		onAll,
@@ -34,6 +35,7 @@
 		tileGradient?: string;
 		textColor?: string;
 		textShadowColor?: string;
+		pastOverlayColor?: string;
 		groupIcons?: boolean;
 		onMore?: () => void;
 		onAll?: () => void;
@@ -444,15 +446,14 @@
 
 					<!-- Past time dim overlay for SVG elements (AQI, temp lines, etc) -->
 					{#if pastOverlayWidth > 0}
-						{@const borderInset = 2}
 						<rect
-							x={borderInset}
-							y={borderInset}
-							width={pastOverlayWidth - borderInset * 2}
-							height={TILE_HEIGHT - borderInset * 2}
-							fill="white"
+							x={0}
+							y={0}
+							width={pastOverlayWidth - 2}
+							height={TILE_HEIGHT}
+							fill={pastOverlayColor}
 							opacity="0.5"
-							rx="1"
+							style="transition: fill 1s ease-out"
 						/>
 					{/if}
 				</svg>
@@ -578,7 +579,10 @@
 			border: none;
 			border-right: 1px solid rgba(0, 0, 0, 0.08);
 			border-radius: 0;
-			transition: background 0.15s;
+			transition:
+				background 0.15s,
+				color 1s ease-out,
+				text-shadow 1s ease-out;
 
 			&:hover:not(:disabled) {
 				background: rgba(255, 255, 255, 0.3);
@@ -601,7 +605,10 @@
 			border: none;
 			border-right: 1px solid rgba(0, 0, 0, 0.08);
 			border-radius: 0;
-			transition: background 0.15s;
+			transition:
+				background 0.15s,
+				color 1s ease-out,
+				text-shadow 1s ease-out;
 
 			&:last-child {
 				border-right: none;

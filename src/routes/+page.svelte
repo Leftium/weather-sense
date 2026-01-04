@@ -540,6 +540,9 @@
 	// Text shadow is opposite of text color
 	const textShadowColor = $derived(contrastTextColor(displayColors[1], true));
 
+	// Past overlay color - use dark overlay on light backgrounds, white on dark backgrounds
+	const pastOverlayColor = $derived(contrastTextColor(displayColors[1], true, 'white', 'black'));
+
 	function toggleUnits(node: HTMLElement, options: { temperature: boolean | string }) {
 		function handleClick() {
 			emit('weatherdata_requestedToggleUnits', options);
@@ -721,6 +724,7 @@
 				{tileGradient}
 				{textColor}
 				{textShadowColor}
+				{pastOverlayColor}
 				{maxForecastDays}
 				{groupIcons}
 				onMore={() => (forecastDaysVisible = Math.min(forecastDaysVisible + 2, maxForecastDays))}
@@ -952,7 +956,9 @@
 		background: var(--sky-gradient, $gradient-sky-default);
 		background-attachment: fixed;
 		padding-block: 0.2em;
-		transition: background 1s ease-out;
+		transition:
+			background 1s ease-out,
+			color 1s ease-out;
 
 		// iOS Safari has severe performance issues with background-attachment: fixed
 		@supports (-webkit-touch-callout: none) {

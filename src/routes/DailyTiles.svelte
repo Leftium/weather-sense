@@ -578,7 +578,6 @@
 			border: none;
 			border-right: 1px solid rgba(0, 0, 0, 0.08);
 			border-radius: 0;
-			cursor: pointer;
 			transition: background 0.15s;
 
 			&:hover:not(:disabled) {
@@ -586,6 +585,7 @@
 			}
 
 			&:disabled {
+				opacity: 0.4;
 				cursor: default;
 			}
 		}
@@ -601,7 +601,6 @@
 			border: none;
 			border-right: 1px solid rgba(0, 0, 0, 0.08);
 			border-radius: 0;
-			cursor: pointer;
 			transition: background 0.15s;
 
 			&:last-child {
@@ -618,7 +617,7 @@
 
 			&:disabled {
 				opacity: 0.4;
-				cursor: not-allowed;
+				cursor: default;
 			}
 		}
 	}

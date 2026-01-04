@@ -30,9 +30,30 @@ export function trackable(node: HTMLElement, options: TrackableOptions) {
 	let activePointerId: number | null = null;
 	const GESTURE_THRESHOLD = 8; // pixels to move before deciding gesture type
 
-	function trackToMouseX(e: PointerEvent | MouseEvent) {
+	// RAF throttling for touch scrubbing - prevents excessive updates on iOS
+	let pendingMs: number | null = null;
+	let rafId: number | null = null;
+
+	function scheduleTimeUpdate(ms: number) {
+		pendingMs = ms;
+		if (rafId === null) {
+			rafId = requestAnimationFrame(() => {
+				if (pendingMs !== null) {
+					options.onTimeChange(pendingMs);
+					pendingMs = null;
+				}
+				rafId = null;
+			});
+		}
+	}
+
+	function trackToMouseX(e: PointerEvent | MouseEvent, useRaf = false) {
 		const ms = options.getMs(e);
-		options.onTimeChange(ms);
+		if (useRaf) {
+			scheduleTimeUpdate(ms);
+		} else {
+			options.onTimeChange(ms);
+		}
 	}
 
 	function handlePointerMove(e: PointerEvent) {
@@ -113,9 +134,9 @@ export function trackable(node: HTMLElement, options: TrackableOptions) {
 		const absDeltaX = Math.abs(deltaX);
 		const absDeltaY = Math.abs(deltaY);
 
-		// If already scrubbing, continue scrubbing
+		// If already scrubbing, continue scrubbing with RAF throttling
 		if (isScrubbing) {
-			trackToMouseX(e);
+			trackToMouseX(e, true); // Use RAF for touch scrubbing
 			// Lock scroll position
 			document.documentElement.scrollTop = savedScrollTop;
 			document.body.scrollTop = savedScrollTop;
@@ -136,7 +157,7 @@ export function trackable(node: HTMLElement, options: TrackableOptions) {
 				isScrubbing = true;
 				node.style.touchAction = 'none';
 				node.setPointerCapture(e.pointerId);
-				trackToMouseX(e);
+				trackToMouseX(e, true); // Use RAF for touch scrubbing
 				options.onTrackingStart(node);
 			} else {
 				// More vertical = scrolling - let native scroll handle it
@@ -150,6 +171,16 @@ export function trackable(node: HTMLElement, options: TrackableOptions) {
 		if (e.pointerType !== 'touch') return;
 
 		if (isScrubbing) {
+			// Cancel any pending RAF update
+			if (rafId !== null) {
+				cancelAnimationFrame(rafId);
+				rafId = null;
+			}
+			// Apply final position immediately
+			if (pendingMs !== null) {
+				options.onTimeChange(pendingMs);
+				pendingMs = null;
+			}
 			options.onTrackingEnd();
 			node.style.touchAction = ''; // Restore native scroll for next gesture
 		}
@@ -176,6 +207,10 @@ export function trackable(node: HTMLElement, options: TrackableOptions) {
 	return {
 		destroy() {
 			abortController.abort();
+			if (rafId !== null) {
+				cancelAnimationFrame(rafId);
+				rafId = null;
+			}
 		},
 	};
 }

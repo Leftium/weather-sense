@@ -921,6 +921,13 @@
 		background: var(--sky-gradient, $gradient-sky-default);
 		background-attachment: fixed;
 		transition: background 1s ease-out;
+
+		// iOS Safari has severe performance issues with background-attachment: fixed
+		// It causes jank during touch/scroll and visual glitches
+		// Disable on all mobile to avoid seam between sticky and content
+		@include mobile-only {
+			background-attachment: scroll;
+		}
 	}
 
 	.sticky-info {
@@ -932,6 +939,11 @@
 		background-attachment: fixed;
 		padding-block: 0.2em;
 		transition: background 1s ease-out;
+
+		// Match sky-gradient-bg on mobile to avoid visual seam
+		@include mobile-only {
+			background-attachment: scroll;
+		}
 
 		& > div {
 			padding-block: $size-1;

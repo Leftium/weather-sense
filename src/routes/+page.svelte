@@ -1186,20 +1186,6 @@
 		padding-inline: 0;
 	}
 
-	// Mobile: right padding for scroll gesture safety
-	@include mobile-only {
-		.timeline-grid,
-		footer {
-			padding-right: 1rem;
-		}
-
-		// Timeline plots extend edge-to-edge (scrub works well now)
-		.hourly-row,
-		.day-row {
-			margin-right: -1rem;
-		}
-	}
-
 	// Daily rows - span all columns, use subgrid
 	.day-row {
 		display: grid;
@@ -1285,7 +1271,8 @@
 	}
 
 	.timeline {
-		flex-grow: 1;
+		width: 100%;
+		min-width: 0; // Allow grid item to shrink below content size
 		height: calc(64px + $size-3);
 
 		&.today {
@@ -1315,9 +1302,15 @@
 	.main-content {
 		display: grid;
 		padding-inline: 0;
+
+		// Mobile: timeline plots extend edge-to-edge (override .container padding)
+		@include mobile-only {
+			padding-right: 0;
+		}
 	}
 
 	.scroll {
+		width: 100%;
 		overflow: auto;
 		position: relative;
 	}

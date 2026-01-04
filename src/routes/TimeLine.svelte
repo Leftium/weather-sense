@@ -192,11 +192,57 @@
 				(item) => item.aqiEurope,
 			);
 
+			// Add "No Data" fallback when no AQI data for this time range
+			function noDataFallback(levels: AqiItem[]): AqiItem[] {
+				if (levels.length === 0) {
+					const noDataLabel = aqiUsToLabel(null);
+					const { fillText, fillShadow } = getContrastColors(noDataLabel.color);
+					return [
+						{
+							ms: msEnd,
+							aqiUs: null as unknown as number,
+							aqiEurope: null as unknown as number,
+							text: noDataLabel.text,
+							x1: msStart,
+							x2: msEnd,
+							xMiddle: (msStart + msEnd) / 2,
+							fill: noDataLabel.color,
+							fillText,
+							fillShadow,
+						},
+					];
+				}
+				return levels;
+			}
+
 			return {
-				aqiUsLevels,
-				aqiEuropeLevels,
+				aqiUsLevels: noDataFallback(aqiUsLevels),
+				aqiEuropeLevels: noDataFallback(aqiEuropeLevels),
 			};
 		}
+
+		// Return "No Data" fallback even when no AQI data exists at all
+		if (draw.aqiUs || draw.aqiEurope) {
+			const noDataLabel = aqiUsToLabel(null);
+			const { fillText, fillShadow } = getContrastColors(noDataLabel.color);
+			const noDataEntry = {
+				ms: msEnd,
+				aqiUs: null as unknown as number,
+				aqiEurope: null as unknown as number,
+				text: noDataLabel.text,
+				x1: msStart,
+				x2: msEnd,
+				xMiddle: (msStart + msEnd) / 2,
+				fill: noDataLabel.color,
+				fillText,
+				fillShadow,
+			};
+			return {
+				aqiUsLevels: [noDataEntry],
+				aqiEuropeLevels: [noDataEntry],
+			};
+		}
+
 		return null;
 	});
 

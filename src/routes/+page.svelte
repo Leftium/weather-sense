@@ -1128,7 +1128,7 @@
 	.timeline-grid {
 		overflow-x: hidden;
 		display: grid;
-		grid-template-columns: 12px auto auto minmax(0, 1fr);
+		grid-template-columns: 8px auto auto minmax(0, 1fr);
 		grid-row-gap: 0.1em;
 		grid-column-gap: 0.2em;
 		margin-bottom: 0.2em;
@@ -1137,26 +1137,15 @@
 
 	// Temperature gradient bar - shows day's temp range relative to global range
 	.temp-gradient-bar {
-		grid-column: 1;
-		width: 12px;
+		grid-column: 1 / 4; // Span columns 1-3, stop before timeline
+		grid-row: 1;
+		margin-right: -0.2em; // Compensate for grid gap
 		height: 64px; // Match TimeLine plot height (without x-axis)
-		background: linear-gradient(to right, var(--color-high), var(--color-low));
+		background: linear-gradient(to bottom right, var(--color-high), var(--color-low));
 		border-radius: 2px 0 0 2px;
 		align-self: center; // Vertically center with plot
 		position: relative;
-		z-index: 2; // Above weather icon so icon appears to come from behind
-
-		// Subtle connector strip extending to the right
-		&::after {
-			content: '';
-			position: absolute;
-			top: 0;
-			left: 100%;
-			width: 100vw;
-			height: 100%;
-			background: rgba(0, 0, 0, 0.03);
-			pointer-events: none;
-		}
+		z-index: 0; // Behind icons and labels
 	}
 
 	.hourly-row .temp-gradient-bar,
@@ -1186,6 +1175,7 @@
 			display: grid;
 			grid-template-columns: subgrid;
 			grid-column: 2 / span 2;
+			grid-row: 1;
 
 			.day {
 				grid-column: span 2;
@@ -1204,6 +1194,7 @@
 
 		.timeline {
 			grid-column: 4;
+			grid-row: 1;
 		}
 
 		div.day {
@@ -1236,6 +1227,7 @@
 			display: grid;
 			grid-template-columns: subgrid;
 			grid-column: 2 / span 2;
+			grid-row: 1;
 
 			.day {
 				grid-column: span 2;
@@ -1254,6 +1246,7 @@
 
 		.timeline {
 			grid-column: 4;
+			grid-row: 1;
 		}
 	}
 
@@ -1264,18 +1257,27 @@
 	// Day label styles with text outline
 	.day-label {
 		overflow: visible;
+		z-index: 1; // Above temp-gradient-bar
 
 		.day {
 			position: relative;
 			z-index: 1;
-			@include text-outline-white;
+			text-shadow:
+				0 0 2px white,
+				0 0 4px white,
+				0 0 6px white,
+				0 0 8px white,
+				0 0 12px white,
+				0 0 16px white,
+				0 0 24px white,
+				0 0 32px white;
 
 			.icon.small {
 				position: absolute;
-				left: -20px; // Position so ~2/3 of 40px icon is visible (~13px hidden)
+				left: 25px; // Centered between gradient block and hourly plot
 				top: 50%;
 				transform: translateY(calc(-50% - 10px));
-				z-index: -1; // Below day label text and temp-gradient-bar
+				z-index: -1; // Below day label text
 				height: 40px;
 				width: 40px;
 			}
@@ -1298,7 +1300,18 @@
 
 		.high-low {
 			font-size: smaller;
-			@include text-outline-white;
+
+			span {
+				text-shadow:
+					0 0 2px white,
+					0 0 4px white,
+					0 0 6px white,
+					0 0 8px white,
+					0 0 12px white,
+					0 0 16px white,
+					0 0 24px white,
+					0 0 32px white;
+			}
 		}
 	}
 

@@ -374,6 +374,29 @@
 					preserveAspectRatio="none"
 					in:fade={{ duration: 300 }}
 				>
+					<!-- Ghost white glow filter for text -->
+					<defs>
+						<filter
+							id="white-glow"
+							x="-100%"
+							y="-100%"
+							width="300%"
+							height="300%"
+							filterUnits="objectBoundingBox"
+						>
+							<feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur" />
+							<feFlood flood-color="#f8f8ff" result="white" />
+							<feComposite in="white" in2="blur" operator="in" result="glow" />
+							<feMerge>
+								<feMergeNode in="glow" />
+								<feMergeNode in="glow" />
+								<feMergeNode in="glow" />
+								<feMergeNode in="glow" />
+								<feMergeNode in="SourceGraphic" />
+							</feMerge>
+						</filter>
+					</defs>
+
 					<!-- Precipitation labels -->
 					{#each days as day, i}
 						{#if day.precipitation > 0}
@@ -384,10 +407,7 @@
 								font-size="10"
 								font-weight="600"
 								fill={TEMP_COLOR_COLD}
-								stroke="#f8f8ff"
-								stroke-opacity="0.85"
-								stroke-width="2"
-								paint-order="stroke fill"
+								filter="url(#white-glow)"
 							>
 								{day.precipitation.toFixed(1)}mm
 							</text>
@@ -405,10 +425,7 @@
 							font-size="11"
 							font-weight="bold"
 							fill={TEMP_COLOR_HOT}
-							stroke="#f8f8ff"
-							stroke-opacity="0.85"
-							stroke-width="3"
-							paint-order="stroke fill"
+							filter="url(#white-glow)"
 							class="temp-label"
 							role="button"
 							tabindex="0"
@@ -430,10 +447,7 @@
 							font-size="11"
 							font-weight="bold"
 							fill={TEMP_COLOR_COLD}
-							stroke="#f8f8ff"
-							stroke-opacity="0.85"
-							stroke-width="3"
-							paint-order="stroke fill"
+							filter="url(#white-glow)"
 							class="temp-label"
 							role="button"
 							tabindex="0"
@@ -635,10 +649,14 @@
 		margin-bottom: 0;
 		color: #333;
 		text-shadow:
-			-1px -1px 0 rgba(248, 248, 255, 0.8),
-			1px -1px 0 rgba(248, 248, 255, 0.8),
-			-1px 1px 0 rgba(248, 248, 255, 0.8),
-			1px 1px 0 rgba(248, 248, 255, 0.8);
+			0 0 2px #f8f8ff,
+			0 0 4px #f8f8ff,
+			0 0 6px #f8f8ff,
+			0 0 8px #f8f8ff,
+			0 0 12px #f8f8ff,
+			0 0 16px #f8f8ff,
+			0 0 24px #f8f8ff,
+			0 0 32px #f8f8ff;
 
 		&.today {
 			font-weight: 900;

@@ -1263,14 +1263,14 @@
 			position: relative;
 			z-index: 1;
 			text-shadow:
-				0 0 2px white,
-				0 0 4px white,
-				0 0 6px white,
-				0 0 8px white,
-				0 0 12px white,
-				0 0 16px white,
-				0 0 24px white,
-				0 0 32px white;
+				0 0 2px #f8f8ff,
+				0 0 4px #f8f8ff,
+				0 0 6px #f8f8ff,
+				0 0 8px #f8f8ff,
+				0 0 12px #f8f8ff,
+				0 0 16px #f8f8ff,
+				0 0 24px #f8f8ff,
+				0 0 32px #f8f8ff;
 
 			.icon.small {
 				position: absolute;
@@ -1303,14 +1303,14 @@
 
 			span {
 				text-shadow:
-					0 0 2px white,
-					0 0 4px white,
-					0 0 6px white,
-					0 0 8px white,
-					0 0 12px white,
-					0 0 16px white,
-					0 0 24px white,
-					0 0 32px white;
+					0 0 2px #f8f8ff,
+					0 0 4px #f8f8ff,
+					0 0 6px #f8f8ff,
+					0 0 8px #f8f8ff,
+					0 0 12px #f8f8ff,
+					0 0 16px #f8f8ff,
+					0 0 24px #f8f8ff,
+					0 0 32px #f8f8ff;
 			}
 		}
 	}

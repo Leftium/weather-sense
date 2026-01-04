@@ -368,8 +368,18 @@ export function makeNsWeatherData() {
 			`&current=us_aqi,european_aqi` +
 			`&hourly=us_aqi,european_aqi`;
 
-		const fetched = await fetch(url);
-		const json = await fetched.json();
+		let json;
+		try {
+			const fetched = await fetch(url);
+			if (!fetched.ok) {
+				console.error(`fetchOpenMeteoAirQuality failed: ${fetched.status}`);
+				return;
+			}
+			json = await fetched.json();
+		} catch (error) {
+			console.error('fetchOpenMeteoAirQuality error:', error);
+			return;
+		}
 
 		timezone = json.timezone;
 		timezoneAbbreviation = json.timezone_abbreviation;
@@ -439,8 +449,18 @@ export function makeNsWeatherData() {
 			`&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,weather_code,dew_point_2m` +
 			`&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,rain_sum,showers_sum,snowfall_sum,precipitation_hours,precipitation_probability_max`;
 
-		const fetched = await fetch(url);
-		const json = await fetched.json();
+		let json;
+		try {
+			const fetched = await fetch(url);
+			if (!fetched.ok) {
+				console.error(`fetchOpenMeteoForecast failed: ${fetched.status}`);
+				return;
+			}
+			json = await fetched.json();
+		} catch (error) {
+			console.error('fetchOpenMeteoForecast error:', error);
+			return;
+		}
 
 		timezone = json.timezone;
 		timezoneAbbreviation = json.timezone_abbreviation;
@@ -543,11 +563,21 @@ export function makeNsWeatherData() {
 	if (browser) {
 		on('weatherdata_requestedFetchRainviewerData', async function () {
 			// Load all the available map frames from RainViewer API via proxy to avoid CORS
-			const fetched = await fetch('/api/rainviewer/weather-maps');
-			const rainviewerData = await fetched.json();
+			let rainviewerData;
+			try {
+				const fetched = await fetch('/api/rainviewer/weather-maps');
+				if (!fetched.ok) {
+					console.error(`fetchRainviewerData failed: ${fetched.status}`);
+					return;
+				}
+				rainviewerData = await fetched.json();
+			} catch (error) {
+				console.error('fetchRainviewerData error:', error);
+				return;
+			}
 
-			const frames = (rainviewerData.radar.past || [])
-				.concat(rainviewerData.radar.nowcast || [])
+			const frames = (rainviewerData.radar?.past || [])
+				.concat(rainviewerData.radar?.nowcast || [])
 				.map((frame: { time: number; path: string }) => {
 					const ms = frame.time * MS_IN_SECOND;
 					return {
@@ -561,13 +591,13 @@ export function makeNsWeatherData() {
 			const msLast = frames.at(-1)?.ms;
 			const msEnd = msLast ? msLast + 10 * MS_IN_MINUTE : undefined;
 
-			const generated = rainviewerData.generated * 1000;
+			const generated = (rainviewerData.generated || 0) * 1000;
 			radar = {
 				generatedPretty: nsWeatherData.tzFormat(generated),
 				generated: generated,
 				msStart,
 				msEnd,
-				host: rainviewerData.host,
+				host: rainviewerData.host || '',
 				frames,
 			};
 			emit('weatherdata_updatedRadar', { nsWeatherData });
@@ -593,13 +623,21 @@ export function makeNsWeatherData() {
 			} else if (params.coords) {
 				name = '...';
 				// name = REVERSE_GEOCODE(params.coords)
-				const resp = await fetch(
-					`/api/geo/reverse?lat=${params.coords.latitude}&lon=${params.coords.longitude}`,
-				);
-				const json = await resp.json();
-				const result = json[0];
-
-				name = `${result.name}, ${result.state || result.country}`;
+				try {
+					const resp = await fetch(
+						`/api/geo/reverse?lat=${params.coords.latitude}&lon=${params.coords.longitude}`,
+					);
+					if (resp.ok) {
+						const json = await resp.json();
+						const result = json?.[0];
+						if (result?.name) {
+							name = `${result.name}, ${result.state || result.country}`;
+						}
+					}
+				} catch (error) {
+					console.error('Reverse geocoding error:', error);
+					// Keep name as '...' or previous value
+				}
 			}
 
 			//gg({ name, coords, params });

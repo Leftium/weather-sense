@@ -1,7 +1,15 @@
 import { env } from '$env/dynamic/private';
-import { json } from '@sveltejs/kit';
+import { json, type RequestHandler } from '@sveltejs/kit';
 
-export const GET = async ({ url, fetch }) => {
+const FALLBACK_LOCATION = [
+	{
+		name: 'Unknown Location',
+		country: 'Unknown',
+		state: null,
+	},
+];
+
+export const GET: RequestHandler = async ({ url, fetch }) => {
 	const lat = url.searchParams.get('latitude') || url.searchParams.get('lat');
 	const lon = url.searchParams.get('longitude') || url.searchParams.get('lon');
 
@@ -9,18 +17,28 @@ export const GET = async ({ url, fetch }) => {
 
 	if (!OPEN_WEATHER_APPID) {
 		// Return a fallback response when API key is not available
-		return json([
-			{
-				name: 'Unknown Location',
-				country: 'Unknown',
-				state: null,
-			},
-		]);
+		return json(FALLBACK_LOCATION);
 	}
 
-	const apiUrl = `http://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${lon}&appid=${OPEN_WEATHER_APPID}`;
+	try {
+		const apiUrl = `http://api.openweathermap.org/geo/1.0/reverse?lat=${lat}&lon=${lon}&appid=${OPEN_WEATHER_APPID}`;
+		const resp = await fetch(apiUrl);
 
-	const resp = fetch(apiUrl);
+		if (!resp.ok) {
+			console.error(`Reverse geocoding failed: ${resp.status} ${resp.statusText}`);
+			return json(FALLBACK_LOCATION);
+		}
 
-	return resp;
+		const data = await resp.json();
+
+		// Ensure we always return a valid array with at least one result
+		if (!Array.isArray(data) || data.length === 0) {
+			return json(FALLBACK_LOCATION);
+		}
+
+		return json(data);
+	} catch (error) {
+		console.error('Reverse geocoding error:', error);
+		return json(FALLBACK_LOCATION);
+	}
 };

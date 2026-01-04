@@ -750,16 +750,16 @@
 				></div>
 				<div class="day-label">
 					<div class="day today">
-						{#if wmoCode(hourly24WmoCode ?? undefined).icon}
-							<button
-								class="icon-toggle"
-								onclick={() => (groupIcons = !groupIcons)}
-								title={`${wmoCode(hourly24WmoCode ?? undefined).description} (click to ${groupIcons ? 'ungroup' : 'group'} icons)`}
-							>
+						<button
+							class="icon-toggle"
+							onclick={() => (groupIcons = !groupIcons)}
+							title={`${wmoCode(hourly24WmoCode ?? undefined).description} (click to ${groupIcons ? 'ungroup' : 'group'} icons)`}
+						>
+							{#if wmoCode(hourly24WmoCode ?? undefined).icon}
 								<img class="icon small" src={wmoCode(hourly24WmoCode ?? undefined).icon} alt="" />
-							</button>
-						{/if}
-						24hrs
+							{/if}
+							24hrs
+						</button>
 					</div>
 					<div class="high-low">
 						<span style:color={TEMP_COLOR_HOT} use:toggleUnits={{ temperature: true }}>
@@ -811,8 +811,8 @@
 								title={`${wmoCode(dayWmoCode).description} (click to ${groupIcons ? 'ungroup' : 'group'} icons)`}
 							>
 								<img class="icon small" src={wmoCode(dayWmoCode).icon} alt="" />
+								{day.compactDate}
 							</button>
-							{day.compactDate}
 						</div>
 						<div class="high-low">
 							<span style:color={TEMP_COLOR_HOT} use:toggleUnits={{ temperature: true }}

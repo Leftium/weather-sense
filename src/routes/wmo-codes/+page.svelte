@@ -113,6 +113,7 @@
 
 	.container-fluid {
 		height: 100vh;
+		max-width: none;
 		padding: 0;
 		background: $color-ghost-white;
 	}

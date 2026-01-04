@@ -1,14 +1,25 @@
 <script lang="ts">
 	import { map } from 'lodash-es';
 
-	import { WMO_CODES } from '$lib/util';
+	import { WMO_CODES, getGoogleV2Icon, hasUniqueNightIcon, getGoogleV1Icon } from '$lib/util';
 	import { onMount } from 'svelte';
 
 	// Convert Object to array, adding key as `.code` prop.
-	const wmoCodes = map(WMO_CODES, (value, code) => ({
-		code: Number(code),
-		...value,
-	}));
+	const wmoCodes = map(WMO_CODES, (value, code) => {
+		const codeNum = Number(code);
+		const hasUniqueNight = hasUniqueNightIcon(codeNum);
+		return {
+			code: codeNum,
+			...value,
+			hasUniqueNight,
+			// Day grid: use v2 day if unique day/night, otherwise v1 day
+			dayGridIcon: hasUniqueNight ? getGoogleV2Icon(codeNum, true) : getGoogleV1Icon(codeNum, true),
+			// Night grid: use v2 night if unique day/night, otherwise v1 night
+			nightGridIcon: hasUniqueNight
+				? getGoogleV2Icon(codeNum, false)
+				: getGoogleV1Icon(codeNum, false),
+		};
+	});
 
 	let offsetWidth = $state(0);
 	let offsetHeight = $state(0);
@@ -33,29 +44,91 @@
 		<button {onclick}>Transpose</button>
 	</nav>
 	{#if mode}
-		<div class="grid-container">
-			<div class="wmo-grid">
-				{#each wmoCodes as wmo}
-					<article
-						style:background-color={wmo.color}
-						class="wmo-item group-{wmo.group} level-{wmo.level}"
-						style:color={wmo.colorText}
-						style:text-shadow={`1px 1px ${wmo.colorShadow}`}
-					>
-						<div class="code">{wmo.code}</div>
-						<img src={wmo.icon} alt="" />
-						<div class="label">
-							{wmo.description}
-						</div>
-					</article>
-				{/each}
-				{#each ['No Precipitation', 'Rain', 'Freezing Rain', 'Snow', 'Thunder Storm'] as title, index}
-					<article class="divider divider-{index}">{title}</article>
-				{/each}
+		<div class="grids-wrapper">
+			<!-- Airy Icons -->
+			<div class="grid-container">
+				<h2 class="grid-title">Airy Icons</h2>
+				<div class="wmo-grid">
+					{#each wmoCodes as wmo}
+						<article
+							style:background-color={wmo.color}
+							class="wmo-item group-{wmo.group} level-{wmo.level}"
+							style:color={wmo.colorText}
+							style:text-shadow={`1px 1px ${wmo.colorShadow}`}
+						>
+							<div class="code">{wmo.code}</div>
+							<img src={wmo.icon} alt="" />
+							<div class="label">
+								{wmo.description}
+							</div>
+						</article>
+					{/each}
+					{#each ['No Precipitation', 'Rain', 'Freezing Rain', 'Snow', 'Thunder Storm'] as title, index}
+						<article class="divider divider-{index}">{title}</article>
+					{/each}
 
-				{#each [...Array(11)] as item}
-					<article class="wmo-item ghost-item"></article>
-				{/each}
+					{#each [...Array(11)] as item}
+						<article class="wmo-item ghost-item"></article>
+					{/each}
+				</div>
+			</div>
+
+			<!-- Google v2 (Day) + v1 fallback -->
+			<div class="grid-container">
+				<h2 class="grid-title">Google v2 (Day) + v1 fallback</h2>
+				<div class="wmo-grid">
+					{#each wmoCodes as wmo}
+						<article
+							style:background-color={wmo.color}
+							class="wmo-item group-{wmo.group} level-{wmo.level}"
+							class:from-v1={!wmo.hasUniqueNight}
+							style:color={wmo.colorText}
+							style:text-shadow={`1px 1px ${wmo.colorShadow}`}
+						>
+							<div class="code">{wmo.code}</div>
+							<img src={wmo.dayGridIcon} alt="" />
+							<div class="label">
+								{wmo.description}
+							</div>
+						</article>
+					{/each}
+					{#each ['No Precipitation', 'Rain', 'Freezing Rain', 'Snow', 'Thunder Storm'] as title, index}
+						<article class="divider divider-{index}">{title}</article>
+					{/each}
+
+					{#each [...Array(11)] as item}
+						<article class="wmo-item ghost-item"></article>
+					{/each}
+				</div>
+			</div>
+
+			<!-- Google v2 Night + v1 fallback -->
+			<div class="grid-container">
+				<h2 class="grid-title">Google v2 (Night) + v1 fallback</h2>
+				<div class="wmo-grid">
+					{#each wmoCodes as wmo}
+						<article
+							style:background-color={wmo.color}
+							class="wmo-item group-{wmo.group} level-{wmo.level}"
+							class:from-v1={!wmo.hasUniqueNight}
+							style:color={wmo.colorText}
+							style:text-shadow={`1px 1px ${wmo.colorShadow}`}
+						>
+							<div class="code">{wmo.code}</div>
+							<img src={wmo.nightGridIcon} alt="" />
+							<div class="label">
+								{wmo.description}
+							</div>
+						</article>
+					{/each}
+					{#each ['No Precipitation', 'Rain', 'Freezing Rain', 'Snow', 'Thunder Storm'] as title, index}
+						<article class="divider divider-{index}">{title}</article>
+					{/each}
+
+					{#each [...Array(11)] as item}
+						<article class="wmo-item ghost-item"></article>
+					{/each}
+				</div>
 			</div>
 		</div>
 	{/if}
@@ -72,6 +145,23 @@
 	$violet-550: #8352c5;
 	$fuchsia-450: #ed2aac;
 	$pink-450: #f42c6f;
+
+	.grids-wrapper {
+		overflow-y: auto;
+		flex: 1;
+	}
+
+	.grid-title {
+		text-align: center;
+		margin: 1em 0 0.5em;
+		font-size: 1.2em;
+		color: $grey-450;
+	}
+
+	.from-v1 {
+		outline: 2px dashed rgba(0, 0, 0, 0.3);
+		outline-offset: -2px;
+	}
 
 	nav {
 		display: flex;
@@ -119,7 +209,7 @@
 	}
 
 	.grid-container {
-		overflow-y: scroll;
+		// overflow handled by .grids-wrapper
 	}
 
 	.wmo-grid {
@@ -165,9 +255,14 @@
 	}
 
 	.wide {
+		.grids-wrapper {
+			display: flex;
+			flex-direction: column;
+			gap: 2em;
+			padding-bottom: 2em;
+		}
+
 		.grid-container {
-			height: 100%;
-			overflow: auto;
 			margin: 0 0.4em;
 		}
 
@@ -175,10 +270,8 @@
 			width: fit-content;
 			margin: auto;
 
-			height: calc(88vh);
-
 			font-size: 0.9em;
-			padding-top: 2em;
+			padding-top: 1em;
 
 			grid-template-columns: repeat(4, 3em auto auto auto) 3em;
 
@@ -187,18 +280,13 @@
 		}
 
 		.wmo-item {
-			height: calc(88vh / 3);
+			height: 140px;
 			aspect-ratio: 1 / 1.62;
 		}
 
 		@media (min-width: 376px) {
-			/* CSS rules */
-			.wmo-grid {
-				height: auto;
-			}
-
 			.wmo-item {
-				height: 180px;
+				height: 160px;
 			}
 		}
 

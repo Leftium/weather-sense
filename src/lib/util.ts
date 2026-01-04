@@ -325,6 +325,105 @@ export function wmoCode(code: number | undefined) {
 	};
 }
 
+// Google Weather Icons v2 mapping
+// Only "No Precipitation" codes (0-3) have day/night variants
+// All precipitation codes use same icon for day/night
+// prettier-ignore
+export const GOOGLE_V2_ICONS: Record<number, { day: string; night: string }> = {
+	0:  { day: 'sunny',                          night: 'clear_night' },
+	1:  { day: 'mostly_sunny',                   night: 'mostly_clear_night' },
+	2:  { day: 'partly_cloudy',                  night: 'partly_cloudy_night' },
+	3:  { day: 'mostly_cloudy_day',              night: 'mostly_cloudy_night' },
+
+	45: { day: 'haze_fog_dust_smoke',            night: 'haze_fog_dust_smoke' },
+	48: { day: 'haze_fog_dust_smoke',            night: 'haze_fog_dust_smoke' },
+
+	51: { day: 'drizzle',                        night: 'drizzle' },
+	53: { day: 'drizzle',                        night: 'drizzle' },
+	55: { day: 'drizzle',                        night: 'drizzle' },
+	80: { day: 'showers_rain',                   night: 'showers_rain' },
+	81: { day: 'showers_rain',                   night: 'showers_rain' },
+	82: { day: 'heavy_rain',                     night: 'heavy_rain' },
+	61: { day: 'showers_rain',                   night: 'showers_rain' },
+	63: { day: 'showers_rain',                   night: 'showers_rain' },
+	65: { day: 'heavy_rain',                     night: 'heavy_rain' },
+
+	56: { day: 'sleet_hail',                     night: 'sleet_hail' },
+	57: { day: 'sleet_hail',                     night: 'sleet_hail' },
+	66: { day: 'wintry_mix_rain_snow',           night: 'wintry_mix_rain_snow' },
+	67: { day: 'sleet_hail',                     night: 'sleet_hail' },
+
+	77: { day: 'flurries',                       night: 'flurries' },
+	85: { day: 'snow_showers_snow',              night: 'snow_showers_snow' },
+	86: { day: 'heavy_snow',                     night: 'heavy_snow' },
+	71: { day: 'flurries',                       night: 'flurries' },
+	73: { day: 'snow_showers_snow',              night: 'snow_showers_snow' },
+	75: { day: 'heavy_snow',                     night: 'heavy_snow' },
+
+	95: { day: 'strong_tstorms',                 night: 'strong_tstorms' },
+	96: { day: 'strong_tstorms',                 night: 'strong_tstorms' },
+	99: { day: 'strong_tstorms',                 night: 'strong_tstorms' },
+};
+
+export function getGoogleV2Icon(code: number, isDay = true): string {
+	const mapping = GOOGLE_V2_ICONS[code];
+	if (!mapping) return '/icons/google-v2/sunny.png';
+	const iconName = isDay ? mapping.day : mapping.night;
+	return `/icons/google-v2/${iconName}.png`;
+}
+
+export function hasUniqueNightIcon(code: number): boolean {
+	const mapping = GOOGLE_V2_ICONS[code];
+	if (!mapping) return false;
+	return mapping.day !== mapping.night;
+}
+
+// Google Weather Icons v1 mapping
+// Most have no day/night variants, but some do (like showers with sun vs cloud)
+// prettier-ignore
+export const GOOGLE_V1_ICONS: Record<number, { day: string; night: string }> = {
+	0:  { day: 'sunny',           night: 'sunny' },
+	1:  { day: 'sunny_s_cloudy',  night: 'sunny_s_cloudy' },
+	2:  { day: 'partly_cloudy',   night: 'partly_cloudy' },
+	3:  { day: 'cloudy',          night: 'cloudy' },
+
+	45: { day: 'fog',             night: 'fog' },
+	48: { day: 'fog',             night: 'fog' },
+
+	51: { day: 'rain_light',      night: 'rain_light' },
+	53: { day: 'rain_light',      night: 'rain_light' },
+	55: { day: 'rain_light',      night: 'rain_light' },
+	80: { day: 'sunny_s_rain',    night: 'cloudy_s_rain' },
+	81: { day: 'rain_s_sunny',    night: 'rain_s_cloudy' },
+	82: { day: 'rain_s_sunny',    night: 'rain_s_cloudy' },
+	61: { day: 'rain',            night: 'rain' },
+	63: { day: 'rain_heavy',      night: 'rain_heavy' },
+	65: { day: 'rain_heavy',      night: 'rain_heavy' },
+
+	56: { day: 'snow_s_rain',     night: 'snow_s_rain' },
+	57: { day: 'snow_s_rain',     night: 'snow_s_rain' },
+	66: { day: 'rain_s_snow',     night: 'rain_s_snow' },
+	67: { day: 'rain_s_snow',     night: 'rain_s_snow' },
+
+	77: { day: 'snow_s_cloudy',   night: 'snow_s_cloudy' },
+	85: { day: 'snow_s_cloudy',   night: 'snow_s_cloudy' },
+	86: { day: 'snow_s_cloudy',   night: 'snow_s_cloudy' },
+	71: { day: 'snow_light',      night: 'snow_light' },
+	73: { day: 'snow',            night: 'snow' },
+	75: { day: 'snow_heavy',      night: 'snow_heavy' },
+
+	95: { day: 'thunderstorms',   night: 'thunderstorms' },
+	96: { day: 'thunderstorms',   night: 'thunderstorms' },
+	99: { day: 'thunderstorms',   night: 'thunderstorms' },
+};
+
+export function getGoogleV1Icon(code: number, isDay = true): string {
+	const mapping = GOOGLE_V1_ICONS[code];
+	if (!mapping) return '/icons/google-v1/sunny.png';
+	const iconName = isDay ? mapping.day : mapping.night;
+	return `/icons/google-v1/${iconName}.png`;
+}
+
 // Get the precipitation group for a WMO code (used for grouping similar weather types)
 // Group 0 = clear/cloudy, 1 = fog, 2 = rain/drizzle, 3 = freezing rain, 4 = snow, 5 = thunderstorm
 export function precipitationGroup(code: number): number {

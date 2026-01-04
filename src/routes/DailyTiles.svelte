@@ -376,9 +376,9 @@
 					{#each days as day, i}
 						{#if day.precipitation > 0}
 							<text
-								x={(i + 0.5) * TILE_WIDTH}
+								x={(i + 1) * TILE_WIDTH - 4}
 								y={PRECIP_LABEL_Y}
-								text-anchor="middle"
+								text-anchor="end"
 								font-size="10"
 								font-weight="600"
 								fill={TEMP_COLOR_COLD}

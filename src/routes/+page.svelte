@@ -1322,18 +1322,15 @@
 		}
 
 		.high-low {
-			font-size: smaller;
+			font-size: 13px;
+			font-weight: bold;
 
 			span {
 				text-shadow:
 					0 0 2px #f8f8ff,
 					0 0 4px #f8f8ff,
 					0 0 6px #f8f8ff,
-					0 0 8px #f8f8ff,
-					0 0 12px #f8f8ff,
-					0 0 16px #f8f8ff,
-					0 0 24px #f8f8ff,
-					0 0 32px #f8f8ff;
+					0 0 8px #f8f8ff;
 			}
 		}
 	}

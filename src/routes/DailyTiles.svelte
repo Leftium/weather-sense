@@ -376,10 +376,12 @@
 							height="300%"
 							filterUnits="objectBoundingBox"
 						>
-							<feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur" />
+							<feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur" />
 							<feFlood flood-color="#f8f8ff" result="white" />
 							<feComposite in="white" in2="blur" operator="in" result="glow" />
 							<feMerge>
+								<feMergeNode in="glow" />
+								<feMergeNode in="glow" />
 								<feMergeNode in="glow" />
 								<feMergeNode in="glow" />
 								<feMergeNode in="glow" />
@@ -414,7 +416,7 @@
 							{x}
 							y={y - 8}
 							text-anchor="middle"
-							font-size="11"
+							font-size="13"
 							font-weight="bold"
 							fill={TEMP_COLOR_HOT}
 							filter="url(#white-glow)"
@@ -436,7 +438,7 @@
 							{x}
 							y={y + 14}
 							text-anchor="middle"
-							font-size="11"
+							font-size="13"
 							font-weight="bold"
 							fill={TEMP_COLOR_COLD}
 							filter="url(#white-glow)"

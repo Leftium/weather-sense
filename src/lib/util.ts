@@ -344,9 +344,8 @@ export function getGroupedWmoCode(
 				: {};
 		counts[current.weatherCode] = counts[current.weatherCode] || 0;
 
-		if (index < array.length - 1) {
-			counts[current.weatherCode] += 1;
-		}
+		// Count all hours (unlike TimeLine.svelte which has a 25th fencepost item to skip)
+		counts[current.weatherCode] += 1;
 
 		// For clear/cloudy group (0), pick most common code
 		if (precipitationGroup(nextCode) === 0) {

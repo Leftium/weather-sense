@@ -4,11 +4,13 @@
 		colors,
 		wmoCode,
 		getDayWmoCode,
+		getWeatherIcon,
 		formatTemp,
 		MS_IN_DAY,
 		TEMP_COLOR_HOT,
 		TEMP_COLOR_COLD,
 	} from '$lib/util';
+	import { iconSetStore } from '$lib/iconSet.svelte';
 	import { trackable, isTempLabel } from '$lib/trackable';
 	import { getEmitter } from '$lib/emitter';
 	import { clamp, minBy, maxBy } from 'lodash-es';
@@ -136,7 +138,7 @@
 	const TILE_WIDTH = 70;
 	const TILE_HEIGHT = 114;
 
-	const TEMP_AREA_TOP = 50;
+	const TEMP_AREA_TOP = 62;
 	const TEMP_AREA_BOTTOM = TILE_HEIGHT - 30; // Leave room for min temp labels and precip
 	const TEMP_AREA_HEIGHT = TEMP_AREA_BOTTOM - TEMP_AREA_TOP;
 	const PRECIP_BAR_BOTTOM = TILE_HEIGHT - 2; // Near bottom of tile
@@ -281,7 +283,8 @@
 					{#if !isLoading}
 						<img
 							class="tile-icon"
-							src={wmoCode(tileWmoCode).icon}
+							class:google-icon={iconSetStore.value === 'google'}
+							src={getWeatherIcon(tileWmoCode, iconSetStore.value, true)}
 							alt=""
 							in:fade={{ duration: 300 }}
 						/>
@@ -537,6 +540,14 @@
 		height: 94px;
 		margin: -38px 0 0 -32px;
 		pointer-events: none;
+
+		// Google icons: centered horizontally, raised up (may clip at top)
+		&.google-icon {
+			width: 52px;
+			height: 52px;
+			margin: -2px 0 0 0;
+			justify-self: center;
+		}
 	}
 
 	.tile-content {

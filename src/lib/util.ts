@@ -424,6 +424,26 @@ export function getGoogleV1Icon(code: number, isDay = true): string {
 	return `/icons/google-v1/${iconName}.png`;
 }
 
+// Get the appropriate Google icon (v2 for clear/cloudy with day/night, v1 for precipitation)
+export function getGoogleIcon(code: number, isDay = true): string {
+	// Use v2 for codes with unique day/night variants (clear/cloudy: 0-3)
+	if (hasUniqueNightIcon(code)) {
+		return getGoogleV2Icon(code, isDay);
+	}
+	// Use v1 for precipitation codes
+	return getGoogleV1Icon(code, isDay);
+}
+
+// Get weather icon based on icon set preference
+// iconSet: 'airy' | 'google'
+// isDay: true for day, false for night (only affects Google icons)
+export function getWeatherIcon(code: number, iconSet: 'airy' | 'google', isDay = true): string {
+	if (iconSet === 'airy') {
+		return WMO_CODES[code]?.icon ?? WMO_CODES[0].icon;
+	}
+	return getGoogleIcon(code, isDay);
+}
+
 // Get the precipitation group for a WMO code (used for grouping similar weather types)
 // Group 0 = clear/cloudy, 1 = fog, 2 = rain/drizzle, 3 = freezing rain, 4 = snow, 5 = thunderstorm
 export function precipitationGroup(code: number): number {

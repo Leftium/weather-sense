@@ -26,6 +26,7 @@
 		aqiUsToLabel,
 		colors,
 		getContrastColors,
+		getWeatherIcon,
 		MS_IN_10_MINUTES,
 		MS_IN_DAY,
 		MS_IN_HOUR,
@@ -37,6 +38,7 @@
 		TEMP_COLOR_HOT,
 		TEMP_COLOR_COLD,
 	} from '$lib/util';
+	import { iconSetStore } from '$lib/iconSet.svelte';
 	import type { Markish } from '@observablehq/plot';
 	import dayjs from 'dayjs';
 
@@ -288,8 +290,8 @@
 			type CodesItem = {
 				ms: number;
 				weatherCode: number;
+				isDay: boolean;
 				text: string;
-				icon: string;
 				x1: number;
 				x2: number;
 				xMiddle: number;
@@ -352,8 +354,8 @@
 				const draftItem = {
 					ms: x2,
 					weatherCode: nextCode,
+					isDay: current.isDay,
 					text: WMO_CODES[nextCode].description,
-					icon: WMO_CODES[nextCode].icon,
 					x1,
 					x2,
 					xMiddle: (Number(x1) + Number(x2)) / 2,
@@ -419,7 +421,6 @@
 							xMiddle: (Number(prev.x1) + Number(next.x2)) / 2,
 							weatherCode: mergedCode,
 							text: WMO_CODES[mergedCode].description,
-							icon: WMO_CODES[mergedCode].icon,
 							fill,
 							fillText,
 							fillShadow,
@@ -932,7 +933,9 @@
 						},
 						src: (d) => {
 							const width = xScale?.apply(d.x2) - xScale?.apply(d.x1);
-							return width < ICON_WIDTH ? null : d.icon;
+							return width < ICON_WIDTH
+								? null
+								: getWeatherIcon(d.weatherCode, iconSetStore.value, d.isDay);
 						},
 					}),
 				);

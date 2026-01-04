@@ -2,7 +2,14 @@
 	import { map } from 'lodash-es';
 
 	import { WMO_CODES, getGoogleV2Icon, hasUniqueNightIcon, getGoogleV1Icon } from '$lib/util';
+	import { iconSetStore } from '$lib/iconSet.svelte';
 	import { onMount } from 'svelte';
+
+	let offsetWidth = $state(0);
+	let offsetHeight = $state(0);
+
+	let mode = $state('');
+	let isNight = $state(false);
 
 	// Convert Object to array, adding key as `.code` prop.
 	const wmoCodesBase = map(WMO_CODES, (value, code) => {
@@ -29,23 +36,16 @@
 		wmoCodesBase.map((wmo) => ({
 			...wmo,
 			displayIcon:
-				iconSet === 'airy' ? wmo.airyIcon : isNight ? wmo.googleNightIcon : wmo.googleDayIcon,
+				iconSetStore.value === 'airy'
+					? wmo.airyIcon
+					: isNight
+						? wmo.googleNightIcon
+						: wmo.googleDayIcon,
 		})),
 	);
 
-	let offsetWidth = $state(0);
-	let offsetHeight = $state(0);
-
-	let mode = $state('');
-	let iconSet = $state<'airy' | 'google'>('google');
-	let isNight = $state(false);
-
 	function toggleMode() {
 		mode = mode === 'tall' ? 'wide' : 'tall';
-	}
-
-	function toggleIconSet() {
-		iconSet = iconSet === 'airy' ? 'google' : 'airy';
 	}
 
 	function toggleTime() {
@@ -63,8 +63,12 @@
 		<span class="separator">|</span>
 		<a href="https://blog.leftium.com/2024/07/wmo-codes.html">About</a>
 		<span class="separator">|</span>
-		<button onclick={toggleIconSet}>{iconSet === 'airy' ? 'Airy' : 'Google'}</button>
-		<button onclick={toggleTime} disabled={iconSet === 'airy'}>{isNight ? 'Night' : 'Day'}</button>
+		<button onclick={iconSetStore.toggle}
+			>{iconSetStore.value === 'airy' ? 'Airy' : 'Google'}</button
+		>
+		<button onclick={toggleTime} disabled={iconSetStore.value === 'airy'}
+			>{isNight ? 'Night' : 'Day'}</button
+		>
 		<button onclick={toggleMode}>Transpose</button>
 	</nav>
 	{#if mode}

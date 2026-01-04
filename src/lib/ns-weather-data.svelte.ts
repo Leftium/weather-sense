@@ -70,6 +70,7 @@ export type HourlyForecast = {
 	ms: number;
 	msPretty: string;
 
+	isDay: boolean;
 	weatherCode: number;
 	temperature: number;
 
@@ -109,6 +110,7 @@ type ForecastItem = {
 	ms: number;
 
 	// From omForecast:
+	isDay: boolean;
 	temperature: number;
 	weatherCode: number;
 	humidity: number;
@@ -257,6 +259,7 @@ export function makeNsWeatherData() {
 				msPretty: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),
 				ms,
 
+				isDay: item.isDay ?? true,
 				weatherCode: item.weatherCode ?? 0,
 
 				temperature: item.temperature ?? 0,
@@ -446,7 +449,7 @@ export function makeNsWeatherData() {
 			`&timeformat=unixtime&timezone=auto&past_days=${PAST_DAYS}&forecast_days=${FORECAST_DAYS}` +
 			`&temperature_unit=fahrenheit` +
 			`&current=temperature_2m,relative_humidity_2m,is_day,precipitation,rain,showers,snowfall,weather_code` +
-			`&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,weather_code,dew_point_2m` +
+			`&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,weather_code,dew_point_2m,is_day` +
 			`&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,rain_sum,showers_sum,snowfall_sum,precipitation_hours,precipitation_probability_max`;
 
 		let json;
@@ -494,6 +497,9 @@ export function makeNsWeatherData() {
 					const safeValue = typeof value === 'number' ? value : 0;
 					(object as Record<string, number | string>)[keyData] = safeValue;
 				});
+
+				// Handle is_day separately as boolean
+				object.isDay = json.hourly.is_day?.[index] === 1;
 
 				return object as HourlyForecast;
 			})
@@ -780,6 +786,10 @@ export function makeNsWeatherData() {
 
 		get displayWeatherCode() {
 			return dataForecast.get(startOf(msTracker, 'hour', timezone))?.weatherCode;
+		},
+
+		get displayIsDay() {
+			return dataForecast.get(startOf(msTracker, 'hour', timezone))?.isDay ?? true;
 		},
 
 		get displayHumidity() {

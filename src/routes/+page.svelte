@@ -17,6 +17,7 @@
 		wmoCode,
 		getGroupedWmoCode,
 		getDayWmoCode,
+		getWeatherIcon,
 		colors,
 		aqiUsToLabel,
 		aqiEuropeToLabel,
@@ -26,6 +27,7 @@
 		formatTemp,
 		temperatureToColor,
 	} from '$lib/util.js';
+	import { iconSetStore } from '$lib/iconSet.svelte';
 	import RadarMapLibre from './RadarMapLibre.svelte';
 
 	import { clearEvents, getEmitter } from '$lib/emitter.js';
@@ -664,7 +666,15 @@
 			<span>{wmoCode(nsWeatherData.displayWeatherCode).description}</span>
 		</div>
 
-		<img class="icon" src={wmoCode(nsWeatherData.displayWeatherCode).icon} alt="" />
+		<img
+			class="icon"
+			src={getWeatherIcon(
+				nsWeatherData.displayWeatherCode ?? 0,
+				iconSetStore.value,
+				nsWeatherData.displayIsDay,
+			)}
+			alt=""
+		/>
 
 		<div class="time">
 			<div>{nsWeatherData.tzFormat(nsWeatherData.ms, 'ddd MMM D')}</div>
@@ -774,8 +784,16 @@
 						onclick={() => (groupIcons = !groupIcons)}
 						title={`${wmoCode(hourly24WmoCode ?? undefined).description} (click to ${groupIcons ? 'ungroup' : 'group'} icons)`}
 					>
-						{#if wmoCode(hourly24WmoCode ?? undefined).icon}
-							<img class="icon small" src={wmoCode(hourly24WmoCode ?? undefined).icon} alt="" />
+						{#if hourly24WmoCode != null}
+							<img
+								class="icon small"
+								src={getWeatherIcon(
+									hourly24WmoCode,
+									iconSetStore.value,
+									nsWeatherData.displayIsDay,
+								)}
+								alt=""
+							/>
 						{/if}
 					</button>
 				</div>
@@ -835,7 +853,11 @@
 							onclick={() => (groupIcons = !groupIcons)}
 							title={`${wmoCode(dayWmoCode).description} (click to ${groupIcons ? 'ungroup' : 'group'} icons)`}
 						>
-							<img class="icon small" src={wmoCode(dayWmoCode).icon} alt="" />
+							<img
+								class="icon small"
+								src={getWeatherIcon(dayWmoCode, iconSetStore.value, true)}
+								alt=""
+							/>
 						</button>
 					</div>
 					<div class="day-label">

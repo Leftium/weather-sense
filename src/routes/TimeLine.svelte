@@ -332,7 +332,8 @@
 			// 1. Its duration is <= MAX_GAP_HOURS hours, AND
 			// 2. Its precipitation group is less severe than BOTH surrounding segments
 			// Only run when groupIcons is enabled
-			const MAX_GAP_HOURS = 2;
+			// NOTE: Similar logic exists in util.ts getGroupedWmoCode() for daily tile icons
+			const MAX_GAP_HOURS = 1;
 			const MAX_GAP_MS = MAX_GAP_HOURS * MS_IN_HOUR;
 
 			// Need at least 3 segments to have a gap between two others

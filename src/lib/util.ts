@@ -367,7 +367,8 @@ export function getGroupedWmoCode(
 	// A gap is merged if:
 	// 1. Its duration is <= MAX_GAP_HOURS hours, AND
 	// 2. Its precipitation group is less severe than BOTH surrounding segments
-	const MAX_GAP_HOURS = 2;
+	// NOTE: Similar logic exists in TimeLine.svelte for hourly display
+	const MAX_GAP_HOURS = 1;
 
 	// Need at least 3 segments to have a gap between two others
 	if (groupedCodes.length >= 3) {

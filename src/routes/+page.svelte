@@ -541,7 +541,8 @@
 	const textShadowColor = $derived(contrastTextColor(displayColors[1], true));
 
 	// Past overlay color - use dark overlay on light backgrounds, white on dark backgrounds
-	const pastOverlayColor = $derived(contrastTextColor(displayColors[1], true, 'white', 'black'));
+	// Past tile dimming - CSS-only approach for simplicity
+	const pastTileOpacity = 0.25;
 
 	// Calculate temp range based on visible hourly plot days only
 	const visibleTempStats = $derived.by(() => {
@@ -740,7 +741,7 @@
 				{tileGradient}
 				{textColor}
 				{textShadowColor}
-				{pastOverlayColor}
+				{pastTileOpacity}
 				{maxForecastDays}
 				{groupIcons}
 				onMore={() => (forecastDaysVisible = Math.min(forecastDaysVisible + 2, maxForecastDays))}

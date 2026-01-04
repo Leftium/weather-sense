@@ -22,7 +22,7 @@
 		tileGradient = 'linear-gradient(160deg, #6bb3e0 0%, #a8d8f0 50%, #eee 100%)',
 		textColor = '#333',
 		textShadowColor = 'rgba(248, 248, 255, 0.8)',
-		pastOverlayColor = 'white',
+		pastTileOpacity = 0.25,
 		groupIcons = true,
 		onMore,
 		onAll,
@@ -35,7 +35,7 @@
 		tileGradient?: string;
 		textColor?: string;
 		textShadowColor?: string;
-		pastOverlayColor?: string;
+		pastTileOpacity?: number;
 		groupIcons?: boolean;
 		onMore?: () => void;
 		onAll?: () => void;
@@ -244,15 +244,6 @@
 		updateTracker(nsWeatherData.ms);
 	});
 
-	// Calculate X position for past overlay (full past days only, not partial today)
-	const pastOverlayWidth = $derived.by(() => {
-		// Find today's tile index
-		const todayIndex = days.findIndex((day) => day.fromToday === 0);
-		if (todayIndex <= 0) return 0;
-		// Cover all tiles before today
-		return todayIndex * TILE_WIDTH;
-	});
-
 	// Trackable options for this component
 	const trackableOptions = {
 		getMs: (e: PointerEvent | MouseEvent) => xToMs(e.clientX),
@@ -268,6 +259,7 @@
 	class="daily-tiles"
 	style:--tile-count={isLoading ? placeholderCount : days.length}
 	style:--sky-gradient={skyGradient}
+	style:--past-tile-opacity={pastTileOpacity}
 	bind:this={containerDiv}
 >
 	<!-- Wrapper to constrain trackable area to just the tiles -->
@@ -457,19 +449,6 @@
 							{formatTemp(day.temperatureMin, nsWeatherData.units.temperature)}
 						</text>
 					{/each}
-
-					<!-- Past time dim overlay for SVG elements (AQI, temp lines, etc) -->
-					{#if pastOverlayWidth > 0}
-						<rect
-							x={0}
-							y={0}
-							width={pastOverlayWidth - 2}
-							height={TILE_HEIGHT}
-							fill={pastOverlayColor}
-							opacity="0.5"
-							style="transition: fill 1s ease-out"
-						/>
-					{/if}
 				</svg>
 			{/if}
 		</div>
@@ -540,7 +519,7 @@
 		}
 
 		&.past > * {
-			opacity: 0.7;
+			opacity: var(--past-tile-opacity, 0.7);
 		}
 	}
 

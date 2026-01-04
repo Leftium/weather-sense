@@ -543,6 +543,22 @@
 	// Past overlay color - use dark overlay on light backgrounds, white on dark backgrounds
 	const pastOverlayColor = $derived(contrastTextColor(displayColors[1], true, 'white', 'black'));
 
+	// Calculate temp range based on visible hourly plot days only
+	const visibleTempStats = $derived.by(() => {
+		const visibleDays = (nsWeatherData.daily || []).filter(
+			(day) => day.fromToday > -2 && day.fromToday < forecastDaysVisible,
+		);
+		if (visibleDays.length === 0) {
+			return nsWeatherData.temperatureStats;
+		}
+		const minTemp = Math.min(...visibleDays.map((d) => d.temperatureMin));
+		const maxTemp = Math.max(...visibleDays.map((d) => d.temperatureMax));
+		return {
+			minTemperatureOnly: minTemp,
+			maxTemperature: maxTemp,
+		};
+	});
+
 	function toggleUnits(node: HTMLElement, options: { temperature: boolean | string }) {
 		function handleClick() {
 			emit('weatherdata_requestedToggleUnits', options);
@@ -740,15 +756,15 @@
 					style:--color-high={nsWeatherData.daily?.[2]
 						? temperatureToColor(
 								nsWeatherData.daily[2].temperatureMax,
-								nsWeatherData.temperatureStats.minTemperatureOnly,
-								nsWeatherData.temperatureStats.maxTemperature,
+								visibleTempStats.minTemperatureOnly,
+								visibleTempStats.maxTemperature,
 							)
 						: '#ccc'}
 					style:--color-low={nsWeatherData.daily?.[2]
 						? temperatureToColor(
 								nsWeatherData.daily[2].temperatureMin,
-								nsWeatherData.temperatureStats.minTemperatureOnly,
-								nsWeatherData.temperatureStats.maxTemperature,
+								visibleTempStats.minTemperatureOnly,
+								visibleTempStats.maxTemperature,
 							)
 						: '#ccc'}
 				></div>
@@ -781,6 +797,7 @@
 						{groupIcons}
 						start={Date.now() - 2 * MS_IN_HOUR}
 						trackerColor={targetColors[1]}
+						tempStats={visibleTempStats}
 					/>
 				</div>
 			</div>
@@ -790,10 +807,16 @@
 			{#each (nsWeatherData.daily || []).filter((day) => day.fromToday > -2 && day.fromToday < forecastDaysVisible) as day, index}
 				{@const past = day.fromToday < 0}
 				{@const today = day.fromToday === 0}
-				{@const globalMin = nsWeatherData.temperatureStats.minTemperatureOnly}
-				{@const globalMax = nsWeatherData.temperatureStats.maxTemperature}
-				{@const colorHigh = temperatureToColor(day.temperatureMax, globalMin, globalMax)}
-				{@const colorLow = temperatureToColor(day.temperatureMin, globalMin, globalMax)}
+				{@const colorHigh = temperatureToColor(
+					day.temperatureMax,
+					visibleTempStats.minTemperatureOnly,
+					visibleTempStats.maxTemperature,
+				)}
+				{@const colorLow = temperatureToColor(
+					day.temperatureMin,
+					visibleTempStats.minTemperatureOnly,
+					visibleTempStats.maxTemperature,
+				)}
 				{@const dayWmoCode = getDayWmoCode(
 					day.ms,
 					day.weatherCode,
@@ -836,6 +859,7 @@
 							ghostTracker={true}
 							{past}
 							trackerColor={targetColors[1]}
+							tempStats={visibleTempStats}
 						/>
 					</div>
 				</div>

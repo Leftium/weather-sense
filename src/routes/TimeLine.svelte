@@ -61,6 +61,7 @@
 		past = false,
 		trackerColor = 'yellow',
 		groupIcons = true,
+		tempStats,
 	}: {
 		nsWeatherData: NsWeatherData;
 		plotVisibility: PlotVisibility;
@@ -71,6 +72,7 @@
 		past?: boolean;
 		trackerColor?: string;
 		groupIcons?: boolean;
+		tempStats?: { minTemperatureOnly: number; maxTemperature: number };
 	} = $props();
 
 	const labelElements: Record<string, HTMLElement> = $state({});
@@ -601,9 +603,10 @@
 
 	function makeTransformTemperature(keyName = 'temperature', localMin?: number, localMax?: number) {
 		return function (da: any[]) {
-			// Use local (day's) range if provided, otherwise fall back to global
-			const minTemp = localMin ?? nsWeatherData.temperatureStats.minTemperature;
-			const maxTemp = localMax ?? nsWeatherData.temperatureStats.maxTemperature;
+			// Use local (day's) range if provided, otherwise fall back to visible/global
+			const stats = tempStats ?? nsWeatherData.temperatureStats;
+			const minTemp = localMin ?? stats.minTemperatureOnly;
+			const maxTemp = localMax ?? stats.maxTemperature;
 			const range = maxTemp - minTemp;
 			if (range === 0) return da.map(() => 50); // Flat line in middle if no range
 			return da.map((d) => (100 * (d[keyName] - minTemp)) / range);
@@ -938,11 +941,11 @@
 			const localMin = dataForecast.localTempMin;
 			const localMax = dataForecast.localTempMax;
 
-			// Calculate gradient colors based on where day's temps fall in global TEMPERATURE range
+			// Calculate gradient colors based on where day's temps fall in visible TEMPERATURE range
 			// Use temperature-only range (excludes dew point) so cold days show blue
 			// Use actualHighTemp/actualLowTemp (not affected by ghostTracker dot positioning)
-			const { minTemperatureOnly: globalMin, maxTemperature: globalMax } =
-				nsWeatherData.temperatureStats;
+			const stats = tempStats ?? nsWeatherData.temperatureStats;
+			const { minTemperatureOnly: globalMin, maxTemperature: globalMax } = stats;
 
 			// Colors for temperature high/low based on global temp range
 			const colorAtHigh = temperatureToColor(dataForecast.actualHighTemp, globalMin, globalMax);

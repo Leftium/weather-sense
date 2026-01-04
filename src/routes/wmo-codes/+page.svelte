@@ -5,29 +5,51 @@
 	import { onMount } from 'svelte';
 
 	// Convert Object to array, adding key as `.code` prop.
-	const wmoCodes = map(WMO_CODES, (value, code) => {
+	const wmoCodesBase = map(WMO_CODES, (value, code) => {
 		const codeNum = Number(code);
 		const hasUniqueNight = hasUniqueNightIcon(codeNum);
 		return {
 			code: codeNum,
 			...value,
 			hasUniqueNight,
+			airyIcon: value.icon,
 			// Day grid: use v2 day if unique day/night, otherwise v1 day
-			dayGridIcon: hasUniqueNight ? getGoogleV2Icon(codeNum, true) : getGoogleV1Icon(codeNum, true),
+			googleDayIcon: hasUniqueNight
+				? getGoogleV2Icon(codeNum, true)
+				: getGoogleV1Icon(codeNum, true),
 			// Night grid: use v2 night if unique day/night, otherwise v1 night
-			nightGridIcon: hasUniqueNight
+			googleNightIcon: hasUniqueNight
 				? getGoogleV2Icon(codeNum, false)
 				: getGoogleV1Icon(codeNum, false),
 		};
 	});
 
+	// Compute displayed icon based on current selections
+	const wmoCodes = $derived(
+		wmoCodesBase.map((wmo) => ({
+			...wmo,
+			displayIcon:
+				iconSet === 'airy' ? wmo.airyIcon : isNight ? wmo.googleNightIcon : wmo.googleDayIcon,
+		})),
+	);
+
 	let offsetWidth = $state(0);
 	let offsetHeight = $state(0);
 
 	let mode = $state('');
+	let iconSet = $state<'airy' | 'google'>('google');
+	let isNight = $state(false);
 
-	function onclick() {
+	function toggleMode() {
 		mode = mode === 'tall' ? 'wide' : 'tall';
+	}
+
+	function toggleIconSet() {
+		iconSet = iconSet === 'airy' ? 'google' : 'airy';
+	}
+
+	function toggleTime() {
+		isNight = !isNight;
 	}
 
 	onMount(() => {
@@ -41,13 +63,13 @@
 		<span class="separator">|</span>
 		<a href="https://blog.leftium.com/2024/07/wmo-codes.html">About this Table</a>
 		<span class="separator">|</span>
-		<button {onclick}>Transpose</button>
+		<button onclick={toggleIconSet}>{iconSet === 'airy' ? 'Airy' : 'Google'}</button>
+		<button onclick={toggleTime} disabled={iconSet === 'airy'}>{isNight ? 'Night' : 'Day'}</button>
+		<button onclick={toggleMode}>Transpose</button>
 	</nav>
 	{#if mode}
 		<div class="grids-wrapper">
-			<!-- Airy Icons -->
 			<div class="grid-container">
-				<h2 class="grid-title">Airy Icons</h2>
 				<div class="wmo-grid">
 					{#each wmoCodes as wmo}
 						<article
@@ -57,65 +79,7 @@
 							style:text-shadow={`1px 1px ${wmo.colorShadow}`}
 						>
 							<div class="code">{wmo.code}</div>
-							<img src={wmo.icon} alt="" />
-							<div class="label">
-								{wmo.description}
-							</div>
-						</article>
-					{/each}
-					{#each ['No Precipitation', 'Rain', 'Freezing Rain', 'Snow', 'Thunder Storm'] as title, index}
-						<article class="divider divider-{index}">{title}</article>
-					{/each}
-
-					{#each [...Array(11)] as item}
-						<article class="wmo-item ghost-item"></article>
-					{/each}
-				</div>
-			</div>
-
-			<!-- Google v2 (Day) + v1 fallback -->
-			<div class="grid-container">
-				<h2 class="grid-title">Google v2 (Day) + v1 fallback</h2>
-				<div class="wmo-grid">
-					{#each wmoCodes as wmo}
-						<article
-							style:background-color={wmo.color}
-							class="wmo-item group-{wmo.group} level-{wmo.level}"
-							class:from-v1={!wmo.hasUniqueNight}
-							style:color={wmo.colorText}
-							style:text-shadow={`1px 1px ${wmo.colorShadow}`}
-						>
-							<div class="code">{wmo.code}</div>
-							<img src={wmo.dayGridIcon} alt="" />
-							<div class="label">
-								{wmo.description}
-							</div>
-						</article>
-					{/each}
-					{#each ['No Precipitation', 'Rain', 'Freezing Rain', 'Snow', 'Thunder Storm'] as title, index}
-						<article class="divider divider-{index}">{title}</article>
-					{/each}
-
-					{#each [...Array(11)] as item}
-						<article class="wmo-item ghost-item"></article>
-					{/each}
-				</div>
-			</div>
-
-			<!-- Google v2 Night + v1 fallback -->
-			<div class="grid-container">
-				<h2 class="grid-title">Google v2 (Night) + v1 fallback</h2>
-				<div class="wmo-grid">
-					{#each wmoCodes as wmo}
-						<article
-							style:background-color={wmo.color}
-							class="wmo-item group-{wmo.group} level-{wmo.level}"
-							class:from-v1={!wmo.hasUniqueNight}
-							style:color={wmo.colorText}
-							style:text-shadow={`1px 1px ${wmo.colorShadow}`}
-						>
-							<div class="code">{wmo.code}</div>
-							<img src={wmo.nightGridIcon} alt="" />
+							<img src={wmo.displayIcon} alt="" />
 							<div class="label">
 								{wmo.description}
 							</div>
@@ -151,20 +115,9 @@
 		flex: 1;
 	}
 
-	.grid-title {
-		text-align: center;
-		margin: 1em 0 0.5em;
-		font-size: 1.2em;
-		color: $grey-450;
-	}
-
-	.from-v1 {
-		outline: 2px dashed rgba(0, 0, 0, 0.3);
-		outline-offset: -2px;
-	}
-
 	nav {
 		display: flex;
+		flex-wrap: wrap;
 		justify-content: center;
 		align-items: center;
 		gap: 0.5em;
@@ -183,6 +136,11 @@
 
 		.separator {
 			color: $color-border-light;
+		}
+
+		button:disabled {
+			opacity: 0.4;
+			cursor: not-allowed;
 		}
 	}
 
@@ -255,14 +213,9 @@
 	}
 
 	.wide {
-		.grids-wrapper {
-			display: flex;
-			flex-direction: column;
-			gap: 2em;
-			padding-bottom: 2em;
-		}
-
 		.grid-container {
+			height: 100%;
+			overflow: auto;
 			margin: 0 0.4em;
 		}
 
@@ -270,8 +223,10 @@
 			width: fit-content;
 			margin: auto;
 
+			height: calc(88vh);
+
 			font-size: 0.9em;
-			padding-top: 1em;
+			padding-top: 2em;
 
 			grid-template-columns: repeat(4, 3em auto auto auto) 3em;
 
@@ -280,13 +235,17 @@
 		}
 
 		.wmo-item {
-			height: 140px;
+			height: calc(88vh / 3);
 			aspect-ratio: 1 / 1.62;
 		}
 
 		@media (min-width: 376px) {
+			.wmo-grid {
+				height: auto;
+			}
+
 			.wmo-item {
-				height: 160px;
+				height: 180px;
 			}
 		}
 

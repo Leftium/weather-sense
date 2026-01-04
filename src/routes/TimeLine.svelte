@@ -334,6 +334,7 @@
 					counts[current.weatherCode] += 1;
 				}
 
+				// For clear/cloudy group (0), pick most common code
 				if (getPrecipGroup(nextCode) === 0) {
 					nextCode = Number(
 						maxBy(Object.keys(counts), (code) => counts[Number(code)] + Number(code) / 100),
@@ -359,7 +360,7 @@
 					fill: WMO_CODES[nextCode].color,
 					fillText,
 					fillShadow,
-					counts: {},
+					counts,
 				};
 
 				if (prevItem && prevPrecipGroup === getPrecipGroup(nextCode)) {

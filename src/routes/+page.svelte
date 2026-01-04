@@ -259,9 +259,10 @@
 	// Animates through TIME to ensure you never skip gradients (e.g., must pass through dawn)
 	// Moves at constant COLOR speed for smooth visual transitions
 	// If multiple transitions (dawn+dusk), speeds through early ones, slows for final one
-	const TARGET_COLOR_DELTA_NORMAL = 0.008; // Normal color change per frame
-	const MIN_TIME_STEP = 30000; // Minimum 30 seconds per frame
-	const MAX_TIME_STEP = 3600000; // Maximum 1 hour per frame
+	const TARGET_COLOR_DELTA_PER_SECOND = 0.5; // Color change per second (frame-rate independent)
+	const MIN_TIME_STEP_PER_SEC = 1800000; // Min simulated ms per real second (30 min/sec)
+	const MAX_TIME_STEP_PER_SEC = 216000000; // Max simulated ms per real second (60 hr/sec)
+	const SNAP_THRESHOLD = 500; // Snap to target when within 500ms simulated time
 
 	// Calculate initial sky colors based on timezone from request
 	// Estimate sunrise ~6am and sunset ~6pm local time
@@ -281,19 +282,14 @@
 	let animationFrameId: number | null = null;
 
 	function getTimeOfDay(ms: number): number {
-		const date = new Date(ms);
-		return (
-			date.getHours() * 3600000 +
-			date.getMinutes() * 60000 +
-			date.getSeconds() * 1000 +
-			date.getMilliseconds()
-		);
+		// Use location's timezone, not local timezone
+		const d = dayjs(ms).tz(nsWeatherData.timezone);
+		return d.hour() * 3600000 + d.minute() * 60000 + d.second() * 1000 + d.millisecond();
 	}
 
 	function getDayStart(ms: number): number {
-		const date = new Date(ms);
-		date.setHours(0, 0, 0, 0);
-		return date.getTime();
+		// Use location's timezone, not local timezone
+		return dayjs(ms).tz(nsWeatherData.timezone).startOf('day').valueOf();
 	}
 
 	// Count dawn/dusk transitions between two times
@@ -401,9 +397,16 @@
 		return getSkyColors(nsWeatherData.ms, currentDay.sunrise, currentDay.sunset);
 	});
 
-	// Start animation loop - steps through time at constant color speed
+	// Start animation loop - steps through time at constant color speed (frame-rate independent)
 	$effect(() => {
-		function animate() {
+		let lastFrameTime: number | null = null;
+
+		function animate(currentTime: number) {
+			// Calculate delta time (seconds since last frame)
+			// Default to 16ms (~60fps) on first frame to avoid zero movement
+			const deltaTime = lastFrameTime !== null ? (currentTime - lastFrameTime) / 1000 : 0.016;
+			lastFrameTime = currentTime;
+
 			if (!currentDay) {
 				animationFrameId = requestAnimationFrame(animate);
 				return;
@@ -423,7 +426,7 @@
 			const absDiff = Math.abs(diff);
 
 			// If close enough, snap
-			if (absDiff < MIN_TIME_STEP) {
+			if (absDiff < SNAP_THRESHOLD) {
 				displayMs = targetMs;
 				animationFrameId = requestAnimationFrame(animate);
 				return;
@@ -447,11 +450,11 @@
 			);
 			const skipIntermediate = numTransitions > 1 && !inFinal;
 
-			// Calculate time step
+			// Calculate time step based on delta time (frame-rate independent)
 			let timeStep: number;
 			if (skipIntermediate) {
 				// Skip intermediate transitions - use max step, but stop at final transition edge
-				timeStep = MAX_TIME_STEP;
+				timeStep = MAX_TIME_STEP_PER_SEC * deltaTime;
 
 				// Don't skip into the final transition
 				const edge = getFinalTransitionEdge(
@@ -477,16 +480,21 @@
 				// Calculate max color delta across all 3 stops
 				const maxDelta = colorsDelta(currentColors, sampleColors);
 
+				// Target color delta for this frame = per-second rate * delta time
+				const targetDelta = TARGET_COLOR_DELTA_PER_SECOND * deltaTime;
+
 				if (maxDelta < 0.0001) {
 					// Colors barely changing (midday/midnight), use max step
-					timeStep = MAX_TIME_STEP;
+					timeStep = MAX_TIME_STEP_PER_SEC * deltaTime;
 				} else {
-					timeStep = (TARGET_COLOR_DELTA_NORMAL / maxDelta) * sampleStep;
+					timeStep = (targetDelta / maxDelta) * sampleStep;
 				}
 			}
 
-			// Clamp time step
-			timeStep = Math.max(MIN_TIME_STEP, Math.min(MAX_TIME_STEP, timeStep));
+			// Clamp time step (scaled by deltaTime for frame-rate independence)
+			const minStep = MIN_TIME_STEP_PER_SEC * deltaTime;
+			const maxStep = MAX_TIME_STEP_PER_SEC * deltaTime;
+			timeStep = Math.max(minStep, Math.min(maxStep, timeStep));
 
 			// Don't overshoot target
 			if (timeStep > absDiff) {
@@ -509,13 +517,21 @@
 		};
 	});
 
+	// Detect iOS for gradient workaround (CSS @supports doesn't work for JS-generated styles)
+	const isIOS = browser && /iPad|iPhone|iPod/.test(navigator.userAgent);
+
 	// Build gradients from animated displayColors
+	// Palettes are [light, mid, dark]
+	// iOS: horizontal gradient (90deg) eliminates seam between sticky header and content
+	// Others: diagonal gradient (45deg) - light bottom-left to dark top-right
 	const skyGradient = $derived(
-		`linear-gradient(-135deg, ${displayColors[0]} 0%, ${displayColors[1]} 50%, ${displayColors[2]} 100%)`,
+		isIOS
+			? `linear-gradient(90deg, ${displayColors[0]} 0%, ${displayColors[1]} 50%, ${displayColors[2]} 100%)`
+			: `linear-gradient(45deg, ${displayColors[0]} 0%, ${displayColors[1]} 50%, ${displayColors[2]} 100%)`,
 	);
 
 	const tileGradient = $derived(
-		`linear-gradient(135deg, ${displayColors[0]} 0%, ${displayColors[1]} 50%, ${displayColors[2]} 100%)`,
+		`linear-gradient(315deg, ${displayColors[0]} 0%, ${displayColors[1]} 50%, ${displayColors[2]} 100%)`,
 	);
 
 	// Text color based on middle color for contrast

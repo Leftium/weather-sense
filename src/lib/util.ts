@@ -476,12 +476,12 @@ export function summarize(arrayOrObject: unknown[] | undefined | null) {
 import { getSunAltitude } from './horizon.js';
 
 // Bright color palettes for each phase (3 stops for gradient)
-// Format: [top-left, middle, bottom-right] for 135deg gradient
+// Format: [left, middle, right] for 90deg gradient (light -> dark)
 const skyPalettes = {
-	night: ['#000c26', '#2a3a5c', '#5c4d7a'],
+	night: ['#5c4d7a', '#2a3a5c', '#000c26'],
 	dawn: ['#f0f8ff', '#ffb6a3', '#ffd93d'],
 	day: ['#f0f8ff', '#a8d8f0', '#6bb3e0'],
-	dusk: ['#4a2c5a', '#ff6b6b', '#ffd93d'],
+	dusk: ['#ffd93d', '#ff6b6b', '#4a2c5a'],
 };
 
 // Interpolate between two color palettes using colorjs.io in OKLCH space

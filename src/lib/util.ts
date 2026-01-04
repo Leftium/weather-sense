@@ -259,8 +259,8 @@ export const WMO_CODES: Record<number, any> = {
 	2:  makeWmo(   1_2, 'slate.350',   'Partly Cloudy',    'partly-cloudy'),
     3:  makeWmo(   1_3, 'slate.450',   'Overcast',         'overcast'),
 
-	45: makeWmo(1_02_1, 'grey.350',    'Fog',              'fog'),
-    48: makeWmo(1_02_3, 'grey.550',    'Icy Fog',          'rime-fog'),
+	45: makeWmo(1_02_1, 'zinc.350',    'Fog',              'fog'),
+    48: makeWmo(1_02_3, 'zinc.550',    'Icy Fog',          'rime-fog'),
 
 	51: makeWmo(2_03_1, 'azure.200',   'L.Drizzle',        'light-drizzle'),
 	53: makeWmo(2_03_2, 'azure.300',   'Drizzle',          'moderate-drizzle'),

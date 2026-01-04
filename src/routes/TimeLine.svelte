@@ -334,7 +334,7 @@
 			// Only run when groupIcons is enabled
 			// NOTE: Similar logic exists in util.ts getGroupedWmoCode() for daily tile icons
 			const MAX_GAP_HOURS = 1;
-			const MAX_GAP_MS = MAX_GAP_HOURS * MS_IN_HOUR;
+			const MAX_GAP_MS = MAX_GAP_HOURS * MS_IN_HOUR + 3 * MS_IN_MINUTE; // Add buffer for segment overlap
 
 			// Need at least 3 segments to have a gap between two others
 			if (groupIcons && codes.length >= 3) {

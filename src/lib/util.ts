@@ -7,6 +7,32 @@ import { gg } from '@leftium/gg';
 import picoColors from '$lib/pico-color-palette.json';
 import dayjs from 'dayjs';
 
+/**
+ * Debug logger that collects messages and stores them in window.debugLog
+ * Usage:
+ *   1. Create logger: const debug = createDebugLogger('MyComponent', shouldDebug);
+ *   2. Log messages: debug.log('message here');
+ *   3. Finish and store: debug.finish();
+ *   4. In browser console: copy(debugLog)
+ */
+export function createDebugLogger(name: string, enabled: boolean) {
+	const messages: string[] = [];
+	return {
+		log: (msg: string) => {
+			if (enabled) messages.push(msg);
+		},
+		finish: () => {
+			if (enabled && typeof window !== 'undefined') {
+				(window as any).debugLog = messages.join('\n');
+				console.log(`[${name}] Debug stored in window.debugLog - run: copy(debugLog)`);
+			}
+		},
+		get messages() {
+			return messages;
+		},
+	};
+}
+
 export const SOLARIZED_BLUE = '#268bd2';
 
 // Temperature colors (softer red/blue for hot/cold)

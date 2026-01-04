@@ -327,6 +327,60 @@
 				return accumulator;
 			}, [] as CodesItem[]);
 
+			// Second pass: merge short gaps into surrounding precipitation segments
+			// A gap is merged if:
+			// 1. Its duration is <= MAX_GAP_HOURS hours, AND
+			// 2. Its precipitation group is less severe than BOTH surrounding segments
+			// Only run when groupIcons is enabled
+			const MAX_GAP_HOURS = 2;
+			const MAX_GAP_MS = MAX_GAP_HOURS * MS_IN_HOUR;
+
+			// Need at least 3 segments to have a gap between two others
+			if (groupIcons && codes.length >= 3) {
+				for (let i = codes.length - 2; i >= 1; i--) {
+					const gap = codes[i];
+					const prev = codes[i - 1];
+					const next = codes[i + 1];
+
+					// Safety check - skip if any segment is undefined
+					if (!gap || !prev || !next) continue;
+
+					const gapDuration = gap.x2 - gap.x1;
+					const gapGroup = getPrecipGroup(gap.weatherCode);
+					const prevGroup = getPrecipGroup(prev.weatherCode);
+					const nextGroup = getPrecipGroup(next.weatherCode);
+
+					// Merge if gap is short and less severe than both neighbors
+					if (gapDuration <= MAX_GAP_MS && gapGroup < prevGroup && gapGroup < nextGroup) {
+						// Use the more severe weather code from surrounding segments
+						const mergedCode =
+							WMO_CODES[prev.weatherCode].wsCode > WMO_CODES[next.weatherCode].wsCode
+								? prev.weatherCode
+								: next.weatherCode;
+
+						const fill = WMO_CODES[mergedCode].color;
+						const { fillText, fillShadow } = getContrastColors(fill);
+
+						// Merge prev + gap + next into prev
+						codes[i - 1] = {
+							...prev,
+							ms: next.ms,
+							x2: next.x2,
+							xMiddle: (Number(prev.x1) + Number(next.x2)) / 2,
+							weatherCode: mergedCode,
+							text: WMO_CODES[mergedCode].description,
+							icon: WMO_CODES[mergedCode].icon,
+							fill,
+							fillText,
+							fillShadow,
+						};
+
+						// Remove gap and next (they're now merged into prev)
+						codes.splice(i, 2);
+					}
+				}
+			}
+
 			const rain = metrics
 				.filter((d) => d.precipitation > 0)
 				.map((d) => {

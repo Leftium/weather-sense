@@ -363,6 +363,48 @@ export function getGroupedWmoCode(
 		return accumulator;
 	}, [] as GroupedCode[]);
 
+	// Second pass: merge short gaps into surrounding precipitation segments
+	// A gap is merged if:
+	// 1. Its duration is <= MAX_GAP_HOURS hours, AND
+	// 2. Its precipitation group is less severe than BOTH surrounding segments
+	const MAX_GAP_HOURS = 2;
+
+	// Need at least 3 segments to have a gap between two others
+	if (groupedCodes.length >= 3) {
+		for (let i = groupedCodes.length - 2; i >= 1; i--) {
+			const gap = groupedCodes[i];
+			const prev = groupedCodes[i - 1];
+			const next = groupedCodes[i + 1];
+
+			// Safety check - skip if any segment is undefined
+			if (!gap || !prev || !next) continue;
+
+			// Count hours in gap by summing counts
+			const gapHours = Object.values(gap.counts).reduce((sum, n) => sum + n, 0);
+			const gapGroup = precipitationGroup(gap.weatherCode);
+			const prevGroup = precipitationGroup(prev.weatherCode);
+			const nextGroup = precipitationGroup(next.weatherCode);
+
+			// Merge if gap is short and less severe than both neighbors
+			if (gapHours <= MAX_GAP_HOURS && gapGroup < prevGroup && gapGroup < nextGroup) {
+				// Use the more severe weather code from surrounding segments
+				const mergedCode =
+					WMO_CODES[prev.weatherCode].wsCode > WMO_CODES[next.weatherCode].wsCode
+						? prev.weatherCode
+						: next.weatherCode;
+
+				// Merge prev + gap + next into prev
+				groupedCodes[i - 1] = {
+					weatherCode: mergedCode,
+					counts: { ...prev.counts, ...gap.counts, ...next.counts },
+				};
+
+				// Remove gap and next (they're now merged into prev)
+				groupedCodes.splice(i, 2);
+			}
+		}
+	}
+
 	// Pick the most severe from the group representatives
 	const mostSevereGroup = maxByFn(groupedCodes, (g) => wmoCode(g.weatherCode).wsCode ?? 0);
 	return mostSevereGroup?.weatherCode ?? null;

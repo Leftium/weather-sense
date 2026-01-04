@@ -767,20 +767,19 @@
 								visibleTempStats.maxTemperature,
 							)
 						: '#ccc'}
-				></div>
+				>
+					<button
+						class="icon-toggle"
+						onclick={() => (groupIcons = !groupIcons)}
+						title={`${wmoCode(hourly24WmoCode ?? undefined).description} (click to ${groupIcons ? 'ungroup' : 'group'} icons)`}
+					>
+						{#if wmoCode(hourly24WmoCode ?? undefined).icon}
+							<img class="icon small" src={wmoCode(hourly24WmoCode ?? undefined).icon} alt="" />
+						{/if}
+					</button>
+				</div>
 				<div class="day-label">
-					<div class="day today">
-						<button
-							class="icon-toggle"
-							onclick={() => (groupIcons = !groupIcons)}
-							title={`${wmoCode(hourly24WmoCode ?? undefined).description} (click to ${groupIcons ? 'ungroup' : 'group'} icons)`}
-						>
-							{#if wmoCode(hourly24WmoCode ?? undefined).icon}
-								<img class="icon small" src={wmoCode(hourly24WmoCode ?? undefined).icon} alt="" />
-							{/if}
-							24hrs
-						</button>
-					</div>
+					<div class="day today">24hrs</div>
 					<div class="high-low">
 						<span style:color={TEMP_COLOR_HOT} use:toggleUnits={{ temperature: true }}>
 							{nsWeatherData.format('daily[2].temperatureMax', false)}
@@ -829,17 +828,18 @@
 						class={['temp-gradient-bar', { today }]}
 						style:--color-high={colorHigh}
 						style:--color-low={colorLow}
-					></div>
+					>
+						<button
+							class="icon-toggle"
+							onclick={() => (groupIcons = !groupIcons)}
+							title={`${wmoCode(dayWmoCode).description} (click to ${groupIcons ? 'ungroup' : 'group'} icons)`}
+						>
+							<img class="icon small" src={wmoCode(dayWmoCode).icon} alt="" />
+						</button>
+					</div>
 					<div class="day-label">
 						<div class={['day', { today }]}>
-							<button
-								class="icon-toggle"
-								onclick={() => (groupIcons = !groupIcons)}
-								title={`${wmoCode(dayWmoCode).description} (click to ${groupIcons ? 'ungroup' : 'group'} icons)`}
-							>
-								<img class="icon small" src={wmoCode(dayWmoCode).icon} alt="" />
-								{day.compactDate}
-							</button>
+							{day.compactDate}
 						</div>
 						<div class="high-low">
 							<span style:color={TEMP_COLOR_HOT} use:toggleUnits={{ temperature: true }}
@@ -1170,6 +1170,28 @@
 		align-self: center; // Vertically center with plot
 		position: relative;
 		z-index: 0; // Behind icons and labels
+
+		.icon-toggle {
+			all: unset;
+			cursor: pointer;
+			position: absolute;
+			right: -20px; // Position icon at right edge of gradient
+			top: 50%;
+			transform: translateY(calc(-50% - 20px));
+
+			&:hover .icon.small {
+				filter: brightness(1.1);
+			}
+
+			&:active .icon.small {
+				filter: brightness(0.9);
+			}
+		}
+
+		.icon.small {
+			height: 40px;
+			width: 40px;
+		}
 	}
 
 	.hourly-row .temp-gradient-bar,
@@ -1296,31 +1318,6 @@
 				0 0 16px #f8f8ff,
 				0 0 24px #f8f8ff,
 				0 0 32px #f8f8ff;
-
-			.icon.small {
-				position: absolute;
-				left: 25px; // Centered between gradient block and hourly plot
-				top: 50%;
-				transform: translateY(calc(-50% - 10px));
-				z-index: -1; // Below day label text
-				height: 40px;
-				width: 40px;
-			}
-
-			// Transparent button wrapper for clickable icon toggle
-			.icon-toggle {
-				all: unset;
-				cursor: pointer;
-				display: inline;
-
-				&:hover .icon.small {
-					filter: brightness(1.1);
-				}
-
-				&:active .icon.small {
-					filter: brightness(0.9);
-				}
-			}
 		}
 
 		.high-low {

@@ -59,9 +59,9 @@
 
 <div class="container-fluid flex-column {mode}" bind:offsetWidth bind:offsetHeight>
 	<nav>
-		<a href="/">← Back to WeatherSense</a>
+		<a href="/">← Back</a>
 		<span class="separator">|</span>
-		<a href="https://blog.leftium.com/2024/07/wmo-codes.html">About this Table</a>
+		<a href="https://blog.leftium.com/2024/07/wmo-codes.html">About</a>
 		<span class="separator">|</span>
 		<button onclick={toggleIconSet}>{iconSet === 'airy' ? 'Airy' : 'Google'}</button>
 		<button onclick={toggleTime} disabled={iconSet === 'airy'}>{isNight ? 'Night' : 'Day'}</button>

@@ -1262,6 +1262,7 @@
 		.day {
 			position: relative;
 			z-index: 1;
+			color: #3d2d2d;
 			text-shadow:
 				0 0 2px #f8f8ff,
 				0 0 4px #f8f8ff,

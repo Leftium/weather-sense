@@ -647,7 +647,7 @@
 		font-size: 14px;
 		font-weight: 600;
 		margin-bottom: 0;
-		color: #333;
+		color: #3d2d2d;
 		text-shadow:
 			0 0 2px #f8f8ff,
 			0 0 4px #f8f8ff,

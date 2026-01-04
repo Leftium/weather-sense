@@ -522,8 +522,8 @@
 	};
 
 	function makeTransFormPrecipitation(onlyLinear: boolean) {
-		// 80th percentile of hourly precipitation (~20% of rainy hours exceed this)
-		const LINEAR_MAX = 2;
+		// ~80th percentile for snow precipitation (snow reports higher mm/hr than rain)
+		const LINEAR_MAX = 3;
 
 		const LINEAR_SECTION = 70;
 		const CAP_BONUS = 3;

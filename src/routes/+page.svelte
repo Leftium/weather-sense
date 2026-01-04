@@ -923,9 +923,7 @@
 		transition: background 1s ease-out;
 
 		// iOS Safari has severe performance issues with background-attachment: fixed
-		// It causes jank during touch/scroll and visual glitches
-		// Disable on all mobile to avoid seam between sticky and content
-		@include mobile-only {
+		@supports (-webkit-touch-callout: none) {
 			background-attachment: scroll;
 		}
 	}
@@ -940,8 +938,8 @@
 		padding-block: 0.2em;
 		transition: background 1s ease-out;
 
-		// Match sky-gradient-bg on mobile to avoid visual seam
-		@include mobile-only {
+		// iOS Safari has severe performance issues with background-attachment: fixed
+		@supports (-webkit-touch-callout: none) {
 			background-attachment: scroll;
 		}
 

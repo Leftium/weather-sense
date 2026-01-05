@@ -542,13 +542,13 @@
 	.past-overlay {
 		width: 100%;
 		height: 100%;
-		background: white;
+		background: black;
 		opacity: 0;
 		pointer-events: none;
 		z-index: 3; // Below precip-underlay (4), so temp plot stays visible
 
 		&.past {
-			opacity: 0.4;
+			opacity: 0.3;
 		}
 	}
 

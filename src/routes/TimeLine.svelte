@@ -1144,16 +1144,29 @@
 			}
 
 			// Past overlay - mutes portion before current time
-			marks.push(
-				Plot.rectY([0], {
-					x1: msStart,
-					x2: Math.min(msEnd, Math.max(msStart, Date.now())),
-					y1: yDomainTop,
-					y2: yDomainBottom,
-					fill: 'white',
-					opacity: 0.5,
-				}),
-			);
+			// Vertical gradient: darker at top and bottom, transparent in middle (vignette)
+			const now = Date.now();
+			const pastEnd = Math.min(msEnd, Math.max(msStart, now));
+
+			if (now > msStart) {
+				marks.push(
+					() => htl.svg`<defs>
+						<linearGradient id="past-overlay-gradient-${msStart}" x1="0" y1="0" x2="0" y2="1">
+							<stop offset="0%" stop-color="black" stop-opacity="0.35" />
+							<stop offset="100%" stop-color="black" stop-opacity="0" />
+						</linearGradient>
+					</defs>`,
+				);
+				marks.push(
+					Plot.rectY([0], {
+						x1: msStart,
+						x2: pastEnd,
+						y1: yDomainTop,
+						y2: yDomainBottom,
+						fill: `url(#past-overlay-gradient-${msStart})`,
+					}),
+				);
+			}
 		}
 
 		//@ts-expect-error: x.type is valid.

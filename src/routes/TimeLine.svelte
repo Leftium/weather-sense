@@ -28,6 +28,7 @@
 		colors,
 		getCloudGradient,
 		getContrastColors,
+		getSkyColors,
 		getWeatherIcon,
 		MS_IN_10_MINUTES,
 		MS_IN_DAY,
@@ -39,7 +40,9 @@
 		temperatureToColor,
 		TEMP_COLOR_HOT,
 		TEMP_COLOR_COLD,
+		skyPalettes,
 	} from '$lib/util';
+	import { getSunAltitude } from '$lib/horizon';
 	import { iconSetStore } from '$lib/iconSet.svelte';
 	import type { Markish } from '@observablehq/plot';
 	import dayjs from 'dayjs';
@@ -112,6 +115,7 @@
 	let clientWidth: number = $state(0);
 
 	const aqiPlotHeight = 20;
+	const skyStripHeight = 10;
 
 	const yDomainTop = 145;
 	let yDomainBottom = $derived.by(() => {
@@ -124,6 +128,9 @@
 		if (draw.aqiEurope) {
 			value -= aqiPlotHeight;
 		}
+
+		// Sky strip goes at the very bottom, under AQI bands
+		value -= skyStripHeight;
 
 		return value;
 	});
@@ -272,6 +279,168 @@
 		}
 
 		return null;
+	});
+
+	// Sky color slices with full vertical gradient per time sample
+	// Optimized: single rects for day/night, fine sampling only during transitions
+	let dataSkyColor = $derived.by(() => {
+		if (!nsWeatherData.daily?.length) return null;
+
+		type SkySlice = {
+			x1: number;
+			x2: number;
+			colors: string[]; // [horizon, middle, upper sky]
+			gradientId: string;
+		};
+
+		// Find sunrise/sunset for a given timestamp
+		function getSunTimes(ms: number): { sunrise: number; sunset: number } | null {
+			const day = nsWeatherData.daily?.find((d) => d.ms <= ms && d.ms + MS_IN_DAY > ms);
+			return day ? { sunrise: day.sunrise, sunset: day.sunset } : null;
+		}
+
+		// Convert radians to degrees
+		function radToDeg(rad: number): number {
+			return (rad * 180) / Math.PI;
+		}
+
+		// Get sun altitude in degrees at a given time
+		function getAltitude(ms: number, sunrise: number, sunset: number): number {
+			return radToDeg(getSunAltitude(ms, sunrise, sunset));
+		}
+
+		// Binary search to find time when altitude crosses a threshold
+		// Returns ms when altitude first goes above/below threshold in the search range
+		function findAltitudeCrossing(
+			startMs: number,
+			endMs: number,
+			sunrise: number,
+			sunset: number,
+			targetAlt: number,
+			rising: boolean, // true if looking for altitude going up past threshold
+		): number {
+			let lo = startMs;
+			let hi = endMs;
+			while (hi - lo > MS_IN_MINUTE) {
+				const mid = Math.floor((lo + hi) / 2);
+				const alt = getAltitude(mid, sunrise, sunset);
+				if (rising ? alt < targetAlt : alt > targetAlt) {
+					lo = mid;
+				} else {
+					hi = mid;
+				}
+			}
+			return hi;
+		}
+
+		const slices: SkySlice[] = [];
+		const FINE_INTERVAL = MS_IN_MINUTE;
+
+		// Altitude thresholds from getSkyColors:
+		// <= -18°: night
+		// -18° to 6°: transition (dawn/dusk)
+		// >= 6°: day
+		const NIGHT_THRESHOLD = -18;
+		const DAY_THRESHOLD = 6;
+
+		// Process each day in the range
+		for (const day of nsWeatherData.daily) {
+			const { sunrise, sunset, ms: dayStart } = day;
+			const dayEnd = dayStart + MS_IN_DAY;
+
+			// Skip days outside our range
+			if (dayEnd < msStart || dayStart > msEnd) continue;
+
+			const solarNoon = (sunrise + sunset) / 2;
+
+			// Find key transition times using binary search
+			// Dawn: night->day transition (altitude rising from -18° to 6°)
+			const dawnStart = findAltitudeCrossing(
+				dayStart,
+				sunrise,
+				sunrise,
+				sunset,
+				NIGHT_THRESHOLD,
+				true,
+			);
+			const dawnEnd = findAltitudeCrossing(
+				sunrise,
+				solarNoon,
+				sunrise,
+				sunset,
+				DAY_THRESHOLD,
+				true,
+			);
+
+			// Dusk: day->night transition (altitude falling from 6° to -18°)
+			const duskStart = findAltitudeCrossing(
+				solarNoon,
+				sunset,
+				sunrise,
+				sunset,
+				DAY_THRESHOLD,
+				false,
+			);
+			const duskEnd = findAltitudeCrossing(sunset, dayEnd, sunrise, sunset, NIGHT_THRESHOLD, false);
+
+			// Helper to add a single solid rect
+			function addSolidRect(x1: number, x2: number, palette: string[]) {
+				if (x2 <= x1) return;
+				const clampedX1 = Math.max(x1, msStart);
+				const clampedX2 = Math.min(x2, msEnd);
+				if (clampedX2 <= clampedX1) return;
+
+				slices.push({
+					x1: clampedX1,
+					x2: clampedX2,
+					colors: palette,
+					gradientId: `sky-solid-${clampedX1}`,
+				});
+			}
+
+			// Helper to add fine-sampled transition rects
+			function addTransitionRects(x1: number, x2: number) {
+				const clampedX1 = Math.max(x1, msStart);
+				const clampedX2 = Math.min(x2, msEnd);
+				if (clampedX2 <= clampedX1) return;
+
+				let ms = clampedX1;
+				while (ms < clampedX2) {
+					const colors = getSkyColors(ms, sunrise, sunset);
+					const nextMs = Math.min(ms + FINE_INTERVAL, clampedX2);
+					slices.push({
+						x1: ms,
+						x2: nextMs + MS_IN_MINUTE, // slight overlap to prevent gaps
+						colors,
+						gradientId: `sky-slice-${ms}`,
+					});
+					ms = nextMs;
+				}
+			}
+
+			// Night before dawn (from day start to dawn start)
+			addSolidRect(dayStart, dawnStart, skyPalettes.night);
+
+			// Dawn transition
+			addTransitionRects(dawnStart, dawnEnd);
+
+			// Day (from dawn end to dusk start)
+			addSolidRect(dawnEnd, duskStart, skyPalettes.day);
+
+			// Dusk transition
+			addTransitionRects(duskStart, duskEnd);
+
+			// Night after dusk (from dusk end to day end)
+			addSolidRect(duskEnd, dayEnd, skyPalettes.night);
+		}
+
+		// Sort slices by x1 to ensure proper rendering order
+		slices.sort((a, b) => a.x1 - b.x1);
+
+		console.log(
+			`Sky slices: ${slices.length} rects (vs ${Math.round((msEnd - msStart) / MS_IN_MINUTE)} minutes in range)`,
+		);
+		return slices;
 	});
 
 	let dataForecast = $derived.by(() => {
@@ -474,7 +643,7 @@
 			const tomorrow = +dayjs().add(1, 'day').startOf('day');
 			if (MOCK_WMO_CODES && metrics.length > 0 && msStart >= tomorrow) {
 				codes.length = 0; // Clear existing codes
-				const segmentDuration = 6 * MS_IN_HOUR; // 6 hours per code
+				const segmentDuration = 4 * MS_IN_HOUR; // 4 hours per code
 				// Calculate day offset from tomorrow to continue codes across rows
 				const dayOffset = Math.floor((msStart - tomorrow) / MS_IN_DAY);
 				const codesPerDay = Math.floor((24 * MS_IN_HOUR) / segmentDuration); // 4 codes per day
@@ -806,13 +975,6 @@
 		} as Plot.TextOptions;
 
 		const marks: Markish[] = [
-			// Background; also needed for d3.pointer() target.
-			Plot.rectY([0], {
-				x1: msStart,
-				x2: msEnd,
-				y: yDomainTop,
-				fill: '#efefef',
-			}),
 			// Bottom border line connecting tick marks (extends left off-screen to cover temp bar)
 			Plot.ruleY([yDomainBottom], {
 				x1: msStart - MS_IN_DAY,
@@ -821,6 +983,68 @@
 				strokeWidth: 1,
 			}),
 		];
+
+		// Sky color gradient as base layer (replaces gray background)
+		if (dataSkyColor && dataSkyColor.length > 0) {
+			// Create all vertical gradient definitions
+			marks.push(() => {
+				const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+
+				for (const slice of dataSkyColor) {
+					const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+					gradient.setAttribute('id', slice.gradientId);
+					gradient.setAttribute('x1', '0');
+					gradient.setAttribute('y1', '0');
+					gradient.setAttribute('x2', '0');
+					gradient.setAttribute('y2', '1'); // Vertical gradient
+
+					// Solid bottom color for sky strip (colors[2] = upper sky)
+					const stop0 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+					stop0.setAttribute('offset', '0%');
+					stop0.setAttribute('stop-color', slice.colors[2]); // Upper sky color only
+					gradient.appendChild(stop0);
+
+					defs.appendChild(gradient);
+				}
+
+				return defs;
+			});
+
+			// Render sky as a thin strip at very bottom (below AQI bands, above tick marks)
+			// Calculate position based on how many AQI bands are shown
+			let aqiOffset = 0;
+			if (draw.aqiUs) aqiOffset += aqiPlotHeight;
+			if (draw.aqiEurope) aqiOffset += aqiPlotHeight;
+			const skyY2 = -aqiOffset;
+			const skyY1 = skyY2 - skyStripHeight;
+
+			marks.push(
+				Plot.rectY(dataSkyColor, {
+					x1: 'x1',
+					x2: 'x2',
+					y1: skyY1,
+					y2: skyY2,
+					fill: (d) => `url(#${d.gradientId})`,
+				}),
+			);
+		} else {
+			// Fallback gray background if no sky data
+			let aqiOffset = 0;
+			if (draw.aqiUs) aqiOffset += aqiPlotHeight;
+			if (draw.aqiEurope) aqiOffset += aqiPlotHeight;
+			const skyY2 = -aqiOffset;
+			const skyY1 = skyY2 - skyStripHeight;
+
+			marks.push(
+				Plot.rectY([0], {
+					x1: msStart,
+					x2: msEnd,
+					y1: skyY1,
+					y2: skyY2,
+					fill: '#efefef',
+				}),
+			);
+		}
 
 		if (dataAirQuality) {
 			if (draw.aqiUs) {
@@ -863,7 +1087,7 @@
 						x1: 'x1',
 						x2: 'x2',
 						y1: -aqiPlotHeight,
-						y2: -0,
+						y2: 0,
 						fill: 'fill',
 					}),
 				);
@@ -905,6 +1129,7 @@
 					// For fog/precip: dark at top (0%), light at bottom (100%)
 					const topColor = isSky ? light : dark;
 					const bottomColor = isSky ? dark : light;
+					// All gradients are solid (no transparency)
 					marks.push(
 						() => htl.svg`<defs>
 							<linearGradient id="cloud-gradient-${code}-${msStart}" x1="0" y1="0" x2="0.3" y2="1">
@@ -916,7 +1141,7 @@
 					);
 				}
 
-				// Weather code colored bands:
+				// Weather code colored bands (full height)
 				marks.push(
 					Plot.rectY(dataForecast.codes, {
 						x1: 'x1',
@@ -1136,19 +1361,7 @@
 				);
 			}
 
-			if (draw.solarEvents && xAxis) {
-				marks.push(
-					// Plot sunrise as yellow rule and sunset as icons:
-					Plot.image(dataForecast?.solarEvents, {
-						width: 32,
-						height: 32,
-
-						x: 'x',
-						y: yDomainBottom - 4,
-						src: (d) => `/icons/meteocons/${d.type}.png`,
-					}),
-				);
-			}
+			// Sunrise/sunset indicators removed - sky strip shows this now
 
 			// Past overlay - mutes portion before current time
 			// Vertical gradient: darker at top and bottom, transparent in middle (vignette)

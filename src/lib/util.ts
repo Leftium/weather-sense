@@ -776,25 +776,32 @@ export function summarize(arrayOrObject: unknown[] | undefined | null) {
 }
 
 // Sky gradient using sun altitude for smooth palette interpolation
-import { getSunAltitude } from './horizon.js';
+import { getSunAltitude } from './horizon';
+export { getSunAltitude };
 
 // Bright color palettes for each phase (3 stops for gradient)
-// Format: [left, middle, right] for 90deg gradient (light -> dark)
-const skyPalettes = {
+// Format: [horizon, middle, upper sky]
+export const skyPalettes = {
 	night: ['#5c4d7a', '#2a3a5c', '#000c26'],
-	dawn: ['#f0f8ff', '#ffb6a3', '#ffd93d'],
+	dawn: ['#fff0e6', '#ff9977', '#ffcc33'], // warm white horizon, orange middle, golden upper
 	day: ['#f0f8ff', '#a8d8f0', '#6bb3e0'],
-	dusk: ['#ffd93d', '#ff6b6b', '#4a2c5a'],
+	dusk: ['#4a2c5a', '#ff6b6b', '#ffd93d'], // purple upper sky, coral middle, golden horizon
 };
 
-// Interpolate between two color palettes using colorjs.io in OKLCH space
-function interpolatePalettes(palette1: string[], palette2: string[], t: number): string[] {
+// Interpolate between two color palettes using colorjs.io
+// TEMP: Pass colorSpace parameter to compare srgb vs srgb-linear between days
+function interpolatePalettes(
+	palette1: string[],
+	palette2: string[],
+	t: number,
+	colorSpace = 'srgb',
+): string[] {
 	// Clamp t to 0-1
 	const clampedT = Math.max(0, Math.min(1, t));
 	return palette1.map((color1, i) => {
 		const c1 = new Color(color1);
 		const c2 = new Color(palette2[i]);
-		const mixed = c1.mix(c2, clampedT, { space: 'oklch' });
+		const mixed = c1.mix(c2, clampedT, { space: colorSpace });
 		return mixed.toString({ format: 'hex' });
 	});
 }
@@ -858,7 +865,12 @@ function radToDeg(rad: number): number {
 	return (rad * 180) / Math.PI;
 }
 
-export function getSkyColors(ms: number, sunrise: number, sunset: number): string[] {
+export function getSkyColors(
+	ms: number,
+	sunrise: number,
+	sunset: number,
+	colorSpace = 'srgb-linear',
+): string[] {
 	const altitudeRad = getSunAltitude(ms, sunrise, sunset);
 	const altitude = radToDeg(altitudeRad);
 	const solarNoon = (sunrise + sunset) / 2;
@@ -879,18 +891,18 @@ export function getSkyColors(ms: number, sunrise: number, sunset: number): strin
 		// Map -18° to -6° => t: 0 to 1
 		const t = (altitude + 18) / 12;
 		if (isMorning) {
-			return interpolatePalettes(skyPalettes.night, skyPalettes.dawn, t);
+			return interpolatePalettes(skyPalettes.night, skyPalettes.dawn, t, colorSpace);
 		} else {
-			return interpolatePalettes(skyPalettes.night, skyPalettes.dusk, t);
+			return interpolatePalettes(skyPalettes.night, skyPalettes.dusk, t, colorSpace);
 		}
 	} else if (altitude > -6 && altitude <= 6) {
 		// Golden hour: dawn/dusk -> day
 		// Map -6° to 6° => t: 0 to 1
 		const t = (altitude + 6) / 12;
 		if (isMorning) {
-			return interpolatePalettes(skyPalettes.dawn, skyPalettes.day, t);
+			return interpolatePalettes(skyPalettes.dawn, skyPalettes.day, t, colorSpace);
 		} else {
-			return interpolatePalettes(skyPalettes.dusk, skyPalettes.day, t);
+			return interpolatePalettes(skyPalettes.dusk, skyPalettes.day, t, colorSpace);
 		}
 	} else {
 		// Full daylight (altitude > 6°)

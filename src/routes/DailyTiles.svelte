@@ -436,7 +436,7 @@
 						{@const y = tempToY(day.temperatureMin)}
 						<text
 							{x}
-							y={y + 12}
+							y={y + 14}
 							text-anchor="middle"
 							font-size="13"
 							font-weight="bold"

@@ -387,8 +387,8 @@ export const GOOGLE_V1_ICONS: Record<number, { day: string; night: string }> = {
 	2:  { day: 'partly_cloudy',   night: 'partly_cloudy' },
 	3:  { day: 'cloudy',          night: 'cloudy' },
 
-	45: { day: 'fog',             night: 'fog' },
-	48: { day: 'fog',             night: 'fog' },
+	45: { day: 'cloudy',          night: 'cloudy' },
+	48: { day: 'cloudy',          night: 'cloudy' },
 
 	51: { day: 'rain_light',      night: 'rain_light' },
 	53: { day: 'rain_light',      night: 'rain_light' },

@@ -1214,6 +1214,7 @@
 		.icon.small {
 			height: 40px;
 			width: 40px;
+			filter: drop-shadow(0 0 10px rgba(135, 206, 235, 0.8));
 		}
 	}
 

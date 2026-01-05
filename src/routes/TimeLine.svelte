@@ -998,11 +998,16 @@
 					gradient.setAttribute('x2', '0');
 					gradient.setAttribute('y2', '1'); // Vertical gradient
 
-					// Solid bottom color for sky strip (colors[2] = upper sky)
+					// Vertical gradient for sky strip: upper sky at top, middle at bottom
 					const stop0 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
 					stop0.setAttribute('offset', '0%');
-					stop0.setAttribute('stop-color', slice.colors[2]); // Upper sky color only
+					stop0.setAttribute('stop-color', slice.colors[2]); // Upper sky at top
 					gradient.appendChild(stop0);
+
+					const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+					stop1.setAttribute('offset', '100%');
+					stop1.setAttribute('stop-color', slice.colors[1]); // Middle color at bottom
+					gradient.appendChild(stop1);
 
 					defs.appendChild(gradient);
 				}

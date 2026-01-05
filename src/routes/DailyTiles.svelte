@@ -289,7 +289,7 @@
 							in:fade={{ duration: 300 }}
 						/>
 						<div class="tile-content" in:fade={{ duration: 300 }}>
-							<div class="date" class:today>{day.compactDate}</div>
+							<div class="date" class:today class:past>{day.compactDate}</div>
 						</div>
 					{/if}
 					<div class="past-overlay" class:past></div>
@@ -663,6 +663,10 @@
 
 		&.today {
 			font-weight: 900;
+		}
+
+		&.past {
+			color: #999;
 		}
 	}
 

@@ -18,6 +18,7 @@
 		getGroupedWmoCode,
 		getDayWmoCode,
 		getWeatherIcon,
+		startOf,
 		colors,
 		aqiUsToLabel,
 		aqiEuropeToLabel,
@@ -255,6 +256,14 @@
 		}
 
 		return getGroupedWmoCode(hourlyInRange, maxBy);
+	});
+
+	// Get isDay for the current real time (where past overlay ends on 24hr plot)
+	const currentIsDay = $derived.by(() => {
+		const now = Date.now();
+		const currentHourMs = startOf(now, 'hour', nsWeatherData.timezone);
+		const hourData = nsWeatherData.dataForecast.get(currentHourMs);
+		return hourData?.isDay ?? true;
 	});
 
 	// Dynamic sky gradient with smooth animated transitions
@@ -787,11 +796,7 @@
 						{#if hourly24WmoCode != null}
 							<img
 								class="icon small"
-								src={getWeatherIcon(
-									hourly24WmoCode,
-									iconSetStore.value,
-									nsWeatherData.displayIsDay,
-								)}
+								src={getWeatherIcon(hourly24WmoCode, iconSetStore.value, currentIsDay)}
 								alt=""
 							/>
 						{/if}
@@ -1214,7 +1219,8 @@
 		.icon.small {
 			height: 40px;
 			width: 40px;
-			filter: drop-shadow(0 0 10px rgba(135, 206, 235, 0.8));
+			filter: drop-shadow(0 0 10px rgba(135, 206, 235, 0.8))
+				drop-shadow(0 0 16px rgba(255, 255, 255, 0.7));
 		}
 	}
 

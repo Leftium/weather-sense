@@ -370,6 +370,8 @@
 						...draftItem,
 						x1: prevItem.x1,
 						xMiddle: (Number(prevItem.x1) + x2) / 2,
+						// If any hour in merged segment is day, show day icon
+						isDay: prevItem.isDay || current.isDay,
 						counts,
 					};
 				} else {
@@ -420,6 +422,8 @@
 							x2: next.x2,
 							xMiddle: (Number(prev.x1) + Number(next.x2)) / 2,
 							weatherCode: mergedCode,
+							// If any segment has day, show day icon
+							isDay: prev.isDay || gap.isDay || next.isDay,
 							text: WMO_CODES[mergedCode].description,
 							fill,
 							fillText,

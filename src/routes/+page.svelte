@@ -1143,12 +1143,12 @@
 			border: none;
 			background:
 				linear-gradient($color-ghost-white, $color-ghost-white) padding-box,
-				linear-gradient(to bottom right, #3366ff 50%, #ff4444 50%) border-box;
+				linear-gradient(110deg, #3366ff 0%, #3366ff 40%, #ff4444 60%, #ff4444 100%) border-box;
 			border: 3px solid transparent;
 		}
 
 		input[type='checkbox'][name='tempRange']::before {
-			background: linear-gradient(to bottom right, #3366ff 50%, #ff4444 50%);
+			background: linear-gradient(110deg, #3366ff 0%, #3366ff 40%, #ff4444 60%, #ff4444 100%);
 			transform: scale(0);
 			transition: 200ms transform ease-in-out;
 		}

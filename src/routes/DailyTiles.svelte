@@ -370,7 +370,7 @@
 					preserveAspectRatio="none"
 					in:fade={{ duration: 300 }}
 				>
-					<!-- Ghost white glow filter for text -->
+					<!-- Ghost white glow filter - 3 layers matching CSS text-shadow approach -->
 					<defs>
 						<filter
 							id="white-glow"
@@ -380,13 +380,22 @@
 							height="300%"
 							filterUnits="objectBoundingBox"
 						>
-							<feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur" />
-							<feFlood flood-color="#f8f8ff" result="white" />
-							<feComposite in="white" in2="blur" operator="in" result="glow" />
+							<!-- Layer 1: 3px blur, 0.6 opacity -->
+							<feGaussianBlur in="SourceAlpha" stdDeviation="1.5" result="blur1" />
+							<feFlood flood-color="#ffffff" flood-opacity="0.6" result="white1" />
+							<feComposite in="white1" in2="blur1" operator="in" result="glow1" />
+							<!-- Layer 2: 6px blur, 0.4 opacity -->
+							<feGaussianBlur in="SourceAlpha" stdDeviation="3" result="blur2" />
+							<feFlood flood-color="#ffffff" flood-opacity="0.4" result="white2" />
+							<feComposite in="white2" in2="blur2" operator="in" result="glow2" />
+							<!-- Layer 3: 12px blur, 0.3 opacity -->
+							<feGaussianBlur in="SourceAlpha" stdDeviation="6" result="blur3" />
+							<feFlood flood-color="#ffffff" flood-opacity="0.3" result="white3" />
+							<feComposite in="white3" in2="blur3" operator="in" result="glow3" />
 							<feMerge>
-								<feMergeNode in="glow" />
-								<feMergeNode in="glow" />
-								<feMergeNode in="glow" />
+								<feMergeNode in="glow3" />
+								<feMergeNode in="glow2" />
+								<feMergeNode in="glow1" />
 								<feMergeNode in="SourceGraphic" />
 							</feMerge>
 						</filter>
@@ -648,14 +657,9 @@
 		margin-bottom: 0;
 		color: #3d2d2d;
 		text-shadow:
-			0 0 2px #f8f8ff,
-			0 0 4px #f8f8ff,
-			0 0 6px #f8f8ff,
-			0 0 8px #f8f8ff,
-			0 0 12px #f8f8ff,
-			0 0 16px #f8f8ff,
-			0 0 24px #f8f8ff,
-			0 0 32px #f8f8ff;
+			0 0 3px rgba(255, 255, 255, 0.6),
+			0 0 6px rgba(255, 255, 255, 0.4),
+			0 0 12px rgba(255, 255, 255, 0.3);
 
 		&.today {
 			font-weight: 900;

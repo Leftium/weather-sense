@@ -799,10 +799,10 @@
 				<div class="day-label">
 					<div class="day today">24hrs</div>
 					<div class="high-low">
-						<span style:color={TEMP_COLOR_HOT} use:toggleUnits={{ temperature: true }}>
+						<span class="high" style:color={TEMP_COLOR_HOT} use:toggleUnits={{ temperature: true }}>
 							{nsWeatherData.format('daily[2].temperatureMax', false)}
 						</span>
-						<span style:color={TEMP_COLOR_COLD} use:toggleUnits={{ temperature: true }}>
+						<span class="low" style:color={TEMP_COLOR_COLD} use:toggleUnits={{ temperature: true }}>
 							{nsWeatherData.format('daily[2].temperatureMin', false)}
 						</span>
 					</div>
@@ -864,9 +864,15 @@
 							{day.compactDate}
 						</div>
 						<div class="high-low">
-							<span style:color={TEMP_COLOR_HOT} use:toggleUnits={{ temperature: true }}
+							<span
+								class="high"
+								style:color={TEMP_COLOR_HOT}
+								use:toggleUnits={{ temperature: true }}
 								>{formatTemp(day.temperatureMax, nsWeatherData.units.temperature)}</span
-							><span style:color={TEMP_COLOR_COLD} use:toggleUnits={{ temperature: true }}
+							><span
+								class="low"
+								style:color={TEMP_COLOR_COLD}
+								use:toggleUnits={{ temperature: true }}
 								>{formatTemp(day.temperatureMin, nsWeatherData.units.temperature)}</span
 							>
 						</div>
@@ -1233,8 +1239,8 @@
 		.icon.small {
 			height: 40px;
 			width: 40px;
-			filter: drop-shadow(0 0 10px rgba(135, 206, 235, 0.8))
-				drop-shadow(0 0 16px rgba(255, 255, 255, 0.7));
+			filter: drop-shadow(0 0 3px rgba(100, 149, 237, 0.6))
+				drop-shadow(0 0 6px rgba(100, 149, 237, 0.4)) drop-shadow(0 0 12px rgba(100, 149, 237, 0.3));
 		}
 	}
 
@@ -1340,10 +1346,6 @@
 		}
 	}
 
-	.day.today {
-		font-weight: bold;
-	}
-
 	// Day label styles with text outline
 	.day-label {
 		overflow: visible;
@@ -1352,28 +1354,34 @@
 		.day {
 			position: relative;
 			z-index: 1;
-			color: #3d2d2d;
+			color: #eee;
+			font-weight: 600;
 			text-shadow:
-				0 0 2px #f8f8ff,
-				0 0 4px #f8f8ff,
-				0 0 6px #f8f8ff,
-				0 0 8px #f8f8ff,
-				0 0 12px #f8f8ff,
-				0 0 16px #f8f8ff,
-				0 0 24px #f8f8ff,
-				0 0 32px #f8f8ff;
+				0 0 3px rgba(128, 128, 128, 0.6),
+				0 0 6px rgba(128, 128, 128, 0.4),
+				0 0 12px rgba(128, 128, 128, 0.3);
+
+			&.today {
+				font-weight: 900;
+			}
 		}
 
 		.high-low {
 			font-size: 13px;
 			font-weight: bold;
 
-			span {
+			.high {
 				text-shadow:
-					0 0 2px #f8f8ff,
-					0 0 4px #f8f8ff,
-					0 0 6px #f8f8ff,
-					0 0 8px #f8f8ff;
+					0 0 3px rgba(128, 128, 128, 0.6),
+					0 0 6px rgba(128, 128, 128, 0.4),
+					0 0 12px rgba(128, 128, 128, 0.3);
+			}
+
+			.low {
+				text-shadow:
+					0 0 3px rgba(248, 248, 255, 0.6),
+					0 0 6px rgba(248, 248, 255, 0.4),
+					0 0 12px rgba(248, 248, 255, 0.3);
 			}
 		}
 	}

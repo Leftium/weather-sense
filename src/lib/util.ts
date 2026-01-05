@@ -214,6 +214,7 @@ export const AQI_INDEX_EUROPE = [
 ];
 
 const NO_DATA_LABEL = makeAqiLabel('No Data', picoColors.grey[300]);
+const NOT_AVAILABLE_LABEL = makeAqiLabel('Not Available', picoColors.slate[300]);
 
 // Ranges from 0-50 (good), 51-100 (moderate), 101-150 (unhealthy for sensitive groups), 151-200 (unhealthy), 201-300 (very unhealthy) and 301-500 (hazardous).
 export function aqiUsToLabel(aqi: number | null) {
@@ -231,6 +232,10 @@ export function aqiEuropeToLabel(aqi: number | null) {
 	}
 	const index = Math.min(Math.floor(aqi / 20), 5);
 	return AQI_INDEX_EUROPE[index];
+}
+
+export function aqiNotAvailableLabel() {
+	return NOT_AVAILABLE_LABEL;
 }
 
 function makeWmo(wsCode: number, picoColor: string, description: string, iconName: string) {

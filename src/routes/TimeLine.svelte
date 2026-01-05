@@ -23,6 +23,7 @@
 		AQI_INDEX_EUROPE,
 		AQI_INDEX_US,
 		aqiEuropeToLabel,
+		aqiNotAvailableLabel,
 		aqiUsToLabel,
 		colors,
 		getContrastColors,
@@ -129,24 +130,48 @@
 	let dataAirQuality = $derived.by(() => {
 		//gg('data');
 
+		type AqiItem = {
+			ms: number;
+			aqiUs: number;
+			aqiEurope: number;
+
+			text: string;
+			x1: number;
+			x2: number;
+			xMiddle: number;
+			fill: string;
+			fillText: string;
+			fillShadow: string;
+		};
+
+		// Helper to create a fallback entry
+		function createFallbackEntry(
+			label: { text: string; color: string },
+			x1: number,
+			x2: number,
+		): AqiItem {
+			const { fillText, fillShadow } = getContrastColors(label.color);
+			return {
+				ms: x2,
+				aqiUs: null as unknown as number,
+				aqiEurope: null as unknown as number,
+				text: label.text,
+				x1,
+				x2,
+				xMiddle: (x1 + x2) / 2,
+				fill: label.color,
+				fillText,
+				fillShadow,
+			};
+		}
+
 		if (nsWeatherData.dataAirQuality.size) {
+			// Get max timestamp from AQI data to determine API boundary
+			const aqiMaxMs = Math.max(...nsWeatherData.dataAirQuality.keys()) + MS_IN_HOUR;
+
 			const filteredAirQuality = [...nsWeatherData.dataAirQuality.values()].filter((item) => {
 				return item.ms >= msStart && item.ms <= msEnd;
 			});
-
-			type AqiItem = {
-				ms: number;
-				aqiUs: number;
-				aqiEurope: number;
-
-				text: string;
-				x1: number;
-				x2: number;
-				xMiddle: number;
-				fill: string;
-				fillText: string;
-				fillShadow: string;
-			};
 
 			// Generic AQI level grouping function
 			function groupAqiLevels(
@@ -196,54 +221,52 @@
 				(item) => item.aqiEurope,
 			);
 
-			// Add "No Data" fallback when no AQI data for this time range
-			function noDataFallback(levels: AqiItem[]): AqiItem[] {
-				if (levels.length === 0) {
-					const noDataLabel = aqiUsToLabel(null);
-					const { fillText, fillShadow } = getContrastColors(noDataLabel.color);
-					return [
-						{
-							ms: msEnd,
-							aqiUs: null as unknown as number,
-							aqiEurope: null as unknown as number,
-							text: noDataLabel.text,
-							x1: msStart,
-							x2: msEnd,
-							xMiddle: (msStart + msEnd) / 2,
-							fill: noDataLabel.color,
-							fillText,
-							fillShadow,
-						},
-					];
+			// Add fallback entries when no AQI data for parts of the time range
+			function addFallbackEntries(levels: AqiItem[]): AqiItem[] {
+				const result = [...levels];
+
+				// Time range entirely beyond API limit - show "Not Available" for entire range
+				if (msStart >= aqiMaxMs) {
+					return [createFallbackEntry(aqiNotAvailableLabel(), msStart, msEnd)];
 				}
-				return levels;
+
+				// If time range starts before any data, add "No Data" at the beginning
+				if (levels.length === 0 || levels[0].x1 > msStart) {
+					const gapEnd = levels.length > 0 ? levels[0].x1 : Math.min(msEnd, aqiMaxMs);
+					if (gapEnd > msStart) {
+						result.unshift(createFallbackEntry(aqiUsToLabel(null), msStart, gapEnd));
+					}
+				}
+
+				// If time range extends beyond API limit, add "Not Available" at the end
+				if (msEnd > aqiMaxMs) {
+					const notAvailableStart = Math.max(
+						aqiMaxMs,
+						levels.length > 0 ? levels.at(-1)!.x2 : msStart,
+					);
+					result.push(createFallbackEntry(aqiNotAvailableLabel(), notAvailableStart, msEnd));
+				}
+
+				// If no data at all within the API range, show "No Data"
+				if (result.length === 0) {
+					result.push(createFallbackEntry(aqiUsToLabel(null), msStart, msEnd));
+				}
+
+				return result;
 			}
 
 			return {
-				aqiUsLevels: noDataFallback(aqiUsLevels),
-				aqiEuropeLevels: noDataFallback(aqiEuropeLevels),
+				aqiUsLevels: addFallbackEntries(aqiUsLevels),
+				aqiEuropeLevels: addFallbackEntries(aqiEuropeLevels),
 			};
 		}
 
-		// Return "No Data" fallback even when no AQI data exists at all
+		// Return "Not Available" fallback when source doesn't support AQI at all
 		if (draw.aqiUs || draw.aqiEurope) {
-			const noDataLabel = aqiUsToLabel(null);
-			const { fillText, fillShadow } = getContrastColors(noDataLabel.color);
-			const noDataEntry = {
-				ms: msEnd,
-				aqiUs: null as unknown as number,
-				aqiEurope: null as unknown as number,
-				text: noDataLabel.text,
-				x1: msStart,
-				x2: msEnd,
-				xMiddle: (msStart + msEnd) / 2,
-				fill: noDataLabel.color,
-				fillText,
-				fillShadow,
-			};
+			const notAvailableEntry = createFallbackEntry(aqiNotAvailableLabel(), msStart, msEnd);
 			return {
-				aqiUsLevels: [noDataEntry],
-				aqiEuropeLevels: [noDataEntry],
+				aqiUsLevels: [notAvailableEntry],
+				aqiEuropeLevels: [notAvailableEntry],
 			};
 		}
 
@@ -1126,6 +1149,7 @@
 		{/each}
 
 		<div bind:this={labelElements['No Data']}>No Data</div>
+		<div bind:this={labelElements['Not Available']}>Not Available</div>
 	</div>
 {/if}
 

@@ -813,6 +813,13 @@
 				y: yDomainTop,
 				fill: '#efefef',
 			}),
+			// Bottom border line connecting tick marks
+			Plot.ruleY([yDomainBottom], {
+				x1: msStart,
+				x2: msEnd,
+				stroke: 'rgba(0, 0, 0, 0.2)',
+				strokeWidth: 1,
+			}),
 		];
 
 		if (dataAirQuality) {

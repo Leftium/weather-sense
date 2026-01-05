@@ -5,6 +5,7 @@
 		wmoCode,
 		getDayWmoCode,
 		getWeatherIcon,
+		getCloudGradientCSS,
 		formatTemp,
 		MS_IN_DAY,
 		TEMP_COLOR_HOT,
@@ -21,7 +22,7 @@
 		forecastDaysVisible = 5,
 		maxForecastDays = 16,
 		skyGradient = 'linear-gradient(135deg, #eee 0%, #a8d8f0 50%, #6bb3e0 100%)',
-		tileGradient = 'linear-gradient(160deg, #6bb3e0 0%, #a8d8f0 50%, #eee 100%)',
+
 		textColor = '#333',
 		textShadowColor = 'rgba(248, 248, 255, 0.8)',
 
@@ -34,7 +35,7 @@
 		forecastDaysVisible?: number;
 		maxForecastDays?: number;
 		skyGradient?: string;
-		tileGradient?: string;
+
 		textColor?: string;
 		textShadowColor?: string;
 
@@ -276,7 +277,7 @@
 					class="tile"
 					class:past
 					title={!isLoading ? wmoCode(tileWmoCode).description : ''}
-					style:--tile-gradient={tileGradient}
+					style:--tile-gradient={getCloudGradientCSS(tileWmoCode)}
 				>
 					<div class="tile-bg"></div>
 					{#if !isLoading}

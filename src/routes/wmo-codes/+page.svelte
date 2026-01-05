@@ -192,7 +192,9 @@
 
 			img {
 				width: 50%;
-				filter: drop-shadow(0 0 3px rgba(255, 255, 255, 0.5));
+				filter: drop-shadow(0 0 3px rgba(128, 128, 128, 0.6))
+					drop-shadow(0 0 6px rgba(128, 128, 128, 0.4))
+					drop-shadow(0 0 12px rgba(128, 128, 128, 0.3));
 			}
 		}
 

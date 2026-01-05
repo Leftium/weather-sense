@@ -841,6 +841,7 @@
 					nsWeatherData.hourly,
 					groupIcons,
 					maxBy,
+					nsWeatherData.timezone,
 				)}
 				<div class={['day-row', { past }]} transition:slide={{ duration: 1000 }}>
 					<div

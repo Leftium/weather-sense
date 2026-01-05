@@ -271,7 +271,14 @@
 				{@const past = !isLoading && day.fromToday < 0}
 				{@const today = !isLoading && day.fromToday === 0}
 				{@const tileWmoCode = !isLoading
-					? getDayWmoCode(day.ms, day.weatherCode, nsWeatherData.hourly, groupIcons, maxBy)
+					? getDayWmoCode(
+							day.ms,
+							day.weatherCode,
+							nsWeatherData.hourly,
+							groupIcons,
+							maxBy,
+							nsWeatherData.timezone,
+						)
 					: 0}
 				<div
 					class="tile"

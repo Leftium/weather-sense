@@ -291,6 +291,7 @@
 							<div class="date" class:today>{day.compactDate}</div>
 						</div>
 					{/if}
+					<div class="past-overlay" class:past></div>
 				</div>
 			{/each}
 
@@ -527,6 +528,19 @@
 		transition: background 1s ease-out;
 	}
 
+	.past-overlay {
+		width: 100%;
+		height: 100%;
+		background: white;
+		opacity: 0;
+		pointer-events: none;
+		z-index: 3; // Below precip-underlay (4), so temp plot stays visible
+
+		&.past {
+			opacity: 0.4;
+		}
+	}
+
 	.tile-icon {
 		width: 94px;
 		height: 94px;
@@ -547,7 +561,7 @@
 		flex-direction: column;
 		align-items: center;
 		padding-top: 4px;
-		z-index: 6; // Above tracker-line (5)
+		z-index: 2; // Below past-overlay (3)
 	}
 
 	.button-bar {

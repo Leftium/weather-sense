@@ -911,13 +911,20 @@
 				.attr('stroke-width', 2);
 
 			if (showRect) {
+				// Add gradient definition for tracker rect
+				ig.append('defs').html(`
+					<linearGradient id="tracker-rect-gradient" x1="0" y1="0" x2="0" y2="1">
+						<stop offset="0%" stop-color="#FFEE00" stop-opacity="0.5" />
+						<stop offset="100%" stop-color="#FFEE00" stop-opacity="0" />
+					</linearGradient>
+				`);
+
 				ig.append('rect')
 					.attr('x', x1)
 					.attr('y', y1)
 					.attr('width', x2 - x1)
 					.attr('height', y2 - y1)
-					.attr('fill', '#FFEE00')
-					.attr('opacity', 0.4);
+					.attr('fill', 'url(#tracker-rect-gradient)');
 			}
 		}
 

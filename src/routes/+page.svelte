@@ -27,6 +27,7 @@
 		contrastTextColor,
 		formatTemp,
 		temperatureToColor,
+		DAY_START_HOUR,
 	} from '$lib/util.js';
 	import { iconSetStore } from '$lib/iconSet.svelte';
 	import RadarMapLibre from './RadarMapLibre.svelte';
@@ -882,7 +883,7 @@
 							{nsWeatherData}
 							{plotVisibility}
 							{groupIcons}
-							start={day.ms}
+							start={day.ms + DAY_START_HOUR * MS_IN_HOUR}
 							xAxis={day.compactDate == 'Today'}
 							ghostTracker={true}
 							{past}

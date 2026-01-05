@@ -528,8 +528,9 @@
 				counts[current.weatherCode] = counts[current.weatherCode] || 0;
 
 				// Don't count final (25th) hour (needed for fence post problem).
+				// Weight daytime hours 2x to better reflect "waking hours" weather experience
 				if (index < array.length - 1) {
-					counts[current.weatherCode] += 1;
+					counts[current.weatherCode] += current.isDay ? 2 : 1;
 				}
 
 				// For clear/cloudy group (0), pick most common code
@@ -746,24 +747,6 @@
 					actualLowTemp = item.temperature;
 				}
 			});
-
-			// For ghostTracker mode, try to place low dot BEFORE high dot
-			// (typical daily pattern: coolest in morning → warmest in afternoon)
-			// But keep actualLowTemp/actualHighTemp unchanged for gradient coloring
-			if (ghostTracker && low.ms > high.ms) {
-				// Try to find the lowest temp that occurs before the high
-				const itemsBeforeHigh = metrics.filter((item) => item.ms < high.ms);
-
-				if (itemsBeforeHigh.length > 0) {
-					// Found items before high - use the lowest one
-					const lowBeforeHigh = itemsBeforeHigh.reduce(
-						(min, item) => (item.temperature < min.temperature ? item : min),
-						itemsBeforeHigh[0],
-					);
-					low = lowBeforeHigh;
-				}
-				// Otherwise keep the actual low position (after the high)
-			}
 
 			// Calculate local min/max across all temperature-like fields for y-axis scaling
 			let localTempMin = Number.MAX_VALUE;

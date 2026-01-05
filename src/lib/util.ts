@@ -46,6 +46,9 @@ export const MS_IN_DAY = 24 * MS_IN_HOUR;
 
 export const MS_IN_10_MINUTES = 10 * MS_IN_MINUTE;
 
+// Start "day" plots at 4 AM to capture full daylight cycle (earliest sunrise ~4:25 AM in most populated areas)
+export const DAY_START_HOUR = 4;
+
 export const colors = {
 	humidity: '#9062CA',
 	precipitationProbability: '#58FAF9',
@@ -574,7 +577,7 @@ export function precipitationGroup(code: number): number {
 // picks the most severe code within each group (or most common for clear/cloudy),
 // then returns the most severe among all group representatives
 export function getGroupedWmoCode(
-	hourlyData: { weatherCode: number }[],
+	hourlyData: { weatherCode: number; isDay?: boolean }[],
 	maxByFn: <T>(arr: T[], fn: (item: T) => number) => T | undefined,
 ): number | null {
 	if (!hourlyData?.length) return null;
@@ -606,7 +609,8 @@ export function getGroupedWmoCode(
 		counts[current.weatherCode] = counts[current.weatherCode] || 0;
 
 		// Count all hours (unlike TimeLine.svelte which has a 25th fencepost item to skip)
-		counts[current.weatherCode] += 1;
+		// Weight daytime hours 2x to better reflect "waking hours" weather experience
+		counts[current.weatherCode] += current.isDay ? 2 : 1;
 
 		// For clear/cloudy group (0), pick most common code
 		if (precipitationGroup(nextCode) === 0) {
@@ -708,8 +712,9 @@ export function getDayWmoCode(
 		return fallbackCode;
 	}
 
-	const dayEnd = dayMs + 24 * MS_IN_HOUR;
-	const hourlyInRange = hourlyData?.filter((h) => h.ms >= dayMs && h.ms < dayEnd);
+	const dayStart = dayMs + DAY_START_HOUR * MS_IN_HOUR;
+	const dayEnd = dayStart + 24 * MS_IN_HOUR;
+	const hourlyInRange = hourlyData?.filter((h) => h.ms >= dayStart && h.ms < dayEnd);
 
 	return getGroupedWmoCode(hourlyInRange ?? [], maxByFn) ?? fallbackCode;
 }

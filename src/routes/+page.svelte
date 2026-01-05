@@ -68,7 +68,7 @@
 	let plotVisibility = $state({
 		temp: true,
 		tempRange: true,
-		dewPoint: true,
+		dewPoint: false,
 		humidity: false,
 		precip: true,
 		chance: true,
@@ -181,11 +181,11 @@
 	// Layout orders: [narrow/wide] x [collapsed/expanded]
 	const layoutOrders = {
 		narrow: {
-			collapsed: ['temp', 'dewPoint', 'precip', 'chance', 'euAqi', 'showAll'],
+			collapsed: ['temp', 'humidity', 'precip', 'chance', 'euAqi', 'showAll'],
 			expanded: ['temp', 'tempRange', 'dewPoint', 'humidity', 'precip', 'chance', 'euAqi', 'usAqi'],
 		},
 		wide: {
-			collapsed: ['temp', 'precip', 'euAqi', 'dewPoint', 'chance', 'showAll'],
+			collapsed: ['temp', 'precip', 'euAqi', 'humidity', 'chance', 'showAll'],
 			expanded: ['temp', 'dewPoint', 'precip', 'euAqi', 'tempRange', 'humidity', 'chance', 'usAqi'],
 		},
 	};

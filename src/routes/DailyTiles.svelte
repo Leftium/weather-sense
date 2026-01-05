@@ -379,13 +379,10 @@
 							height="300%"
 							filterUnits="objectBoundingBox"
 						>
-							<feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blur" />
+							<feGaussianBlur in="SourceAlpha" stdDeviation="2" result="blur" />
 							<feFlood flood-color="#f8f8ff" result="white" />
 							<feComposite in="white" in2="blur" operator="in" result="glow" />
 							<feMerge>
-								<feMergeNode in="glow" />
-								<feMergeNode in="glow" />
-								<feMergeNode in="glow" />
 								<feMergeNode in="glow" />
 								<feMergeNode in="glow" />
 								<feMergeNode in="glow" />
@@ -417,7 +414,7 @@
 						{@const y = tempToY(day.temperatureMax)}
 						<text
 							{x}
-							y={y - 8}
+							y={y - 5}
 							text-anchor="middle"
 							font-size="13"
 							font-weight="bold"
@@ -439,7 +436,7 @@
 						{@const y = tempToY(day.temperatureMin)}
 						<text
 							{x}
-							y={y + 14}
+							y={y + 12}
 							text-anchor="middle"
 							font-size="13"
 							font-weight="bold"

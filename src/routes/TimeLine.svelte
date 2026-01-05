@@ -291,6 +291,7 @@
 			x2: number;
 			colors: string[]; // [horizon, middle, upper sky]
 			gradientId: string;
+			isNight: boolean; // true for night palette (uses different gradient direction)
 		};
 
 		// Find sunrise/sunset for a given timestamp
@@ -384,7 +385,7 @@
 			const duskEnd = findAltitudeCrossing(sunset, dayEnd, sunrise, sunset, NIGHT_THRESHOLD, false);
 
 			// Helper to add a single solid rect
-			function addSolidRect(x1: number, x2: number, palette: string[]) {
+			function addSolidRect(x1: number, x2: number, palette: string[], isNight: boolean) {
 				if (x2 <= x1) return;
 				const clampedX1 = Math.max(x1, msStart);
 				const clampedX2 = Math.min(x2, msEnd);
@@ -395,6 +396,7 @@
 					x2: clampedX2,
 					colors: palette,
 					gradientId: `sky-solid-${clampedX1}`,
+					isNight,
 				});
 			}
 
@@ -413,25 +415,26 @@
 						x2: nextMs + MS_IN_MINUTE, // slight overlap to prevent gaps
 						colors,
 						gradientId: `sky-slice-${ms}`,
+						isNight: false, // transitions are never pure night
 					});
 					ms = nextMs;
 				}
 			}
 
 			// Night before dawn (from day start to dawn start)
-			addSolidRect(dayStart, dawnStart, skyPalettes.night);
+			addSolidRect(dayStart, dawnStart, skyPalettes.night, true);
 
 			// Dawn transition
 			addTransitionRects(dawnStart, dawnEnd);
 
 			// Day (from dawn end to dusk start)
-			addSolidRect(dawnEnd, duskStart, skyPalettes.day);
+			addSolidRect(dawnEnd, duskStart, skyPalettes.day, false);
 
 			// Dusk transition
 			addTransitionRects(duskStart, duskEnd);
 
 			// Night after dusk (from dusk end to day end)
-			addSolidRect(duskEnd, dayEnd, skyPalettes.night);
+			addSolidRect(duskEnd, dayEnd, skyPalettes.night, true);
 		}
 
 		// Sort slices by x1 to ensure proper rendering order
@@ -998,10 +1001,12 @@
 					gradient.setAttribute('x2', '0');
 					gradient.setAttribute('y2', '1'); // Vertical gradient
 
-					// Vertical gradient for sky strip: upper sky at top, middle at bottom
+					// Vertical gradient for sky strip
+					// All palettes: upper sky at top → middle at bottom
+					const topColor = slice.colors[2];
 					const stop0 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
 					stop0.setAttribute('offset', '0%');
-					stop0.setAttribute('stop-color', slice.colors[2]); // Upper sky at top
+					stop0.setAttribute('stop-color', topColor);
 					gradient.appendChild(stop0);
 
 					const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');

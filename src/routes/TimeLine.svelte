@@ -41,7 +41,6 @@
 		TEMP_COLOR_HOT,
 		TEMP_COLOR_COLD,
 		skyPalettes,
-		ACTIVE_HOURS_END,
 	} from '$lib/util';
 	import { getSunAltitude } from '$lib/horizon';
 	import { iconSetStore } from '$lib/iconSet.svelte';
@@ -529,11 +528,8 @@
 				counts[current.weatherCode] = counts[current.weatherCode] || 0;
 
 				// Don't count final (25th) hour (needed for fence post problem).
-				// Weight "active hours" 2x: daytime (sunrise-sunset) OR evening (until 10 PM)
 				if (index < array.length - 1) {
-					const hour = dayjs(current.ms).tz(nsWeatherData.timezone).hour();
-					const isActiveHours = current.isDay || hour < ACTIVE_HOURS_END;
-					counts[current.weatherCode] += isActiveHours ? 2 : 1;
+					counts[current.weatherCode] += 1;
 				}
 
 				// For clear/cloudy group (0), pick most common code

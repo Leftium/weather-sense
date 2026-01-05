@@ -238,6 +238,83 @@ export function aqiNotAvailableLabel() {
 	return NOT_AVAILABLE_LABEL;
 }
 
+// Each gradient is [light, mid, dark] for CSS linear-gradient
+const cloudGradients = {
+	clear: ['#f0f8ff', '#a8d8f0', '#6bb3e0'], // Bright blue sky
+	mostlyClear: ['#e8f4fc', '#9fd0e8', '#70a8c8'], // Slightly muted
+	partlyCloudy: ['#dde8ef', '#94b8c8', '#6a90a8'], // More gray mixed in
+	overcast: ['#d0d8de', '#a0a8b0', '#808890'], // Gray sky
+	fog: ['#f8f8f8', '#e8e8e8', '#d0d0d0'], // White/misty
+	showers: ['#d8e4ec', '#98b0c0', '#7090a0'], // Between partlyCloudy and overcast (sun/cloud mix)
+	rain: ['#c8d0d8', '#a8b0b8', '#889098'], // Match snow - cool gray
+	snow: ['#c8d0d8', '#a8b0b8', '#889098'], // Cool gray (slightly lighter than rain)
+	thunderstorm: ['#909098', '#606068', '#404048'], // Dark ominous
+};
+
+/**
+ * Get sky gradient colors based on WMO weather code
+ * @param wmoCode - WMO weather code (0-99)
+ * @returns Array of 3 colors for gradient [light, mid, dark]
+ */
+export function getCloudGradient(wmoCode: number): string[] {
+	// Clear sky
+	if (wmoCode === 0) return cloudGradients.clear;
+
+	// Mostly clear
+	if (wmoCode === 1) return cloudGradients.mostlyClear;
+
+	// Partly cloudy
+	if (wmoCode === 2) return cloudGradients.partlyCloudy;
+
+	// Overcast
+	if (wmoCode === 3) return cloudGradients.overcast;
+
+	// Fog
+	if (wmoCode === 45 || wmoCode === 48) return cloudGradients.fog;
+
+	// Thunderstorm (95-99)
+	if (wmoCode >= 95) return cloudGradients.thunderstorm;
+
+	// Snow (71-77, 85-86)
+	if ((wmoCode >= 71 && wmoCode <= 77) || (wmoCode >= 85 && wmoCode <= 86)) {
+		return cloudGradients.snow;
+	}
+
+	// Showers (80-82) - mixed sun/clouds
+	if (wmoCode >= 80 && wmoCode <= 82) return cloudGradients.showers;
+
+	// Rain, drizzle, freezing rain (51-67)
+	if (wmoCode >= 51 && wmoCode <= 67) {
+		return cloudGradients.rain;
+	}
+
+	// Default to clear
+	return cloudGradients.clear;
+}
+
+/**
+ * Get the middle color from the cloud gradient for a WMO weather code
+ * Used for hourly plot backgrounds where gradients aren't practical
+ * @param wmoCode - WMO weather code (0-99)
+ * @returns Middle color from the gradient
+ */
+export function getCloudColor(wmoCode: number): string {
+	return getCloudGradient(wmoCode)[1];
+}
+
+/**
+ * Get CSS gradient string for a WMO weather code
+ * @param wmoCode - WMO weather code (0-99)
+ * @param angle - Gradient angle in degrees (default 315)
+ * @returns CSS linear-gradient string
+ */
+export function getCloudGradientCSS(wmoCode: number, angle = 315): string {
+	const colors = getCloudGradient(wmoCode);
+	// Solid zones at ends (15% each) with smooth transition in middle
+	// 0-15%: solid light, 15-85%: transition through mid, 85-100%: solid dark
+	return `linear-gradient(${angle}deg, ${colors[0]} 0%, ${colors[0]} 15%, ${colors[1]} 50%, ${colors[2]} 85%, ${colors[2]} 100%)`;
+}
+
 function makeWmo(wsCode: number, picoColor: string, description: string, iconName: string) {
 	const groups = [
 		'clear',
@@ -320,6 +397,23 @@ export const WMO_CODES: Record<number, any> = {
 	99: makeWmo(5_11_3, 'pink.550',    'T-Storm + Hail',   'thunderstorm-with-hail'),
 };
 
+// Override colors for no-precip (0-3) and fog (45, 48) with cloud gradient middle color
+// This is done after WMO_CODES definition since getCloudColor depends on cloudGradients
+const noPrecipCodes = [0, 1, 2, 3, 45, 48];
+for (const code of noPrecipCodes) {
+	if (WMO_CODES[code]) {
+		const cloudColor = getCloudColor(code);
+		WMO_CODES[code].color = cloudColor;
+		WMO_CODES[code].colorText = contrastTextColor(cloudColor);
+		WMO_CODES[code].colorShadow = contrastTextColor(
+			cloudColor,
+			true,
+			`rgba(255 255 255 / 50%)`,
+			`rgba(51 51 51 / 50%)`,
+		);
+	}
+}
+
 export function wmoCode(code: number | undefined) {
 	if (code !== undefined && WMO_CODES[code] !== undefined) {
 		return WMO_CODES[code];
@@ -331,68 +425,6 @@ export function wmoCode(code: number | undefined) {
 }
 
 // Cloud-cover based sky gradients for weather conditions
-// Each gradient is [light, mid, dark] for CSS linear-gradient
-const cloudGradients = {
-	clear: ['#f0f8ff', '#a8d8f0', '#6bb3e0'], // Bright blue sky
-	mostlyClear: ['#e8f4fc', '#9fd0e8', '#70a8c8'], // Slightly muted
-	partlyCloudy: ['#dde8ef', '#94b8c8', '#6a90a8'], // More gray mixed in
-	overcast: ['#d0d8de', '#a0a8b0', '#808890'], // Gray sky
-	showers: ['#d8e4ec', '#98b0c0', '#7090a0'], // Between partlyCloudy and overcast (sun/cloud mix)
-	rain: ['#c8d0d8', '#a8b0b8', '#889098'], // Match snow - cool gray
-	snow: ['#c8d0d8', '#a8b0b8', '#889098'], // Cool gray (slightly lighter than rain)
-	thunderstorm: ['#909098', '#606068', '#404048'], // Dark ominous
-};
-
-/**
- * Get sky gradient colors based on WMO weather code
- * @param wmoCode - WMO weather code (0-99)
- * @returns Array of 3 colors for gradient [light, mid, dark]
- */
-export function getCloudGradient(wmoCode: number): string[] {
-	// Clear sky
-	if (wmoCode === 0) return cloudGradients.clear;
-
-	// Mostly clear
-	if (wmoCode === 1) return cloudGradients.mostlyClear;
-
-	// Partly cloudy
-	if (wmoCode === 2) return cloudGradients.partlyCloudy;
-
-	// Overcast or fog
-	if (wmoCode === 3 || wmoCode === 45 || wmoCode === 48) return cloudGradients.overcast;
-
-	// Thunderstorm (95-99)
-	if (wmoCode >= 95) return cloudGradients.thunderstorm;
-
-	// Snow (71-77, 85-86)
-	if ((wmoCode >= 71 && wmoCode <= 77) || (wmoCode >= 85 && wmoCode <= 86)) {
-		return cloudGradients.snow;
-	}
-
-	// Showers (80-82) - mixed sun/clouds
-	if (wmoCode >= 80 && wmoCode <= 82) return cloudGradients.showers;
-
-	// Rain, drizzle, freezing rain (51-67)
-	if (wmoCode >= 51 && wmoCode <= 67) {
-		return cloudGradients.rain;
-	}
-
-	// Default to clear
-	return cloudGradients.clear;
-}
-
-/**
- * Get CSS gradient string for a WMO weather code
- * @param wmoCode - WMO weather code (0-99)
- * @param angle - Gradient angle in degrees (default 315)
- * @returns CSS linear-gradient string
- */
-export function getCloudGradientCSS(wmoCode: number, angle = 315): string {
-	const colors = getCloudGradient(wmoCode);
-	// Solid zones at ends (15% each) with smooth transition in middle
-	// 0-15%: solid light, 15-85%: transition through mid, 85-100%: solid dark
-	return `linear-gradient(${angle}deg, ${colors[0]} 0%, ${colors[0]} 15%, ${colors[1]} 50%, ${colors[2]} 85%, ${colors[2]} 100%)`;
-}
 
 // Google Weather Icons v2 mapping
 // Only "No Precipitation" codes (0-3) have day/night variants

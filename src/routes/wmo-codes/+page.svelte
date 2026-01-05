@@ -1,7 +1,15 @@
 <script lang="ts">
 	import { map } from 'lodash-es';
 
-	import { WMO_CODES, getGoogleV2Icon, hasUniqueNightIcon, getGoogleV1Icon } from '$lib/util';
+	import {
+		WMO_CODES,
+		getGoogleV2Icon,
+		hasUniqueNightIcon,
+		getGoogleV1Icon,
+		getCloudGradientCSS,
+		getCloudGradient,
+		getContrastColors,
+	} from '$lib/util';
 	import { iconSetStore } from '$lib/iconSet.svelte';
 	import { onMount } from 'svelte';
 
@@ -15,11 +23,20 @@
 	const wmoCodesBase = map(WMO_CODES, (value, code) => {
 		const codeNum = Number(code);
 		const hasUniqueNight = hasUniqueNightIcon(codeNum);
+		// Only use gradient for no precipitation group (codes 0-3) and fog (45, 48)
+		const isNoPrecip = codeNum <= 3 || codeNum === 45 || codeNum === 48;
+		const gradientColors = getCloudGradient(codeNum);
+		const { fillText, fillShadow } = getContrastColors(gradientColors[1]);
 		return {
 			code: codeNum,
 			...value,
 			hasUniqueNight,
 			airyIcon: value.icon,
+			// Background: gradient for no precip, solid color for others
+			background: isNoPrecip ? getCloudGradientCSS(codeNum) : value.color,
+			// Text colors: based on gradient middle for no precip, pico color for others
+			textColor: isNoPrecip ? fillText : value.colorText,
+			shadowColor: isNoPrecip ? fillShadow : value.colorShadow,
 			// Day grid: use v2 day if unique day/night, otherwise v1 day
 			googleDayIcon: hasUniqueNight
 				? getGoogleV2Icon(codeNum, true)
@@ -77,10 +94,10 @@
 				<div class="wmo-grid">
 					{#each wmoCodes as wmo}
 						<article
-							style:background-color={wmo.color}
+							style:background={wmo.background}
 							class="wmo-item group-{wmo.group} level-{wmo.level}"
-							style:color={wmo.colorText}
-							style:text-shadow={`1px 1px ${wmo.colorShadow}`}
+							style:color={wmo.textColor}
+							style:text-shadow={`1px 1px ${wmo.shadowColor}`}
 						>
 							<div class="code">{wmo.code}</div>
 							<img src={wmo.displayIcon} alt="" />

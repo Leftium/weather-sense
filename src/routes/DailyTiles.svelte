@@ -143,7 +143,7 @@
 	const TEMP_AREA_HEIGHT = TEMP_AREA_BOTTOM - TEMP_AREA_TOP;
 	const PRECIP_BAR_BOTTOM = TILE_HEIGHT - 2; // Near bottom of tile
 	const PRECIP_BAR_MAX_HEIGHT = PRECIP_BAR_BOTTOM - TEMP_AREA_TOP;
-	const PRECIP_BAR_WIDTH = 26;
+	const PRECIP_BAR_WIDTH = 48;
 	const PRECIP_LABEL_Y = TILE_HEIGHT - 6; // Above bottom edge
 
 	// Convert temperature to Y coordinate

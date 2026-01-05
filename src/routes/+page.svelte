@@ -1214,7 +1214,6 @@
 		margin-right: -0.2em; // Compensate for grid gap
 		height: 64px; // Match TimeLine plot height (without x-axis)
 		background: linear-gradient(to bottom right, var(--color-high), var(--color-low));
-		border-radius: 2px 0 0 2px;
 		align-self: center; // Vertically center with plot
 		position: relative;
 		z-index: 0; // Behind icons and labels

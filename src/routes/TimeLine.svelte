@@ -813,9 +813,9 @@
 				y: yDomainTop,
 				fill: '#efefef',
 			}),
-			// Bottom border line connecting tick marks
+			// Bottom border line connecting tick marks (extends left off-screen to cover temp bar)
 			Plot.ruleY([yDomainBottom], {
-				x1: msStart,
+				x1: msStart - MS_IN_DAY,
 				x2: msEnd,
 				stroke: 'rgba(0, 0, 0, 0.2)',
 				strokeWidth: 1,

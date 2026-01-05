@@ -19,24 +19,36 @@
 	let mode = $state('');
 	let isNight = $state(false);
 
+	// Helper to create CSS gradient from [dark, mid, light] array
+	// 135deg = top-left to bottom-right (dark at top-left, light at bottom-right)
+	function makePrecipGradient(colors: string[]): string {
+		const [dark, mid, light] = colors;
+		return `linear-gradient(135deg, ${dark} 0%, ${dark} 15%, ${mid} 50%, ${light} 85%, ${light} 100%)`;
+	}
+
 	// Convert Object to array, adding key as `.code` prop.
 	const wmoCodesBase = map(WMO_CODES, (value, code) => {
 		const codeNum = Number(code);
 		const hasUniqueNight = hasUniqueNightIcon(codeNum);
-		// Only use gradient for no precipitation group (codes 0-3) and fog (45, 48)
-		const isNoPrecip = codeNum <= 3 || codeNum === 45 || codeNum === 48;
-		const gradientColors = getCloudGradient(codeNum);
+		const isSky = codeNum <= 3;
+		const isFog = codeNum === 45 || codeNum === 48;
+		const gradientColors = isSky || isFog ? getCloudGradient(codeNum) : value.gradient;
 		const { fillText, fillShadow } = getContrastColors(gradientColors[1]);
+		// Sky: 315deg (light at top), Fog/Precip: 135deg (dark at top)
+		const getBackground = () => {
+			if (isSky) return getCloudGradientCSS(codeNum); // 315deg default
+			if (isFog) return getCloudGradientCSS(codeNum, 135); // inverted
+			return makePrecipGradient(value.gradient); // 135deg
+		};
 		return {
 			code: codeNum,
 			...value,
 			hasUniqueNight,
 			airyIcon: value.icon,
-			// Background: gradient for no precip, solid color for others
-			background: isNoPrecip ? getCloudGradientCSS(codeNum) : value.color,
-			// Text colors: based on gradient middle for no precip, pico color for others
-			textColor: isNoPrecip ? fillText : value.colorText,
-			shadowColor: isNoPrecip ? fillShadow : value.colorShadow,
+			background: getBackground(),
+			// Text colors based on gradient middle color
+			textColor: fillText,
+			shadowColor: fillShadow,
 			// Day grid: use v2 day if unique day/night, otherwise v1 day
 			googleDayIcon: hasUniqueNight
 				? getGoogleV2Icon(codeNum, true)

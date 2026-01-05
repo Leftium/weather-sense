@@ -238,13 +238,14 @@ export function aqiNotAvailableLabel() {
 	return NOT_AVAILABLE_LABEL;
 }
 
-// Each gradient is [light, mid, dark] for CSS linear-gradient
+// Each gradient is [top, mid, bottom] for CSS linear-gradient
+// Sky gets lighter/whiter as clouds increase from clear → overcast
 const cloudGradients = {
-	clear: ['#f0f8ff', '#a8d8f0', '#6bb3e0'], // Bright blue sky
-	mostlyClear: ['#e8f4fc', '#9fd0e8', '#70a8c8'], // Slightly muted
-	partlyCloudy: ['#dde8ef', '#94b8c8', '#6a90a8'], // More gray mixed in
-	overcast: ['#d0d8de', '#a0a8b0', '#808890'], // Gray sky
-	fog: ['#f8f8f8', '#e8e8e8', '#d0d0d0'], // White/misty
+	clear: ['#6bb3e0', '#a8d8f0', '#f0f8ff'], // Deep blue top, light bottom
+	mostlyClear: ['#90c8e8', '#b8e0f4', '#f4faff'], // Lighter/whiter than clear
+	partlyCloudy: ['#b0d8f0', '#d0e8f8', '#f8fcff'], // Even lighter, more white
+	overcast: ['#c8dce8', '#dce8f0', '#f0f4f8'], // Lightest, mostly white with hint of blue
+	fog: ['#d0d0d0', '#e8e8e8', '#f8f8f8'], // Gray top, white bottom
 	showers: ['#d8e4ec', '#98b0c0', '#7090a0'], // Between partlyCloudy and overcast (sun/cloud mix)
 	rain: ['#c8d0d8', '#a8b0b8', '#889098'], // Match snow - cool gray
 	snow: ['#c8d0d8', '#a8b0b8', '#889098'], // Cool gray (slightly lighter than rain)
@@ -303,15 +304,15 @@ export function getCloudColor(wmoCode: number): string {
 }
 
 /**
- * Get CSS gradient string for a WMO weather code
- * @param wmoCode - WMO weather code (0-99)
+ * Get CSS linear-gradient string for a cloud/sky WMO code.
+ * @param wmoCode - WMO code (0-3 or 45/48)
  * @param angle - Gradient angle in degrees (default 315)
  * @returns CSS linear-gradient string
  */
 export function getCloudGradientCSS(wmoCode: number, angle = 315): string {
 	const colors = getCloudGradient(wmoCode);
 	// Solid zones at ends (15% each) with smooth transition in middle
-	// 0-15%: solid light, 15-85%: transition through mid, 85-100%: solid dark
+	// 315deg: bottom-right to top-left (dark at bottom-right, light at top-left)
 	return `linear-gradient(${angle}deg, ${colors[0]} 0%, ${colors[0]} 15%, ${colors[1]} 50%, ${colors[2]} 85%, ${colors[2]} 100%)`;
 }
 
@@ -347,6 +348,19 @@ function makeWmo(wsCode: number, picoColor: string, description: string, iconNam
 		`rgba(51 51 51 / 50%)`,
 	);
 
+	// Generate gradient colors from lighter to darker shades of the same hue
+	// Parse picoColor like 'azure.300' into hue and value
+	const [hue, valueStr] = picoColor.split('.');
+	const value = parseInt(valueStr, 10);
+	// Create gradient: lighter (value - 150) → mid (value) → darker (value + 150)
+	// Clamp to valid pico range (50-950)
+	const lightValue = Math.max(50, value - 150);
+	const darkValue = Math.min(950, value + 150);
+	const gradientLight = get(picoColors, `${hue}.${lightValue}`) || color;
+	const gradientDark = get(picoColors, `${hue}.${darkValue}`) || color;
+	// Gradient: [top/dark, mid, bottom/light] to match sky gradient direction
+	const gradient = [gradientDark, color, gradientLight];
+
 	return {
 		description,
 		wsCode,
@@ -356,6 +370,7 @@ function makeWmo(wsCode: number, picoColor: string, description: string, iconNam
 		color,
 		colorText,
 		colorShadow,
+		gradient,
 		icon,
 	};
 }

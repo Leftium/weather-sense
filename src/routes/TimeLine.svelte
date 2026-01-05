@@ -26,6 +26,7 @@
 		aqiNotAvailableLabel,
 		aqiUsToLabel,
 		colors,
+		getCloudGradient,
 		getContrastColors,
 		getWeatherIcon,
 		MS_IN_10_MINUTES,
@@ -371,9 +372,11 @@
 				const x1 = current.ms;
 				const x2 = Math.min(current.ms + MS_IN_HOUR + 2 * MS_IN_MINUTE, msEnd);
 
-				const fill = WMO_CODES[nextCode].color;
+				// Use gradient for all WMO codes
+				const solidColor = WMO_CODES[nextCode].color;
+				const fill = `url(#cloud-gradient-${nextCode}-${msStart})`;
 
-				const { fillText, fillShadow } = getContrastColors(fill);
+				const { fillText, fillShadow } = getContrastColors(solidColor);
 				const draftItem = {
 					ms: x2,
 					weatherCode: nextCode,
@@ -382,7 +385,7 @@
 					x1,
 					x2,
 					xMiddle: (Number(x1) + Number(x2)) / 2,
-					fill: WMO_CODES[nextCode].color,
+					fill,
 					fillText,
 					fillShadow,
 					counts,
@@ -435,8 +438,10 @@
 								? prev.weatherCode
 								: next.weatherCode;
 
-						const fill = WMO_CODES[mergedCode].color;
-						const { fillText, fillShadow } = getContrastColors(fill);
+						// Use gradient for all WMO codes
+						const solidColorMerged = WMO_CODES[mergedCode].color;
+						const fillMerged = `url(#cloud-gradient-${mergedCode}-${msStart})`;
+						const { fillText, fillShadow } = getContrastColors(solidColorMerged);
 
 						// Merge prev + gap + next into prev
 						codes[i - 1] = {
@@ -448,13 +453,55 @@
 							// If any segment has day, show day icon
 							isDay: prev.isDay || gap.isDay || next.isDay,
 							text: WMO_CODES[mergedCode].description,
-							fill,
+							fill: fillMerged,
 							fillText,
 							fillShadow,
 						};
 
 						// Remove gap and next (they're now merged into prev)
 						codes.splice(i, 2);
+					}
+				}
+			}
+
+			// DEBUG: Mock all WMO codes to compare gradients vs solid colors
+			// Only applies to rows starting tomorrow or later (to avoid past fading)
+			const MOCK_WMO_CODES = false;
+			const allWmoCodes = [
+				0, 1, 2, 3, 45, 48, 51, 53, 55, 61, 63, 65, 56, 57, 66, 67, 71, 73, 75, 77, 80, 81, 82, 85,
+				86, 95, 96, 99,
+			];
+			const tomorrow = +dayjs().add(1, 'day').startOf('day');
+			if (MOCK_WMO_CODES && metrics.length > 0 && msStart >= tomorrow) {
+				codes.length = 0; // Clear existing codes
+				const segmentDuration = 6 * MS_IN_HOUR; // 6 hours per code
+				// Calculate day offset from tomorrow to continue codes across rows
+				const dayOffset = Math.floor((msStart - tomorrow) / MS_IN_DAY);
+				const codesPerDay = Math.floor((24 * MS_IN_HOUR) / segmentDuration); // 4 codes per day
+				const startIndex = (dayOffset * codesPerDay) % allWmoCodes.length;
+
+				for (let i = 0; i < codesPerDay; i++) {
+					const wmoCode = allWmoCodes[(startIndex + i) % allWmoCodes.length];
+					const x1 = msStart + i * segmentDuration;
+					const x2 = x1 + segmentDuration;
+					// Only add if segment is within the visible range
+					if (x1 < msEnd) {
+						const solidColor = WMO_CODES[wmoCode].color;
+						const fill = `url(#cloud-gradient-${wmoCode}-${msStart})`;
+						const { fillText, fillShadow } = getContrastColors(solidColor);
+						codes.push({
+							ms: Math.min(x2, msEnd),
+							weatherCode: wmoCode,
+							isDay: true,
+							text: WMO_CODES[wmoCode].description,
+							x1,
+							x2: Math.min(x2, msEnd),
+							xMiddle: (x1 + Math.min(x2, msEnd)) / 2,
+							fill,
+							fillText,
+							fillShadow,
+							counts: {},
+						});
 					}
 				}
 			}
@@ -837,6 +884,31 @@
 
 		if (dataForecast) {
 			if (draw.weatherCode) {
+				// Define gradients for all WMO codes (vertical with ~17° angle)
+				const skyCodes = [0, 1, 2, 3];
+				const fogCodes = [45, 48];
+				const allWmoCodeKeys = Object.keys(WMO_CODES).map(Number);
+				for (const code of allWmoCodeKeys) {
+					const isSky = skyCodes.includes(code);
+					const isFog = fogCodes.includes(code);
+					// Use sky/fog gradients for clear/cloudy/fog, pico gradients for precipitation
+					const [dark, mid, light] =
+						isSky || isFog ? getCloudGradient(code) : WMO_CODES[code].gradient;
+					// For sky: light at top (0%), dark at bottom (100%)
+					// For fog/precip: dark at top (0%), light at bottom (100%)
+					const topColor = isSky ? light : dark;
+					const bottomColor = isSky ? dark : light;
+					marks.push(
+						() => htl.svg`<defs>
+							<linearGradient id="cloud-gradient-${code}-${msStart}" x1="0" y1="0" x2="0.3" y2="1">
+								<stop offset="0%" stop-color="${topColor}" />
+								<stop offset="50%" stop-color="${mid}" />
+								<stop offset="100%" stop-color="${bottomColor}" />
+							</linearGradient>
+						</defs>`,
+					);
+				}
+
 				// Weather code colored bands:
 				marks.push(
 					Plot.rectY(dataForecast.codes, {
@@ -1159,6 +1231,12 @@
 	div,
 	div > :global(svg) {
 		overflow: visible !important;
+	}
+
+	/* Glow behind weather icons - matches wmo-codes page */
+	div > :global(svg image) {
+		filter: drop-shadow(0 0 3px rgba(128, 128, 128, 0.6))
+			drop-shadow(0 0 6px rgba(128, 128, 128, 0.4)) drop-shadow(0 0 12px rgba(128, 128, 128, 0.3));
 	}
 
 	div {

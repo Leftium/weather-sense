@@ -537,8 +537,8 @@
 	// Others: diagonal gradient (45deg) - light bottom-left to dark top-right
 	const skyGradient = $derived(
 		isIOS
-			? `linear-gradient(90deg, ${displayColors[0]} 0%, ${displayColors[1]} 50%, ${displayColors[2]} 100%)`
-			: `linear-gradient(45deg, ${displayColors[0]} 0%, ${displayColors[1]} 50%, ${displayColors[2]} 100%)`,
+			? `linear-gradient(90deg, ${displayColors[2]} 0%, ${displayColors[1]} 50%, ${displayColors[0]} 100%)`
+			: `linear-gradient(45deg, ${displayColors[2]} 0%, ${displayColors[1]} 50%, ${displayColors[0]} 100%)`,
 	);
 
 	// Text color based on middle color for contrast

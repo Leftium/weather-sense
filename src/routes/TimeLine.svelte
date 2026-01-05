@@ -914,8 +914,8 @@
 				// Add gradient definition for tracker rect
 				ig.append('defs').html(`
 					<linearGradient id="tracker-rect-gradient" x1="0" y1="0" x2="0" y2="1">
-						<stop offset="0%" stop-color="#FFEE00" stop-opacity="0.5" />
-						<stop offset="100%" stop-color="#FFEE00" stop-opacity="0" />
+						<stop offset="0%" stop-color="#FFEE00" stop-opacity="0" />
+						<stop offset="100%" stop-color="#FFEE00" stop-opacity="0.5" />
 					</linearGradient>
 				`);
 

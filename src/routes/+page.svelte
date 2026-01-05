@@ -707,7 +707,11 @@
 				{:else if config.bindKey}
 					<input
 						type="checkbox"
-						name={config.key === 'showAll' ? 'showAll' : undefined}
+						name={config.key === 'showAll'
+							? 'showAll'
+							: config.key === 'tempRange'
+								? 'tempRange'
+								: undefined}
 						style="--color: {config.color}"
 						checked={config.checked}
 						onchange={(e) => handleCheckboxChange(config.bindKey!, e)}
@@ -1130,6 +1134,26 @@
 		}
 
 		input[type='checkbox']:not([name='temperature']):checked::before {
+			transform: scale(1);
+		}
+
+		// Temp range checkbox - split blue/red with rounded corners
+		input[type='checkbox'][name='tempRange'] {
+			position: relative;
+			border: none;
+			background:
+				linear-gradient($color-ghost-white, $color-ghost-white) padding-box,
+				linear-gradient(to bottom right, #3366ff 50%, #ff4444 50%) border-box;
+			border: 3px solid transparent;
+		}
+
+		input[type='checkbox'][name='tempRange']::before {
+			background: linear-gradient(to bottom right, #3366ff 50%, #ff4444 50%);
+			transform: scale(0);
+			transition: 200ms transform ease-in-out;
+		}
+
+		input[type='checkbox'][name='tempRange']:checked::before {
 			transform: scale(1);
 		}
 

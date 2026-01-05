@@ -484,6 +484,7 @@
 		width: 100%;
 		overflow: clip;
 		background: transparent;
+		padding-block: 6px;
 	}
 
 	.tiles-track-area {
@@ -568,8 +569,7 @@
 	.button-bar {
 		display: flex;
 		justify-content: center;
-		margin-top: 3px;
-		padding-bottom: 3px;
+		margin-top: 6px;
 
 		.button-group {
 			display: flex;

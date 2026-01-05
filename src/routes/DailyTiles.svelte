@@ -24,7 +24,7 @@
 		tileGradient = 'linear-gradient(160deg, #6bb3e0 0%, #a8d8f0 50%, #eee 100%)',
 		textColor = '#333',
 		textShadowColor = 'rgba(248, 248, 255, 0.8)',
-		pastTileOpacity = 0.25,
+
 		groupIcons = true,
 		onMore,
 		onAll,
@@ -37,7 +37,7 @@
 		tileGradient?: string;
 		textColor?: string;
 		textShadowColor?: string;
-		pastTileOpacity?: number;
+
 		groupIcons?: boolean;
 		onMore?: () => void;
 		onAll?: () => void;
@@ -261,7 +261,6 @@
 	class="daily-tiles"
 	style:--tile-count={isLoading ? placeholderCount : days.length}
 	style:--sky-gradient={skyGradient}
-	style:--past-tile-opacity={pastTileOpacity}
 	bind:this={containerDiv}
 >
 	<!-- Wrapper to constrain trackable area to just the tiles -->
@@ -518,10 +517,6 @@
 
 		> * {
 			grid-area: stack;
-		}
-
-		&.past > * {
-			opacity: var(--past-tile-opacity, 0.7);
 		}
 	}
 

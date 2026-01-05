@@ -541,19 +541,14 @@
 			: `linear-gradient(45deg, ${displayColors[0]} 0%, ${displayColors[1]} 50%, ${displayColors[2]} 100%)`,
 	);
 
-	const tileGradient = $derived(
-		`linear-gradient(315deg, ${displayColors[0]} 0%, ${displayColors[1]} 50%, ${displayColors[2]} 100%)`,
-	);
+	// Always use day palette for readability (prep for cloudiness-based gradients)
+	const tileGradient = `linear-gradient(315deg, #f0f8ff 0%, #a8d8f0 50%, #6bb3e0 100%)`;
 
 	// Text color based on middle color for contrast
 	const textColor = $derived(contrastTextColor(displayColors[1]));
 
 	// Text shadow is opposite of text color
 	const textShadowColor = $derived(contrastTextColor(displayColors[1], true));
-
-	// Past overlay color - use dark overlay on light backgrounds, white on dark backgrounds
-	// Past tile dimming - CSS-only approach for simplicity
-	const pastTileOpacity = 0.25;
 
 	// Calculate temp range based on visible hourly plot days only
 	const visibleTempStats = $derived.by(() => {
@@ -764,7 +759,6 @@
 				{tileGradient}
 				{textColor}
 				{textShadowColor}
-				{pastTileOpacity}
 				{maxForecastDays}
 				{groupIcons}
 				onMore={() => (forecastDaysVisible = Math.min(forecastDaysVisible + 2, maxForecastDays))}

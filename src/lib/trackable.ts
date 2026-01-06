@@ -15,6 +15,10 @@ export type TrackableOptions = {
 	onTrackingEnd: () => void;
 	// Optional: check if target should be ignored (e.g., temp labels)
 	shouldIgnoreTarget?: (target: Element) => boolean;
+	// Optional: callback for tap in top region (e.g., toggle sky visibility)
+	onTopRegionTap?: () => void;
+	// Optional: height ratio for top region (default 0.3 = top 30%)
+	topRegionRatio?: number;
 };
 
 export function trackable(node: HTMLElement, options: TrackableOptions) {
@@ -29,6 +33,13 @@ export function trackable(node: HTMLElement, options: TrackableOptions) {
 	let isScrubbing = false;
 	let activePointerId: number | null = null;
 	const GESTURE_THRESHOLD = 8; // pixels to move before deciding gesture type
+
+	// Tap detection for top region
+	let pointerDownX = 0;
+	let pointerDownY = 0;
+	let pointerDownTime = 0;
+	const TAP_THRESHOLD = 10; // max pixels moved to count as tap
+	const TAP_MAX_DURATION = 300; // max ms for a tap
 
 	// RAF throttling for touch scrubbing - prevents excessive updates on iOS
 	let pendingMs: number | null = null;
@@ -78,6 +89,11 @@ export function trackable(node: HTMLElement, options: TrackableOptions) {
 			return;
 		}
 
+		// Record position for tap detection
+		pointerDownX = e.clientX;
+		pointerDownY = e.clientY;
+		pointerDownTime = Date.now();
+
 		trackUntilMouseUp = true;
 		trackToMouseX(e);
 		options.onTrackingStart(node);
@@ -90,6 +106,24 @@ export function trackable(node: HTMLElement, options: TrackableOptions) {
 		if (options.getTrackedElement() === node) {
 			trackUntilMouseUp = false;
 			options.onTrackingEnd();
+
+			// Check for tap in top region
+			if (options.onTopRegionTap) {
+				const deltaX = Math.abs(e.clientX - pointerDownX);
+				const deltaY = Math.abs(e.clientY - pointerDownY);
+				const duration = Date.now() - pointerDownTime;
+
+				if (deltaX < TAP_THRESHOLD && deltaY < TAP_THRESHOLD && duration < TAP_MAX_DURATION) {
+					// Check if tap is in top region of the node
+					const rect = node.getBoundingClientRect();
+					const relativeY = e.clientY - rect.top;
+					const topRegionRatio = options.topRegionRatio ?? 0.3;
+
+					if (relativeY < rect.height * topRegionRatio) {
+						options.onTopRegionTap();
+					}
+				}
+			}
 		}
 	}
 
@@ -183,6 +217,15 @@ export function trackable(node: HTMLElement, options: TrackableOptions) {
 			}
 			options.onTrackingEnd();
 			node.style.touchAction = ''; // Restore native scroll for next gesture
+		} else if (!gestureDecided && options.onTopRegionTap) {
+			// No gesture decided = tap (didn't move enough to trigger scrub or scroll)
+			const rect = node.getBoundingClientRect();
+			const relativeY = touchStartY - rect.top;
+			const topRegionRatio = options.topRegionRatio ?? 0.3;
+
+			if (relativeY >= 0 && relativeY < rect.height * topRegionRatio) {
+				options.onTopRegionTap();
+			}
 		}
 
 		gestureDecided = false;

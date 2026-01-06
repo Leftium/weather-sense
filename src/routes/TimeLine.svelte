@@ -838,6 +838,8 @@
 		onTimeChange: (ms: number) => emit('weatherdata_requestedSetTime', { ms }),
 		onTrackingStart: (node: HTMLElement) => emit('weatherdata_requestedTrackingStart', { node }),
 		onTrackingEnd: () => emit('weatherdata_requestedTrackingEnd'),
+		onTopRegionTap: toggleSkyThroughWmo,
+		topRegionRatio: 0.3, // Top 30% where the solid WMO label band is
 	};
 
 	function makeTransFormPrecipitation(onlyLinear: boolean) {
@@ -1537,19 +1539,7 @@
 	</div>
 {/if}
 
-<div
-	bind:this={div}
-	bind:clientWidth
-	use:trackable={trackableOptions}
-	role="img"
-	onpointerdown={(e) => {
-		if (e.shiftKey) {
-			e.preventDefault();
-			e.stopPropagation();
-			toggleSkyThroughWmo();
-		}
-	}}
-></div>
+<div bind:this={div} bind:clientWidth use:trackable={trackableOptions} role="img"></div>
 
 <style>
 	div,

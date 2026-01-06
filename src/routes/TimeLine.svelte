@@ -361,12 +361,16 @@
 		const DAY_THRESHOLD = 6;
 
 		// Process each day in the range
+		const today = +dayjs().startOf('day');
 		for (const day of nsWeatherData.daily) {
 			const { sunrise, sunset, ms: dayStart } = day;
 			const dayEnd = dayStart + MS_IN_DAY;
 
 			// Skip days outside our range
 			if (dayEnd < msStart || dayStart > msEnd) continue;
+
+			// Day offset from today (for mocking dawn colors)
+			const dayOffset = Math.floor((dayStart - today) / MS_IN_DAY);
 
 			const solarNoon = (sunrise + sunset) / 2;
 
@@ -432,7 +436,7 @@
 
 				let ms = clampedX1;
 				while (ms < clampedX2) {
-					const colors = getSkyColors(ms, sunrise, sunset);
+					const colors = getSkyColors(ms, sunrise, sunset, 'srgb-linear', dayOffset);
 					const nextMs = Math.min(ms + FINE_INTERVAL, clampedX2);
 					slices.push({
 						x1: ms,
@@ -1056,9 +1060,9 @@
 					gradient.setAttribute('y2', '1'); // Vertical gradient
 
 					// Merged gradient: main sky strip + solid mini strip at bottom
-					// colors[0] = horizon, colors[1] = middle, colors[2] = upper sky
-					const topColor = slice.colors[2];
-					const bottomColor = slice.colors[0];
+					// skyPalettes format: [top, middle, bottom] matches SVG gradient (0%=top, 100%=bottom)
+					const topColor = slice.colors[0];
+					const bottomColor = slice.colors[2];
 
 					// Scale original stops to fit in main section (0% to mainEndPercent%)
 					const stop0 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');

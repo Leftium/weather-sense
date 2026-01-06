@@ -813,13 +813,23 @@ import { getSunAltitude } from './horizon';
 export { getSunAltitude };
 
 // Bright color palettes for each phase (3 stops for gradient)
-// Format: [horizon, middle, upper sky]
+// Sky color palettes for different times of day
+// Format: [top, middle, bottom] - matches SVG gradient direction (0% at top, 100% at bottom)
+// In the plot: top = upper sky, bottom = horizon
 export const skyPalettes = {
-	night: ['#000c26', '#2a3a5c', '#7455b8'], // dark at horizon, purple at upper sky (top)
-	dawn: ['#ffcc33', '#ff9977', '#fff0e6'], // golden at horizon, orange middle, warm white upper
-	day: ['#6bb3e0', '#a8d8f0', '#f0f8ff'], // blue at horizon, light blue middle, white upper
-	dusk: ['#ffd93d', '#ff6b6b', '#7455b8'], // golden at horizon, coral middle, purple upper (matches night)
+	night: ['#000c26', '#2a3a5c', '#7455b8'], // dark blue top → slate → purple glow at horizon
+	dawn: ['#ff6633', '#ffb055', '#ffd93d'], // vivid orange top → light orange → golden at horizon
+	day: ['#f0f8ff', '#a8d8f0', '#6bb3e0'], // white top → light blue → blue at horizon
+	dusk: ['#ff6b6b', '#ff8454', '#ffc400'], // coral top → orange → deep amber-gold at horizon
 };
+
+// MOCK: Disabled - dawn colors finalized
+const MOCK_DAWN_COLORS = false;
+
+export function getMockedDawnPalette(dayOffset: number): string[] {
+	if (!MOCK_DAWN_COLORS || dayOffset < 0) return skyPalettes.dawn;
+	return skyPalettes.dawn;
+}
 
 // Interpolate between two color palettes using colorjs.io
 // TEMP: Pass colorSpace parameter to compare srgb vs srgb-linear between days
@@ -903,11 +913,15 @@ export function getSkyColors(
 	sunrise: number,
 	sunset: number,
 	colorSpace = 'srgb-linear',
+	dayOffset = -1, // For mocking dawn colors per day (-1 = no mock)
 ): string[] {
 	const altitudeRad = getSunAltitude(ms, sunrise, sunset);
 	const altitude = radToDeg(altitudeRad);
 	const solarNoon = (sunrise + sunset) / 2;
 	const isMorning = ms < solarNoon;
+
+	// Get dawn palette (possibly mocked)
+	const dawnPalette = getMockedDawnPalette(dayOffset);
 
 	// Altitude thresholds (in degrees):
 	// -18° to -12°: astronomical twilight (night -> dawn/dusk transition starts)
@@ -924,7 +938,7 @@ export function getSkyColors(
 		// Map -18° to -6° => t: 0 to 1
 		const t = (altitude + 18) / 12;
 		if (isMorning) {
-			return interpolatePalettes(skyPalettes.night, skyPalettes.dawn, t, colorSpace);
+			return interpolatePalettes(skyPalettes.night, dawnPalette, t, colorSpace);
 		} else {
 			return interpolatePalettes(skyPalettes.night, skyPalettes.dusk, t, colorSpace);
 		}
@@ -933,7 +947,7 @@ export function getSkyColors(
 		// Map -6° to 6° => t: 0 to 1
 		const t = (altitude + 6) / 12;
 		if (isMorning) {
-			return interpolatePalettes(skyPalettes.dawn, skyPalettes.day, t, colorSpace);
+			return interpolatePalettes(dawnPalette, skyPalettes.day, t, colorSpace);
 		} else {
 			return interpolatePalettes(skyPalettes.dusk, skyPalettes.day, t, colorSpace);
 		}

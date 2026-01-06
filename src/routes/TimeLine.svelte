@@ -43,6 +43,7 @@
 		getContrastColors,
 		getSkyColors,
 		getWeatherIcon,
+		getWmoOpacity,
 		MS_IN_10_MINUTES,
 		MS_IN_DAY,
 		MS_IN_HOUR,
@@ -447,9 +448,20 @@
 				}
 			}
 
-			// Render all minutes as transitions (no optimization for now)
-			// TODO: optimize later with canvas caching
-			addTransitionRects(dayStart, dayEnd, false);
+			// Night before dawn (from day start to dawn start)
+			addSolidRect(dayStart, dawnStart, skyPalettes.night, true, false);
+
+			// Dawn transition (fine-sampled)
+			addTransitionRects(dawnStart, dawnEnd, false);
+
+			// Day (from dawn end to dusk start)
+			addSolidRect(dawnEnd, duskStart, skyPalettes.day, false, true);
+
+			// Dusk transition (fine-sampled)
+			addTransitionRects(duskStart, duskEnd, true);
+
+			// Night after dusk (from dusk end to day end)
+			addSolidRect(duskEnd, dayEnd, skyPalettes.night, true, false);
 		}
 
 		// Sort slices by x1 to ensure proper rendering order
@@ -1179,15 +1191,21 @@
 				for (const code of allWmoCodeKeys) {
 					const isSky = skyCodes.includes(code);
 					const isFog = fogCodes.includes(code);
-					// Use sky/fog gradients for clear/cloudy/fog, pico gradients for precipitation
+
+					// When toggle is on: use cloudGradient colors (grays) with weather-based opacity
+					// When toggle is off: use original pico colors for precip, cloudGradient for sky/fog
+					const useGrayColors = showSkyThroughWmo;
 					const [dark, mid, light] =
-						isSky || isFog ? getCloudGradient(code) : WMO_CODES[code].gradient;
+						useGrayColors || isSky || isFog ? getCloudGradient(code) : WMO_CODES[code].gradient;
+
 					// For sky: light at top (0%), dark at bottom (100%)
 					// For fog/precip: dark at top (0%), light at bottom (100%)
 					const topColor = isSky ? light : dark;
 					const bottomColor = isSky ? dark : light;
-					// Gradient: opaque or transparent bottom based on toggle
-					const bottomOpacity = showSkyThroughWmo ? 0 : 1;
+
+					// Opacity: weather-based when toggle on, fully opaque when off
+					// Top band (0-30%) always opaque, bottom band uses weather-based opacity
+					const bottomOpacity = showSkyThroughWmo ? getWmoOpacity(code) : 1;
 					marks.push(
 						() => htl.svg`<defs>
 							<linearGradient id="cloud-gradient-${code}-${msStart}" x1="0" y1="0" x2="0" y2="1">
@@ -1519,36 +1537,21 @@
 	</div>
 {/if}
 
-<div class="timeline-container">
-	<div bind:this={div} bind:clientWidth use:trackable={trackableOptions} role="img"></div>
-	<!-- Clickable overlay for WMO area to toggle sky visibility -->
-	<button
-		class="wmo-toggle-overlay"
-		onclick={toggleSkyThroughWmo}
-		aria-label="Toggle sky visibility through weather conditions"
-	></button>
-</div>
+<div
+	bind:this={div}
+	bind:clientWidth
+	use:trackable={trackableOptions}
+	role="img"
+	onpointerdown={(e) => {
+		if (e.shiftKey) {
+			e.preventDefault();
+			e.stopPropagation();
+			toggleSkyThroughWmo();
+		}
+	}}
+></div>
 
 <style>
-	.timeline-container {
-		position: relative;
-		width: 100%;
-		height: 100%;
-	}
-
-	.wmo-toggle-overlay {
-		position: absolute;
-		top: 0;
-		left: 0;
-		width: 100%;
-		height: 30%; /* Covers the solid WMO band at top */
-		background: transparent;
-		border: none;
-		cursor: pointer;
-		padding: 0;
-		margin: 0;
-	}
-
 	div,
 	div > :global(svg) {
 		overflow: visible !important;

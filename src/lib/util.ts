@@ -319,6 +319,35 @@ export function getCloudGradientCSS(wmoCode: number, angle = 315): string {
 	return `linear-gradient(${angle}deg, ${colors[0]} 0%, ${colors[0]} 15%, ${colors[1]} 50%, ${colors[2]} 85%, ${colors[2]} 100%)`;
 }
 
+/**
+ * Get opacity for WMO weather code overlay (how much sky shows through)
+ * Clear conditions are transparent, cloudy/precipitation more opaque
+ * @param wmoCode - WMO weather code (0-99)
+ * @returns Opacity value 0-1 (0 = fully transparent, 1 = fully opaque)
+ */
+export function getWmoOpacity(wmoCode: number): number {
+	// Clear sky - fully transparent
+	if (wmoCode === 0) return 0;
+
+	// Mostly clear
+	if (wmoCode === 1) return 0.1;
+
+	// Partly cloudy
+	if (wmoCode === 2) return 0.2;
+
+	// Overcast
+	if (wmoCode === 3) return 0.4;
+
+	// Fog
+	if (wmoCode === 45 || wmoCode === 48) return 0.6;
+
+	// Thunderstorm (95-99)
+	if (wmoCode >= 95) return 0.6;
+
+	// All precipitation (drizzle, rain, snow, showers): moderate opacity
+	return 0.3;
+}
+
 function makeWmo(wsCode: number, picoColor: string, description: string, iconName: string) {
 	const groups = [
 		'clear',

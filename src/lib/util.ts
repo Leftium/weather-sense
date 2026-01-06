@@ -399,6 +399,19 @@ export function getWmoOverlayGradient(wmoCode: number): { offset: string; color:
 		];
 	}
 
+	// All precipitation codes: use same overcast desaturation overlay
+	// This provides a consistent cloudy sky base for all precipitation types
+	// Codes: 51-55 (drizzle), 56-57 (freezing drizzle), 61-65 (rain),
+	//        66-67 (freezing rain), 71-77 (snow), 80-82 (showers),
+	//        85-86 (snow showers), 95-99 (thunderstorm)
+	if (wmoCode >= 51) {
+		return [
+			{ offset: '0%', color: 'rgba(160,160,170,0.55)' },
+			{ offset: '50%', color: 'rgba(170,170,180,0.58)' },
+			{ offset: '100%', color: 'rgba(180,180,190,0.60)' },
+		];
+	}
+
 	// Other codes: no overlay (will use solid WMO gradients)
 	return null;
 }

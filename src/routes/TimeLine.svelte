@@ -1216,12 +1216,13 @@
 					}),
 				);
 
-				// When showSkyThroughWmo is active, add semi-transparent overlays for codes 1-3 and fog (45, 48)
-				// These go on top of the sky strip to simulate cloud coverage / fog
+				// When showSkyThroughWmo is active, add semi-transparent overlays
+				// These go on top of the sky strip to simulate cloud coverage / fog / precipitation
 				if (showSkyThroughWmo) {
-					// Define overlay gradients for codes 1-3 and fog codes
-					const overlayCodes = [1, 2, 3, 45, 48];
-					for (const code of overlayCodes) {
+					// Define overlay gradients for all supported WMO codes
+					// Codes 1-3: cloudy, 45/48: fog, 51+: all precipitation
+					const allWmoCodes = Object.keys(WMO_CODES).map(Number);
+					for (const code of allWmoCodes) {
 						const overlayStops = getWmoOverlayGradient(code);
 						if (overlayStops) {
 							marks.push(
@@ -1234,13 +1235,8 @@
 						}
 					}
 
-					// Render overlay rects for codes 1-3 and fog (code 0 needs no overlay - pure sky)
-					const overlayData = dataForecast.codes.filter(
-						(d) =>
-							(d.weatherCode >= 1 && d.weatherCode <= 3) ||
-							d.weatherCode === 45 ||
-							d.weatherCode === 48,
-					);
+					// Render overlay rects for all codes except 0 (clear - pure sky)
+					const overlayData = dataForecast.codes.filter((d) => d.weatherCode !== 0);
 					if (overlayData.length > 0) {
 						marks.push(
 							Plot.rectY(overlayData, {

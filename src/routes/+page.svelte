@@ -23,6 +23,7 @@
 		aqiUsToLabel,
 		aqiEuropeToLabel,
 		getSkyColors,
+		getSkyColorsFullPalette,
 		colorsDelta,
 		contrastTextColor,
 		formatTemp,
@@ -398,15 +399,16 @@
 	let lastTargetDayStart = $state(getDayStart(Date.now()));
 
 	// Compute colors from displayMs using currentDay's sunrise/sunset
+	// Use full palette (with white/purple) for sticky bg
 	const displayColors = $derived.by(() => {
 		if (!currentDay) return DEFAULT_COLORS;
-		return getSkyColors(displayMs, currentDay.sunrise, currentDay.sunset);
+		return getSkyColorsFullPalette(displayMs, currentDay.sunrise, currentDay.sunset);
 	});
 
 	// Immediate colors (no animation) for tracker
 	const targetColors = $derived.by(() => {
 		if (!currentDay) return DEFAULT_COLORS;
-		return getSkyColors(nsWeatherData.ms, currentDay.sunrise, currentDay.sunset);
+		return getSkyColorsFullPalette(nsWeatherData.ms, currentDay.sunrise, currentDay.sunset);
 	});
 
 	// Start animation loop - steps through time at constant color speed (frame-rate independent)

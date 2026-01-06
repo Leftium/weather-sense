@@ -361,16 +361,12 @@
 		const DAY_THRESHOLD = 6;
 
 		// Process each day in the range
-		const today = +dayjs().startOf('day');
 		for (const day of nsWeatherData.daily) {
 			const { sunrise, sunset, ms: dayStart } = day;
 			const dayEnd = dayStart + MS_IN_DAY;
 
 			// Skip days outside our range
 			if (dayEnd < msStart || dayStart > msEnd) continue;
-
-			// Day offset from today (for mocking dawn colors)
-			const dayOffset = Math.floor((dayStart - today) / MS_IN_DAY);
 
 			const solarNoon = (sunrise + sunset) / 2;
 
@@ -436,7 +432,7 @@
 
 				let ms = clampedX1;
 				while (ms < clampedX2) {
-					const colors = getSkyColors(ms, sunrise, sunset, 'srgb-linear', dayOffset);
+					const colors = getSkyColors(ms, sunrise, sunset);
 					const nextMs = Math.min(ms + FINE_INTERVAL, clampedX2);
 					slices.push({
 						x1: ms,

@@ -814,21 +814,28 @@ export { getSunAltitude };
 
 // Bright color palettes for each phase (3 stops for gradient)
 // Sky color palettes for different times of day
-// Format: [top, middle, bottom] - matches SVG gradient direction (0% at top, 100% at bottom)
-// In the plot: top = upper sky, bottom = horizon
+// Format for night/day: [top, middle, bottom] - all 3 used for both sky strip and sticky bg
+// Format for dawn/dusk: [top, bottom, extended] where:
+//   - Sky strip uses [0] and [1] with calculated middle (2-tone, no white/purple)
+//   - Sticky bg uses all 3: [0] → [1] → [2] (includes white/purple)
 export const skyPalettes = {
 	night: ['#000c26', '#2a3a5c', '#7455b8'], // dark blue top → slate → purple glow at horizon
-	dawn: ['#ff6633', '#ffb055', '#ffd93d'], // vivid orange top → light orange → golden at horizon
+	dawn: ['#ff6633', '#ffd93d', '#fff0e6'], // vivid orange top → golden horizon → warm white (sticky bg only)
 	day: ['#f0f8ff', '#a8d8f0', '#6bb3e0'], // white top → light blue → blue at horizon
-	dusk: ['#ff6b6b', '#ff8454', '#ffc400'], // coral top → orange → deep amber-gold at horizon
+	dusk: ['#ff6b6b', '#ffc400', '#7455b8'], // coral top → amber-gold horizon → purple (sticky bg only)
 };
 
-// MOCK: Disabled - dawn colors finalized
-const MOCK_DAWN_COLORS = false;
-
-export function getMockedDawnPalette(dayOffset: number): string[] {
-	if (!MOCK_DAWN_COLORS || dayOffset < 0) return skyPalettes.dawn;
-	return skyPalettes.dawn;
+// Get sky strip palette for dawn/dusk (2-tone with calculated middle, omits white/purple)
+// Night/day return unchanged (all 3 colors used)
+export function getSkyStripPalette(palette: string[], isDawnOrDusk: boolean): string[] {
+	if (!isDawnOrDusk) return palette;
+	// For dawn/dusk: use [0] as top, [1] as bottom, calculate middle between them
+	const top = palette[0];
+	const bottom = palette[1];
+	const c1 = new Color(top);
+	const c2 = new Color(bottom);
+	const middle = c1.mix(c2, 0.5, { space: 'srgb' }).toString({ format: 'hex' });
+	return [top, middle, bottom];
 }
 
 // Interpolate between two color palettes using colorjs.io
@@ -908,20 +915,23 @@ function radToDeg(rad: number): number {
 	return (rad * 180) / Math.PI;
 }
 
-export function getSkyColors(
+// Internal function to get sky colors with option for sky strip (2-tone dawn/dusk) or full palette
+function getSkyColorsInternal(
 	ms: number,
 	sunrise: number,
 	sunset: number,
 	colorSpace = 'srgb-linear',
-	dayOffset = -1, // For mocking dawn colors per day (-1 = no mock)
+	forSkyStrip = false,
 ): string[] {
 	const altitudeRad = getSunAltitude(ms, sunrise, sunset);
 	const altitude = radToDeg(altitudeRad);
 	const solarNoon = (sunrise + sunset) / 2;
 	const isMorning = ms < solarNoon;
 
-	// Get dawn palette (possibly mocked)
-	const dawnPalette = getMockedDawnPalette(dayOffset);
+	// For sky strip: dawn/dusk use 2-tone palette (omit white/purple)
+	// For sticky bg: use full 3-color palette
+	const dawnPalette = forSkyStrip ? getSkyStripPalette(skyPalettes.dawn, true) : skyPalettes.dawn;
+	const duskPalette = forSkyStrip ? getSkyStripPalette(skyPalettes.dusk, true) : skyPalettes.dusk;
 
 	// Altitude thresholds (in degrees):
 	// -18° to -12°: astronomical twilight (night -> dawn/dusk transition starts)
@@ -940,7 +950,7 @@ export function getSkyColors(
 		if (isMorning) {
 			return interpolatePalettes(skyPalettes.night, dawnPalette, t, colorSpace);
 		} else {
-			return interpolatePalettes(skyPalettes.night, skyPalettes.dusk, t, colorSpace);
+			return interpolatePalettes(skyPalettes.night, duskPalette, t, colorSpace);
 		}
 	} else if (altitude > -6 && altitude <= 6) {
 		// Golden hour: dawn/dusk -> day
@@ -949,7 +959,7 @@ export function getSkyColors(
 		if (isMorning) {
 			return interpolatePalettes(dawnPalette, skyPalettes.day, t, colorSpace);
 		} else {
-			return interpolatePalettes(skyPalettes.dusk, skyPalettes.day, t, colorSpace);
+			return interpolatePalettes(duskPalette, skyPalettes.day, t, colorSpace);
 		}
 	} else {
 		// Full daylight (altitude > 6°)
@@ -957,18 +967,38 @@ export function getSkyColors(
 	}
 }
 
+// Get sky colors for sky strip (dawn/dusk use 2-tone palette without white/purple)
+export function getSkyColors(
+	ms: number,
+	sunrise: number,
+	sunset: number,
+	colorSpace = 'srgb-linear',
+): string[] {
+	return getSkyColorsInternal(ms, sunrise, sunset, colorSpace, true);
+}
+
+// Get sky colors for sticky bg (full 3-color palette including white/purple)
+export function getSkyColorsFullPalette(
+	ms: number,
+	sunrise: number,
+	sunset: number,
+	colorSpace = 'srgb-linear',
+): string[] {
+	return getSkyColorsInternal(ms, sunrise, sunset, colorSpace, false);
+}
+
 export function getSkyGradient(ms: number, sunrise: number, sunset: number): string {
-	const colors = getSkyColors(ms, sunrise, sunset);
+	const colors = getSkyColorsFullPalette(ms, sunrise, sunset);
 	return `linear-gradient(-135deg, ${colors[0]} 0%, ${colors[1]} 50%, ${colors[2]} 100%)`;
 }
 
 export function getTileGradient(ms: number, sunrise: number, sunset: number): string {
-	const colors = getSkyColors(ms, sunrise, sunset);
+	const colors = getSkyColorsFullPalette(ms, sunrise, sunset);
 	return `linear-gradient(135deg, ${colors[0]} 0%, ${colors[1]} 50%, ${colors[2]} 100%)`;
 }
 
 export function getTextColor(ms: number, sunrise: number, sunset: number): string {
-	const colors = getSkyColors(ms, sunrise, sunset);
+	const colors = getSkyColorsFullPalette(ms, sunrise, sunset);
 	// Use middle color as dominant background color for contrast calculation
 	return contrastTextColor(colors[1]);
 }

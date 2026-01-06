@@ -1204,13 +1204,14 @@
 
 					// When toggle is on: fully transparent below label band (top 30%)
 					// When toggle is off: fully opaque throughout
+					const labelBandPercent = 30;
 					const bottomOpacity = showSkyThroughWmo ? 0 : 1;
 					marks.push(
 						() => htl.svg`<defs>
 							<linearGradient id="cloud-gradient-${code}-${msStart}" x1="0" y1="0" x2="0" y2="1">
 								<stop offset="0%" stop-color="${topColor}" stop-opacity="1" />
-								<stop offset="30%" stop-color="${mid}" stop-opacity="1" />
-								<stop offset="30%" stop-color="${mid}" stop-opacity="${bottomOpacity}" />
+								<stop offset="${labelBandPercent}%" stop-color="${mid}" stop-opacity="1" />
+								<stop offset="${labelBandPercent}%" stop-color="${mid}" stop-opacity="${bottomOpacity}" />
 								<stop offset="100%" stop-color="${bottomColor}" stop-opacity="${bottomOpacity}" />
 							</linearGradient>
 						</defs>`,

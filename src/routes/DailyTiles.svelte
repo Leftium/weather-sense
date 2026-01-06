@@ -8,6 +8,8 @@
 		getCloudGradientCSS,
 		formatTemp,
 		MS_IN_DAY,
+		MS_IN_HOUR,
+		DAY_START_HOUR,
 		TEMP_COLOR_HOT,
 		TEMP_COLOR_COLD,
 	} from '$lib/util';
@@ -186,11 +188,14 @@
 	let trackerX: number | null = $state(null);
 	let trackerColor: string = $state('#FFEE00');
 
-	// Get start of day ms for a given day
+	// Offset from midnight to align with hourly plots (4 AM start)
+	const dayStartOffsetMs = DAY_START_HOUR * MS_IN_HOUR;
+
+	// Get start of day ms for a given day (offset to 4 AM to match hourly plots)
 	function getDayStartMs(dayIndex: number): number {
 		const day = days[dayIndex];
 		if (!day) return 0;
-		return day.ms;
+		return day.ms + dayStartOffsetMs;
 	}
 
 	// Convert ms to day index and X position within tiles
@@ -226,7 +231,7 @@
 		const day = days[clamp(dayIndex, 0, days.length - 1)];
 		if (!day) return Date.now();
 
-		return day.ms + fractionOfDay * MS_IN_DAY;
+		return day.ms + dayStartOffsetMs + fractionOfDay * MS_IN_DAY;
 	}
 
 	// Update tracker display based on nsWeatherData.ms

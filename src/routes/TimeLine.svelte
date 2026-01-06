@@ -43,7 +43,6 @@
 		getContrastColors,
 		getSkyColors,
 		getWeatherIcon,
-		getWmoOpacity,
 		MS_IN_10_MINUTES,
 		MS_IN_DAY,
 		MS_IN_HOUR,
@@ -411,7 +410,7 @@
 			) {
 				if (x2 <= x1) return;
 				const clampedX1 = Math.max(x1, msStart);
-				const clampedX2 = Math.min(x2, msEnd);
+				const clampedX2 = Math.min(x2 + MS_IN_MINUTE, msEnd); // slight overlap to prevent gaps
 				if (clampedX2 <= clampedX1) return;
 
 				slices.push({
@@ -1194,20 +1193,18 @@
 					const isSky = skyCodes.includes(code);
 					const isFog = fogCodes.includes(code);
 
-					// When toggle is on: use cloudGradient colors (grays) with weather-based opacity
-					// When toggle is off: use original pico colors for precip, cloudGradient for sky/fog
-					const useGrayColors = showSkyThroughWmo;
+					// Use sky/fog gradients for clear/cloudy/fog, pico gradients for precipitation
 					const [dark, mid, light] =
-						useGrayColors || isSky || isFog ? getCloudGradient(code) : WMO_CODES[code].gradient;
+						isSky || isFog ? getCloudGradient(code) : WMO_CODES[code].gradient;
 
 					// For sky: light at top (0%), dark at bottom (100%)
 					// For fog/precip: dark at top (0%), light at bottom (100%)
 					const topColor = isSky ? light : dark;
 					const bottomColor = isSky ? dark : light;
 
-					// Opacity: weather-based when toggle on, fully opaque when off
-					// Top band (0-30%) always opaque, bottom band uses weather-based opacity
-					const bottomOpacity = showSkyThroughWmo ? getWmoOpacity(code) : 1;
+					// When toggle is on: fully transparent below label band (top 30%)
+					// When toggle is off: fully opaque throughout
+					const bottomOpacity = showSkyThroughWmo ? 0 : 1;
 					marks.push(
 						() => htl.svg`<defs>
 							<linearGradient id="cloud-gradient-${code}-${msStart}" x1="0" y1="0" x2="0" y2="1">

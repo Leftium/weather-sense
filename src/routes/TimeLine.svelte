@@ -1,6 +1,19 @@
 <script module lang="ts">
+	import { browser } from '$app/environment';
+
 	let adjustedLabelWidths = $state(false);
 	let labelWidths: Record<string, number> = $state({});
+
+	// Global toggle for sky visibility through WMO conditions (persisted to localStorage)
+	const STORAGE_KEY = 'showSkyThroughWmo';
+	let showSkyThroughWmo = $state(browser ? localStorage.getItem(STORAGE_KEY) === 'true' : false);
+
+	function toggleSkyThroughWmo() {
+		showSkyThroughWmo = !showSkyThroughWmo;
+		if (browser) {
+			localStorage.setItem(STORAGE_KEY, String(showSkyThroughWmo));
+		}
+	}
 </script>
 
 <script lang="ts">
@@ -1173,14 +1186,15 @@
 					// For fog/precip: dark at top (0%), light at bottom (100%)
 					const topColor = isSky ? light : dark;
 					const bottomColor = isSky ? dark : light;
-					// Gradient with solid top band, transparent bottom (sky shows through)
+					// Gradient: opaque or transparent bottom based on toggle
+					const bottomOpacity = showSkyThroughWmo ? 0 : 1;
 					marks.push(
 						() => htl.svg`<defs>
 							<linearGradient id="cloud-gradient-${code}-${msStart}" x1="0" y1="0" x2="0" y2="1">
 								<stop offset="0%" stop-color="${topColor}" stop-opacity="1" />
 								<stop offset="30%" stop-color="${mid}" stop-opacity="1" />
-								<stop offset="30%" stop-color="${mid}" stop-opacity="0" />
-								<stop offset="100%" stop-color="${bottomColor}" stop-opacity="0" />
+								<stop offset="30%" stop-color="${mid}" stop-opacity="${bottomOpacity}" />
+								<stop offset="100%" stop-color="${bottomColor}" stop-opacity="${bottomOpacity}" />
 							</linearGradient>
 						</defs>`,
 					);
@@ -1505,9 +1519,36 @@
 	</div>
 {/if}
 
-<div bind:this={div} bind:clientWidth use:trackable={trackableOptions} role="img"></div>
+<div class="timeline-container">
+	<div bind:this={div} bind:clientWidth use:trackable={trackableOptions} role="img"></div>
+	<!-- Clickable overlay for WMO area to toggle sky visibility -->
+	<button
+		class="wmo-toggle-overlay"
+		onclick={toggleSkyThroughWmo}
+		aria-label="Toggle sky visibility through weather conditions"
+	></button>
+</div>
 
 <style>
+	.timeline-container {
+		position: relative;
+		width: 100%;
+		height: 100%;
+	}
+
+	.wmo-toggle-overlay {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 30%; /* Covers the solid WMO band at top */
+		background: transparent;
+		border: none;
+		cursor: pointer;
+		padding: 0;
+		margin: 0;
+	}
+
 	div,
 	div > :global(svg) {
 		overflow: visible !important;

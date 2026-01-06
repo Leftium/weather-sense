@@ -553,6 +553,8 @@
 		height: 94px;
 		margin: -38px 0 0 -32px;
 		pointer-events: none;
+		filter: drop-shadow(0 0 3px rgba(128, 128, 128, 0.6))
+			drop-shadow(0 0 6px rgba(128, 128, 128, 0.4)) drop-shadow(0 0 12px rgba(128, 128, 128, 0.3));
 
 		// Google icons: centered horizontally, raised up (may clip at top)
 		&.google-icon {

@@ -34,6 +34,7 @@
 		MS_IN_DAY,
 		MS_IN_HOUR,
 		MS_IN_MINUTE,
+		DAY_START_HOUR,
 		startOf,
 		WMO_CODES,
 		precipitationGroup,
@@ -934,8 +935,18 @@
 		if (msIntervalStart >= msStart && msIntervalStart < msEnd) {
 			drawTracker(ms, msIntervalStart, length, trackerColor, true);
 		} else if (ghostTracker) {
-			const msGhost = msStart + ((ms + nsWeatherData.utcOffsetMs) % MS_IN_DAY);
-			const msGhostInterval = msStart + ((msIntervalStart + nsWeatherData.utcOffsetMs) % MS_IN_DAY);
+			// Calculate time-of-day offset from the day start hour (4 AM), not midnight
+			// msStart is already at DAY_START_HOUR, so we need to offset from that
+			const dayStartOffsetMs = DAY_START_HOUR * MS_IN_HOUR;
+			const msGhost =
+				msStart +
+				((((ms + nsWeatherData.utcOffsetMs - dayStartOffsetMs) % MS_IN_DAY) + MS_IN_DAY) %
+					MS_IN_DAY);
+			const msGhostInterval =
+				msStart +
+				((((msIntervalStart + nsWeatherData.utcOffsetMs - dayStartOffsetMs) % MS_IN_DAY) +
+					MS_IN_DAY) %
+					MS_IN_DAY);
 
 			drawTracker(msGhost, msGhostInterval, length, 'white', false);
 		}

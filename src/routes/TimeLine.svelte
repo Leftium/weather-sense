@@ -1485,7 +1485,7 @@
 
 	/* Glow behind temperature line for visibility over WMO code backgrounds */
 	div > :global(svg [stroke*='temp-gradient']) {
-		filter: drop-shadow(0 0 2px white) drop-shadow(0 0 4px white);
+		filter: drop-shadow(0 0 2px ghostwhite) drop-shadow(0 0 4px ghostwhite);
 	}
 
 	div {

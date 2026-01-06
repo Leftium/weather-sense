@@ -1461,8 +1461,7 @@
 
 			// Sunrise/sunset indicators removed - sky strip shows this now
 
-			// Past overlay - mutes portion before current time
-			// Vertical gradient: darker at top and bottom, transparent in middle (vignette)
+			// Past overlay - sepia-tinted top and bottom edges
 			const now = Date.now();
 			const pastEnd = Math.min(msEnd, Math.max(msStart, now));
 
@@ -1470,10 +1469,10 @@
 				marks.push(
 					() => htl.svg`<defs>
 						<linearGradient id="past-overlay-gradient-${msStart}" x1="0" y1="0" x2="0" y2="1">
-							<stop offset="0%" stop-color="black" stop-opacity=".5" />
-							<stop offset="30%" stop-color="black" stop-opacity=".5" />
-							<stop offset="30%" stop-color="black" stop-opacity=".35" />
-							<stop offset="100%" stop-color="black" stop-opacity="0" />
+							<stop offset="0%" stop-color="rgb(100, 80, 50)" stop-opacity=".6" />
+							<stop offset="10%" stop-color="rgb(100, 80, 50)" stop-opacity=".6" />
+							<stop offset="30%" stop-color="rgb(100, 80, 50)" stop-opacity="0" />
+							<stop offset="100%" stop-color="rgb(100, 80, 50)" stop-opacity="0" />
 						</linearGradient>
 					</defs>`,
 				);

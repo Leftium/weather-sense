@@ -543,7 +543,20 @@
 	.past-overlay {
 		width: 100%;
 		height: 100%;
-		background: linear-gradient(100deg, rgba(0, 0, 0, 0) 0%, rgba(0, 0, 0, 0.7) 100%);
+		/* Sepia-tinted vignette - upper-right and lower-left corners */
+		background:
+			linear-gradient(
+				to bottom left,
+				rgba(100, 80, 50, 0.6) 0%,
+				rgba(100, 80, 50, 0.6) 10%,
+				transparent 35%
+			),
+			linear-gradient(
+				to top right,
+				rgba(100, 80, 50, 0.6) 0%,
+				rgba(100, 80, 50, 0.6) 10%,
+				transparent 35%
+			);
 		opacity: 0;
 		pointer-events: none;
 		z-index: 3; // Below precip-underlay (4), so temp plot stays visible

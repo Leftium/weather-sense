@@ -350,16 +350,12 @@
 						{@const y = tempToY(day.temperatureMin)}
 						<circle cx={x} cy={y} r="3" fill={TEMP_COLOR_COLD} />
 					{/each}
-				</svg>
-			{/if}
 
-			<!-- Tracker line (in front of precip bars, behind temp lines/labels) -->
-			{#if !isLoading && trackerX !== null}
-				<div
-					class="tracker-line"
-					style:left="{trackerX}px"
-					style:background-color={trackerColor}
-				></div>
+					<!-- Tracker line -->
+					{#if trackerX !== null}
+						<rect x={trackerX - 1} y="2" width="2" height={TILE_HEIGHT - 4} fill={trackerColor} />
+					{/if}
+				</svg>
 			{/if}
 
 			<!-- SVG overlay for temp lines, labels, and precip labels -->
@@ -497,7 +493,7 @@
 	}
 
 	.tiles-track-area {
-		width: calc(var(--tile-count) * 70px);
+		width: fit-content;
 		margin-inline: auto;
 		user-select: none;
 		/* pan-y for native vertical scroll; horizontal gestures captured for scrubbing */
@@ -507,7 +503,9 @@
 	.tiles {
 		position: relative;
 		display: flex;
-		overflow: visible;
+		gap: 0;
+		overflow: clip;
+		width: fit-content;
 	}
 
 	.tile {
@@ -518,14 +516,11 @@
 		height: 114px;
 		display: grid;
 		grid-template-areas: 'stack';
-		border: 2px solid;
-		border-color: rgba(255, 255, 255, 0.5) rgba(0, 0, 0, 0.15) rgba(0, 0, 0, 0.2)
-			rgba(255, 255, 255, 0.5);
-		box-shadow:
-			inset 1px 1px 0 rgba(255, 255, 255, 0.3),
-			inset -1px -1px 0 rgba(0, 0, 0, 0.1),
-			0 2px 4px rgba(0, 0, 0, 0.15);
 		overflow: hidden;
+
+		&:not(:last-of-type) {
+			border-right: 2px solid rgba(255, 255, 255, 0.7);
+		}
 
 		> * {
 			grid-area: stack;
@@ -533,8 +528,9 @@
 	}
 
 	.tile-bg {
-		width: 100%;
-		height: 100%;
+		width: calc(100% + 20px);
+		height: calc(100% + 20px);
+		margin: -10px;
 		background: var(--tile-gradient, linear-gradient(160deg, #6bb3e0 0%, #a8d8f0 50%, #eee 100%));
 		transition: background 1s ease-out;
 	}
@@ -572,7 +568,8 @@
 		flex-direction: column;
 		align-items: center;
 		padding-top: 4px;
-		z-index: 2; // Below past-overlay (3)
+		position: relative;
+		z-index: 6; // Above tracker-line (5), below overlay (10)
 	}
 
 	.button-bar {
@@ -684,6 +681,7 @@
 		position: absolute;
 		top: 2px;
 		bottom: 2px;
+		left: 0;
 		width: 2px;
 		transform: translateX(-1px); // Center the line on the position
 		pointer-events: none;

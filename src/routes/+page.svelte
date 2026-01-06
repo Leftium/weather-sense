@@ -1202,7 +1202,7 @@
 		overflow-x: hidden;
 		display: grid;
 		grid-template-columns: 8px auto auto minmax(0, 1fr);
-		grid-row-gap: 0.1em;
+		grid-row-gap: 1em;
 		grid-column-gap: 0.2em;
 		margin-bottom: 0.2em;
 		background: $color-ghost-white;

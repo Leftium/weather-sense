@@ -440,6 +440,18 @@
 		// Sort slices by x1 to ensure proper rendering order
 		slices.sort((a, b) => a.x1 - b.x1);
 
+		// Fill any gap at the end with night (handles 4am plots extending into next day without data)
+		const lastSlice = slices.at(-1);
+		if (lastSlice && lastSlice.x2 < msEnd) {
+			slices.push({
+				x1: lastSlice.x2,
+				x2: msEnd,
+				colors: skyPalettes.night,
+				gradientId: `sky-solid-${lastSlice.x2}`,
+				isNight: true,
+			});
+		}
+
 		console.log(
 			`Sky slices: ${slices.length} rects (vs ${Math.round((msEnd - msStart) / MS_IN_MINUTE)} minutes in range)`,
 		);

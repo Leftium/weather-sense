@@ -590,9 +590,9 @@
 		}
 
 		.day-count {
-			padding: 0.3em 0.6em;
+			padding: 0.5em 0.8em;
 			margin: 0;
-			font-size: 11px;
+			font-size: 13px;
 			font-weight: 500;
 			color: color-mix(in srgb, var(--btn-text-color, #333) 70%, transparent);
 			text-shadow: 0 1px 1px color-mix(in srgb, var(--btn-text-shadow, #f8f8ff) 60%, transparent);
@@ -616,9 +616,9 @@
 		}
 
 		button.tile-btn {
-			padding: 0.3em 0.6em;
+			padding: 0.5em 0.8em;
 			margin: 0;
-			font-size: 11px;
+			font-size: 13px;
 			font-weight: 500;
 			color: color-mix(in srgb, var(--btn-text-color, #333) 70%, transparent);
 			text-shadow: 0 1px 1px color-mix(in srgb, var(--btn-text-shadow, #f8f8ff) 60%, transparent);

@@ -786,10 +786,10 @@ export { getSunAltitude };
 // Bright color palettes for each phase (3 stops for gradient)
 // Format: [horizon, middle, upper sky]
 export const skyPalettes = {
-	night: ['#000c26', '#2a3a5c', '#7455b8'], // flipped: dark at horizon, purple at upper sky
-	dawn: ['#fff0e6', '#ff9977', '#ffcc33'], // warm white horizon, orange middle, golden upper
-	day: ['#f0f8ff', '#a8d8f0', '#6bb3e0'],
-	dusk: ['#4a2c5a', '#ff6b6b', '#ffd93d'], // purple upper sky, coral middle, golden horizon
+	night: ['#000c26', '#2a3a5c', '#7455b8'], // dark at horizon, purple at upper sky (top)
+	dawn: ['#ffcc33', '#ff9977', '#fff0e6'], // golden at horizon, orange middle, warm white upper
+	day: ['#6bb3e0', '#a8d8f0', '#f0f8ff'], // blue at horizon, light blue middle, white upper
+	dusk: ['#ffd93d', '#ff6b6b', '#7455b8'], // golden at horizon, coral middle, purple upper (matches night)
 };
 
 // Interpolate between two color palettes using colorjs.io

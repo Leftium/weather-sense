@@ -292,7 +292,9 @@
 			x2: number;
 			colors: string[]; // [horizon, middle, upper sky]
 			gradientId: string;
-			isNight: boolean; // true for night palette (uses different gradient direction)
+			isNight: boolean; // true for night palette
+			isDusk: boolean; // true for dusk transition
+			isDay: boolean; // true for daytime
 		};
 
 		// Find sunrise/sunset for a given timestamp
@@ -386,7 +388,13 @@
 			const duskEnd = findAltitudeCrossing(sunset, dayEnd, sunrise, sunset, NIGHT_THRESHOLD, false);
 
 			// Helper to add a single solid rect
-			function addSolidRect(x1: number, x2: number, palette: string[], isNight: boolean) {
+			function addSolidRect(
+				x1: number,
+				x2: number,
+				palette: string[],
+				isNight: boolean,
+				isDay: boolean,
+			) {
 				if (x2 <= x1) return;
 				const clampedX1 = Math.max(x1, msStart);
 				const clampedX2 = Math.min(x2, msEnd);
@@ -398,11 +406,13 @@
 					colors: palette,
 					gradientId: `sky-solid-${clampedX1}`,
 					isNight,
+					isDusk: false,
+					isDay,
 				});
 			}
 
 			// Helper to add fine-sampled transition rects
-			function addTransitionRects(x1: number, x2: number) {
+			function addTransitionRects(x1: number, x2: number, isDusk: boolean) {
 				const clampedX1 = Math.max(x1, msStart);
 				const clampedX2 = Math.min(x2, msEnd);
 				if (clampedX2 <= clampedX1) return;
@@ -417,25 +427,16 @@
 						colors,
 						gradientId: `sky-slice-${ms}`,
 						isNight: false, // transitions are never pure night
+						isDusk,
+						isDay: false,
 					});
 					ms = nextMs;
 				}
 			}
 
-			// Night before dawn (from day start to dawn start)
-			addSolidRect(dayStart, dawnStart, skyPalettes.night, true);
-
-			// Dawn transition
-			addTransitionRects(dawnStart, dawnEnd);
-
-			// Day (from dawn end to dusk start)
-			addSolidRect(dawnEnd, duskStart, skyPalettes.day, false);
-
-			// Dusk transition
-			addTransitionRects(duskStart, duskEnd);
-
-			// Night after dusk (from dusk end to day end)
-			addSolidRect(duskEnd, dayEnd, skyPalettes.night, true);
+			// Render all minutes as transitions (no optimization for now)
+			// TODO: optimize later with canvas caching
+			addTransitionRects(dayStart, dayEnd, false);
 		}
 
 		// Sort slices by x1 to ensure proper rendering order
@@ -450,6 +451,8 @@
 				colors: skyPalettes.night,
 				gradientId: `sky-solid-${lastSlice.x2}`,
 				isNight: true,
+				isDusk: false,
+				isDay: false,
 			});
 		}
 
@@ -1000,6 +1003,19 @@
 		];
 
 		// Sky color gradient as base layer (replaces gray background)
+		// Calculate mini skystrip position
+		let aqiOffset = 0;
+		if (draw.aqiUs) aqiOffset += aqiPlotHeight;
+		if (draw.aqiEurope) aqiOffset += aqiPlotHeight;
+		const miniSkyY2 = -aqiOffset;
+		const miniSkyY1 = miniSkyY2 - skyStripHeight;
+
+		// Total height of merged skystrip (main + mini below y-axis)
+		const mainHeight = yDomainTop; // 0 to yDomainTop
+		const totalHeight = mainHeight + skyStripHeight + aqiOffset;
+		// Percentage where main section ends and mini begins
+		const mainEndPercent = (mainHeight / totalHeight) * 100;
+
 		if (dataSkyColor && dataSkyColor.length > 0) {
 			// Create all vertical gradient definitions
 			marks.push(() => {
@@ -1013,18 +1029,37 @@
 					gradient.setAttribute('x2', '0');
 					gradient.setAttribute('y2', '1'); // Vertical gradient
 
-					// Vertical gradient for sky strip
-					// All palettes: upper sky at top → middle at bottom
+					// Merged gradient: main sky strip + solid mini strip at bottom
+					// colors[0] = horizon, colors[1] = middle, colors[2] = upper sky
 					const topColor = slice.colors[2];
+					const bottomColor = slice.colors[0];
+
+					// Scale original stops to fit in main section (0% to mainEndPercent%)
 					const stop0 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
 					stop0.setAttribute('offset', '0%');
 					stop0.setAttribute('stop-color', topColor);
 					gradient.appendChild(stop0);
 
 					const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
-					stop1.setAttribute('offset', '100%');
-					stop1.setAttribute('stop-color', slice.colors[1]); // Middle color at bottom
+					stop1.setAttribute('offset', `${0.3 * mainEndPercent}%`);
+					stop1.setAttribute('stop-color', topColor); // Hold top color until 30% of main
 					gradient.appendChild(stop1);
+
+					const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+					stop2.setAttribute('offset', `${0.65 * mainEndPercent}%`);
+					stop2.setAttribute('stop-color', slice.colors[1]); // Middle
+					gradient.appendChild(stop2);
+
+					const stop3 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+					stop3.setAttribute('offset', `${mainEndPercent}%`);
+					stop3.setAttribute('stop-color', bottomColor);
+					gradient.appendChild(stop3);
+
+					// Solid bottom color for mini strip section
+					const stop4 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+					stop4.setAttribute('offset', '100%');
+					stop4.setAttribute('stop-color', bottomColor);
+					gradient.appendChild(stop4);
 
 					defs.appendChild(gradient);
 				}
@@ -1032,37 +1067,24 @@
 				return defs;
 			});
 
-			// Render sky as a thin strip at very bottom (below AQI bands, above tick marks)
-			// Calculate position based on how many AQI bands are shown
-			let aqiOffset = 0;
-			if (draw.aqiUs) aqiOffset += aqiPlotHeight;
-			if (draw.aqiEurope) aqiOffset += aqiPlotHeight;
-			const skyY2 = -aqiOffset;
-			const skyY1 = skyY2 - skyStripHeight;
-
+			// Render merged sky strip (main + mini below y-axis)
 			marks.push(
 				Plot.rectY(dataSkyColor, {
 					x1: 'x1',
 					x2: 'x2',
-					y1: skyY1,
-					y2: skyY2,
+					y1: yDomainTop,
+					y2: miniSkyY1,
 					fill: (d) => `url(#${d.gradientId})`,
 				}),
 			);
 		} else {
-			// Fallback gray background if no sky data
-			let aqiOffset = 0;
-			if (draw.aqiUs) aqiOffset += aqiPlotHeight;
-			if (draw.aqiEurope) aqiOffset += aqiPlotHeight;
-			const skyY2 = -aqiOffset;
-			const skyY1 = skyY2 - skyStripHeight;
-
+			// Fallback gray background if no sky data (merged main + mini)
 			marks.push(
 				Plot.rectY([0], {
 					x1: msStart,
 					x2: msEnd,
-					y1: skyY1,
-					y2: skyY2,
+					y1: yDomainTop,
+					y2: miniSkyY1,
 					fill: '#efefef',
 				}),
 			);
@@ -1151,13 +1173,14 @@
 					// For fog/precip: dark at top (0%), light at bottom (100%)
 					const topColor = isSky ? light : dark;
 					const bottomColor = isSky ? dark : light;
-					// All gradients are solid (no transparency)
+					// Gradient with solid top band, transparent bottom (sky shows through)
 					marks.push(
 						() => htl.svg`<defs>
-							<linearGradient id="cloud-gradient-${code}-${msStart}" x1="0" y1="0" x2="0.3" y2="1">
-								<stop offset="0%" stop-color="${topColor}" />
-								<stop offset="50%" stop-color="${mid}" />
-								<stop offset="100%" stop-color="${bottomColor}" />
+							<linearGradient id="cloud-gradient-${code}-${msStart}" x1="0" y1="0" x2="0" y2="1">
+								<stop offset="0%" stop-color="${topColor}" stop-opacity="1" />
+								<stop offset="30%" stop-color="${mid}" stop-opacity="1" />
+								<stop offset="30%" stop-color="${mid}" stop-opacity="0" />
+								<stop offset="100%" stop-color="${bottomColor}" stop-opacity="0" />
 							</linearGradient>
 						</defs>`,
 					);

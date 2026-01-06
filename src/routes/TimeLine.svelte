@@ -1483,6 +1483,11 @@
 			drop-shadow(0 0 6px rgba(128, 128, 128, 0.4)) drop-shadow(0 0 12px rgba(128, 128, 128, 0.3));
 	}
 
+	/* Glow behind temperature line for visibility over WMO code backgrounds */
+	div > :global(svg [stroke*='temp-gradient']) {
+		filter: drop-shadow(0 0 2px white) drop-shadow(0 0 4px white);
+	}
+
 	div {
 		display: grid;
 		align-items: center;

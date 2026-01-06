@@ -940,14 +940,26 @@
 			}
 		}
 
-		const msStartOf10Min = startOf(ms, MS_IN_10_MINUTES);
-		const msStartOfHour = startOf(ms, MS_IN_HOUR);
-		const interval =
-			nsWeatherData.intervals.find((item) => item.ms === msStartOf10Min) ||
-			nsWeatherData.intervals.find((item) => item.ms === msStartOfHour);
+		const interval = nsWeatherData.intervals.find((item) => ms >= item.ms && ms <= item.x2);
 
 		const msIntervalStart = interval?.ms ?? ms;
 		const length = interval ? interval.x2 - interval.ms : 1;
+
+		// Debug tracker alignment issues - only log when no interval found
+		// const formatMs = (t: number) => dayjs(t).tz(nsWeatherData.timezone).format('HH:mm:ss');
+		// const debug = createDebugLogger(`Tracker ${formatMs(ms)}`, hours === 24 && !interval);
+		// debug.log(`ms: ${formatMs(ms)} (${ms})`);
+		// debug.log(`interval found: ${interval ? 'yes' : 'no'}`);
+		// if (interval) {
+		// 	debug.log(`interval.ms: ${formatMs(interval.ms)} (${interval.ms})`);
+		// 	debug.log(`interval.x2: ${formatMs(interval.x2)} (${interval.x2})`);
+		// 	debug.log(`length: ${length}ms (${length / MS_IN_MINUTE} min)`);
+		// }
+		// const nearbyIntervals = nsWeatherData.intervals
+		// 	.filter((item) => Math.abs(item.ms - ms) < MS_IN_HOUR * 2)
+		// 	.map((item) => `${formatMs(item.ms)}-${formatMs(item.x2)}`);
+		// debug.log(`nearby intervals: ${nearbyIntervals.join(', ')}`);
+		// debug.finish();
 
 		if (msIntervalStart >= msStart && msIntervalStart < msEnd) {
 			drawTracker(ms, msIntervalStart, length, trackerColor, true);

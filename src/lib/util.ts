@@ -348,6 +348,61 @@ export function getWmoOpacity(wmoCode: number): number {
 	return 0.3;
 }
 
+/**
+ * Get semi-transparent overlay gradient stops for WMO codes 1-3 (cloudy conditions)
+ * Used when showSkyThroughWmo is active to overlay cloudiness on sky strip
+ * Gradient is vertical: more transparent at top, more opaque toward horizon
+ * Colors matched to diagonal strip from reference WMO code images
+ * @param wmoCode - WMO weather code (0-3)
+ * @returns Array of gradient stops [{offset, color}] or null if no overlay needed
+ */
+export function getWmoOverlayGradient(wmoCode: number): { offset: string; color: string }[] | null {
+	// Code 0 (Clear): no overlay needed - pure sky
+	if (wmoCode === 0) return null;
+
+	// Code 1 (Mostly Clear): subtle haze, barely visible at top, light haze at horizon
+	if (wmoCode === 1) {
+		return [
+			{ offset: '0%', color: 'rgba(255,255,255,0)' },
+			{ offset: '40%', color: 'rgba(255,255,255,0.08)' },
+			{ offset: '70%', color: 'rgba(255,255,255,0.18)' },
+			{ offset: '100%', color: 'rgba(240,248,255,0.30)' }, // slight blue tint at horizon
+		];
+	}
+
+	// Code 2 (Partly Cloudy): visible white clouds, more prominent toward horizon
+	if (wmoCode === 2) {
+		return [
+			{ offset: '0%', color: 'rgba(255,255,255,0.12)' },
+			{ offset: '30%', color: 'rgba(255,255,255,0.25)' },
+			{ offset: '60%', color: 'rgba(255,255,255,0.45)' },
+			{ offset: '100%', color: 'rgba(235,245,255,0.60)' }, // bluish-white at horizon
+		];
+	}
+
+	// Code 3 (Overcast): desaturation layer - neutral gray to wash out blue
+	// Mutes sky while preserving some character (dawn/dusk transitions visible)
+	if (wmoCode === 3) {
+		return [
+			{ offset: '0%', color: 'rgba(160,160,170,0.55)' },
+			{ offset: '50%', color: 'rgba(170,170,180,0.58)' },
+			{ offset: '100%', color: 'rgba(180,180,190,0.60)' },
+		];
+	}
+
+	// Codes 45, 48 (Fog, Icy Fog): light gray top fading to white at bottom
+	if (wmoCode === 45 || wmoCode === 48) {
+		return [
+			{ offset: '0%', color: 'rgba(200,200,200,0.75)' }, // light gray at top
+			{ offset: '50%', color: 'rgba(220,220,220,0.80)' },
+			{ offset: '100%', color: 'rgba(245,245,245,0.85)' }, // near white at bottom
+		];
+	}
+
+	// Other codes: no overlay (will use solid WMO gradients)
+	return null;
+}
+
 function makeWmo(wsCode: number, picoColor: string, description: string, iconName: string) {
 	const groups = [
 		'clear',

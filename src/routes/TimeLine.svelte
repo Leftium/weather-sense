@@ -43,6 +43,7 @@
 		getContrastColors,
 		getSkyColors,
 		getWeatherIcon,
+		getWmoOverlayGradient,
 		MS_IN_10_MINUTES,
 		MS_IN_DAY,
 		MS_IN_HOUR,
@@ -676,46 +677,33 @@
 				}
 			}
 
-			// DEBUG: Mock all WMO codes to compare gradients vs solid colors
+			// DEBUG: Mock WMO codes for testing sky overlays
 			// Only applies to rows starting tomorrow or later (to avoid past fading)
 			const MOCK_WMO_CODES = false;
-			const allWmoCodes = [
-				0, 1, 2, 3, 45, 48, 51, 53, 55, 61, 63, 65, 56, 57, 66, 67, 71, 73, 75, 77, 80, 81, 82, 85,
-				86, 95, 96, 99,
-			];
 			const tomorrow = +dayjs().add(1, 'day').startOf('day');
 			if (MOCK_WMO_CODES && metrics.length > 0 && msStart >= tomorrow) {
 				codes.length = 0; // Clear existing codes
-				const segmentDuration = 4 * MS_IN_HOUR; // 4 hours per code
-				// Calculate day offset from tomorrow to continue codes across rows
 				const dayOffset = Math.floor((msStart - tomorrow) / MS_IN_DAY);
-				const codesPerDay = Math.floor((24 * MS_IN_HOUR) / segmentDuration); // 4 codes per day
-				const startIndex = (dayOffset * codesPerDay) % allWmoCodes.length;
+				// One code per entire day, cycling through test codes
+				const testWmoCodes = [0, 1, 2, 3];
+				const wmoCode = testWmoCodes[dayOffset % testWmoCodes.length];
 
-				for (let i = 0; i < codesPerDay; i++) {
-					const wmoCode = allWmoCodes[(startIndex + i) % allWmoCodes.length];
-					const x1 = msStart + i * segmentDuration;
-					const x2 = x1 + segmentDuration;
-					// Only add if segment is within the visible range
-					if (x1 < msEnd) {
-						const solidColor = WMO_CODES[wmoCode].color;
-						const fill = `url(#cloud-gradient-${wmoCode}-${msStart})`;
-						const { fillText, fillShadow } = getContrastColors(solidColor);
-						codes.push({
-							ms: Math.min(x2, msEnd),
-							weatherCode: wmoCode,
-							isDay: true,
-							text: WMO_CODES[wmoCode].description,
-							x1,
-							x2: Math.min(x2, msEnd),
-							xMiddle: (x1 + Math.min(x2, msEnd)) / 2,
-							fill,
-							fillText,
-							fillShadow,
-							counts: {},
-						});
-					}
-				}
+				const solidColor = WMO_CODES[wmoCode].color;
+				const fill = `url(#cloud-gradient-${wmoCode}-${msStart})`;
+				const { fillText, fillShadow } = getContrastColors(solidColor);
+				codes.push({
+					ms: msEnd,
+					weatherCode: wmoCode,
+					isDay: true,
+					text: WMO_CODES[wmoCode].description,
+					x1: msStart,
+					x2: msEnd,
+					xMiddle: (msStart + msEnd) / 2,
+					fill,
+					fillText,
+					fillShadow,
+					counts: {},
+				});
 			}
 
 			const rain = metrics
@@ -1227,6 +1215,43 @@
 						fill: 'fill',
 					}),
 				);
+
+				// When showSkyThroughWmo is active, add semi-transparent overlays for codes 1-3 and fog (45, 48)
+				// These go on top of the sky strip to simulate cloud coverage / fog
+				if (showSkyThroughWmo) {
+					// Define overlay gradients for codes 1-3 and fog codes
+					const overlayCodes = [1, 2, 3, 45, 48];
+					for (const code of overlayCodes) {
+						const overlayStops = getWmoOverlayGradient(code);
+						if (overlayStops) {
+							marks.push(
+								() => htl.svg`<defs>
+									<linearGradient id="wmo-overlay-${code}-${msStart}" x1="0" y1="0" x2="0" y2="1">
+										${overlayStops.map((stop: { offset: string; color: string }) => htl.svg`<stop offset="${stop.offset}" stop-color="${stop.color}" />`)}
+									</linearGradient>
+								</defs>`,
+							);
+						}
+					}
+
+					// Render overlay rects for codes 1-3 and fog (code 0 needs no overlay - pure sky)
+					const overlayData = dataForecast.codes.filter(
+						(d) =>
+							(d.weatherCode >= 1 && d.weatherCode <= 3) ||
+							d.weatherCode === 45 ||
+							d.weatherCode === 48,
+					);
+					if (overlayData.length > 0) {
+						marks.push(
+							Plot.rectY(overlayData, {
+								x1: 'x1',
+								x2: 'x2',
+								y: yDomainTop,
+								fill: (d) => `url(#wmo-overlay-${d.weatherCode}-${msStart})`,
+							}),
+						);
+					}
+				}
 			}
 
 			if (draw.humidity) {

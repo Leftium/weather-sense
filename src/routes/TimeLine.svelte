@@ -1394,7 +1394,9 @@
 				marks.push(
 					() => htl.svg`<defs>
 						<linearGradient id="past-overlay-gradient-${msStart}" x1="0" y1="0" x2="0" y2="1">
-							<stop offset="0%" stop-color="black" stop-opacity="0.35" />
+							<stop offset="0%" stop-color="black" stop-opacity=".5" />
+							<stop offset="30%" stop-color="black" stop-opacity=".5" />
+							<stop offset="30%" stop-color="black" stop-opacity=".35" />
 							<stop offset="100%" stop-color="black" stop-opacity="0" />
 						</linearGradient>
 					</defs>`,

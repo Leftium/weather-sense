@@ -1370,13 +1370,7 @@
 			font-size: 13px;
 			font-weight: bold;
 
-			.high {
-				text-shadow:
-					0 0 3px rgba(128, 128, 128, 0.6),
-					0 0 6px rgba(128, 128, 128, 0.4),
-					0 0 12px rgba(128, 128, 128, 0.3);
-			}
-
+			.high,
 			.low {
 				text-shadow:
 					0 0 3px rgba(248, 248, 255, 0.6),

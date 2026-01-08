@@ -534,6 +534,9 @@
 		}
 	}
 
+	// Detect iOS for gradient workaround (CSS @supports doesn't work for JS-generated styles)
+	const isIOS = browser && /iPad|iPhone|iPod/.test(navigator.userAgent);
+
 	function updateSkyGradientDOM() {
 		const day = findDayForMs(displayMs);
 		if (day) {
@@ -570,6 +573,10 @@
 				skyGradientBgEl.style.setProperty('--btn-text-color', contrastTextColor(colors[1]));
 				skyGradientBgEl.style.setProperty('--btn-text-shadow', contrastTextColor(colors[1], true));
 			}
+
+			// Update body background (for viewport edges behind content)
+			// Use solid middle color instead of gradient - much cheaper to render
+			document.body.style.setProperty('--sky-gradient', colors[1]);
 		}
 	}
 
@@ -614,9 +621,6 @@
 		}
 		skyFinishRafId = requestAnimationFrame(finishSkyAnimation);
 	});
-
-	// Detect iOS for gradient workaround (CSS @supports doesn't work for JS-generated styles)
-	const isIOS = browser && /iPad|iPhone|iPod/.test(navigator.userAgent);
 
 	// Build gradients from animated throttledColors
 	// Palettes are [light, mid, dark]
@@ -678,12 +682,8 @@
 		`linear-gradient(90deg, ${throttledColors[2]} 0%, ${throttledColors[1]} 50%, ${throttledColors[0]} 100%)`,
 	);
 
-	// Sync sky gradient to body for full viewport background
-	$effect(() => {
-		if (browser) {
-			document.body.style.setProperty('--sky-gradient', skyGradient);
-		}
-	});
+	// Body sky gradient is now updated via updateSkyGradientDOM() for consistency
+	// with other gradient updates (uses displayMs directly, not throttledDisplayMs)
 
 	// Text color based on middle color for contrast
 	const textColor = $derived(contrastTextColor(throttledColors[1]));

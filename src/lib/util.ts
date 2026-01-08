@@ -911,6 +911,160 @@ export function getSkyStripPalette(palette: string[], isDawnOrDusk: boolean): st
 	return [top, middle, bottom];
 }
 
+// ============================================================================
+// FAST RGB FUNCTIONS - No Color.js, for hot render paths
+// ============================================================================
+
+// Parse hex color to RGB array (handles both 3 and 6 digit hex)
+function hexToRgb(hex: string): [number, number, number] {
+	let h = hex.startsWith('#') ? hex.slice(1) : hex;
+	// Expand 3-digit shorthand (e.g., "f63" -> "ff6633")
+	if (h.length === 3) {
+		h = h[0] + h[0] + h[1] + h[1] + h[2] + h[2];
+	}
+	return [parseInt(h.slice(0, 2), 16), parseInt(h.slice(2, 4), 16), parseInt(h.slice(4, 6), 16)];
+}
+
+// Convert RGB array to hex string (with validation)
+function rgbToHex(r: number, g: number, b: number): string {
+	// Clamp and handle NaN
+	const clamp = (n: number) => Math.max(0, Math.min(255, Math.round(isNaN(n) ? 0 : n)));
+	return (
+		'#' +
+		clamp(r).toString(16).padStart(2, '0') +
+		clamp(g).toString(16).padStart(2, '0') +
+		clamp(b).toString(16).padStart(2, '0')
+	);
+}
+
+// Fast RGB lerp between two hex colors (no Color.js)
+function fastMixRgb(hex1: string, hex2: string, t: number): string {
+	const [r1, g1, b1] = hexToRgb(hex1);
+	const [r2, g2, b2] = hexToRgb(hex2);
+	// Clamp t to valid range (rgbToHex handles RGB clamping)
+	const clampedT = Math.max(0, Math.min(1, t));
+	return rgbToHex(r1 + (r2 - r1) * clampedT, g1 + (g2 - g1) * clampedT, b1 + (b2 - b1) * clampedT);
+}
+
+// Fast lerp between two palettes (arrays of hex colors)
+function fastLerpPalette(palette1: string[], palette2: string[], t: number): string[] {
+	return palette1.map((c1, i) => fastMixRgb(c1, palette2[i], t));
+}
+
+// ============================================================================
+// PRE-COMPUTED SKY COLOR CACHE
+// Eliminates Color.js from render loop by pre-computing all altitude steps
+// ============================================================================
+
+const ALTITUDE_STEP = 0.5; // degrees
+const ALTITUDE_MIN = -18;
+const ALTITUDE_MAX = 6;
+
+// Cache structure: altitude -> palette (for each phase transition)
+// Dawn: night(-18) -> dawn(-6) -> day(+6)
+// Dusk: day(+6) -> dusk(-6) -> night(-18)
+type SkyCache = {
+	// Morning: interpolated palettes from night through dawn to day
+	dawn: Map<number, string[]>;
+	dawnStrip: Map<number, string[]>; // For sky strip (2-tone dawn)
+	// Evening: interpolated palettes from day through dusk to night
+	dusk: Map<number, string[]>;
+	duskStrip: Map<number, string[]>; // For sky strip (2-tone dusk)
+};
+
+let skyColorCache: SkyCache | null = null;
+
+// Build the cache using Color.js (called once at startup)
+function buildSkyColorCache(): SkyCache {
+	const cache: SkyCache = {
+		dawn: new Map(),
+		dawnStrip: new Map(),
+		dusk: new Map(),
+		duskStrip: new Map(),
+	};
+
+	// Pre-compute palettes for dawn/dusk strips (2-tone versions)
+	const dawnPaletteFull = skyPalettes.dawn;
+	const duskPaletteFull = skyPalettes.dusk;
+	const dawnPaletteStrip = getSkyStripPalette(skyPalettes.dawn, true);
+	const duskPaletteStrip = getSkyStripPalette(skyPalettes.dusk, true);
+
+	for (let alt = ALTITUDE_MIN; alt <= ALTITUDE_MAX; alt += ALTITUDE_STEP) {
+		// Round to avoid floating point issues as map key
+		const key = Math.round(alt * 10) / 10;
+
+		if (alt <= -6) {
+			// Twilight zone: night -> dawn/dusk (-18 to -6)
+			// Map -18° to -6° => t: 0 to 1
+			const t = (alt + 18) / 12;
+			cache.dawn.set(key, interpolatePalettes(skyPalettes.night, dawnPaletteFull, t));
+			cache.dawnStrip.set(key, interpolatePalettes(skyPalettes.night, dawnPaletteStrip, t));
+			cache.dusk.set(key, interpolatePalettes(skyPalettes.night, duskPaletteFull, t));
+			cache.duskStrip.set(key, interpolatePalettes(skyPalettes.night, duskPaletteStrip, t));
+		} else {
+			// Golden hour: dawn/dusk -> day (-6 to +6)
+			// Map -6° to 6° => t: 0 to 1
+			const t = (alt + 6) / 12;
+			cache.dawn.set(key, interpolatePalettes(dawnPaletteFull, skyPalettes.day, t));
+			cache.dawnStrip.set(key, interpolatePalettes(dawnPaletteStrip, skyPalettes.day, t));
+			cache.dusk.set(key, interpolatePalettes(duskPaletteFull, skyPalettes.day, t));
+			cache.duskStrip.set(key, interpolatePalettes(duskPaletteStrip, skyPalettes.day, t));
+		}
+	}
+
+	return cache;
+}
+
+// Get or create the cache
+function getSkyColorCache(): SkyCache {
+	if (!skyColorCache) {
+		skyColorCache = buildSkyColorCache();
+	}
+	return skyColorCache;
+}
+
+// Fast sky color lookup using pre-computed cache + RGB lerp
+function getSkyColorsCached(altitude: number, isMorning: boolean, forSkyStrip: boolean): string[] {
+	// Handle edge cases
+	if (altitude <= ALTITUDE_MIN) {
+		return skyPalettes.night;
+	}
+	if (altitude >= ALTITUDE_MAX) {
+		return skyPalettes.day;
+	}
+
+	const cache = getSkyColorCache();
+	const cacheMap = isMorning
+		? forSkyStrip
+			? cache.dawnStrip
+			: cache.dawn
+		: forSkyStrip
+			? cache.duskStrip
+			: cache.dusk;
+
+	// Find the two cached altitudes to interpolate between
+	const lowerAlt = Math.floor(altitude / ALTITUDE_STEP) * ALTITUDE_STEP;
+	const upperAlt = lowerAlt + ALTITUDE_STEP;
+
+	// Round keys to avoid floating point issues
+	const lowerKey = Math.round(lowerAlt * 10) / 10;
+	const upperKey = Math.round(upperAlt * 10) / 10;
+
+	const lowerPalette = cacheMap.get(lowerKey);
+	const upperPalette = cacheMap.get(upperKey);
+
+	if (!lowerPalette || !upperPalette) {
+		// Fallback if cache miss - use closest available or static palette
+		if (lowerPalette) return lowerPalette;
+		if (upperPalette) return upperPalette;
+		return altitude < 0 ? skyPalettes.night : skyPalettes.day;
+	}
+
+	// Fast RGB interpolation between cached values
+	const t = (altitude - lowerAlt) / ALTITUDE_STEP;
+	return fastLerpPalette(lowerPalette, upperPalette, t);
+}
+
 // Interpolate between two color palettes using colorjs.io
 // TEMP: Pass colorSpace parameter to compare srgb vs srgb-linear between days
 function interpolatePalettes(
@@ -940,11 +1094,9 @@ export function lerpColors(current: string[], target: string[], factor: number):
 }
 
 // Mix two colors by a factor (0 = color1, 1 = color2)
+// Uses fast RGB interpolation for performance in hot render paths
 export function mixColors(color1: string, color2: string, factor: number): string {
-	const c1 = new Color(color1);
-	const c2 = new Color(color2);
-	const mixed = c1.mix(c2, factor, { space: 'oklch' });
-	return mixed.toString({ format: 'hex' });
+	return fastMixRgb(color1, color2, factor);
 }
 
 // Move colors toward target by a fixed step in OKLCH space (linear animation)
@@ -980,13 +1132,16 @@ export function colorsAreClose(
 	});
 }
 
-// Get max color delta between two color arrays (in deltaEOK units)
+// Get max color delta between two color arrays
+// Uses fast RGB Euclidean distance (normalized to ~0-1 range like deltaEOK)
 export function colorsDelta(colors1: string[], colors2: string[]): number {
 	let maxDelta = 0;
 	for (let i = 0; i < colors1.length; i++) {
-		const c1 = new Color(colors1[i]);
-		const c2 = new Color(colors2[i]);
-		maxDelta = Math.max(maxDelta, c1.deltaEOK(c2));
+		const [r1, g1, b1] = hexToRgb(colors1[i]);
+		const [r2, g2, b2] = hexToRgb(colors2[i]);
+		// Euclidean distance in RGB, normalized to 0-1 range (max distance is sqrt(3*255^2) ≈ 441)
+		const dist = Math.sqrt((r2 - r1) ** 2 + (g2 - g1) ** 2 + (b2 - b1) ** 2) / 441;
+		maxDelta = Math.max(maxDelta, dist);
 	}
 	return maxDelta;
 }
@@ -997,11 +1152,12 @@ function radToDeg(rad: number): number {
 }
 
 // Internal function to get sky colors with option for sky strip (2-tone dawn/dusk) or full palette
+// Uses pre-computed cache + fast RGB interpolation for performance
 function getSkyColorsInternal(
 	ms: number,
 	sunrise: number,
 	sunset: number,
-	colorSpace = 'srgb-linear',
+	_colorSpace = 'srgb-linear', // Kept for API compatibility, but cache uses srgb
 	forSkyStrip = false,
 ): string[] {
 	const altitudeRad = getSunAltitude(ms, sunrise, sunset);
@@ -1009,43 +1165,8 @@ function getSkyColorsInternal(
 	const solarNoon = (sunrise + sunset) / 2;
 	const isMorning = ms < solarNoon;
 
-	// For sky strip: dawn/dusk use 2-tone palette (omit white/purple)
-	// For sticky bg: use full 3-color palette
-	const dawnPalette = forSkyStrip ? getSkyStripPalette(skyPalettes.dawn, true) : skyPalettes.dawn;
-	const duskPalette = forSkyStrip ? getSkyStripPalette(skyPalettes.dusk, true) : skyPalettes.dusk;
-
-	// Altitude thresholds (in degrees):
-	// -18° to -12°: astronomical twilight (night -> dawn/dusk transition starts)
-	// -12° to -6°: nautical twilight
-	// -6° to 0°: civil twilight (dawn/dusk colors strongest)
-	// 0° to 6°: golden hour (dawn/dusk -> day transition)
-	// > 6°: full daylight
-
-	if (altitude <= -18) {
-		// Deep night
-		return skyPalettes.night;
-	} else if (altitude > -18 && altitude <= -6) {
-		// Twilight: night -> dawn/dusk
-		// Map -18° to -6° => t: 0 to 1
-		const t = (altitude + 18) / 12;
-		if (isMorning) {
-			return interpolatePalettes(skyPalettes.night, dawnPalette, t, colorSpace);
-		} else {
-			return interpolatePalettes(skyPalettes.night, duskPalette, t, colorSpace);
-		}
-	} else if (altitude > -6 && altitude <= 6) {
-		// Golden hour: dawn/dusk -> day
-		// Map -6° to 6° => t: 0 to 1
-		const t = (altitude + 6) / 12;
-		if (isMorning) {
-			return interpolatePalettes(dawnPalette, skyPalettes.day, t, colorSpace);
-		} else {
-			return interpolatePalettes(duskPalette, skyPalettes.day, t, colorSpace);
-		}
-	} else {
-		// Full daylight (altitude > 6°)
-		return skyPalettes.day;
-	}
+	// Use fast cached lookup + RGB lerp instead of Color.js
+	return getSkyColorsCached(altitude, isMorning, forSkyStrip);
 }
 
 // Get sky colors for sky strip (dawn/dusk use 2-tone palette without white/purple)

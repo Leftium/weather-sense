@@ -896,12 +896,18 @@ export const skyPalettes = {
 // Night/day return unchanged (all 3 colors used)
 export function getSkyStripPalette(palette: string[], isDawnOrDusk: boolean): string[] {
 	if (!isDawnOrDusk) return palette;
-	// Dawn/dusk: [2] as top, [1] as bottom (darker at bottom)
-	const top = palette[2];
-	const bottom = palette[1];
-	const c1 = new Color(top);
-	const c2 = new Color(bottom);
-	const middle = c1.mix(c2, 0.5, { space: 'srgb' }).toString({ format: 'hex' });
+	// Dawn/dusk: use [1] and [2], with darker color at bottom
+	const c1 = new Color(palette[1]);
+	const c2 = new Color(palette[2]);
+	// Compare luminance - lower luminance = darker
+	const lum1 = c1.oklch.l ?? 0;
+	const lum2 = c2.oklch.l ?? 0;
+	// Lighter on top, darker on bottom
+	const top = lum1 > lum2 ? palette[1] : palette[2];
+	const bottom = lum1 > lum2 ? palette[2] : palette[1];
+	const cTop = new Color(top);
+	const cBottom = new Color(bottom);
+	const middle = cTop.mix(cBottom, 0.5, { space: 'srgb' }).toString({ format: 'hex' });
 	return [top, middle, bottom];
 }
 
@@ -931,6 +937,14 @@ export function lerpColors(current: string[], target: string[], factor: number):
 		const mixed = c1.mix(c2, factor, { space: 'oklch' });
 		return mixed.toString({ format: 'hex' });
 	});
+}
+
+// Mix two colors by a factor (0 = color1, 1 = color2)
+export function mixColors(color1: string, color2: string, factor: number): string {
+	const c1 = new Color(color1);
+	const c2 = new Color(color2);
+	const mixed = c1.mix(c2, factor, { space: 'oklch' });
+	return mixed.toString({ format: 'hex' });
 }
 
 // Move colors toward target by a fixed step in OKLCH space (linear animation)

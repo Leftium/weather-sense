@@ -84,6 +84,7 @@
 		trackerColor = 'yellow',
 		groupIcons = true,
 		tempStats,
+		debugTrackerMs,
 	}: {
 		nsWeatherData: NsWeatherData;
 		plotVisibility: PlotVisibility;
@@ -95,6 +96,7 @@
 		trackerColor?: string;
 		groupIcons?: boolean;
 		tempStats?: { minTemperatureOnly: number; maxTemperature: number };
+		debugTrackerMs?: number;
 	} = $props();
 
 	const labelElements: Record<string, HTMLElement> = $state({});
@@ -978,6 +980,14 @@
 					MS_IN_DAY);
 
 			drawTracker(msGhost, msGhostInterval, length, 'white', false);
+		}
+
+		// DEBUG: Draw debug tracker for displayMs (animated time)
+		if (debugTrackerMs !== undefined) {
+			const debugIntervalStart = startOf(debugTrackerMs, 'hour', nsWeatherData.timezone);
+			if (debugIntervalStart >= msStart && debugIntervalStart < msEnd) {
+				drawTracker(debugTrackerMs, debugIntervalStart, length, 'magenta', true);
+			}
 		}
 	}
 

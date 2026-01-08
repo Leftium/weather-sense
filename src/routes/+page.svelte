@@ -29,6 +29,7 @@
 		formatTemp,
 		temperatureToColor,
 		DAY_START_HOUR,
+		mixColors,
 	} from '$lib/util.js';
 	import { iconSetStore } from '$lib/iconSet.svelte';
 	import RadarMapLibre from './RadarMapLibre.svelte';
@@ -221,10 +222,8 @@
 		});
 	});
 
-	// Find the day that contains the current ms timestamp
-	const currentDay = $derived.by(() => {
-		const ms = nsWeatherData.ms;
-		// Find day where ms falls between start of day and start of next day
+	// Find the day that contains a given ms timestamp
+	function findDayForMs(ms: number) {
 		const day = nsWeatherData.daily?.find((d, i, arr) => {
 			const nextDay = arr[i + 1];
 			if (nextDay) {
@@ -235,7 +234,10 @@
 		});
 		// Fallback to today
 		return day || nsWeatherData.daily?.find((d) => d.fromToday === 0);
-	});
+	}
+
+	// Find the day that contains the current ms timestamp
+	const currentDay = $derived.by(() => findDayForMs(nsWeatherData.ms));
 
 	// Get representative WMO code for the 24-hour hourly plot
 	// When groupIcons=true: groups codes like TimeLine does, then picks most severe group representative
@@ -398,11 +400,12 @@
 	let displayMs = $state(Date.now());
 	let lastTargetDayStart = $state(getDayStart(Date.now()));
 
-	// Compute colors from displayMs using currentDay's sunrise/sunset
+	// Compute colors from displayMs using the correct day's sunrise/sunset
 	// Use full palette (with white/purple) for sticky bg
 	const displayColors = $derived.by(() => {
-		if (!currentDay) return DEFAULT_COLORS;
-		return getSkyColorsFullPalette(displayMs, currentDay.sunrise, currentDay.sunset);
+		const day = findDayForMs(displayMs);
+		if (!day) return DEFAULT_COLORS;
+		return getSkyColorsFullPalette(displayMs, day.sunrise, day.sunset);
 	});
 
 	// Immediate colors (no animation) for tracker
@@ -429,10 +432,18 @@
 			const targetMs = nsWeatherData.ms;
 			const targetDayStart = getDayStart(targetMs);
 
-			// If day changed, teleport display to same time-of-day on new day
+			// If day changed, teleport display to the correct edge of the new day
+			// Going forward (to later day): teleport to start of new day (00:00)
+			// Going backward (to earlier day): teleport to end of new day (23:59)
 			if (targetDayStart !== lastTargetDayStart) {
-				const currentTimeOfDay = getTimeOfDay(displayMs);
-				displayMs = targetDayStart + currentTimeOfDay;
+				const goingForward = targetDayStart > lastTargetDayStart;
+				if (goingForward) {
+					// Teleport to start of new day (just after midnight)
+					displayMs = targetDayStart;
+				} else {
+					// Teleport to end of new day (just before midnight of next day)
+					displayMs = targetDayStart + MS_IN_DAY - 1;
+				}
 				lastTargetDayStart = targetDayStart;
 			}
 
@@ -543,6 +554,67 @@
 			? `linear-gradient(90deg, ${displayColors[2]} 0%, ${displayColors[1]} 50%, ${displayColors[0]} 100%)`
 			: `linear-gradient(45deg, ${displayColors[2]} 0%, ${displayColors[1]} 50%, ${displayColors[0]} 100%)`,
 	);
+
+	// DEBUG: Experimental blended gradient approach
+	let debugOpacity = $state(100); // percentage for horizontal overlay opacity
+	let debugBlendMode = $state('overlay'); // blend mode
+
+	const blendModes = ['overlay', 'soft-light', 'multiply', 'normal'] as const;
+
+	// Track dimensions for seamless vertical gradient calculation
+	let stickyHeight = $state(200); // will be bound to element
+	let tilesHeight = $state(400); // will be bound to element
+
+	// Convert opacity percentage to 2-digit hex
+	const opacityHex = $derived(
+		Math.round((debugOpacity / 100) * 255)
+			.toString(16)
+			.padStart(2, '0'),
+	);
+
+	// Calculate the boundary color for seamless vertical gradient
+	// Gradient goes: color0 (top) -> color1 (middle) -> color2 (bottom)
+	const totalHeight = $derived(stickyHeight + tilesHeight);
+	const stickyRatio = $derived(stickyHeight / totalHeight);
+
+	// Interpolate color at the boundary between sticky and tiles
+	const boundaryColor = $derived.by(() => {
+		// stickyRatio tells us where in the 0-1 gradient range the boundary falls
+		// Gradient: 0% = color0, 50% = color1, 100% = color2
+		if (stickyRatio <= 0.5) {
+			// Boundary is in the top half (color0 -> color1)
+			const t = stickyRatio / 0.5; // normalize to 0-1
+			return mixColors(displayColors[0], displayColors[1], t);
+		} else {
+			// Boundary is in the bottom half (color1 -> color2)
+			const t = (stickyRatio - 0.5) / 0.5; // normalize to 0-1
+			return mixColors(displayColors[1], displayColors[2], t);
+		}
+	});
+
+	// Seamless vertical gradients for sticky and tiles
+	const skyGradientStickyVertical = $derived(
+		`linear-gradient(180deg, ${displayColors[0]} 0%, ${boundaryColor} 100%)`,
+	);
+	const skyGradientTilesVertical = $derived(
+		`linear-gradient(180deg, ${boundaryColor} 0%, ${displayColors[2]} 100%)`,
+	);
+
+	// Semi-transparent horizontal gradient for blending
+	const skyGradientHorizontal = $derived(
+		`linear-gradient(90deg, ${displayColors[2]}${opacityHex} 0%, ${displayColors[1]}${opacityHex} 50%, ${displayColors[0]}${opacityHex} 100%)`,
+	);
+
+	// DEBUG: Sync skyGradient to body for full viewport gradient inspection
+	$effect(() => {
+		if (browser) {
+			document.body.style.setProperty('--sky-gradient', skyGradient);
+			document.body.style.setProperty('--sky-gradient-horizontal', skyGradientHorizontal);
+			document.body.style.setProperty('--sky-blend-mode', debugBlendMode);
+			document.body.style.setProperty('--sky-gradient-sticky-vertical', skyGradientStickyVertical);
+			document.body.style.setProperty('--sky-gradient-tiles-vertical', skyGradientTilesVertical);
+		}
+	});
 
 	// Text color based on middle color for contrast
 	const textColor = $derived(contrastTextColor(displayColors[1]));
@@ -658,7 +730,15 @@
 	</div>
 </div>
 
-<div class="container sticky-info" style:--sky-gradient={skyGradient} style:color={textColor}>
+<div
+	class="container sticky-info use-vertical"
+	bind:offsetHeight={stickyHeight}
+	style:--sky-gradient={skyGradient}
+	style:--sky-gradient-horizontal={skyGradientHorizontal}
+	style:--sky-gradient-vertical={skyGradientStickyVertical}
+	style:--sky-blend-mode={debugBlendMode}
+	style:color={textColor}
+>
 	<div class="name">
 		{nsWeatherData.name}
 		<span class="accuracy"
@@ -749,9 +829,35 @@
 	</div>
 </div>
 
+<!-- DEBUG: Gradient tuning sliders -->
+<div class="debug-sliders">
+	<div>Vertical blend (sticky: {stickyHeight}px, tiles: {tilesHeight}px)</div>
+	<div>displayMs: {nsWeatherData.tzFormat(displayMs, 'ddd MMM D hh:mma')}</div>
+	<div>targetMs: {nsWeatherData.tzFormat(nsWeatherData.ms, 'ddd MMM D hh:mma')}</div>
+	<label>
+		Opacity: {debugOpacity}%
+		<input type="range" min="0" max="100" bind:value={debugOpacity} />
+	</label>
+	<label>
+		Blend: {debugBlendMode}
+		<select bind:value={debugBlendMode}>
+			{#each blendModes as mode}
+				<option value={mode}>{mode}</option>
+			{/each}
+		</select>
+	</label>
+</div>
+
 <div class="container main-content">
 	<div class="scroll">
-		<div class="sky-gradient-bg" style:--sky-gradient={skyGradient}>
+		<div
+			class="sky-gradient-bg use-vertical"
+			bind:offsetHeight={tilesHeight}
+			style:--sky-gradient={skyGradient}
+			style:--sky-gradient-horizontal={skyGradientHorizontal}
+			style:--sky-gradient-vertical={skyGradientTilesVertical}
+			style:--sky-blend-mode={debugBlendMode}
+		>
 			<DailyTiles
 				{nsWeatherData}
 				{forecastDaysVisible}
@@ -818,6 +924,7 @@
 						start={Date.now() - 2 * MS_IN_HOUR}
 						trackerColor={targetColors[1]}
 						tempStats={visibleTempStats}
+						debugTrackerMs={displayMs}
 					/>
 				</div>
 			</div>
@@ -891,6 +998,7 @@
 							{past}
 							trackerColor={targetColors[1]}
 							tempStats={visibleTempStats}
+							debugTrackerMs={displayMs}
 						/>
 					</div>
 				</div>
@@ -992,15 +1100,45 @@
 	$size-1: 0.25rem;
 	$size-3: 1rem;
 
-	.sky-gradient-bg {
-		background: var(--sky-gradient, $gradient-sky-default);
-		background-attachment: fixed;
-		transition: background 1s ease-out;
+	// DEBUG: Gradient tuning sliders
+	.debug-sliders {
+		position: fixed;
+		bottom: 1rem;
+		right: 1rem;
+		z-index: 9999;
+		background: rgba(0, 0, 0, 0.8);
+		color: white;
+		padding: 1rem;
+		border-radius: 8px;
+		display: flex;
+		flex-direction: column;
+		gap: 0.5rem;
+		font-family: monospace;
+		font-size: 14px;
 
-		// iOS Safari has severe performance issues with background-attachment: fixed
-		@supports (-webkit-touch-callout: none) {
-			background-attachment: scroll;
+		label {
+			display: flex;
+			flex-direction: column;
+			gap: 0.25rem;
 		}
+
+		input[type='range'] {
+			width: 150px;
+		}
+	}
+
+	// DEBUG: Pure fixed gradient on body for comparison
+	:global(body) {
+		background: var(--sky-gradient);
+		background-attachment: fixed;
+		min-height: 100vh;
+	}
+
+	.sky-gradient-bg {
+		// Blended gradient: horizontal on top, seamless vertical on bottom
+		background: var(--sky-gradient-horizontal), var(--sky-gradient-vertical);
+		background-blend-mode: var(--sky-blend-mode, overlay);
+		transition: background 1s ease-out;
 	}
 
 	.sticky-info {
@@ -1008,17 +1146,13 @@
 		top: 0;
 		z-index: 100;
 
-		background: var(--sky-gradient, $gradient-sky-default);
-		background-attachment: fixed;
+		// Blended gradient: horizontal on top, seamless vertical on bottom
+		background: var(--sky-gradient-horizontal), var(--sky-gradient-vertical);
+		background-blend-mode: var(--sky-blend-mode, overlay);
 		padding-block: 0.2em;
 		transition:
 			background 1s ease-out,
 			color 1s ease-out;
-
-		// iOS Safari has severe performance issues with background-attachment: fixed
-		@supports (-webkit-touch-callout: none) {
-			background-attachment: scroll;
-		}
 
 		& > div {
 			padding-block: $size-1;
@@ -1416,6 +1550,7 @@
 	.main-content {
 		display: grid;
 		padding-inline: 0;
+		background: $color-ghost-white; // Prevent body gradient showing through gaps
 
 		// Mobile: timeline plots extend edge-to-edge (override .container padding)
 		@include mobile-only {

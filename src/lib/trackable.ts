@@ -41,21 +41,30 @@ export function trackable(node: HTMLElement, options: TrackableOptions) {
 	const TAP_THRESHOLD = 10; // max pixels moved to count as tap
 	const TAP_MAX_DURATION = 300; // max ms for a tap
 
-	// RAF throttling for touch scrubbing - prevents excessive updates on iOS
+	// Throttling for scrubbing - limits updates to reduce GPU usage
 	let pendingMs: number | null = null;
 	let rafId: number | null = null;
+	let lastUpdateTime = 0;
+	const THROTTLE_MS = 1000 / 60; // 60fps
 
 	function scheduleTimeUpdate(ms: number) {
 		pendingMs = ms;
-		if (rafId === null) {
-			rafId = requestAnimationFrame(() => {
-				if (pendingMs !== null) {
-					options.onTimeChange(pendingMs);
-					pendingMs = null;
-				}
-				rafId = null;
-			});
+		const now = performance.now();
+
+		if (now - lastUpdateTime >= THROTTLE_MS) {
+			// Enough time passed, update immediately via RAF
+			if (rafId === null) {
+				rafId = requestAnimationFrame(() => {
+					if (pendingMs !== null) {
+						options.onTimeChange(pendingMs);
+						pendingMs = null;
+						lastUpdateTime = performance.now();
+					}
+					rafId = null;
+				});
+			}
 		}
+		// Otherwise, skip this update (throttled)
 	}
 
 	function trackToMouseX(e: PointerEvent | MouseEvent, useRaf = false) {
@@ -73,9 +82,9 @@ export function trackable(node: HTMLElement, options: TrackableOptions) {
 
 		const trackedElement = options.getTrackedElement();
 		if (trackedElement === node) {
-			trackToMouseX(e);
+			trackToMouseX(e, true); // Use RAF throttling
 		} else if (mouseIsOver && trackedElement === null) {
-			trackToMouseX(e);
+			trackToMouseX(e, true); // Use RAF throttling
 			options.onTrackingStart(node);
 		}
 	}

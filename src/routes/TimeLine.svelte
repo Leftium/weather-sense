@@ -31,7 +31,7 @@
 	import * as htl from 'htl';
 	import { getEmitter } from '$lib/emitter';
 	import { trackable } from '$lib/trackable';
-	import { onMount, tick } from 'svelte';
+	import { onMount, tick, untrack } from 'svelte';
 	import {
 		AQI_INDEX_EUROPE,
 		AQI_INDEX_US,
@@ -80,6 +80,7 @@
 		hours = 24,
 		xAxis = true,
 		ghostTracker = false,
+		extendTracker = false,
 		past = false,
 		trackerColor = 'yellow',
 		groupIcons = true,
@@ -92,6 +93,7 @@
 		hours?: number;
 		xAxis?: boolean;
 		ghostTracker?: boolean;
+		extendTracker?: boolean;
 		past?: boolean;
 		trackerColor?: string;
 		groupIcons?: boolean;
@@ -897,77 +899,139 @@
 	const xScale = $derived(Plot.scale({ x: plotOptions.x }));
 	const yScale = $derived(Plot.scale({ y: plotOptions.y }));
 
-	function updateTracker(ms: number) {
-		const pg = d3.select(div).select('svg');
-		pg.select('.tracker-rect').remove();
+	// Cache tracker elements to avoid DOM churn on mouse move
+	let trackerGroup: d3.Selection<SVGGElement, unknown, null, undefined> | null = null;
+	let trackerLine: d3.Selection<SVGLineElement, unknown, null, undefined> | null = null;
+	let trackerLineExtended: d3.Selection<SVGLineElement, unknown, null, undefined> | null = null;
+	let trackerRect: d3.Selection<SVGRectElement, unknown, null, undefined> | null = null;
+	let lastTrackerMode: 'normal' | 'ghost' | null = null;
+	let lastRectWidth: number = 0;
 
-		function drawTracker(
-			ms: number,
-			msIntervalStart: number,
-			length: number,
-			lineColor: string,
-			showRect: boolean,
-		) {
-			const ig = pg.append('g').attr('class', 'tracker-rect');
+	function ensureTrackerElements(
+		pg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
+		isGhost: boolean,
+	) {
+		const mode = isGhost ? 'ghost' : 'normal';
+		const y1 = yScale.apply(yDomainTop);
+		const y2 = yScale.apply(yDomainBottom);
 
-			const x = xScale.apply(ms);
-			const x1 = xScale.apply(msIntervalStart);
-			const x2 = xScale.apply(Math.min(msIntervalStart + length, msEnd));
-			const y1 = yScale.apply(yDomainTop);
-			const y2 = yScale.apply(yDomainBottom);
+		// If mode changed or elements don't exist, recreate
+		if (mode !== lastTrackerMode || !trackerGroup) {
+			// Remove old tracker
+			pg.select('.tracker-rect').remove();
+			trackerGroup = null;
+			trackerLine = null;
+			trackerLineExtended = null;
+			trackerRect = null;
 
-			ig.append('line')
-				.attr('x1', x)
-				.attr('x2', x)
+			// Create new group - use will-change for GPU compositing
+			trackerGroup = pg.append('g').attr('class', 'tracker-rect').style('will-change', 'transform');
+
+			// Create extended line first (behind) - white line for ghost trackers below
+			if (extendTracker && !isGhost) {
+				trackerLineExtended = trackerGroup
+					.append('line')
+					.attr('x1', 0)
+					.attr('x2', 0)
+					.attr('y1', y2) // Start where main tracker ends
+					.attr('y2', 2000) // Extend far down
+					.attr('stroke', 'rgba(255, 255, 255, 0.6)')
+					.attr('stroke-width', 2);
+			}
+
+			// Create main tracker line (on top) - sky color
+			trackerLine = trackerGroup
+				.append('line')
+				.attr('x1', 0)
+				.attr('x2', 0)
 				.attr('y1', y1)
 				.attr('y2', y2)
-				.attr('stroke', lineColor)
 				.attr('stroke-width', 2);
 
-			if (showRect) {
-				// Add gradient definition for tracker rect
-				ig.append('defs').html(`
+			// Create rect only for normal mode
+			if (!isGhost) {
+				// Add gradient definition
+				trackerGroup.append('defs').html(`
 					<linearGradient id="tracker-rect-gradient" x1="0" y1="0" x2="0" y2="1">
 						<stop offset="0%" stop-color="#FFEE00" stop-opacity="0" />
 						<stop offset="100%" stop-color="#FFEE00" stop-opacity="0.5" />
 					</linearGradient>
 				`);
 
-				ig.append('rect')
-					.attr('x', x1)
+				// Rect starts at x=0, positioned via transform, width updated only when needed
+				trackerRect = trackerGroup
+					.append('rect')
+					.attr('x', 0)
 					.attr('y', y1)
-					.attr('width', x2 - x1)
 					.attr('height', y2 - y1)
 					.attr('fill', 'url(#tracker-rect-gradient)');
+				lastRectWidth = 0;
 			}
+
+			lastTrackerMode = mode;
 		}
+	}
+
+	function updateTrackerPosition(
+		ms: number,
+		msIntervalStart: number,
+		length: number,
+		lineColor: string,
+	) {
+		if (!trackerGroup || !trackerLine) return;
+
+		const x = xScale.apply(ms);
+		const x1 = xScale.apply(msIntervalStart);
+		const x2 = xScale.apply(Math.min(msIntervalStart + length, msEnd));
+		const rectWidth = x2 - x1;
+
+		// Use CSS transform for position (GPU-accelerated, no layout)
+		trackerGroup.style('transform', `translateX(${x1}px)`);
+
+		// Line position relative to group (line at tracker position within rect)
+		const lineOffset = x - x1;
+		trackerLine.attr('x1', lineOffset).attr('x2', lineOffset).attr('stroke', lineColor);
+
+		// Update extended line position too
+		if (trackerLineExtended) {
+			trackerLineExtended.attr('x1', lineOffset).attr('x2', lineOffset);
+		}
+
+		// Update rect width only if changed (width change triggers layout, but is rare)
+		if (trackerRect && Math.abs(rectWidth - lastRectWidth) > 0.5) {
+			trackerRect.attr('width', rectWidth);
+			lastRectWidth = rectWidth;
+		}
+	}
+
+	function hideTracker() {
+		if (trackerGroup) {
+			trackerGroup.style('opacity', '0');
+		}
+	}
+
+	function showTracker() {
+		if (trackerGroup) {
+			trackerGroup.style('opacity', '1');
+		}
+	}
+
+	function updateTracker(ms: number) {
+		const pg = d3.select(div).select<SVGSVGElement>('svg');
+		if (pg.empty()) return;
 
 		const interval = nsWeatherData.intervals.find((item) => ms >= item.ms && ms <= item.x2);
 
 		const msIntervalStart = interval?.ms ?? ms;
 		const length = interval ? interval.x2 - interval.ms : 1;
 
-		// Debug tracker alignment issues - only log when no interval found
-		// const formatMs = (t: number) => dayjs(t).tz(nsWeatherData.timezone).format('HH:mm:ss');
-		// const debug = createDebugLogger(`Tracker ${formatMs(ms)}`, hours === 24 && !interval);
-		// debug.log(`ms: ${formatMs(ms)} (${ms})`);
-		// debug.log(`interval found: ${interval ? 'yes' : 'no'}`);
-		// if (interval) {
-		// 	debug.log(`interval.ms: ${formatMs(interval.ms)} (${interval.ms})`);
-		// 	debug.log(`interval.x2: ${formatMs(interval.x2)} (${interval.x2})`);
-		// 	debug.log(`length: ${length}ms (${length / MS_IN_MINUTE} min)`);
-		// }
-		// const nearbyIntervals = nsWeatherData.intervals
-		// 	.filter((item) => Math.abs(item.ms - ms) < MS_IN_HOUR * 2)
-		// 	.map((item) => `${formatMs(item.ms)}-${formatMs(item.x2)}`);
-		// debug.log(`nearby intervals: ${nearbyIntervals.join(', ')}`);
-		// debug.finish();
-
 		if (msIntervalStart >= msStart && msIntervalStart < msEnd) {
-			drawTracker(ms, msIntervalStart, length, trackerColor, true);
+			// Normal tracker
+			ensureTrackerElements(pg, false);
+			showTracker();
+			updateTrackerPosition(ms, msIntervalStart, length, trackerColor);
 		} else if (ghostTracker) {
-			// Calculate time-of-day offset from the day start hour (4 AM), not midnight
-			// msStart is already at DAY_START_HOUR, so we need to offset from that
+			// Ghost tracker: Calculate time-of-day offset from the day start hour (4 AM)
 			const dayStartOffsetMs = DAY_START_HOUR * MS_IN_HOUR;
 			const msGhost =
 				msStart +
@@ -979,22 +1043,26 @@
 					MS_IN_DAY) %
 					MS_IN_DAY);
 
-			drawTracker(msGhost, msGhostInterval, length, 'white', false);
+			ensureTrackerElements(pg, true);
+			showTracker();
+			updateTrackerPosition(msGhost, msGhostInterval, length, 'white');
+		} else {
+			hideTracker();
 		}
+	}
 
-		// DEBUG: Draw debug tracker for displayMs (animated time)
-		// if (debugTrackerMs !== undefined) {
-		// 	const debugIntervalStart = startOf(debugTrackerMs, 'hour', nsWeatherData.timezone);
-		// 	if (debugIntervalStart >= msStart && debugIntervalStart < msEnd) {
-		// 		drawTracker(debugTrackerMs, debugIntervalStart, length, 'magenta', true);
-		// 	}
-		// }
+	// Reset tracker cache when plot is redrawn
+	function resetTrackerCache() {
+		trackerGroup = null;
+		trackerLine = null;
+		trackerLineExtended = null;
+		trackerRect = null;
+		lastTrackerMode = null;
+		lastRectWidth = 0;
 	}
 
 	// Generate and place Obervable.Plot from data.
 	function plotData() {
-		//gg('plotData');
-
 		const aqiLabelTextOptions = {
 			fontSize: 10,
 			fill: 'fillText',
@@ -1516,22 +1584,29 @@
 		div?.firstChild?.remove(); // First remove old chart, if any.
 		div?.append(plot); // Then add the new chart.
 
-		// Render initial tracker.
+		// Allow tracker to overflow for extended ghost tracker line
+		if (extendTracker) {
+			const svg = div?.querySelector('svg');
+			if (svg) svg.style.overflow = 'visible';
+		}
+
+		// Reset tracker cache since DOM was replaced, then render initial tracker
+		resetTrackerCache();
 		updateTracker(nsWeatherData.ms);
 	}
 
 	// Update rule location only (leaving rest of plot intact).
-	// Runs every time nsWeatherData.ms changes value.
-	$effect(() => {
-		//gg('EFFECT');
-		updateTracker(nsWeatherData.ms);
+	// Listen for frameTick event for synchronized tracker updates across all plots
+	on('weatherdata_frameTick', ({ ms }) => {
+		updateTracker(ms);
 	});
 
 	// Update entire plot when plotVisibility changes.
 	$effect(() => {
 		// Track the draw object (derived from plotVisibility)
 		draw;
-		plotData();
+		// Use untrack to prevent plotData's internal reactive reads from becoming dependencies
+		untrack(() => plotData());
 	});
 
 	// Update entire plot.
@@ -1579,12 +1654,23 @@
 	</div>
 {/if}
 
-<div bind:this={div} bind:clientWidth use:trackable={trackableOptions} role="img"></div>
+<div
+	bind:this={div}
+	bind:clientWidth
+	use:trackable={trackableOptions}
+	role="img"
+	class:extend-tracker={extendTracker}
+></div>
 
 <style>
 	div,
 	div > :global(svg) {
 		overflow: visible !important;
+	}
+
+	/* Extended tracker - position relative for stacking, but no z-index to avoid clipping icons */
+	div.extend-tracker {
+		position: relative;
 	}
 
 	/* Glow behind weather icons - matches wmo-codes page */

@@ -23,7 +23,6 @@
 		nsWeatherData,
 		forecastDaysVisible = 5,
 		maxForecastDays = 16,
-		skyGradient = 'linear-gradient(135deg, #eee 0%, #a8d8f0 50%, #6bb3e0 100%)',
 
 		textColor = '#333',
 		textShadowColor = 'rgba(248, 248, 255, 0.8)',
@@ -36,7 +35,6 @@
 		nsWeatherData: NsWeatherData;
 		forecastDaysVisible?: number;
 		maxForecastDays?: number;
-		skyGradient?: string;
 
 		textColor?: string;
 		textShadowColor?: string;
@@ -50,7 +48,7 @@
 	const canExpand = $derived(forecastDaysVisible < maxForecastDays);
 	const canReset = $derived(forecastDaysVisible > 3);
 
-	const { emit } = getEmitter<WeatherDataEvents>(import.meta);
+	const { emit, on } = getEmitter<WeatherDataEvents>(import.meta);
 
 	function toggleUnits() {
 		emit('weatherdata_requestedToggleUnits', { temperature: true });
@@ -184,9 +182,20 @@
 	// Ref for trackable container
 	let containerDiv: HTMLDivElement;
 
-	// Tracker state
-	let trackerX: number | null = $state(null);
-	let trackerColor: string = $state('#FFEE00');
+	// Tracker element ref - direct DOM manipulation to avoid Svelte reactivity overhead
+	let trackerRect: SVGRectElement | null = null;
+
+	// Update tracker position directly via DOM (bypasses Svelte reactivity)
+	function setTrackerPosition(x: number | null, color: string = 'yellow') {
+		if (!trackerRect) return;
+		if (x !== null) {
+			trackerRect.style.transform = `translateX(${x}px)`;
+			trackerRect.style.opacity = '1';
+			trackerRect.setAttribute('fill', color);
+		} else {
+			trackerRect.style.opacity = '0';
+		}
+	}
 
 	// Offset from midnight to align with hourly plots (4 AM start)
 	const dayStartOffsetMs = DAY_START_HOUR * MS_IN_HOUR;
@@ -239,17 +248,16 @@
 		const position = msToPosition(ms);
 
 		if (position) {
-			trackerX = position.x;
-			trackerColor = 'yellow';
+			setTrackerPosition(position.x, 'yellow');
 		} else {
 			// Ghost tracker: show current time of day in first visible day
-			trackerX = null;
+			setTrackerPosition(null);
 		}
 	}
 
-	// React to nsWeatherData.ms changes
-	$effect(() => {
-		updateTracker(nsWeatherData.ms);
+	// Listen for frameTick event for synchronized tracker updates
+	on('weatherdata_frameTick', ({ ms }) => {
+		updateTracker(ms);
 	});
 
 	// Trackable options for this component
@@ -266,7 +274,6 @@
 <div
 	class="daily-tiles"
 	style:--tile-count={isLoading ? placeholderCount : days.length}
-	style:--sky-gradient={skyGradient}
 	bind:this={containerDiv}
 >
 	<!-- Wrapper to constrain trackable area to just the tiles -->
@@ -355,11 +362,6 @@
 						{@const y = tempToY(day.temperatureMin)}
 						<circle cx={x} cy={y} r="3" fill={TEMP_COLOR_COLD} />
 					{/each}
-
-					<!-- Tracker line -->
-					{#if trackerX !== null}
-						<rect x={trackerX - 1} y="2" width="2" height={TILE_HEIGHT - 4} fill={trackerColor} />
-					{/if}
 				</svg>
 			{/if}
 
@@ -462,6 +464,25 @@
 							{formatTemp(day.temperatureMin, nsWeatherData.units.temperature)}
 						</text>
 					{/each}
+				</svg>
+			{/if}
+
+			{#if !isLoading}
+				<svg
+					class="tracker-svg"
+					viewBox="0 0 {days.length * TILE_WIDTH} {TILE_HEIGHT}"
+					preserveAspectRatio="none"
+				>
+					<rect
+						bind:this={trackerRect}
+						class="tracker"
+						x="0"
+						y="2"
+						width="2"
+						height={TILE_HEIGHT - 4}
+						fill="yellow"
+						style="transform: translateX(0px); opacity: 0;"
+					/>
 				</svg>
 			{/if}
 		</div>
@@ -590,6 +611,22 @@
 		padding-top: 4px;
 		position: relative;
 		z-index: 6; // Above tracker-line (5), below overlay (10)
+	}
+
+	// Tracker SVG - highest z-index for GPU efficiency
+	.tracker-svg {
+		position: absolute;
+		top: 0;
+		left: 0;
+		width: 100%;
+		height: 100%;
+		z-index: 100; // Above everything
+		pointer-events: none;
+	}
+
+	// Tracker uses CSS transform for GPU-accelerated positioning
+	.tracker {
+		will-change: transform, opacity;
 	}
 
 	.button-bar {

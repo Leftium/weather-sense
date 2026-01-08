@@ -708,10 +708,6 @@
 		&.today {
 			font-weight: 900;
 		}
-
-		&.past {
-			color: #999;
-		}
 	}
 
 	.precip-underlay {

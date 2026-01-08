@@ -983,12 +983,12 @@
 		}
 
 		// DEBUG: Draw debug tracker for displayMs (animated time)
-		if (debugTrackerMs !== undefined) {
-			const debugIntervalStart = startOf(debugTrackerMs, 'hour', nsWeatherData.timezone);
-			if (debugIntervalStart >= msStart && debugIntervalStart < msEnd) {
-				drawTracker(debugTrackerMs, debugIntervalStart, length, 'magenta', true);
-			}
-		}
+		// if (debugTrackerMs !== undefined) {
+		// 	const debugIntervalStart = startOf(debugTrackerMs, 'hour', nsWeatherData.timezone);
+		// 	if (debugIntervalStart >= msStart && debugIntervalStart < msEnd) {
+		// 		drawTracker(debugTrackerMs, debugIntervalStart, length, 'magenta', true);
+		// 	}
+		// }
 	}
 
 	// Generate and place Obervable.Plot from data.

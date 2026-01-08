@@ -555,22 +555,9 @@
 			: `linear-gradient(45deg, ${displayColors[2]} 0%, ${displayColors[1]} 50%, ${displayColors[0]} 100%)`,
 	);
 
-	// DEBUG: Experimental blended gradient approach
-	let debugOpacity = $state(100); // percentage for horizontal overlay opacity
-	let debugBlendMode = $state('overlay'); // blend mode
-
-	const blendModes = ['overlay', 'soft-light', 'multiply', 'normal'] as const;
-
 	// Track dimensions for seamless vertical gradient calculation
 	let stickyHeight = $state(200); // will be bound to element
 	let tilesHeight = $state(400); // will be bound to element
-
-	// Convert opacity percentage to 2-digit hex
-	const opacityHex = $derived(
-		Math.round((debugOpacity / 100) * 255)
-			.toString(16)
-			.padStart(2, '0'),
-	);
 
 	// Calculate the boundary color for seamless vertical gradient
 	// Gradient goes: color0 (top) -> color1 (middle) -> color2 (bottom)
@@ -600,19 +587,15 @@
 		`linear-gradient(180deg, ${boundaryColor} 0%, ${displayColors[2]} 100%)`,
 	);
 
-	// Semi-transparent horizontal gradient for blending
+	// Horizontal gradient for blending (full opacity)
 	const skyGradientHorizontal = $derived(
-		`linear-gradient(90deg, ${displayColors[2]}${opacityHex} 0%, ${displayColors[1]}${opacityHex} 50%, ${displayColors[0]}${opacityHex} 100%)`,
+		`linear-gradient(90deg, ${displayColors[2]} 0%, ${displayColors[1]} 50%, ${displayColors[0]} 100%)`,
 	);
 
-	// DEBUG: Sync skyGradient to body for full viewport gradient inspection
+	// Sync sky gradient to body for full viewport background
 	$effect(() => {
 		if (browser) {
 			document.body.style.setProperty('--sky-gradient', skyGradient);
-			document.body.style.setProperty('--sky-gradient-horizontal', skyGradientHorizontal);
-			document.body.style.setProperty('--sky-blend-mode', debugBlendMode);
-			document.body.style.setProperty('--sky-gradient-sticky-vertical', skyGradientStickyVertical);
-			document.body.style.setProperty('--sky-gradient-tiles-vertical', skyGradientTilesVertical);
 		}
 	});
 
@@ -736,7 +719,6 @@
 	style:--sky-gradient={skyGradient}
 	style:--sky-gradient-horizontal={skyGradientHorizontal}
 	style:--sky-gradient-vertical={skyGradientStickyVertical}
-	style:--sky-blend-mode={debugBlendMode}
 	style:color={textColor}
 >
 	<div class="name">
@@ -829,25 +811,6 @@
 	</div>
 </div>
 
-<!-- DEBUG: Gradient tuning sliders -->
-<div class="debug-sliders">
-	<div>Vertical blend (sticky: {stickyHeight}px, tiles: {tilesHeight}px)</div>
-	<div>displayMs: {nsWeatherData.tzFormat(displayMs, 'ddd MMM D hh:mma')}</div>
-	<div>targetMs: {nsWeatherData.tzFormat(nsWeatherData.ms, 'ddd MMM D hh:mma')}</div>
-	<label>
-		Opacity: {debugOpacity}%
-		<input type="range" min="0" max="100" bind:value={debugOpacity} />
-	</label>
-	<label>
-		Blend: {debugBlendMode}
-		<select bind:value={debugBlendMode}>
-			{#each blendModes as mode}
-				<option value={mode}>{mode}</option>
-			{/each}
-		</select>
-	</label>
-</div>
-
 <div class="container main-content">
 	<div class="scroll">
 		<div
@@ -856,7 +819,6 @@
 			style:--sky-gradient={skyGradient}
 			style:--sky-gradient-horizontal={skyGradientHorizontal}
 			style:--sky-gradient-vertical={skyGradientTilesVertical}
-			style:--sky-blend-mode={debugBlendMode}
 		>
 			<DailyTiles
 				{nsWeatherData}
@@ -924,7 +886,6 @@
 						start={Date.now() - 2 * MS_IN_HOUR}
 						trackerColor={targetColors[1]}
 						tempStats={visibleTempStats}
-						debugTrackerMs={displayMs}
 					/>
 				</div>
 			</div>
@@ -998,7 +959,6 @@
 							{past}
 							trackerColor={targetColors[1]}
 							tempStats={visibleTempStats}
-							debugTrackerMs={displayMs}
 						/>
 					</div>
 				</div>
@@ -1100,34 +1060,7 @@
 	$size-1: 0.25rem;
 	$size-3: 1rem;
 
-	// DEBUG: Gradient tuning sliders
-	.debug-sliders {
-		position: fixed;
-		bottom: 1rem;
-		right: 1rem;
-		z-index: 9999;
-		background: rgba(0, 0, 0, 0.8);
-		color: white;
-		padding: 1rem;
-		border-radius: 8px;
-		display: flex;
-		flex-direction: column;
-		gap: 0.5rem;
-		font-family: monospace;
-		font-size: 14px;
-
-		label {
-			display: flex;
-			flex-direction: column;
-			gap: 0.25rem;
-		}
-
-		input[type='range'] {
-			width: 150px;
-		}
-	}
-
-	// DEBUG: Pure fixed gradient on body for comparison
+	// Full viewport sky gradient on body
 	:global(body) {
 		background: var(--sky-gradient);
 		background-attachment: fixed;
@@ -1137,7 +1070,7 @@
 	.sky-gradient-bg {
 		// Blended gradient: horizontal on top, seamless vertical on bottom
 		background: var(--sky-gradient-horizontal), var(--sky-gradient-vertical);
-		background-blend-mode: var(--sky-blend-mode, overlay);
+		background-blend-mode: overlay;
 		transition: background 1s ease-out;
 	}
 
@@ -1148,7 +1081,7 @@
 
 		// Blended gradient: horizontal on top, seamless vertical on bottom
 		background: var(--sky-gradient-horizontal), var(--sky-gradient-vertical);
-		background-blend-mode: var(--sky-blend-mode, overlay);
+		background-blend-mode: overlay;
 		padding-block: 0.2em;
 		transition:
 			background 1s ease-out,

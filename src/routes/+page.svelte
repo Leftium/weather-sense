@@ -397,15 +397,24 @@
 	}
 
 	// The display time (absolute ms) that animates toward target - this drives the gradient
-	let displayMs = $state(Date.now());
-	let lastTargetDayStart = $state(getDayStart(Date.now()));
+	// NOT reactive - plain variable to avoid triggering Svelte updates at 60fps
+	let displayMs = Date.now();
+	let lastTargetDayStart = getDayStart(Date.now());
 
-	// Compute colors from displayMs using the correct day's sunrise/sunset
+	// Throttled display ms - only this triggers Svelte reactivity, updated at 15fps
+	// Only used for non-scrubbing updates (text color, etc.)
+	let throttledDisplayMs = $state(Date.now());
+
+	// DOM refs for direct gradient updates (bypasses Svelte reactivity)
+	let stickyInfoEl: HTMLDivElement;
+	let skyGradientBgEl: HTMLDivElement;
+
+	// Compute colors from throttled displayMs (only recalculates at 15fps)
 	// Use full palette (with white/purple) for sticky bg
-	const displayColors = $derived.by(() => {
-		const day = findDayForMs(displayMs);
+	const throttledColors = $derived.by(() => {
+		const day = findDayForMs(throttledDisplayMs);
 		if (!day) return DEFAULT_COLORS;
-		return getSkyColorsFullPalette(displayMs, day.sunrise, day.sunset);
+		return getSkyColorsFullPalette(throttledDisplayMs, day.sunrise, day.sunset);
 	});
 
 	// Immediate colors (no animation) for tracker
@@ -414,20 +423,18 @@
 		return getSkyColorsFullPalette(nsWeatherData.ms, currentDay.sunrise, currentDay.sunset);
 	});
 
-	// Start animation loop - steps through time at constant color speed (frame-rate independent)
-	// Access nsWeatherData.ms at top level so effect restarts when target changes
+	// Start animation loop - steps through time at constant color speed
+	// Uses setInterval at 15fps instead of RAF to reduce GPU usage
+	// Polls rawMs to avoid Svelte reactivity overhead during scrub
 	$effect(() => {
-		const targetMs = nsWeatherData.ms; // Track this as dependency
-		let lastFrameTime: number | null = null;
+		const ANIM_INTERVAL_MS = 1000 / 15; // 15fps
+		let intervalId: ReturnType<typeof setInterval> | null = null;
 
-		function animate(currentTime: number) {
-			// Calculate delta time (seconds since last frame)
-			// Default to 16ms (~60fps) on first frame to avoid zero movement
-			const deltaTime = lastFrameTime !== null ? (currentTime - lastFrameTime) / 1000 : 0.016;
-			lastFrameTime = currentTime;
+		function animate() {
+			const deltaTime = ANIM_INTERVAL_MS / 1000;
+			const targetMs = nsWeatherData.rawMs; // Poll non-reactive value
 
 			if (!currentDay) {
-				animationFrameId = requestAnimationFrame(animate);
 				return;
 			}
 			const targetDayStart = getDayStart(targetMs);
@@ -527,18 +534,60 @@
 				timeStep = absDiff;
 			}
 
-			// Step toward target
+			// Step toward target (non-reactive, just a local variable)
 			displayMs = displayMs + direction * timeStep;
 
-			animationFrameId = requestAnimationFrame(animate);
+			// Direct DOM update for gradients (bypasses Svelte reactivity)
+			const day = findDayForMs(displayMs);
+			if (day) {
+				const colors = getSkyColorsFullPalette(displayMs, day.sunrise, day.sunset);
+
+				// Calculate boundary color for seamless vertical gradient
+				const total = stickyHeight + tilesHeight;
+				const ratio = stickyHeight / total;
+				let boundaryCol: string;
+				if (ratio <= 0.5) {
+					const t = ratio / 0.5;
+					boundaryCol = mixColors(colors[0], colors[1], t);
+				} else {
+					const t = (ratio - 0.5) / 0.5;
+					boundaryCol = mixColors(colors[1], colors[2], t);
+				}
+
+				// Horizontal gradient for vivid overlay
+				const gradientH = `linear-gradient(90deg, ${colors[2]} 0%, ${colors[1]} 50%, ${colors[0]} 100%)`;
+				// Seamless vertical gradients - sticky goes top to boundary, tiles goes boundary to bottom
+				const gradientVSticky = `linear-gradient(180deg, ${colors[0]} 0%, ${boundaryCol} 100%)`;
+				const gradientVTiles = `linear-gradient(180deg, ${boundaryCol} 0%, ${colors[2]} 100%)`;
+
+				if (stickyInfoEl) {
+					stickyInfoEl.style.background = `${gradientH}, ${gradientVSticky}`;
+					stickyInfoEl.style.backgroundBlendMode = 'overlay';
+					// Update text color for contrast
+					stickyInfoEl.style.color = contrastTextColor(colors[1]);
+				}
+				if (skyGradientBgEl) {
+					skyGradientBgEl.style.background = `${gradientH}, ${gradientVTiles}`;
+					skyGradientBgEl.style.backgroundBlendMode = 'overlay';
+				}
+			}
+
+			// Only update reactive state occasionally (for text color, etc.)
+			// Skip during active tracking to minimize Svelte overhead
+			if (!nsWeatherData.trackedElement) {
+				throttledDisplayMs = displayMs;
+			}
 		}
 
-		animationFrameId = requestAnimationFrame(animate);
+		// Run animation at 15fps using setInterval
+		intervalId = setInterval(animate, ANIM_INTERVAL_MS);
+		// Run once immediately
+		animate();
 
 		return () => {
-			if (animationFrameId) {
-				cancelAnimationFrame(animationFrameId);
-				animationFrameId = null;
+			if (intervalId) {
+				clearInterval(intervalId);
+				intervalId = null;
 			}
 		};
 	});
@@ -546,14 +595,15 @@
 	// Detect iOS for gradient workaround (CSS @supports doesn't work for JS-generated styles)
 	const isIOS = browser && /iPad|iPhone|iPod/.test(navigator.userAgent);
 
-	// Build gradients from animated displayColors
+	// Build gradients from animated throttledColors
 	// Palettes are [light, mid, dark]
 	// iOS: horizontal gradient (90deg) eliminates seam between sticky header and content
 	// Others: diagonal gradient (45deg) - light bottom-left to dark top-right
+	// PERF: Use throttledColors (15fps) to reduce GPU usage
 	const skyGradient = $derived(
 		isIOS
-			? `linear-gradient(90deg, ${displayColors[2]} 0%, ${displayColors[1]} 50%, ${displayColors[0]} 100%)`
-			: `linear-gradient(45deg, ${displayColors[2]} 0%, ${displayColors[1]} 50%, ${displayColors[0]} 100%)`,
+			? `linear-gradient(90deg, ${throttledColors[2]} 0%, ${throttledColors[1]} 50%, ${throttledColors[0]} 100%)`
+			: `linear-gradient(45deg, ${throttledColors[2]} 0%, ${throttledColors[1]} 50%, ${throttledColors[0]} 100%)`,
 	);
 
 	// Track dimensions for seamless vertical gradient calculation
@@ -572,25 +622,37 @@
 		if (stickyRatio <= 0.5) {
 			// Boundary is in the top half (color0 -> color1)
 			const t = stickyRatio / 0.5; // normalize to 0-1
-			return mixColors(displayColors[0], displayColors[1], t);
+			return mixColors(throttledColors[0], throttledColors[1], t);
 		} else {
 			// Boundary is in the bottom half (color1 -> color2)
 			const t = (stickyRatio - 0.5) / 0.5; // normalize to 0-1
-			return mixColors(displayColors[1], displayColors[2], t);
+			return mixColors(throttledColors[1], throttledColors[2], t);
+		}
+	});
+
+	// Boundary color for seamless vertical gradients (using throttled colors)
+	const throttledBoundaryColor = $derived.by(() => {
+		if (stickyRatio <= 0.5) {
+			const t = stickyRatio / 0.5;
+			return mixColors(throttledColors[0], throttledColors[1], t);
+		} else {
+			const t = (stickyRatio - 0.5) / 0.5;
+			return mixColors(throttledColors[1], throttledColors[2], t);
 		}
 	});
 
 	// Seamless vertical gradients for sticky and tiles
+	// PERF: Use throttledColors (15fps) to reduce GPU usage
 	const skyGradientStickyVertical = $derived(
-		`linear-gradient(180deg, ${displayColors[0]} 0%, ${boundaryColor} 100%)`,
+		`linear-gradient(180deg, ${throttledColors[0]} 0%, ${throttledBoundaryColor} 100%)`,
 	);
 	const skyGradientTilesVertical = $derived(
-		`linear-gradient(180deg, ${boundaryColor} 0%, ${displayColors[2]} 100%)`,
+		`linear-gradient(180deg, ${throttledBoundaryColor} 0%, ${throttledColors[2]} 100%)`,
 	);
 
 	// Horizontal gradient for blending (full opacity)
 	const skyGradientHorizontal = $derived(
-		`linear-gradient(90deg, ${displayColors[2]} 0%, ${displayColors[1]} 50%, ${displayColors[0]} 100%)`,
+		`linear-gradient(90deg, ${throttledColors[2]} 0%, ${throttledColors[1]} 50%, ${throttledColors[0]} 100%)`,
 	);
 
 	// Sync sky gradient to body for full viewport background
@@ -601,10 +663,10 @@
 	});
 
 	// Text color based on middle color for contrast
-	const textColor = $derived(contrastTextColor(displayColors[1]));
+	const textColor = $derived(contrastTextColor(throttledColors[1]));
 
 	// Text shadow is opposite of text color
-	const textShadowColor = $derived(contrastTextColor(displayColors[1], true));
+	const textShadowColor = $derived(contrastTextColor(throttledColors[1], true));
 
 	// Calculate temp range based on visible hourly plot days only
 	const visibleTempStats = $derived.by(() => {
@@ -716,6 +778,7 @@
 
 <div
 	class="container sticky-info use-vertical"
+	bind:this={stickyInfoEl}
 	bind:offsetHeight={stickyHeight}
 	style:--sky-gradient={skyGradient}
 	style:--sky-gradient-horizontal={skyGradientHorizontal}
@@ -816,6 +879,7 @@
 	<div class="scroll">
 		<div
 			class="sky-gradient-bg use-vertical"
+			bind:this={skyGradientBgEl}
 			bind:offsetHeight={tilesHeight}
 			style:--sky-gradient={skyGradient}
 			style:--sky-gradient-horizontal={skyGradientHorizontal}
@@ -824,7 +888,6 @@
 			<DailyTiles
 				{nsWeatherData}
 				{forecastDaysVisible}
-				{skyGradient}
 				{textColor}
 				{textShadowColor}
 				{maxForecastDays}
@@ -956,7 +1019,7 @@
 							{groupIcons}
 							start={day.ms + DAY_START_HOUR * MS_IN_HOUR}
 							xAxis={day.compactDate == 'Today'}
-							ghostTracker={true}
+							ghostTracker
 							{past}
 							trackerColor={targetColors[1]}
 							tempStats={visibleTempStats}
@@ -1069,11 +1132,8 @@
 	}
 
 	.sky-gradient-bg {
-		// TEST: Just vertical gradient (no blend) to check GPU usage
-		background: var(--sky-gradient-vertical);
-		// background: var(--sky-gradient-horizontal), var(--sky-gradient-vertical);
-		// background-blend-mode: overlay;
-		transition: background 1s ease-out;
+		background: var(--sky-gradient-horizontal), var(--sky-gradient-vertical);
+		background-blend-mode: overlay;
 	}
 
 	.sticky-info {
@@ -1081,10 +1141,8 @@
 		top: 0;
 		z-index: 100;
 
-		// TEST: Just vertical gradient (no blend) to check GPU usage
-		background: var(--sky-gradient-vertical);
-		// background: var(--sky-gradient-horizontal), var(--sky-gradient-vertical);
-		// background-blend-mode: overlay;
+		background: var(--sky-gradient-horizontal), var(--sky-gradient-vertical);
+		background-blend-mode: overlay;
 		padding-block: 0.2em;
 		transition:
 			background 1s ease-out,

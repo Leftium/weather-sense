@@ -415,7 +415,9 @@
 	});
 
 	// Start animation loop - steps through time at constant color speed (frame-rate independent)
+	// Access nsWeatherData.ms at top level so effect restarts when target changes
 	$effect(() => {
+		const targetMs = nsWeatherData.ms; // Track this as dependency
 		let lastFrameTime: number | null = null;
 
 		function animate(currentTime: number) {
@@ -428,8 +430,6 @@
 				animationFrameId = requestAnimationFrame(animate);
 				return;
 			}
-
-			const targetMs = nsWeatherData.ms;
 			const targetDayStart = getDayStart(targetMs);
 
 			// If day changed, teleport display to the correct edge of the new day
@@ -450,10 +450,11 @@
 			const diff = targetMs - displayMs;
 			const absDiff = Math.abs(diff);
 
-			// If close enough, snap
+			// If close enough, snap and stop animation loop
 			if (absDiff < SNAP_THRESHOLD) {
 				displayMs = targetMs;
-				animationFrameId = requestAnimationFrame(animate);
+				// Don't continue animation - we've reached target
+				// Loop will restart when targetMs changes (via $effect dependency)
 				return;
 			}
 
@@ -1068,9 +1069,10 @@
 	}
 
 	.sky-gradient-bg {
-		// Blended gradient: horizontal on top, seamless vertical on bottom
-		background: var(--sky-gradient-horizontal), var(--sky-gradient-vertical);
-		background-blend-mode: overlay;
+		// TEST: Just vertical gradient (no blend) to check GPU usage
+		background: var(--sky-gradient-vertical);
+		// background: var(--sky-gradient-horizontal), var(--sky-gradient-vertical);
+		// background-blend-mode: overlay;
 		transition: background 1s ease-out;
 	}
 
@@ -1079,9 +1081,10 @@
 		top: 0;
 		z-index: 100;
 
-		// Blended gradient: horizontal on top, seamless vertical on bottom
-		background: var(--sky-gradient-horizontal), var(--sky-gradient-vertical);
-		background-blend-mode: overlay;
+		// TEST: Just vertical gradient (no blend) to check GPU usage
+		background: var(--sky-gradient-vertical);
+		// background: var(--sky-gradient-horizontal), var(--sky-gradient-vertical);
+		// background-blend-mode: overlay;
 		padding-block: 0.2em;
 		transition:
 			background 1s ease-out,

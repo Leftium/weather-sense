@@ -19,7 +19,7 @@
 	let mainElement: HTMLElement;
 	let mapElement: HTMLDivElement;
 
-	let animationFrameId: number;
+	let animationFrameId: number | null = null;
 
 	let { nsWeatherData }: { nsWeatherData: NsWeatherData } = $props();
 
@@ -251,10 +251,29 @@
 					prevTimestamp = timeStamp;
 				}
 			}
-			animationFrameId = requestAnimationFrame(step);
+			// Only continue animation loop if radar is playing
+			if (nsWeatherData.radarPlaying) {
+				animationFrameId = requestAnimationFrame(step);
+			} else {
+				// Reset so loop can restart when play resumes
+				animationFrameId = null;
+			}
 		}
 
-		animationFrameId = requestAnimationFrame(step);
+		// Expose step function for the radarPlaying watcher
+		radarStepFn = step;
+	});
+
+	// Watch radarPlaying and start/stop animation loop accordingly
+	let radarStepFn: ((timeStamp: number) => void) | null = null;
+	$effect(() => {
+		const isPlaying = nsWeatherData.radarPlaying;
+		if (isPlaying && radarStepFn) {
+			// Start animation loop if not already running
+			if (!animationFrameId) {
+				animationFrameId = requestAnimationFrame(radarStepFn);
+			}
+		}
 	});
 
 	// Resize map when container size changes (e.g., when day labels change width)

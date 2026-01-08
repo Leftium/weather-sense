@@ -570,10 +570,17 @@ export interface OWOneCallResponse {
 
 **Modify**: `src/lib/ns-weather-data.svelte.ts`
 
-Add new state variables and fetch function:
+#### Hot vs Cold State
+
+The Nation State pattern distinguishes between:
+
+- **HOT STATE** - Changes frequently (e.g., 15fps during scrubbing). Uses `HotState` class with `$state` fields for fine-grained reactivity without proxy overhead. Avoid using in `$derived`/`$effect`.
+- **COLD STATE** - Changes on fetch or user action. Can use `$state({...})` since proxy overhead is negligible for infrequent updates. Safe for reactive binding.
+
+OpenWeather data is **COLD STATE** - it only changes when location changes and data is re-fetched:
 
 ```typescript
-// Add to state variables section (around line 164)
+// COLD STATE - add to cold state section (changes on fetch)
 let owOneCall: OWOneCallResponse | null = $state(null);
 let owAvailable: boolean = $state(false); // Track if OpenWeather is configured
 
@@ -658,8 +665,11 @@ on('weatherdata_requestedSetLocation', async function (params) {
 
 ### Storage Strategy
 
+All data storage is **COLD STATE** (changes on fetch, not during scrubbing):
+
 ```typescript
-// Raw responses (for debugging, stored in state)
+// Raw responses (COLD STATE - changes on fetch only)
+// Using $state({...}) is fine here since proxy overhead is negligible for infrequent updates
 let _raw = $state({
 	om: null as OMForecastResponse | null, // Open-Meteo
 	omAir: null as OMAirQualityResponse | null, // Open-Meteo Air Quality
@@ -667,9 +677,11 @@ let _raw = $state({
 	// Future: pw, vc, etc.
 });
 
-// Unified normalized structure (derived from raw)
+// Unified normalized structure (derived from raw - also COLD)
 const unified = $derived.by(() => mergeProviderData(_raw));
 ```
+
+**Note:** For HOT STATE (like `ms` which changes at 15fps during scrubbing), use the `HotState` class pattern with individual `$state` fields for fine-grained reactivity without proxy overhead. See `ns-weather-data.svelte.ts` for the implementation.
 
 ### Unified Hourly Structure
 

@@ -566,6 +566,9 @@
 			if (skyGradientBgEl) {
 				skyGradientBgEl.style.background = `${gradientH}, ${gradientVTiles}`;
 				skyGradientBgEl.style.backgroundBlendMode = 'overlay';
+				// Update button text colors for contrast (cascades to DailyTiles buttons)
+				skyGradientBgEl.style.setProperty('--btn-text-color', contrastTextColor(colors[1]));
+				skyGradientBgEl.style.setProperty('--btn-text-shadow', contrastTextColor(colors[1], true));
 			}
 		}
 	}
@@ -909,12 +912,12 @@
 			style:--sky-gradient={skyGradient}
 			style:--sky-gradient-horizontal={skyGradientHorizontal}
 			style:--sky-gradient-vertical={skyGradientTilesVertical}
+			style:--btn-text-color={textColor}
+			style:--btn-text-shadow={textShadowColor}
 		>
 			<DailyTiles
 				{nsWeatherData}
 				{forecastDaysVisible}
-				{textColor}
-				{textShadowColor}
 				{maxForecastDays}
 				{groupIcons}
 				onMore={() => (forecastDaysVisible = Math.min(forecastDaysVisible + 2, maxForecastDays))}

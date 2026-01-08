@@ -24,9 +24,6 @@
 		forecastDaysVisible = 5,
 		maxForecastDays = 16,
 
-		textColor = '#333',
-		textShadowColor = 'rgba(248, 248, 255, 0.8)',
-
 		groupIcons = true,
 		onMore,
 		onAll,
@@ -35,9 +32,6 @@
 		nsWeatherData: NsWeatherData;
 		forecastDaysVisible?: number;
 		maxForecastDays?: number;
-
-		textColor?: string;
-		textShadowColor?: string;
 
 		groupIcons?: boolean;
 		onMore?: () => void;
@@ -488,11 +482,7 @@
 		</div>
 	</div>
 
-	<div
-		class="button-bar"
-		style:--btn-text-color={textColor}
-		style:--btn-text-shadow={textShadowColor}
-	>
+	<div class="button-bar">
 		<div class="button-group">
 			<button class="day-count" onclick={() => onMore?.()} disabled={isLoading || !canExpand}>
 				{forecastDaysVisible} day forecast

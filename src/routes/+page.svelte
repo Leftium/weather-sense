@@ -52,7 +52,7 @@
 	dayjs.extend(timezonePlugin);
 
 	const nsWeatherData = makeNsWeatherData();
-	const { emit } = getEmitter<WeatherDataEvents>(import.meta);
+	const { emit, on } = getEmitter<WeatherDataEvents>(import.meta);
 
 	let { data } = $props();
 
@@ -423,173 +423,166 @@
 		return getSkyColorsFullPalette(nsWeatherData.ms, currentDay.sunrise, currentDay.sunset);
 	});
 
-	// Start animation loop - steps through time at constant color speed
-	// Uses setInterval at 15fps instead of RAF to reduce GPU usage
-	// Polls rawMs to avoid Svelte reactivity overhead during scrub
-	$effect(() => {
-		const ANIM_INTERVAL_MS = 1000 / 15; // 15fps
-		let intervalId: ReturnType<typeof setInterval> | null = null;
+	// Animation state - managed outside $effect for persistence
+	let skyAnimationId: ReturnType<typeof setInterval> | null = null;
+	const SKY_ANIM_INTERVAL_MS = 1000 / 15; // 15fps
 
-		function animate() {
-			const deltaTime = ANIM_INTERVAL_MS / 1000;
-			const targetMs = nsWeatherData.rawMs; // Poll non-reactive value
+	function animateSky() {
+		const deltaTime = SKY_ANIM_INTERVAL_MS / 1000;
+		const targetMs = nsWeatherData.rawMs; // Poll non-reactive value
 
-			if (!currentDay) {
-				return;
-			}
-			const targetDayStart = getDayStart(targetMs);
+		if (!currentDay) {
+			return;
+		}
+		const targetDayStart = getDayStart(targetMs);
 
-			// If day changed, teleport display to the correct edge of the new day
-			// Going forward (to later day): teleport to start of new day (00:00)
-			// Going backward (to earlier day): teleport to end of new day (23:59)
-			if (targetDayStart !== lastTargetDayStart) {
-				const goingForward = targetDayStart > lastTargetDayStart;
-				if (goingForward) {
-					// Teleport to start of new day (just after midnight)
-					displayMs = targetDayStart;
-				} else {
-					// Teleport to end of new day (just before midnight of next day)
-					displayMs = targetDayStart + MS_IN_DAY - 1;
-				}
-				lastTargetDayStart = targetDayStart;
-			}
-
-			const diff = targetMs - displayMs;
-			const absDiff = Math.abs(diff);
-
-			// If close enough, snap and stop animation loop
-			if (absDiff < SNAP_THRESHOLD) {
-				displayMs = targetMs;
-				// Don't continue animation - we've reached target
-				// Loop will restart when targetMs changes (via $effect dependency)
-				return;
-			}
-
-			const direction = Math.sign(diff);
-
-			// Determine if we should go fast or normal
-			// Fast (skip) if: multiple transitions AND not in final transition yet
-			const numTransitions = countTransitions(
-				displayMs,
-				targetMs,
-				currentDay.sunrise,
-				currentDay.sunset,
-			);
-			const inFinal = isInFinalTransition(
-				displayMs,
-				targetMs,
-				currentDay.sunrise,
-				currentDay.sunset,
-			);
-			const skipIntermediate = numTransitions > 1 && !inFinal;
-
-			// Calculate time step based on delta time (frame-rate independent)
-			let timeStep: number;
-			if (skipIntermediate) {
-				// Skip intermediate transitions - use max step, but stop at final transition edge
-				timeStep = MAX_TIME_STEP_PER_SEC * deltaTime;
-
-				// Don't skip into the final transition
-				const edge = getFinalTransitionEdge(
-					displayMs,
-					targetMs,
-					currentDay.sunrise,
-					currentDay.sunset,
-				);
-				if (edge !== null) {
-					const distToEdge = Math.abs(edge - displayMs);
-					if (distToEdge < timeStep) {
-						timeStep = distToEdge;
-					}
-				}
+		// If day changed, teleport display to the correct edge of the new day
+		if (targetDayStart !== lastTargetDayStart) {
+			const goingForward = targetDayStart > lastTargetDayStart;
+			if (goingForward) {
+				displayMs = targetDayStart;
 			} else {
-				// Calculate color change rate at current position
-				const sampleStep = 60000; // 1 minute sample
-				const sampleMs = displayMs + direction * sampleStep;
+				displayMs = targetDayStart + MS_IN_DAY - 1;
+			}
+			lastTargetDayStart = targetDayStart;
+		}
 
-				const currentColors = getSkyColors(displayMs, currentDay.sunrise, currentDay.sunset);
-				const sampleColors = getSkyColors(sampleMs, currentDay.sunrise, currentDay.sunset);
+		const diff = targetMs - displayMs;
+		const absDiff = Math.abs(diff);
 
-				// Calculate max color delta across all 3 stops
-				const maxDelta = colorsDelta(currentColors, sampleColors);
+		// If close enough, snap and stop animation
+		if (absDiff < SNAP_THRESHOLD) {
+			displayMs = targetMs;
+			// Update DOM one final time
+			updateSkyGradientDOM();
+			// Stop the interval - no more animation needed until next scrub
+			if (skyAnimationId) {
+				clearInterval(skyAnimationId);
+				skyAnimationId = null;
+			}
+			return;
+		}
 
-				// Target color delta for this frame = per-second rate * delta time
-				const targetDelta = TARGET_COLOR_DELTA_PER_SECOND * deltaTime;
+		const direction = Math.sign(diff);
 
-				if (maxDelta < 0.0001) {
-					// Colors barely changing (midday/midnight), use max step
-					timeStep = MAX_TIME_STEP_PER_SEC * deltaTime;
-				} else {
-					timeStep = (targetDelta / maxDelta) * sampleStep;
+		// Determine if we should go fast or normal
+		// Fast (skip) if: multiple transitions AND not in final transition yet
+		const numTransitions = countTransitions(
+			displayMs,
+			targetMs,
+			currentDay.sunrise,
+			currentDay.sunset,
+		);
+		const inFinal = isInFinalTransition(displayMs, targetMs, currentDay.sunrise, currentDay.sunset);
+		const skipIntermediate = numTransitions > 1 && !inFinal;
+
+		// Calculate time step based on delta time (frame-rate independent)
+		let timeStep: number;
+		if (skipIntermediate) {
+			// Skip intermediate transitions - use max step, but stop at final transition edge
+			timeStep = MAX_TIME_STEP_PER_SEC * deltaTime;
+
+			// Don't skip into the final transition
+			const edge = getFinalTransitionEdge(
+				displayMs,
+				targetMs,
+				currentDay.sunrise,
+				currentDay.sunset,
+			);
+			if (edge !== null) {
+				const distToEdge = Math.abs(edge - displayMs);
+				if (distToEdge < timeStep) {
+					timeStep = distToEdge;
 				}
 			}
+		} else {
+			// Calculate color change rate at current position
+			const sampleStep = 60000; // 1 minute sample
+			const sampleMs = displayMs + direction * sampleStep;
 
-			// Clamp time step (scaled by deltaTime for frame-rate independence)
-			const minStep = MIN_TIME_STEP_PER_SEC * deltaTime;
-			const maxStep = MAX_TIME_STEP_PER_SEC * deltaTime;
-			timeStep = Math.max(minStep, Math.min(maxStep, timeStep));
+			const currentColors = getSkyColors(displayMs, currentDay.sunrise, currentDay.sunset);
+			const sampleColors = getSkyColors(sampleMs, currentDay.sunrise, currentDay.sunset);
 
-			// Don't overshoot target
-			if (timeStep > absDiff) {
-				timeStep = absDiff;
-			}
+			// Calculate max color delta across all 3 stops
+			const maxDelta = colorsDelta(currentColors, sampleColors);
 
-			// Step toward target (non-reactive, just a local variable)
-			displayMs = displayMs + direction * timeStep;
+			// Target color delta for this frame = per-second rate * delta time
+			const targetDelta = TARGET_COLOR_DELTA_PER_SECOND * deltaTime;
 
-			// Direct DOM update for gradients (bypasses Svelte reactivity)
-			const day = findDayForMs(displayMs);
-			if (day) {
-				const colors = getSkyColorsFullPalette(displayMs, day.sunrise, day.sunset);
-
-				// Calculate boundary color for seamless vertical gradient
-				const total = stickyHeight + tilesHeight;
-				const ratio = stickyHeight / total;
-				let boundaryCol: string;
-				if (ratio <= 0.5) {
-					const t = ratio / 0.5;
-					boundaryCol = mixColors(colors[0], colors[1], t);
-				} else {
-					const t = (ratio - 0.5) / 0.5;
-					boundaryCol = mixColors(colors[1], colors[2], t);
-				}
-
-				// Horizontal gradient for vivid overlay
-				const gradientH = `linear-gradient(90deg, ${colors[2]} 0%, ${colors[1]} 50%, ${colors[0]} 100%)`;
-				// Seamless vertical gradients - sticky goes top to boundary, tiles goes boundary to bottom
-				const gradientVSticky = `linear-gradient(180deg, ${colors[0]} 0%, ${boundaryCol} 100%)`;
-				const gradientVTiles = `linear-gradient(180deg, ${boundaryCol} 0%, ${colors[2]} 100%)`;
-
-				if (stickyInfoEl) {
-					stickyInfoEl.style.background = `${gradientH}, ${gradientVSticky}`;
-					stickyInfoEl.style.backgroundBlendMode = 'overlay';
-					// Update text color for contrast
-					stickyInfoEl.style.color = contrastTextColor(colors[1]);
-				}
-				if (skyGradientBgEl) {
-					skyGradientBgEl.style.background = `${gradientH}, ${gradientVTiles}`;
-					skyGradientBgEl.style.backgroundBlendMode = 'overlay';
-				}
-			}
-
-			// Only update reactive state occasionally (for text color, etc.)
-			// Skip during active tracking to minimize Svelte overhead
-			if (!nsWeatherData.trackedElement) {
-				throttledDisplayMs = displayMs;
+			if (maxDelta < 0.0001) {
+				// Colors barely changing (midday/midnight), use max step
+				timeStep = MAX_TIME_STEP_PER_SEC * deltaTime;
+			} else {
+				timeStep = (targetDelta / maxDelta) * sampleStep;
 			}
 		}
 
-		// Run animation at 15fps using setInterval
-		intervalId = setInterval(animate, ANIM_INTERVAL_MS);
-		// Run once immediately
-		animate();
+		// Clamp time step (scaled by deltaTime for frame-rate independence)
+		const minStep = MIN_TIME_STEP_PER_SEC * deltaTime;
+		const maxStep = MAX_TIME_STEP_PER_SEC * deltaTime;
+		timeStep = Math.max(minStep, Math.min(maxStep, timeStep));
 
-		return () => {
-			if (intervalId) {
-				clearInterval(intervalId);
-				intervalId = null;
+		// Don't overshoot target
+		if (timeStep > absDiff) {
+			timeStep = absDiff;
+		}
+
+		// Step toward target (non-reactive, just a local variable)
+		displayMs = displayMs + direction * timeStep;
+
+		// Update DOM
+		updateSkyGradientDOM();
+
+		// Only update reactive state occasionally (for text color, etc.)
+		// Skip during active tracking to minimize Svelte overhead
+		if (!nsWeatherData.trackedElement) {
+			throttledDisplayMs = displayMs;
+		}
+	}
+
+	function updateSkyGradientDOM() {
+		const day = findDayForMs(displayMs);
+		if (day) {
+			const colors = getSkyColorsFullPalette(displayMs, day.sunrise, day.sunset);
+
+			// Calculate boundary color for seamless vertical gradient
+			const total = stickyHeight + tilesHeight;
+			const ratio = stickyHeight / total;
+			let boundaryCol: string;
+			if (ratio <= 0.5) {
+				const t = ratio / 0.5;
+				boundaryCol = mixColors(colors[0], colors[1], t);
+			} else {
+				const t = (ratio - 0.5) / 0.5;
+				boundaryCol = mixColors(colors[1], colors[2], t);
 			}
-		};
+
+			// Horizontal gradient for vivid overlay
+			const gradientH = `linear-gradient(90deg, ${colors[2]} 0%, ${colors[1]} 50%, ${colors[0]} 100%)`;
+			// Seamless vertical gradients - sticky goes top to boundary, tiles goes boundary to bottom
+			const gradientVSticky = `linear-gradient(180deg, ${colors[0]} 0%, ${boundaryCol} 100%)`;
+			const gradientVTiles = `linear-gradient(180deg, ${boundaryCol} 0%, ${colors[2]} 100%)`;
+
+			if (stickyInfoEl) {
+				stickyInfoEl.style.background = `${gradientH}, ${gradientVSticky}`;
+				stickyInfoEl.style.backgroundBlendMode = 'overlay';
+				// Update text color for contrast
+				stickyInfoEl.style.color = contrastTextColor(colors[1]);
+			}
+			if (skyGradientBgEl) {
+				skyGradientBgEl.style.background = `${gradientH}, ${gradientVTiles}`;
+				skyGradientBgEl.style.backgroundBlendMode = 'overlay';
+			}
+		}
+	}
+
+	// Start sky animation when tracking starts, via frameTick event
+	on('weatherdata_frameTick', () => {
+		// Start animation loop if not already running
+		if (!skyAnimationId) {
+			skyAnimationId = setInterval(animateSky, SKY_ANIM_INTERVAL_MS);
+			animateSky(); // Run once immediately
+		}
 	});
 
 	// Detect iOS for gradient workaround (CSS @supports doesn't work for JS-generated styles)

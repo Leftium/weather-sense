@@ -613,14 +613,14 @@
 		z-index: 6; // Above tracker-line (5), below overlay (10)
 	}
 
-	// Tracker SVG - highest z-index for GPU efficiency
+	// Tracker SVG - between precip bars and text labels
 	.tracker-svg {
 		position: absolute;
 		top: 0;
 		left: 0;
 		width: 100%;
 		height: 100%;
-		z-index: 100; // Above everything
+		z-index: 5; // Behind tile-content (6) and overlay/labels (10)
 		pointer-events: none;
 	}
 

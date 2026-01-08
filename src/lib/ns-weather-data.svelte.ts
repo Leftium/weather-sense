@@ -36,6 +36,9 @@ export type WeatherDataEvents = {
 	weatherdata_requestedTrackingStart: { node: HTMLElement };
 
 	weatherdata_requestedTrackingEnd: undefined;
+
+	// Emitted at 15fps during tracking for synchronized tracker updates
+	weatherdata_frameTick: { ms: number };
 };
 
 const DATEFORMAT_MASK = 'MM-DD hh:mma z';
@@ -153,6 +156,11 @@ export function makeNsWeatherData() {
 
 	// The time (in ms) for which to render weather data:
 	let msTracker = $state(Date.now());
+	// Non-reactive version for polling-based components (avoids Svelte overhead)
+	let rawMs = Date.now();
+	// Frame-synced ms - updated at 15fps for synchronized tracker rendering
+	let frameMs = Date.now();
+	let frameIntervalId: ReturnType<typeof setInterval> | null = null;
 
 	// The timezone for this data.
 	let timezone = $state('Greenwich'); // GMT
@@ -655,12 +663,19 @@ export function makeNsWeatherData() {
 		on('weatherdata_requestedSetTime', function (params) {
 			// gg('weatherdata_requestedSetTime', params);
 
-			msTracker = params.ms;
+			// Always update non-reactive rawMs (for polling components)
+			rawMs = params.ms;
+
+			// Only update reactive msTracker when NOT tracking (avoids Svelte overhead during scrub)
+			if (!trackedElement) {
+				msTracker = params.ms;
+			}
 
 			const msMaxRadar = (radar.frames.at(-1)?.ms || 0) + 10 * MS_IN_MINUTE;
-			if (msTracker > msMaxRadar) {
+			if (rawMs > msMaxRadar) {
 				radarPlaying = false;
 				if (!trackedElement) {
+					rawMs = Date.now();
 					msTracker = Date.now();
 					resetRadarOnPlay = true;
 				}
@@ -670,18 +685,36 @@ export function makeNsWeatherData() {
 		on('weatherdata_requestedTrackingStart', function (params) {
 			//gg('weatherdata_requestedTrackingStart');
 			trackedElement = params.node;
+
+			// Start frame sync at 15fps for synchronized tracker rendering
+			if (!frameIntervalId) {
+				frameIntervalId = setInterval(() => {
+					frameMs = rawMs;
+					// Emit event so all trackers update on same tick
+					emit('weatherdata_frameTick', { ms: frameMs });
+				}, 1000 / 15);
+			}
 		});
 
 		on('weatherdata_requestedTrackingEnd', function () {
 			//gg('weatherdata_requestedTrackingEnd');
 			trackedElement = null;
+			rawMs = Date.now();
+			frameMs = Date.now();
 			msTracker = Date.now();
+
+			// Stop frame sync
+			if (frameIntervalId) {
+				clearInterval(frameIntervalId);
+				frameIntervalId = null;
+			}
 		});
 
 		on('weatherdata_requestedTogglePlay', function () {
 			radarPlaying = !radarPlaying;
 
 			if (resetRadarOnPlay && radar.frames?.length) {
+				rawMs = radar.frames[0].ms;
 				msTracker = radar.frames[0].ms;
 			}
 			resetRadarOnPlay = false;
@@ -734,6 +767,16 @@ export function makeNsWeatherData() {
 
 		get ms() {
 			return msTracker;
+		},
+
+		// Non-reactive ms for polling-based updates (trackers, etc.)
+		get rawMs() {
+			return rawMs;
+		},
+
+		// Frame-synced ms - all trackers read this for synchronized rendering
+		get frameMs() {
+			return frameMs;
 		},
 
 		get radar() {

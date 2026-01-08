@@ -423,12 +423,11 @@
 		return getSkyColorsFullPalette(nsWeatherData.ms, currentDay.sunrise, currentDay.sunset);
 	});
 
-	// Animation state - managed outside $effect for persistence
-	let skyAnimationId: ReturnType<typeof setInterval> | null = null;
-	const SKY_ANIM_INTERVAL_MS = 1000 / 15; // 15fps
+	// Sky animation runs via frameTick event from ns-weather-data's RAF loop
+	const FRAME_INTERVAL = 1000 / 15; // 15fps (matches ns-weather-data)
 
 	function animateSky() {
-		const deltaTime = SKY_ANIM_INTERVAL_MS / 1000;
+		const deltaTime = FRAME_INTERVAL / 1000;
 		const targetMs = nsWeatherData.rawMs; // Poll non-reactive value
 
 		if (!currentDay) {
@@ -450,16 +449,11 @@
 		const diff = targetMs - displayMs;
 		const absDiff = Math.abs(diff);
 
-		// If close enough, snap and stop animation
+		// If close enough, snap (animation continues via frameTick until tracking ends)
 		if (absDiff < SNAP_THRESHOLD) {
 			displayMs = targetMs;
 			// Update DOM one final time
 			updateSkyGradientDOM();
-			// Stop the interval - no more animation needed until next scrub
-			if (skyAnimationId) {
-				clearInterval(skyAnimationId);
-				skyAnimationId = null;
-			}
 			return;
 		}
 
@@ -576,13 +570,46 @@
 		}
 	}
 
-	// Start sky animation when tracking starts, via frameTick event
+	// Run sky animation on every frame tick (15fps from ns-weather-data's RAF loop)
 	on('weatherdata_frameTick', () => {
-		// Start animation loop if not already running
-		if (!skyAnimationId) {
-			skyAnimationId = setInterval(animateSky, SKY_ANIM_INTERVAL_MS);
-			animateSky(); // Run once immediately
+		animateSky();
+	});
+
+	// Continue sky animation after tracking ends until it reaches target
+	let skyFinishRafId: number | null = null;
+	let lastSkyFinishTime = 0;
+
+	on('weatherdata_requestedTrackingEnd', () => {
+		// Continue animating sky at 15fps until it reaches current time
+		lastSkyFinishTime = performance.now();
+
+		function finishSkyAnimation(now: number) {
+			// Throttle to 15fps
+			if (now - lastSkyFinishTime < FRAME_INTERVAL) {
+				skyFinishRafId = requestAnimationFrame(finishSkyAnimation);
+				return;
+			}
+			lastSkyFinishTime = now;
+
+			const targetMs = nsWeatherData.rawMs;
+			const diff = Math.abs(targetMs - displayMs);
+
+			if (diff > SNAP_THRESHOLD) {
+				animateSky();
+				skyFinishRafId = requestAnimationFrame(finishSkyAnimation);
+			} else {
+				// Done - snap to final position
+				displayMs = targetMs;
+				updateSkyGradientDOM();
+				skyFinishRafId = null;
+			}
 		}
+
+		// Cancel any existing finish animation
+		if (skyFinishRafId !== null) {
+			cancelAnimationFrame(skyFinishRafId);
+		}
+		skyFinishRafId = requestAnimationFrame(finishSkyAnimation);
 	});
 
 	// Detect iOS for gradient workaround (CSS @supports doesn't work for JS-generated styles)
@@ -705,6 +732,11 @@
 
 	onDestroy(() => {
 		clearEvents();
+		// Clean up sky finish animation if running
+		if (skyFinishRafId !== null) {
+			cancelAnimationFrame(skyFinishRafId);
+			skyFinishRafId = null;
+		}
 	});
 
 	// Detect wide layout using matchMedia (separate breakpoints for collapsed vs expanded)

@@ -158,9 +158,10 @@ export function makeNsWeatherData() {
 	let msTracker = $state(Date.now());
 	// Non-reactive version for polling-based components (avoids Svelte overhead)
 	let rawMs = Date.now();
-	// Frame-synced ms - updated at 15fps for synchronized tracker rendering
-	let frameMs = Date.now();
-	let frameIntervalId: ReturnType<typeof setInterval> | null = null;
+	// RAF-based frame loop state (replaces setInterval for better timing)
+	let frameRafId: number | null = null;
+	let lastFrameTime = 0;
+	const FRAME_INTERVAL = 1000 / 15; // 15fps
 
 	// The timezone for this data.
 	let timezone = $state('Greenwich'); // GMT
@@ -686,13 +687,20 @@ export function makeNsWeatherData() {
 			//gg('weatherdata_requestedTrackingStart');
 			trackedElement = params.node;
 
-			// Start frame sync at 15fps for synchronized tracker rendering
-			if (!frameIntervalId) {
-				frameIntervalId = setInterval(() => {
-					frameMs = rawMs;
-					// Emit event so all trackers update on same tick
-					emit('weatherdata_frameTick', { ms: frameMs });
-				}, 1000 / 15);
+			// Start RAF-based frame loop at 15fps for synchronized tracker rendering
+			if (frameRafId === null) {
+				lastFrameTime = performance.now();
+				function frameTick(now: number) {
+					if (frameRafId === null) return; // Stopped
+
+					if (now - lastFrameTime >= FRAME_INTERVAL) {
+						lastFrameTime = now;
+						emit('weatherdata_frameTick', { ms: rawMs });
+					}
+
+					frameRafId = requestAnimationFrame(frameTick);
+				}
+				frameRafId = requestAnimationFrame(frameTick);
 			}
 		});
 
@@ -700,14 +708,16 @@ export function makeNsWeatherData() {
 			//gg('weatherdata_requestedTrackingEnd');
 			trackedElement = null;
 			rawMs = Date.now();
-			frameMs = Date.now();
 			msTracker = Date.now();
 
-			// Stop frame sync
-			if (frameIntervalId) {
-				clearInterval(frameIntervalId);
-				frameIntervalId = null;
+			// Stop frame loop
+			if (frameRafId !== null) {
+				cancelAnimationFrame(frameRafId);
+				frameRafId = null;
 			}
+
+			// Emit final frame tick so animations can complete
+			emit('weatherdata_frameTick', { ms: rawMs });
 		});
 
 		on('weatherdata_requestedTogglePlay', function () {
@@ -772,11 +782,6 @@ export function makeNsWeatherData() {
 		// Non-reactive ms for polling-based updates (trackers, etc.)
 		get rawMs() {
 			return rawMs;
-		},
-
-		// Frame-synced ms - all trackers read this for synchronized rendering
-		get frameMs() {
-			return frameMs;
 		},
 
 		get radar() {

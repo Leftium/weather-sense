@@ -895,6 +895,14 @@
 		},
 	});
 
+	// All UI state that should trigger a plot re-render (centralized for easy maintenance)
+	// NOTE: Data changes (nsWeatherData) trigger via events, not here
+	const plotTriggers = $derived({
+		draw, // plotVisibility checkboxes
+		showSkyThroughWmo, // WMO label band tap toggle
+		groupIcons, // Summary icon click (group/ungroup WMO codes)
+	});
+
 	// @ts-expect-error: x.type is valid.
 	const xScale = $derived(Plot.scale({ x: plotOptions.x }));
 	const yScale = $derived(Plot.scale({ y: plotOptions.y }));
@@ -1606,13 +1614,9 @@
 		updateTracker(ms);
 	});
 
-	// Update entire plot when plotVisibility or showSkyThroughWmo changes.
+	// Update entire plot when UI state changes (plotTriggers centralizes all dependencies)
 	$effect(() => {
-		// Track the draw object (derived from plotVisibility)
-		draw;
-		// Track module-level state for WMO label band toggle
-		showSkyThroughWmo;
-		// Use untrack to prevent plotData's internal reactive reads from becoming dependencies
+		plotTriggers;
 		untrack(() => plotData());
 	});
 

@@ -925,7 +925,12 @@
 			trackerRect = null;
 
 			// Create new group - use will-change for GPU compositing
-			trackerGroup = pg.append('g').attr('class', 'tracker-rect').style('will-change', 'transform');
+			// pointer-events: none allows clicks to pass through to container for tap detection
+			trackerGroup = pg
+				.append('g')
+				.attr('class', 'tracker-rect')
+				.style('will-change', 'transform')
+				.style('pointer-events', 'none');
 
 			// Create extended line first (behind) - white line for ghost trackers below
 			if (extendTracker && !isGhost) {
@@ -1601,10 +1606,12 @@
 		updateTracker(ms);
 	});
 
-	// Update entire plot when plotVisibility changes.
+	// Update entire plot when plotVisibility or showSkyThroughWmo changes.
 	$effect(() => {
 		// Track the draw object (derived from plotVisibility)
 		draw;
+		// Track module-level state for WMO label band toggle
+		showSkyThroughWmo;
 		// Use untrack to prevent plotData's internal reactive reads from becoming dependencies
 		untrack(() => plotData());
 	});

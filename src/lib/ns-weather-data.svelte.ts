@@ -1,4 +1,24 @@
-// Defines nation-state for weather data.
+/**
+ * Nation State for weather data.
+ *
+ * The "Nation State" (NS) pattern creates a scope between local and global:
+ * - Read-only outside: External code can only read values via getters
+ * - Write via events: To modify state, emit a `weatherdata_requested*` event
+ * - Centralized mutations: All writes happen inside the NS
+ *
+ * ## Event Naming Convention
+ * - `weatherdata_requested*` = Command events (external → NS)
+ * - `weatherdata_updated*` / `weatherdata_*Ended` = Notification events (NS → external)
+ *
+ * ## Hot vs Cold State
+ *
+ * HOT STATE (changes during scrubbing at 15fps - avoid in $derived/$effect):
+ * - _hot.ms, _hot.rawMs, _hot.radarPlaying, _hot.trackedElement
+ * - Use `weatherdata_frameTick` event or `rawMs` polling instead of reactive binding
+ *
+ * COLD STATE (changes on fetch/user action - safe for reactive binding):
+ * - coords, timezone, units, hourly, daily, dataForecast, radar, etc.
+ */
 
 import { forEach, get, map, maxBy, minBy, uniq } from 'lodash-es';
 
@@ -39,6 +59,9 @@ export type WeatherDataEvents = {
 
 	// Emitted at 15fps during tracking for synchronized tracker updates
 	weatherdata_frameTick: { ms: number };
+
+	// Emitted after tracking ends (notification for UI cleanup/animation)
+	weatherdata_trackingEnded: undefined;
 };
 
 const DATEFORMAT_MASK = 'MM-DD hh:mma z';
@@ -146,29 +169,50 @@ import { tick, untrack } from 'svelte';
 dayjs.extend(utc);
 dayjs.extend(timezonePlugin);
 
+/**
+ * Hot state class - changes frequently during scrubbing (15fps).
+ * Uses class fields with $state for fine-grained reactivity without proxy overhead.
+ * WARNING: Avoid using these in $derived/$effect - use events or rawMs instead.
+ */
+class HotState {
+	/** Reactive time for rendering */
+	ms = $state(Date.now());
+	/** Non-reactive for polling (avoids Svelte overhead) */
+	rawMs = Date.now();
+	/** Whether radar animation is playing */
+	radarPlaying = $state(false);
+	/** Currently tracked element (during scrubbing) */
+	trackedElement = $state<HTMLElement | null>(null);
+	/** RAF loop ID (internal) */
+	frameRafId: number | null = null;
+	/** Last frame timestamp (internal) */
+	lastFrameTime = 0;
+}
+
 export function makeNsWeatherData() {
 	//gg('makeNsWeatherData');
 
-	// Inputs:
+	// ==========================================================================
+	// HOT STATE - Changes frequently during scrubbing (15fps)
+	// ==========================================================================
+	const _hot = new HotState();
+	const FRAME_INTERVAL = 1000 / 15; // 15fps
+
+	// ==========================================================================
+	// COLD STATE - Changes on fetch/user action (safe for reactive binding)
+	// ==========================================================================
+
+	// Location inputs
 	let coords: Coordinates | null = $state(null);
 	let name: string | null = $state(null);
 	let source: string = $state('???');
 
-	// The time (in ms) for which to render weather data:
-	let msTracker = $state(Date.now());
-	// Non-reactive version for polling-based components (avoids Svelte overhead)
-	let rawMs = Date.now();
-	// RAF-based frame loop state (replaces setInterval for better timing)
-	let frameRafId: number | null = null;
-	let lastFrameTime = 0;
-	const FRAME_INTERVAL = 1000 / 15; // 15fps
-
-	// The timezone for this data.
+	// Timezone
 	let timezone = $state('Greenwich'); // GMT
 	let timezoneAbbreviation = $state('GMT'); // GMT
 	let utcOffsetSeconds = $state(0);
 
-	let radarPlaying = $state(false);
+	// Radar (cold - frames change on fetch, not during playback)
 	let resetRadarOnPlay = $state(true);
 	let radar: Radar = $state({ generated: 0, host: '', frames: [] });
 
@@ -665,19 +709,19 @@ export function makeNsWeatherData() {
 			// gg('weatherdata_requestedSetTime', params);
 
 			// Always update non-reactive rawMs (for polling components)
-			rawMs = params.ms;
+			_hot.rawMs = params.ms;
 
-			// Only update reactive msTracker when NOT tracking (avoids Svelte overhead during scrub)
-			if (!trackedElement) {
-				msTracker = params.ms;
+			// Only update reactive ms when NOT tracking (avoids Svelte overhead during scrub)
+			if (!_hot.trackedElement) {
+				_hot.ms = params.ms;
 			}
 
 			const msMaxRadar = (radar.frames.at(-1)?.ms || 0) + 10 * MS_IN_MINUTE;
-			if (rawMs > msMaxRadar) {
-				radarPlaying = false;
-				if (!trackedElement) {
-					rawMs = Date.now();
-					msTracker = Date.now();
+			if (_hot.rawMs > msMaxRadar) {
+				_hot.radarPlaying = false;
+				if (!_hot.trackedElement) {
+					_hot.rawMs = Date.now();
+					_hot.ms = Date.now();
 					resetRadarOnPlay = true;
 				}
 			}
@@ -685,47 +729,50 @@ export function makeNsWeatherData() {
 
 		on('weatherdata_requestedTrackingStart', function (params) {
 			//gg('weatherdata_requestedTrackingStart');
-			trackedElement = params.node;
+			_hot.trackedElement = params.node;
 
 			// Start RAF-based frame loop at 15fps for synchronized tracker rendering
-			if (frameRafId === null) {
-				lastFrameTime = performance.now();
+			if (_hot.frameRafId === null) {
+				_hot.lastFrameTime = performance.now();
 				function frameTick(now: number) {
-					if (frameRafId === null) return; // Stopped
+					if (_hot.frameRafId === null) return; // Stopped
 
-					if (now - lastFrameTime >= FRAME_INTERVAL) {
-						lastFrameTime = now;
-						emit('weatherdata_frameTick', { ms: rawMs });
+					if (now - _hot.lastFrameTime >= FRAME_INTERVAL) {
+						_hot.lastFrameTime = now;
+						emit('weatherdata_frameTick', { ms: _hot.rawMs });
 					}
 
-					frameRafId = requestAnimationFrame(frameTick);
+					_hot.frameRafId = requestAnimationFrame(frameTick);
 				}
-				frameRafId = requestAnimationFrame(frameTick);
+				_hot.frameRafId = requestAnimationFrame(frameTick);
 			}
 		});
 
 		on('weatherdata_requestedTrackingEnd', function () {
 			//gg('weatherdata_requestedTrackingEnd');
-			trackedElement = null;
-			rawMs = Date.now();
-			msTracker = Date.now();
+			_hot.trackedElement = null;
+			_hot.rawMs = Date.now();
+			_hot.ms = Date.now();
 
 			// Stop frame loop
-			if (frameRafId !== null) {
-				cancelAnimationFrame(frameRafId);
-				frameRafId = null;
+			if (_hot.frameRafId !== null) {
+				cancelAnimationFrame(_hot.frameRafId);
+				_hot.frameRafId = null;
 			}
 
 			// Emit final frame tick so animations can complete
-			emit('weatherdata_frameTick', { ms: rawMs });
+			emit('weatherdata_frameTick', { ms: _hot.rawMs });
+
+			// Notify listeners that tracking has ended (for UI cleanup/animation)
+			emit('weatherdata_trackingEnded');
 		});
 
 		on('weatherdata_requestedTogglePlay', function () {
-			radarPlaying = !radarPlaying;
+			_hot.radarPlaying = !_hot.radarPlaying;
 
 			if (resetRadarOnPlay && radar.frames?.length) {
-				rawMs = radar.frames[0].ms;
-				msTracker = radar.frames[0].ms;
+				_hot.rawMs = radar.frames[0].ms;
+				_hot.ms = radar.frames[0].ms;
 			}
 			resetRadarOnPlay = false;
 		});
@@ -775,21 +822,28 @@ export function makeNsWeatherData() {
 			return name;
 		},
 
+		// --- Hot state (changes at 15fps during scrubbing) ---
+		// WARNING: Avoid using these in $derived/$effect - use events or rawMs instead
 		get ms() {
-			return msTracker;
+			return _hot.ms;
 		},
 
 		// Non-reactive ms for polling-based updates (trackers, etc.)
 		get rawMs() {
-			return rawMs;
-		},
-
-		get radar() {
-			return radar;
+			return _hot.rawMs;
 		},
 
 		get radarPlaying() {
-			return radarPlaying;
+			return _hot.radarPlaying;
+		},
+
+		get trackedElement() {
+			return _hot.trackedElement;
+		},
+
+		// --- Cold state (safe for reactive binding) ---
+		get radar() {
+			return radar;
 		},
 
 		get current() {
@@ -824,44 +878,41 @@ export function makeNsWeatherData() {
 			return intervals;
 		},
 
-		get trackedElement() {
-			return trackedElement;
-		},
-
+		// --- Display values (derived from hot.ms - use sparingly) ---
 		get displayTemperature() {
-			return dataForecast.get(startOf(msTracker, 'hour', timezone))?.temperature;
+			return dataForecast.get(startOf(_hot.ms, 'hour', timezone))?.temperature;
 		},
 
 		get displayWeatherCode() {
-			return dataForecast.get(startOf(msTracker, 'hour', timezone))?.weatherCode;
+			return dataForecast.get(startOf(_hot.ms, 'hour', timezone))?.weatherCode;
 		},
 
 		get displayIsDay() {
-			return dataForecast.get(startOf(msTracker, 'hour', timezone))?.isDay ?? true;
+			return dataForecast.get(startOf(_hot.ms, 'hour', timezone))?.isDay ?? true;
 		},
 
 		get displayHumidity() {
-			return dataForecast.get(startOf(msTracker, 'hour', timezone))?.humidity;
+			return dataForecast.get(startOf(_hot.ms, 'hour', timezone))?.humidity;
 		},
 
 		get displayDewPoint() {
-			return dataForecast.get(startOf(msTracker, 'hour', timezone))?.dewPoint;
+			return dataForecast.get(startOf(_hot.ms, 'hour', timezone))?.dewPoint;
 		},
 
 		get displayPrecipitation() {
-			return dataForecast.get(startOf(msTracker, 'hour', timezone))?.precipitation.toFixed(1);
+			return dataForecast.get(startOf(_hot.ms, 'hour', timezone))?.precipitation.toFixed(1);
 		},
 
 		get displayPrecipitationProbability() {
-			return dataForecast.get(startOf(msTracker, 'hour', timezone))?.precipitationProbability;
+			return dataForecast.get(startOf(_hot.ms, 'hour', timezone))?.precipitationProbability;
 		},
 
 		get displayAqiUs() {
-			return dataAirQuality.get(startOf(msTracker, 'hour', timezone))?.aqiUs;
+			return dataAirQuality.get(startOf(_hot.ms, 'hour', timezone))?.aqiUs;
 		},
 
 		get displayAqiEurope() {
-			return dataAirQuality.get(startOf(msTracker, 'hour', timezone))?.aqiEurope;
+			return dataAirQuality.get(startOf(_hot.ms, 'hour', timezone))?.aqiEurope;
 		},
 
 		get timezone() {

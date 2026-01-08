@@ -582,7 +582,7 @@
 	let skyFinishRafId: number | null = null;
 	let lastSkyFinishTime = 0;
 
-	on('weatherdata_requestedTrackingEnd', () => {
+	on('weatherdata_trackingEnded', () => {
 		// Continue animating sky at 15fps until it reaches current time
 		lastSkyFinishTime = performance.now();
 

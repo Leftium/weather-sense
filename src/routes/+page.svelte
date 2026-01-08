@@ -573,10 +573,6 @@
 				skyGradientBgEl.style.setProperty('--btn-text-color', contrastTextColor(colors[1]));
 				skyGradientBgEl.style.setProperty('--btn-text-shadow', contrastTextColor(colors[1], true));
 			}
-
-			// Update body background (for viewport edges behind content)
-			// Use solid middle color instead of gradient - much cheaper to render
-			document.body.style.setProperty('--sky-gradient', colors[1]);
 		}
 	}
 
@@ -1152,10 +1148,9 @@
 	$size-1: 0.25rem;
 	$size-3: 1rem;
 
-	// Full viewport sky gradient on body
+	// Plain ghost white body background (matches content, sky gradient removed for performance)
 	:global(body) {
-		background: var(--sky-gradient);
-		background-attachment: fixed;
+		background: $color-ghost-white;
 		min-height: 100vh;
 	}
 

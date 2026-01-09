@@ -328,6 +328,30 @@ export function renderSkyGradient(altitude: number): SkyGradientResult {
  * @returns Sun altitude in radians (negative = below horizon)
  */
 export function getSunAltitude(ms: number, sunrise: number, sunset: number): number {
+	const DAY_MS = 24 * 60 * 60 * 1000;
+
+	// Handle cross-midnight case (sunrise > sunset in display timezone)
+	// This happens when viewing a location in a very different timezone
+	// e.g., viewing Minnesota (UTC-6) from Seoul (UTC+9): sunrise appears at 22:49, sunset at 07:49
+	if (sunrise > sunset) {
+		// Normalize so sunrise < sunset by shifting times into a consistent frame
+		// The key insight: daytime is between sunset and sunrise in this case
+		if (ms >= sunset && ms < sunrise) {
+			// ms is in "daytime" (between sunset and sunrise)
+			// Shift sunset forward by 24h so sunrise < sunset
+			sunset += DAY_MS;
+		} else if (ms < sunset) {
+			// ms is after midnight but before sunset (early morning, still "daytime")
+			// Shift both ms and sunset forward
+			ms += DAY_MS;
+			sunset += DAY_MS;
+		} else {
+			// ms >= sunrise (evening/night)
+			// Just shift sunset forward
+			sunset += DAY_MS;
+		}
+	}
+
 	const dayLength = sunset - sunrise;
 
 	// Approximate max altitude based on day length (longer days = higher sun)
@@ -340,7 +364,7 @@ export function getSunAltitude(ms: number, sunrise: number, sunset: number): num
 		// Calculate progress from previous midnight to sunrise
 		// timeUntilSunrise goes from large (at midnight) to 0 (at sunrise)
 		const timeUntilSunrise = sunrise - ms;
-		const halfNightLength = (24 * 60 * 60 * 1000 - dayLength) / 2;
+		const halfNightLength = (DAY_MS - dayLength) / 2;
 		// At midnight, timeUntilSunrise ~ halfNightLength, progress ~ 0
 		// At sunrise, timeUntilSunrise ~ 0, progress ~ 1
 		const progress = 1 - timeUntilSunrise / halfNightLength;
@@ -350,7 +374,7 @@ export function getSunAltitude(ms: number, sunrise: number, sunset: number): num
 	} else if (ms > sunset) {
 		// After sunset - sun is below horizon
 		const timeSinceSunset = ms - sunset;
-		const halfNightLength = (24 * 60 * 60 * 1000 - dayLength) / 2;
+		const halfNightLength = (DAY_MS - dayLength) / 2;
 		// At sunset, timeSinceSunset ~ 0, progress ~ 0
 		// At midnight, timeSinceSunset ~ halfNightLength, progress ~ 1
 		const progress = timeSinceSunset / halfNightLength;

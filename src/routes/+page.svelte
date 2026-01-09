@@ -31,6 +31,7 @@
 		DAY_START_HOUR,
 		mixColors,
 		lerpPaletteFast,
+		getSunAltitude,
 	} from '$lib/util.js';
 	import { iconSetStore } from '$lib/iconSet.svelte';
 	import RadarMapLibre from './RadarMapLibre.svelte';
@@ -331,7 +332,7 @@
 	let wasTracking = false;
 	let lastTrackedElement: HTMLElement | null = null;
 
-	// Transition state
+	// Transition state (for enter/leave/switch)
 	const TRANSITION_DURATION = 200; // ms
 	const SETTLE_DELAY = 100; // ms - wait for mouse to settle before transitioning
 	let transitionStartTime: number | null = null;
@@ -339,6 +340,13 @@
 	let transitionTargetColors: string[] = DEFAULT_COLORS;
 	let transitionRafId: number | null = null;
 	let settleTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
+	// Time-based animation state (for scrubbing within plot)
+	const TARGET_COLOR_DELTA_PER_FRAME = 0.5 / 15; // Color change per frame at 15fps
+	const MIN_TIME_STEP = 30000; // Min 30 seconds per frame
+	const MAX_TIME_STEP = 14400000; // Max 4 hours per frame
+	const SNAP_THRESHOLD = 30000; // Snap when within 30 seconds
+	let scrubTargetMs: number = Date.now();
 
 	// easeOutExpo - fast start, slow end
 	function ease(t: number): number {
@@ -352,6 +360,96 @@
 		const day = findDayForMs(targetMs);
 		if (!day) return DEFAULT_COLORS;
 		return getSkyColorsFullPalette(targetMs, day.sunrise, day.sunset);
+	}
+
+	/**
+	 * Count dawn/dusk transition zones that overlap with the range between two times.
+	 * A transition zone is sunrise/sunset ± 1 hour.
+	 */
+	function countTransitions(fromMs: number, toMs: number, sunrise: number, sunset: number): number {
+		const minMs = Math.min(fromMs, toMs);
+		const maxMs = Math.max(fromMs, toMs);
+		let count = 0;
+
+		// Check if sunrise transition zone (sunrise ± 1 hour) overlaps with range
+		if (sunrise - MS_IN_HOUR < maxMs && sunrise + MS_IN_HOUR > minMs) {
+			count++;
+		}
+		// Check if sunset transition zone (sunset ± 1 hour) overlaps with range
+		if (sunset - MS_IN_HOUR < maxMs && sunset + MS_IN_HOUR > minMs) {
+			count++;
+		}
+		return count;
+	}
+
+	/**
+	 * Find which transition (sunrise or sunset) is closest to target.
+	 * Returns 'sunrise', 'sunset', or null if neither is between display and target.
+	 */
+	function findFinalTransition(
+		displayMs: number,
+		targetMs: number,
+		sunrise: number,
+		sunset: number,
+	): 'sunrise' | 'sunset' | null {
+		const minMs = Math.min(displayMs, targetMs);
+		const maxMs = Math.max(displayMs, targetMs);
+
+		// Check which transitions are in the range (zone overlaps)
+		const sunriseInRange = sunrise - MS_IN_HOUR < maxMs && sunrise + MS_IN_HOUR > minMs;
+		const sunsetInRange = sunset - MS_IN_HOUR < maxMs && sunset + MS_IN_HOUR > minMs;
+
+		if (!sunriseInRange && !sunsetInRange) return null;
+		if (sunriseInRange && !sunsetInRange) return 'sunrise';
+		if (!sunriseInRange && sunsetInRange) return 'sunset';
+
+		// Both in range - final is the one closest to target
+		const sunriseDist = Math.abs(sunrise - targetMs);
+		const sunsetDist = Math.abs(sunset - targetMs);
+		return sunriseDist < sunsetDist ? 'sunrise' : 'sunset';
+	}
+
+	/**
+	 * Check if displayMs is currently in the final transition zone.
+	 * Uses distance-based logic to handle cross-timezone cases where sunrise > sunset.
+	 */
+	function isInFinalTransition(
+		displayMs: number,
+		targetMs: number,
+		sunrise: number,
+		sunset: number,
+	): boolean {
+		const finalTrans = findFinalTransition(displayMs, targetMs, sunrise, sunset);
+		if (finalTrans === null) return false; // No transitions between display and target
+
+		const finalTime = finalTrans === 'sunrise' ? sunrise : sunset;
+
+		// We're in final transition if displayMs is within ±1hr of the final transition
+		return Math.abs(displayMs - finalTime) < MS_IN_HOUR;
+	}
+
+	/**
+	 * Get the edge of the final transition zone (where we should stop skipping).
+	 * Returns the edge closest to displayMs (the entry point into the final zone).
+	 */
+	function getFinalTransitionEdge(
+		displayMs: number,
+		targetMs: number,
+		sunrise: number,
+		sunset: number,
+	): number | null {
+		const finalTrans = findFinalTransition(displayMs, targetMs, sunrise, sunset);
+		if (finalTrans === null) return null;
+
+		const finalTime = finalTrans === 'sunrise' ? sunrise : sunset;
+		const direction = targetMs > displayMs ? 1 : -1;
+
+		// Return the edge we'll hit first when moving toward target
+		if (direction > 0) {
+			return finalTime - MS_IN_HOUR; // Start of zone (approaching from before)
+		} else {
+			return finalTime + MS_IN_HOUR; // End of zone (approaching from after)
+		}
 	}
 
 	/**
@@ -426,6 +524,129 @@
 		transitionStartTime = null;
 	}
 
+	// Track scrub animation start for easing
+	let scrubStartMs: number = Date.now();
+	let scrubStartDisplayMs: number = Date.now();
+
+	/**
+	 * Animate displayMs toward scrubTargetMs using time-based interpolation
+	 * - Fast start, slow end (eased)
+	 * - Slows down during dawn/dusk when colors change rapidly
+	 * - Speeds through intermediate transitions, only slows for final one
+	 */
+	function animateScrub() {
+		const totalDiff = scrubTargetMs - scrubStartDisplayMs;
+		const remainingDiff = scrubTargetMs - displayMs;
+		const absDiff = Math.abs(remainingDiff);
+
+		// If close enough, snap
+		if (absDiff < SNAP_THRESHOLD) {
+			displayMs = scrubTargetMs;
+			displayColors = getTargetColors(displayMs);
+			updateSkyGradientDOMWithColors(displayColors);
+			return;
+		}
+
+		const direction = Math.sign(remainingDiff);
+
+		// Get current day's sunrise/sunset for color calculation
+		const day = findDayForMs(displayMs);
+		if (!day) {
+			// Fallback to instant
+			displayMs = scrubTargetMs;
+			displayColors = getTargetColors(displayMs);
+			updateSkyGradientDOMWithColors(displayColors);
+			return;
+		}
+
+		// Determine if we should skip intermediate transitions
+		// Skip if: multiple transition zones AND not yet in final transition
+		const numTransitions = countTransitions(displayMs, scrubTargetMs, day.sunrise, day.sunset);
+		const inFinal = isInFinalTransition(displayMs, scrubTargetMs, day.sunrise, day.sunset);
+		const skipIntermediate = numTransitions > 1 && !inFinal;
+
+		let timeStep: number;
+
+		if (skipIntermediate) {
+			// Skip intermediate transitions - jump to edge of final transition zone
+			const edge = getFinalTransitionEdge(displayMs, scrubTargetMs, day.sunrise, day.sunset);
+			if (edge !== null) {
+				timeStep = Math.abs(edge - displayMs);
+			} else {
+				timeStep = MAX_TIME_STEP;
+			}
+		} else {
+			// Normal animation - use color-based speed
+			const sampleStep = 60000; // 1 minute sample
+			const sampleMs = displayMs + direction * sampleStep;
+
+			const currentColors = getSkyColors(displayMs, day.sunrise, day.sunset);
+			const sampleColors = getSkyColors(sampleMs, day.sunrise, day.sunset);
+			const colorDelta = colorsDelta(currentColors, sampleColors);
+
+			// Check sun altitude to detect "approaching transition" state
+			// Colors only change when sun altitude is between -18° and +6°
+			// Outside this range, colorDelta=0 even when close to sunrise/sunset
+			const sunAlt = getSunAltitude(displayMs, day.sunrise, day.sunset);
+			const altDeg = (sunAlt * 180) / Math.PI;
+			const ALTITUDE_TRANSITION_MAX = 6; // degrees - above this, colors don't change
+			const approachingTransition = altDeg > ALTITUDE_TRANSITION_MAX && altDeg < 30; // Between 6° and 30°
+
+			if (colorDelta >= 0.0001) {
+				// Colors are changing - use color-based animation
+				timeStep = (TARGET_COLOR_DELTA_PER_FRAME / colorDelta) * sampleStep;
+			} else if (approachingTransition) {
+				// Sun is above the color transition zone but approaching it
+				// Use a moderate step (6 min) to avoid jumping through the transition
+				timeStep = 6 * 60 * 1000; // 6 minutes per frame
+			} else {
+				// Deep day (alt > 30°) or deep night (alt < -18°) - use max step
+				timeStep = MAX_TIME_STEP;
+			}
+
+			// If there's a transition ahead and we're not in it yet, don't overshoot into it
+			if (numTransitions >= 1 && !inFinal) {
+				const edge = getFinalTransitionEdge(displayMs, scrubTargetMs, day.sunrise, day.sunset);
+				if (edge !== null) {
+					const distToEdge = Math.abs(edge - displayMs);
+					if (timeStep > distToEdge) {
+						timeStep = distToEdge;
+					}
+				}
+			}
+
+			// Apply easing: fast start, slow end
+			const progress = Math.abs(totalDiff) > 0 ? 1 - absDiff / Math.abs(totalDiff) : 1;
+			const easedMultiplier = 2 - ease(progress); // 2 at start (fast), 1 at end (slow)
+			timeStep = timeStep * easedMultiplier;
+		}
+
+		// Clamp time step
+		timeStep = Math.max(MIN_TIME_STEP, Math.min(MAX_TIME_STEP, timeStep));
+
+		// Don't overshoot target
+		if (timeStep > absDiff) {
+			timeStep = absDiff;
+		}
+
+		// Step toward target
+		displayMs = displayMs + direction * timeStep;
+
+		// Update colors and DOM
+		displayColors = getTargetColors(displayMs);
+		updateSkyGradientDOMWithColors(displayColors);
+	}
+
+	/**
+	 * Start a new scrub animation toward target
+	 */
+	function startScrub(targetMs: number) {
+		scrubTargetMs = targetMs;
+		scrubStartMs = performance.now();
+		scrubStartDisplayMs = displayMs;
+		animateScrub();
+	}
+
 	// Compute colors from throttled displayMs (only recalculates at 15fps)
 	// Use full palette (with white/purple) for sticky bg
 	const throttledColors = $derived.by(() => {
@@ -474,12 +695,17 @@
 		}
 
 		if (isTracking) {
-			// Scrubbing within same plot - cancel any transition and instant color change
+			// Scrubbing within same plot - use time-based animation
 			cancelTransition();
-			const targetColors = getTargetColors(targetMs);
-			displayColors = targetColors;
-			displayMs = targetMs;
-			updateSkyGradientDOMWithColors(displayColors);
+
+			// If target changed significantly, restart easing from current position
+			const targetMoved = Math.abs(targetMs - scrubTargetMs) > SNAP_THRESHOLD;
+			if (targetMoved) {
+				startScrub(targetMs);
+			} else {
+				// Continue toward existing target
+				animateScrub();
+			}
 		}
 
 		// Not tracking - do nothing (colors stay at current time)

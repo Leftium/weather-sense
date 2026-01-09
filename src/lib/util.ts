@@ -1200,8 +1200,32 @@ function getSkyColorsInternal(
 ): string[] {
 	const altitudeRad = getSunAltitude(ms, sunrise, sunset);
 	const altitude = radToDeg(altitudeRad);
-	const solarNoon = (sunrise + sunset) / 2;
-	const isMorning = ms < solarNoon;
+
+	// Handle cross-midnight case for solar noon calculation
+	// When sunrise > sunset (cross-timezone viewing), normalize times
+	let normalizedSunrise = sunrise;
+	let normalizedSunset = sunset;
+	let normalizedMs = ms;
+
+	if (sunrise > sunset) {
+		const DAY_MS = 24 * 60 * 60 * 1000;
+		// Shift sunset forward by 24h so sunrise < sunset
+		normalizedSunset = sunset + DAY_MS;
+		// If ms is before the original sunset, also shift it
+		if (ms < sunset || ms >= sunrise) {
+			// ms is in the "night" portion or after sunrise
+			if (ms < sunset) {
+				normalizedMs = ms + DAY_MS;
+			}
+			// ms >= sunrise stays as-is since sunrise < normalizedSunset now
+		} else {
+			// ms is between sunset and sunrise (daytime in this weird frame)
+			normalizedMs = ms + DAY_MS;
+		}
+	}
+
+	const solarNoon = (normalizedSunrise + normalizedSunset) / 2;
+	const isMorning = normalizedMs < solarNoon;
 
 	// Use fast cached lookup + RGB lerp instead of Color.js
 	return getSkyColorsCached(altitude, isMorning, forSkyStrip);

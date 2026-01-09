@@ -191,7 +191,10 @@ export function trackable(node: HTMLElement, options: TrackableOptions) {
 
 		touchStartX = e.clientX;
 		touchStartY = e.clientY;
-		savedScrollTop = document.documentElement.scrollTop || document.body.scrollTop;
+		// Note: savedScrollTop is captured later when scrubbing is decided, not here.
+		// On iOS, scroll position can drift between pointerdown and gesture decision
+		// due to momentum scrolling or elastic bounce, causing a jump if we restore
+		// a stale value.
 		gestureDecided = false;
 		isScrubbing = false;
 		activePointerId = e.pointerId;
@@ -227,6 +230,10 @@ export function trackable(node: HTMLElement, options: TrackableOptions) {
 			if (absDeltaX > absDeltaY) {
 				// More horizontal = scrubbing - capture pointer and set touch-action
 				isScrubbing = true;
+				// Capture scroll position NOW, not at pointerdown. On iOS, scroll can
+				// drift between touch start and gesture decision due to momentum/elastic
+				// bounce, causing a jump if we restore a stale savedScrollTop value.
+				savedScrollTop = document.documentElement.scrollTop || document.body.scrollTop;
 				node.style.touchAction = 'none';
 				node.setPointerCapture(e.pointerId);
 				trackToMouseX(e, true); // Use RAF for touch scrubbing

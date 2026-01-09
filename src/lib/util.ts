@@ -951,6 +951,44 @@ function fastLerpPalette(palette1: string[], palette2: string[], t: number): str
 	return palette1.map((c1, i) => fastMixRgb(c1, palette2[i], t));
 }
 
+// Export for direct color animation (skip dawn/dusk)
+export { fastLerpPalette as lerpPaletteFast };
+
+// Fast step colors toward target by a fixed step (RGB-based, no Color.js)
+// Returns new colors array, or target if close enough
+export function stepColorsFast(current: string[], target: string[], stepSize: number): string[] {
+	const delta = colorsDeltaFast(current, target);
+	if (delta <= stepSize) {
+		// Close enough, snap to target
+		return target;
+	}
+	// Move stepSize/delta fraction toward target
+	const factor = stepSize / delta;
+	return fastLerpPalette(current, target, factor);
+}
+
+// Fast check if two color arrays are close enough (RGB-based)
+export function colorsAreCloseFast(
+	colors1: string[],
+	colors2: string[],
+	threshold: number = 0.01,
+): boolean {
+	return colorsDeltaFast(colors1, colors2) < threshold;
+}
+
+// Fast color delta using RGB (for internal use and export)
+function colorsDeltaFast(colors1: string[], colors2: string[]): number {
+	let maxDelta = 0;
+	for (let i = 0; i < colors1.length; i++) {
+		const [r1, g1, b1] = hexToRgb(colors1[i]);
+		const [r2, g2, b2] = hexToRgb(colors2[i]);
+		// Euclidean distance in RGB, normalized to 0-1 range
+		const dist = Math.sqrt((r2 - r1) ** 2 + (g2 - g1) ** 2 + (b2 - b1) ** 2) / 441;
+		maxDelta = Math.max(maxDelta, dist);
+	}
+	return maxDelta;
+}
+
 // ============================================================================
 // PRE-COMPUTED SKY COLOR CACHE
 // Eliminates Color.js from render loop by pre-computing all altitude steps

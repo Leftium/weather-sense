@@ -739,6 +739,8 @@ export function makeNsWeatherData() {
 
 					if (now - _hot.lastFrameTime >= FRAME_INTERVAL) {
 						_hot.lastFrameTime = now;
+						// Update reactive ms at 15fps (for sticky time display)
+						_hot.ms = _hot.rawMs;
 						emit('weatherdata_frameTick', { ms: _hot.rawMs });
 					}
 

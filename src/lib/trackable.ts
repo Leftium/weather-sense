@@ -136,18 +136,47 @@ export function trackable(node: HTMLElement, options: TrackableOptions) {
 		}
 	}
 
+	// Delayed tracking end to allow seamless transfer between adjacent plots
+	let trackingEndTimeoutId: ReturnType<typeof setTimeout> | null = null;
+	const TRACKING_END_DELAY = 50; // ms - short enough to feel instant, long enough for mouseenter
+
+	function cancelPendingTrackingEnd() {
+		if (trackingEndTimeoutId !== null) {
+			clearTimeout(trackingEndTimeoutId);
+			trackingEndTimeoutId = null;
+		}
+	}
+
 	function handleMouseEnter(e: MouseEvent) {
 		mouseIsOver = true;
-		if (!options.getTrackedElement()) {
+		// Cancel any pending tracking end from leaving another plot
+		cancelPendingTrackingEnd();
+
+		const currentTracked = options.getTrackedElement();
+		if (!currentTracked) {
+			// No tracking active - start fresh
+			trackToMouseX(e);
+			options.onTrackingStart(node);
+		} else if (currentTracked !== node) {
+			// Transfer tracking from another plot to this one
 			trackToMouseX(e);
 			options.onTrackingStart(node);
 		}
+		// else: already tracking this node, do nothing
 	}
 
 	function handleMouseLeave(e: MouseEvent) {
 		mouseIsOver = false;
 		if (options.getTrackedElement() === node && !trackUntilMouseUp) {
-			options.onTrackingEnd();
+			// Delay tracking end to allow transfer to adjacent plot
+			cancelPendingTrackingEnd();
+			trackingEndTimeoutId = setTimeout(() => {
+				trackingEndTimeoutId = null;
+				// Only end if we haven't entered another trackable element
+				if (!mouseIsOver && options.getTrackedElement() === node) {
+					options.onTrackingEnd();
+				}
+			}, TRACKING_END_DELAY);
 		}
 	}
 
@@ -259,6 +288,7 @@ export function trackable(node: HTMLElement, options: TrackableOptions) {
 	return {
 		destroy() {
 			abortController.abort();
+			cancelPendingTrackingEnd();
 			if (rafId !== null) {
 				cancelAnimationFrame(rafId);
 				rafId = null;

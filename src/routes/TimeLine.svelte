@@ -915,6 +915,9 @@
 	let lastTrackerMode: 'normal' | 'ghost' | null = null;
 	let lastRectWidth: number = 0;
 
+	// Debug tracker - shows displayMs (eased animation progress)
+	let debugTrackerLine: d3.Selection<SVGLineElement, unknown, null, undefined> | null = null;
+
 	function ensureTrackerElements(
 		pg: d3.Selection<SVGSVGElement, unknown, null, undefined>,
 		isGhost: boolean,
@@ -1072,6 +1075,49 @@
 		trackerRect = null;
 		lastTrackerMode = null;
 		lastRectWidth = 0;
+		debugTrackerLine = null;
+	}
+
+	// Update debug tracker position (dashed line showing displayMs / eased animation)
+	function updateDebugTracker(ms: number) {
+		if (!debugTrackerMs) return;
+
+		const pg = d3.select(div).select<SVGSVGElement>('svg');
+		if (pg.empty()) return;
+
+		const y1 = yScale.apply(yDomainTop);
+		const y2 = yScale.apply(yDomainBottom);
+
+		// Create debug line if it doesn't exist
+		if (!debugTrackerLine) {
+			debugTrackerLine = pg
+				.append('line')
+				.attr('class', 'debug-tracker')
+				.attr('y1', y1)
+				.attr('y2', y2)
+				.attr('stroke', 'magenta')
+				.attr('stroke-width', 2)
+				.attr('stroke-dasharray', '4,4')
+				.style('pointer-events', 'none');
+		}
+
+		// Position the debug line
+		const x = xScale.apply(debugTrackerMs);
+		if (debugTrackerMs >= msStart && debugTrackerMs <= msEnd) {
+			debugTrackerLine.attr('x1', x).attr('x2', x).style('opacity', '1');
+		} else if (ghostTracker) {
+			// Ghost position for debug tracker too
+			const dayStartOffsetMs = DAY_START_HOUR * MS_IN_HOUR;
+			const msGhost =
+				msStart +
+				((((debugTrackerMs + nsWeatherData.utcOffsetMs - dayStartOffsetMs) % MS_IN_DAY) +
+					MS_IN_DAY) %
+					MS_IN_DAY);
+			const xGhost = xScale.apply(msGhost);
+			debugTrackerLine.attr('x1', xGhost).attr('x2', xGhost).style('opacity', '0.5');
+		} else {
+			debugTrackerLine.style('opacity', '0');
+		}
 	}
 
 	// Generate and place Obervable.Plot from data.
@@ -1612,6 +1658,13 @@
 	// Listen for frameTick event for synchronized tracker updates across all plots
 	on('weatherdata_frameTick', ({ ms }) => {
 		updateTracker(ms);
+	});
+
+	// Update debug tracker reactively when debugTrackerMs prop changes
+	$effect(() => {
+		if (debugTrackerMs !== undefined) {
+			updateDebugTracker(debugTrackerMs);
+		}
 	});
 
 	// Update entire plot when UI state changes (plotTriggers centralizes all dependencies)

@@ -333,11 +333,12 @@
 	let lastTrackedElement: HTMLElement | null = null;
 
 	// Transition state (for enter/leave/switch)
-	const TRANSITION_DURATION = 200; // ms
+	const TRANSITION_DURATION = 300; // ms
 	const SETTLE_DELAY = 100; // ms - wait for mouse to settle before transitioning
 	let transitionStartTime: number | null = null;
 	let transitionStartColors: string[] = DEFAULT_COLORS;
 	let transitionTargetColors: string[] = DEFAULT_COLORS;
+	let transitionTargetMs: number = Date.now(); // The time we're transitioning to
 	let transitionRafId: number | null = null;
 	let settleTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
@@ -470,7 +471,9 @@
 		updateSkyGradientDOMWithColors(displayColors);
 
 		if (progress >= 1) {
-			// Done
+			// Done - update displayMs to the target time
+			displayMs = transitionTargetMs;
+			scrubTargetMs = transitionTargetMs; // Initialize scrub target for when scrubbing starts
 			transitionStartTime = null;
 			transitionRafId = null;
 		} else {
@@ -685,19 +688,25 @@
 
 			// Determine target: current cursor position if tracking, current time if not
 			const newTargetMs = isTracking ? targetMs : Date.now();
-			const targetColors = getTargetColors(newTargetMs);
-			displayMs = newTargetMs;
+			const newTargetColors = getTargetColors(newTargetMs);
+			// Store target time for when transition completes
+			transitionTargetMs = newTargetMs;
+			// Don't update displayMs here - let the transition animate the colors
+			// displayMs will be updated when transition completes in runTransition()
 			if (!isTracking) {
 				throttledDisplayMs = newTargetMs;
 			}
-			startTransition(targetColors);
+			startTransition(newTargetColors);
 			return;
 		}
 
 		if (isTracking) {
-			// Scrubbing within same plot - use time-based animation
-			cancelTransition();
+			// If a transition is pending or running, let it complete before scrubbing
+			if (settleTimeoutId !== null || transitionStartTime !== null) {
+				return;
+			}
 
+			// Scrubbing within same plot - use time-based animation
 			// If target changed significantly, restart easing from current position
 			const targetMoved = Math.abs(targetMs - scrubTargetMs) > SNAP_THRESHOLD;
 			if (targetMoved) {
@@ -1126,7 +1135,7 @@
 						start={Date.now() - 2 * MS_IN_HOUR}
 						trackerColor={targetColors[1]}
 						tempStats={visibleTempStats}
-						debugTrackerMs={dev ? displayMs : undefined}
+						debugTrackerMs={undefined}
 					/>
 				</div>
 			</div>
@@ -1200,7 +1209,7 @@
 							{past}
 							trackerColor={targetColors[1]}
 							tempStats={visibleTempStats}
-							debugTrackerMs={dev ? displayMs : undefined}
+							debugTrackerMs={undefined}
 						/>
 					</div>
 				</div>

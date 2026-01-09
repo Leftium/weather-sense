@@ -1737,15 +1737,10 @@
 		position: relative;
 	}
 
-	/* Glow behind weather icons - matches wmo-codes page */
-	div > :global(svg image) {
-		filter: drop-shadow(0 0 3px rgba(128, 128, 128, 0.6))
-			drop-shadow(0 0 6px rgba(128, 128, 128, 0.4)) drop-shadow(0 0 12px rgba(128, 128, 128, 0.3));
-	}
-
-	/* Glow behind temperature line for visibility over WMO code backgrounds */
-	div > :global(svg [stroke*='temp-gradient']) {
-		filter: drop-shadow(0 0 2px ghostwhite) drop-shadow(0 0 4px ghostwhite);
+	/* Disable hit-testing on all SVG children to reduce GPU usage when hovering.
+	   All interaction is handled at the container level by the trackable action. */
+	div > :global(svg *) {
+		pointer-events: none;
 	}
 
 	div {

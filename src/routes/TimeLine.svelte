@@ -1656,7 +1656,11 @@
 
 	// Update rule location only (leaving rest of plot intact).
 	// Listen for frameTick event for synchronized tracker updates across all plots
+	let lastTrackerMs: number | null = null;
 	on('weatherdata_frameTick', ({ ms }) => {
+		// Skip DOM updates if position hasn't changed (reduces GPU work when idle)
+		if (ms === lastTrackerMs) return;
+		lastTrackerMs = ms;
 		updateTracker(ms);
 	});
 

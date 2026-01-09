@@ -734,19 +734,14 @@ export function makeNsWeatherData() {
 			// Start RAF-based frame loop at 15fps for synchronized tracker rendering
 			if (_hot.frameRafId === null) {
 				_hot.lastFrameTime = performance.now();
-				let lastEmittedMs = _hot.rawMs;
 				function frameTick(now: number) {
 					if (_hot.frameRafId === null) return; // Stopped
 
 					if (now - _hot.lastFrameTime >= FRAME_INTERVAL) {
 						_hot.lastFrameTime = now;
-						// Only emit if ms actually changed (reduces GPU work when idle)
-						if (_hot.rawMs !== lastEmittedMs) {
-							lastEmittedMs = _hot.rawMs;
-							// Update reactive ms at 15fps (for sticky time display)
-							_hot.ms = _hot.rawMs;
-							emit('weatherdata_frameTick', { ms: _hot.rawMs });
-						}
+						// Update reactive ms at 15fps (for sticky time display)
+						_hot.ms = _hot.rawMs;
+						emit('weatherdata_frameTick', { ms: _hot.rawMs });
 					}
 
 					_hot.frameRafId = requestAnimationFrame(frameTick);

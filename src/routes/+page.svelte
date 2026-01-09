@@ -454,13 +454,23 @@
 	}
 
 	/**
-	 * Run transition animation loop
+	 * Run transition animation loop (throttled to 15fps to reduce GPU usage)
 	 */
+	const TRANSITION_FRAME_INTERVAL = 1000 / 15; // 15fps
+	let transitionLastFrameTime = 0;
+
 	function runTransition(now: number) {
 		if (transitionStartTime === null) {
 			transitionRafId = null;
 			return;
 		}
+
+		// Throttle to 15fps
+		if (now - transitionLastFrameTime < TRANSITION_FRAME_INTERVAL) {
+			transitionRafId = requestAnimationFrame(runTransition);
+			return;
+		}
+		transitionLastFrameTime = now;
 
 		const elapsed = now - transitionStartTime;
 		const progress = Math.min(1, elapsed / TRANSITION_DURATION);
@@ -498,16 +508,18 @@
 
 	/**
 	 * Schedule a transition after settle delay
+	 * Defers color computation until after mouse settles to reduce work during rapid plot switching
 	 */
-	function startTransition(targetColors: string[]) {
+	function startTransition(targetMs: number) {
 		// Cancel any pending transition
 		if (settleTimeoutId !== null) {
 			clearTimeout(settleTimeoutId);
 		}
 
-		// Wait for mouse to settle before starting transition
+		// Wait for mouse to settle before computing colors and starting transition
 		settleTimeoutId = setTimeout(() => {
 			settleTimeoutId = null;
+			const targetColors = getTargetColors(targetMs);
 			startTransitionNow(targetColors);
 		}, SETTLE_DELAY);
 	}
@@ -688,7 +700,6 @@
 
 			// Determine target: current cursor position if tracking, current time if not
 			const newTargetMs = isTracking ? targetMs : Date.now();
-			const newTargetColors = getTargetColors(newTargetMs);
 			// Store target time for when transition completes
 			transitionTargetMs = newTargetMs;
 			// Don't update displayMs here - let the transition animate the colors
@@ -696,7 +707,8 @@
 			if (!isTracking) {
 				throttledDisplayMs = newTargetMs;
 			}
-			startTransition(newTargetColors);
+			// Defer color computation until after settle delay (reduces work during rapid plot switching)
+			startTransition(newTargetMs);
 			return;
 		}
 

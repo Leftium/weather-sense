@@ -117,6 +117,11 @@ export function humanDistance(n: number | undefined) {
 const colorWhite = new Color('white');
 const colorBlack = new Color('#333');
 
+// Cache for contrastTextColor results to avoid repeated Color.js operations
+// Key format: `${color}|${shadow}|${color1}|${color2}`
+const contrastTextColorCache = new Map<string, string>();
+const CONTRAST_CACHE_MAX_SIZE = 500; // Limit cache size to prevent memory leaks
+
 export function contrastTextColor(
 	color: any,
 	shadow: boolean = false,
@@ -127,6 +132,18 @@ export function contrastTextColor(
 		return 'red';
 	}
 
+	// Build cache key - use string representation for Color objects
+	const c1Key = typeof color1 === 'string' ? color1 : color1.toString();
+	const c2Key = typeof color2 === 'string' ? color2 : color2.toString();
+	const cacheKey = `${color}|${shadow}|${c1Key}|${c2Key}`;
+
+	// Check cache
+	const cached = contrastTextColorCache.get(cacheKey);
+	if (cached !== undefined) {
+		return cached;
+	}
+
+	// Compute result
 	const colorBackground = new Color(color);
 	const colorA = new Color(color1);
 	const colorB = new Color(color2);
@@ -136,7 +153,20 @@ export function contrastTextColor(
 		Math.abs(colorBackground.contrastAPCA(colorA)) < Math.abs(colorBackground.contrastAPCA(colorB));
 
 	const returnValue = needsDarkText ? colorA : colorB;
-	return returnValue.toString({ format: 'hex' });
+	const result = returnValue.toString({ format: 'hex' });
+
+	// Store in cache (with size limit)
+	if (contrastTextColorCache.size >= CONTRAST_CACHE_MAX_SIZE) {
+		// Clear oldest entries (simple approach: clear half the cache)
+		const keysToDelete = Array.from(contrastTextColorCache.keys()).slice(
+			0,
+			CONTRAST_CACHE_MAX_SIZE / 2,
+		);
+		keysToDelete.forEach((k) => contrastTextColorCache.delete(k));
+	}
+	contrastTextColorCache.set(cacheKey, result);
+
+	return result;
 }
 
 // Default colors for text/shadow contrast (used throughout the app)

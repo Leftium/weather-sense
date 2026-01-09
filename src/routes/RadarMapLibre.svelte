@@ -349,29 +349,4 @@
 		border-radius: 50%;
 		box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
 	}
-
-	:global(.pulsing-marker::after) {
-		content: '';
-		position: absolute;
-		top: 50%;
-		left: 50%;
-		width: 14px;
-		height: 14px;
-		background: rgba(59, 130, 246, 0.4);
-		border-radius: 50%;
-		transform: translate(-50%, -50%);
-		animation: pulse 4s ease-in-out infinite;
-	}
-
-	@keyframes pulse {
-		0%,
-		100% {
-			transform: translate(-50%, -50%) scale(1);
-			opacity: 1;
-		}
-		50% {
-			transform: translate(-50%, -50%) scale(3);
-			opacity: 0;
-		}
-	}
 </style>

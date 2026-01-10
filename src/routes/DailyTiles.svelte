@@ -18,6 +18,7 @@
 	import { getEmitter } from '$lib/emitter';
 	import { clamp, minBy, maxBy } from 'lodash-es';
 	import { fade } from 'svelte/transition';
+	import { tick } from 'svelte';
 
 	let {
 		nsWeatherData,
@@ -252,6 +253,12 @@
 	// Listen for frameTick event for synchronized tracker updates
 	on('weatherdata_frameTick', ({ ms }) => {
 		updateTracker(ms);
+	});
+
+	// Initialize tracker after data loads (wait for DOM to update)
+	on('weatherdata_updatedData', async () => {
+		await tick();
+		updateTracker(nsWeatherData.ms);
 	});
 
 	// Trackable options for this component

@@ -916,7 +916,7 @@ export { getSunAltitude };
 // Format: [top, middle, bottom] for sticky bg gradient
 // Sky strip for dawn/dusk uses [extended] and [bottom] (2-tone, no white/purple)
 export const skyPalettes = {
-	night: ['#000c26', '#2a3a5c', '#7455b8'], // dark blue top → slate → purple glow at horizon
+	night: ['#000c26', '#0a2a5c', '#042388'], // dark blue top → mid blue → deep blue at horizon
 	dawn: ['#fff0e6', '#ffd93d', '#ff6633'], // warm white top → golden → vivid orange (sky strip uses orange/golden)
 	day: ['#f0f8ff', '#a8d8f0', '#6bb3e0'], // white top → light blue → blue at horizon
 	dusk: ['#7455b8', '#ff6b6b', '#ffc400'], // purple top → coral → amber (sky strip uses amber top, coral bottom)

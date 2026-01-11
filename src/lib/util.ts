@@ -446,7 +446,7 @@ export function getWmoOverlayGradient(wmoCode: number): { offset: string; color:
 	return null;
 }
 
-function makeWmo(wsCode: number, picoColor: string, description: string, iconName: string) {
+function makeWmo(wsCode: number, colorInput: string, description: string, iconName: string) {
 	const groups = [
 		'clear',
 		'cloudy',
@@ -464,7 +464,10 @@ function makeWmo(wsCode: number, picoColor: string, description: string, iconNam
 
 	const group = groups[Math.floor(wsCode / 10) % 100];
 	const level = wsCode % 10;
-	const color = get(picoColors, picoColor) || get(picoColors, 'yellow.400');
+
+	// Support both Pico color strings (e.g., 'azure.300') and hex colors (e.g., '#4682B4')
+	const isHex = colorInput.startsWith('#');
+	const color = isHex ? colorInput : get(picoColors, colorInput) || get(picoColors, 'yellow.400');
 
 	const icon = `/icons/airy/${iconName}@4x.png`;
 
@@ -478,25 +481,34 @@ function makeWmo(wsCode: number, picoColor: string, description: string, iconNam
 		`rgba(51 51 51 / 50%)`,
 	);
 
-	// Generate gradient colors from lighter to darker shades of the same hue
-	// Parse picoColor like 'azure.300' into hue and value
-	const [hue, valueStr] = picoColor.split('.');
-	const value = parseInt(valueStr, 10);
-	// Create gradient: lighter (value - 150) → mid (value) → darker (value + 150)
-	// Clamp to valid pico range (50-950)
-	const lightValue = Math.max(50, value - 150);
-	const darkValue = Math.min(950, value + 150);
-	const gradientLight = get(picoColors, `${hue}.${lightValue}`) || color;
-	const gradientDark = get(picoColors, `${hue}.${darkValue}`) || color;
-	// Gradient: [top/dark, mid, bottom/light] to match sky gradient direction
-	const gradient = [gradientDark, color, gradientLight];
+	let gradient: string[];
+	if (isHex) {
+		// For hex colors, generate gradient by lightening/darkening
+		const colorObj = new Color(color);
+		const lightColor = colorObj.clone().set('lch.l', (l) => Math.min(95, l + 15));
+		const darkColor = colorObj.clone().set('lch.l', (l) => Math.max(20, l - 15));
+		gradient = [
+			darkColor.toString({ format: 'hex' }),
+			color,
+			lightColor.toString({ format: 'hex' }),
+		];
+	} else {
+		// For Pico colors, use the palette
+		const [hue, valueStr] = colorInput.split('.');
+		const value = parseInt(valueStr, 10);
+		const lightValue = Math.max(50, value - 150);
+		const darkValue = Math.min(950, value + 150);
+		const gradientLight = get(picoColors, `${hue}.${lightValue}`) || color;
+		const gradientDark = get(picoColors, `${hue}.${darkValue}`) || color;
+		gradient = [gradientDark, color, gradientLight];
+	}
 
 	return {
 		description,
 		wsCode,
 		group,
 		level,
-		picoColor,
+		picoColor: colorInput,
 		color,
 		colorText,
 		colorShadow,
@@ -515,20 +527,20 @@ export const WMO_CODES: Record<number, any> = {
 	45: makeWmo(1_02_1, 'zinc.350',    'Fog',              'fog'),
     48: makeWmo(1_02_3, 'zinc.550',    'Icy Fog',          'rime-fog'),
 
-	51: makeWmo(2_03_1, 'azure.200',   'L.Drizzle',        'light-drizzle'),
-	53: makeWmo(2_03_2, 'azure.300',   'Drizzle',          'moderate-drizzle'),
-	55: makeWmo(2_03_3, 'azure.400',   'H.Drizzle',        'dense-drizzle'),
-	80: makeWmo(2_04_1, 'azure.250',   'L.Showers',        'light-rain'),
-	81: makeWmo(2_04_2, 'azure.350',   'Showers',          'moderate-rain'),
-	82: makeWmo(2_04_3, 'azure.450',   'H.Showers',        'heavy-rain'),
-	61: makeWmo(2_05_1, 'blue.350',    'L.Rain',           'light-rain'),
-	63: makeWmo(2_05_2, 'blue.450',    'Rain',             'moderate-rain'),
-    65: makeWmo(2_05_3, 'blue.550',    'H.Rain',           'heavy-rain'),
+	51: makeWmo(2_03_1, 'cyan.300',    'L.Drizzle',        'light-drizzle'),
+	53: makeWmo(2_03_2, 'cyan.400',    'Drizzle',          'moderate-drizzle'),
+	55: makeWmo(2_03_3, 'cyan.500',    'H.Drizzle',        'dense-drizzle'),
+	80: makeWmo(2_04_1, 'cyan.350',    'L.Showers',        'light-rain'),
+	81: makeWmo(2_04_2, 'cyan.450',    'Showers',          'moderate-rain'),
+	82: makeWmo(2_04_3, 'cyan.550',    'H.Showers',        'heavy-rain'),
+	61: makeWmo(2_05_1, 'cyan.450',    'L.Rain',           'light-rain'),
+	63: makeWmo(2_05_2, 'cyan.550',    'Rain',             'moderate-rain'),
+    65: makeWmo(2_05_3, 'cyan.650',    'H.Rain',           'heavy-rain'),
 
-	56: makeWmo(3_06_1, 'indigo.200',  'L.Icy Drizzle',    'light-freezing-drizzle'),
-	57: makeWmo(3_06_3, 'indigo.400',  'Icy Drizzle',      'dense-freezing-drizzle'),
-	66: makeWmo(3_07_1, 'violet.350',  'L.Icy Rain',       'light-freezing-rain'),
-    67: makeWmo(3_07_3, 'violet.550',  'Icy Rain',         'heavy-freezing-rain'),
+	56: makeWmo(3_06_1, '#8090C0',     'L.Icy Drizzle',    'light-freezing-drizzle'),  // Periwinkle light
+	57: makeWmo(3_06_3, '#6A7AB8',     'Icy Drizzle',      'dense-freezing-drizzle'),  // Periwinkle mid
+	66: makeWmo(3_07_1, '#5A6AAD',     'L.Icy Rain',       'light-freezing-rain'),     // Periwinkle darker
+    67: makeWmo(3_07_3, '#4A5A9D',     'Icy Rain',         'heavy-freezing-rain'),     // Periwinkle dark
 
 	77: makeWmo(4_08_2, 'purple.150',  'Snow Grains',      'snowflake'),
 	85: makeWmo(4_09_1, 'purple.250',  'L.Snow Showers',   'slight-snowfall'),

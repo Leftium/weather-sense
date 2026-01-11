@@ -144,8 +144,8 @@
 	// Color values for dividers
 	$amber-200: #ffbf00;
 	$grey-450: #808080;
-	$blue-550: #2060df;
-	$violet-550: #8352c5;
+	$cyan-550: #047878; // Matches rain group
+	$periwinkle: #5a6aad; // Matches freezing rain group
 	$fuchsia-450: #ed2aac;
 	$pink-450: #f42c6f;
 
@@ -357,7 +357,7 @@
 
 			.divider-1 {
 				grid-column-start: 5;
-				background-color: $blue-550;
+				background-color: $cyan-550;
 			}
 
 			.group-drizzle {
@@ -374,7 +374,7 @@
 
 			.divider-2 {
 				grid-column-start: 9;
-				background-color: $violet-550;
+				background-color: $periwinkle;
 			}
 
 			.group-icy-drizzle {
@@ -479,7 +479,7 @@
 
 			.divider-1 {
 				grid-row-start: 5;
-				background-color: $blue-550;
+				background-color: $cyan-550;
 			}
 
 			.group-drizzle {
@@ -496,7 +496,7 @@
 
 			.divider-2 {
 				grid-row-start: 9;
-				background-color: $violet-550;
+				background-color: $periwinkle;
 			}
 
 			.group-icy-drizzle {

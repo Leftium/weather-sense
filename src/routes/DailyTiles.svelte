@@ -629,6 +629,7 @@
 	// Tracker uses CSS transform for GPU-accelerated positioning
 	.tracker {
 		will-change: transform, opacity;
+		filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 6px rgba(0, 0, 0, 0.2));
 	}
 
 	.button-bar {

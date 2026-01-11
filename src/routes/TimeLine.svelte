@@ -958,14 +958,18 @@
 					.attr('stroke-width', 2);
 			}
 
-			// Create main tracker line (on top) - sky color
+			// Create main tracker line (on top)
 			trackerLine = trackerGroup
 				.append('line')
 				.attr('x1', 0)
 				.attr('x2', 0)
 				.attr('y1', y1)
 				.attr('y2', y2)
-				.attr('stroke-width', 2);
+				.attr('stroke-width', 2)
+				.style(
+					'filter',
+					'drop-shadow(0 0 3px rgba(0,0,0,0.3)) drop-shadow(0 0 6px rgba(0,0,0,0.2))',
+				);
 
 			// Create rect only for normal mode
 			if (!isGhost) {

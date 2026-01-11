@@ -1145,7 +1145,6 @@
 						{plotVisibility}
 						{groupIcons}
 						start={Date.now() - 2 * MS_IN_HOUR}
-						trackerColor={targetColors[1]}
 						tempStats={visibleTempStats}
 						debugTrackerMs={undefined}
 					/>
@@ -1219,7 +1218,6 @@
 							xAxis={day.compactDate == 'Today'}
 							ghostTracker
 							{past}
-							trackerColor={targetColors[1]}
 							tempStats={visibleTempStats}
 							debugTrackerMs={undefined}
 						/>

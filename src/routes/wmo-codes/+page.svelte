@@ -11,13 +11,18 @@
 		getContrastColors,
 	} from '$lib/util';
 	import { iconSetStore } from '$lib/iconSet.svelte';
+	import { wmoGradientStore } from '$lib/wmoGradient.svelte';
 	import { onMount } from 'svelte';
 
 	let offsetWidth = $state(0);
 	let offsetHeight = $state(0);
 
-	let mode = $state('');
+	let mounted = $state(false);
+	let isVertical = $state(false);
 	let isNight = $state(false);
+
+	// mode is derived from isVertical: 'tall' = vertical, 'wide' = horizontal
+	const mode = $derived(isVertical ? 'tall' : 'wide');
 
 	// Helper to create CSS gradient from [dark, mid, light] array
 	// 135deg = top-left to bottom-right (dark at top-left, light at bottom-right)
@@ -33,9 +38,10 @@
 		const isSky = codeNum <= 3;
 		const isFog = codeNum === 45 || codeNum === 48;
 		const gradientColors = isSky || isFog ? getCloudGradient(codeNum) : value.gradient;
-		const { fillText, fillShadow } = getContrastColors(gradientColors[1]);
+		const midColor = gradientColors[1];
+		const { fillText, fillShadow } = getContrastColors(midColor);
 		// Sky: 315deg (light at top), Fog/Precip: 135deg (dark at top)
-		const getBackground = () => {
+		const getGradientBackground = () => {
 			if (isSky) return getCloudGradientCSS(codeNum); // 315deg default
 			if (isFog) return getCloudGradientCSS(codeNum, 135); // inverted
 			return makePrecipGradient(value.gradient); // 135deg
@@ -45,7 +51,8 @@
 			...value,
 			hasUniqueNight,
 			airyIcon: value.icon,
-			background: getBackground(),
+			gradientBackground: getGradientBackground(),
+			solidBackground: midColor,
 			// Text colors based on gradient middle color
 			textColor: fillText,
 			shadowColor: fillShadow,
@@ -60,7 +67,7 @@
 		};
 	});
 
-	// Compute displayed icon based on current selections
+	// Compute displayed icon and background based on current selections
 	const wmoCodes = $derived(
 		wmoCodesBase.map((wmo) => ({
 			...wmo,
@@ -70,19 +77,14 @@
 					: isNight
 						? wmo.googleNightIcon
 						: wmo.googleDayIcon,
+			background: wmoGradientStore.value ? wmo.gradientBackground : wmo.solidBackground,
 		})),
 	);
 
-	function toggleMode() {
-		mode = mode === 'tall' ? 'wide' : 'tall';
-	}
-
-	function toggleTime() {
-		isNight = !isNight;
-	}
-
 	onMount(() => {
-		mode = offsetWidth > 600 || offsetHeight / offsetWidth < 1.2 ? 'wide' : 'tall';
+		// Default to vertical on narrow/tall screens
+		isVertical = !(offsetWidth > 600 || offsetHeight / offsetWidth < 1.2);
+		mounted = true;
 	});
 </script>
 
@@ -95,12 +97,16 @@
 		<button onclick={iconSetStore.toggle}
 			>{iconSetStore.value === 'airy' ? 'Airy' : 'Google'}</button
 		>
-		<button onclick={toggleTime} disabled={iconSetStore.value === 'airy'}
-			>{isNight ? 'Night' : 'Day'}</button
-		>
-		<button onclick={toggleMode}>Transpose</button>
+		<label><input type="checkbox" bind:checked={wmoGradientStore.value} /> Gradient</label>
+		<span class="separator">|</span>
+		<span class="nowrap ephemeral-group">
+			<label class="ephemeral" class:disabled={iconSetStore.value === 'airy'}
+				><input type="checkbox" bind:checked={isNight} disabled={iconSetStore.value === 'airy'} /> Night</label
+			>
+			<label class="ephemeral"><input type="checkbox" bind:checked={isVertical} /> Vertical</label>
+		</span>
 	</nav>
-	{#if mode}
+	{#if mounted}
 		<div class="grids-wrapper">
 			<div class="grid-container">
 				<div class="wmo-grid">
@@ -175,17 +181,37 @@
 			opacity: 0.4;
 			cursor: not-allowed;
 		}
+
+		label.disabled {
+			opacity: 0.4;
+			cursor: not-allowed;
+		}
+
+		.ephemeral {
+			font-style: italic;
+		}
+
+		.nowrap {
+			white-space: nowrap;
+		}
+
+		.ephemeral-group {
+			display: inline-flex;
+			gap: 0.5em;
+		}
 	}
 
 	button {
-		padding: 0.4em 0.8em;
-		font-size: 0.9em;
+		padding: 0.15em 0.35em;
+		font-size: 0.85em;
 		background: $color-link-hover;
 		color: white;
 		border: none;
 		border-radius: 4px;
 		cursor: pointer;
 		transition: background 0.15s;
+		min-width: 4.5em;
+		text-align: center;
 
 		&:hover {
 			background: color.adjust($color-link-hover, $lightness: -10%);

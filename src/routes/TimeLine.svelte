@@ -59,6 +59,7 @@
 	} from '$lib/util';
 	import { getSunAltitude } from '$lib/horizon';
 	import { iconSetStore } from '$lib/iconSet.svelte';
+	import { wmoGradientStore } from '$lib/wmoGradient.svelte';
 	import type { Markish } from '@observablehq/plot';
 	import dayjs from 'dayjs';
 
@@ -589,9 +590,11 @@
 				const x1 = current.ms;
 				const x2 = Math.min(current.ms + MS_IN_HOUR + 2 * MS_IN_MINUTE, msEnd);
 
-				// Use gradient for all WMO codes
+				// Use gradient or solid color based on preference
 				const solidColor = WMO_CODES[nextCode].color;
-				const fill = `url(#cloud-gradient-${nextCode}-${msStart})`;
+				const fill = wmoGradientStore.value
+					? `url(#cloud-gradient-${nextCode}-${msStart})`
+					: solidColor;
 
 				const { fillText, fillShadow } = getContrastColors(solidColor);
 				const draftItem = {

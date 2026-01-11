@@ -6,6 +6,7 @@
 		getDayWmoCode,
 		getWeatherIcon,
 		getCloudGradientCSS,
+		getCloudGradient,
 		formatTemp,
 		MS_IN_DAY,
 		MS_IN_HOUR,
@@ -14,6 +15,7 @@
 		TEMP_COLOR_COLD,
 	} from '$lib/util';
 	import { iconSetStore } from '$lib/iconSet.svelte';
+	import { wmoGradientStore } from '$lib/wmoGradient.svelte';
 	import { trackable, isTempLabel } from '$lib/trackable';
 	import { getEmitter } from '$lib/emitter';
 	import { clamp, minBy, maxBy } from 'lodash-es';
@@ -286,11 +288,14 @@
 				{@const tileWmoCode = !isLoading
 					? getDayWmoCode(day.ms, day.weatherCode, nsWeatherData.hourly, groupIcons, maxBy)
 					: 0}
+				{@const tileBackground = wmoGradientStore.value
+					? getCloudGradientCSS(tileWmoCode)
+					: getCloudGradient(tileWmoCode)[1]}
 				<div
 					class="tile"
 					class:past
 					title={!isLoading ? wmoCode(tileWmoCode).description : ''}
-					style:--tile-gradient={getCloudGradientCSS(tileWmoCode)}
+					style:--tile-gradient={tileBackground}
 				>
 					<div class="tile-bg"></div>
 					{#if !isLoading}

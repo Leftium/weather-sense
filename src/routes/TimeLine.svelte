@@ -1750,6 +1750,12 @@
 		pointer-events: none;
 	}
 
+	/* Add glow behind WMO weather icons for better readability */
+	div > :global(svg g[aria-label='image'] image) {
+		filter: drop-shadow(0 0 3px rgba(128, 128, 128, 0.6))
+			drop-shadow(0 0 6px rgba(128, 128, 128, 0.4)) drop-shadow(0 0 12px rgba(128, 128, 128, 0.3));
+	}
+
 	div {
 		display: grid;
 		align-items: center;

@@ -658,9 +658,11 @@
 								? prev.weatherCode
 								: next.weatherCode;
 
-						// Use gradient for all WMO codes
+						// Use gradient or solid color based on preference
 						const solidColorMerged = WMO_CODES[mergedCode].color;
-						const fillMerged = `url(#cloud-gradient-${mergedCode}-${msStart})`;
+						const fillMerged = wmoGradientStore.value
+							? `url(#cloud-gradient-${mergedCode}-${msStart})`
+							: solidColorMerged;
 						const { fillText, fillShadow } = getContrastColors(solidColorMerged);
 
 						// Merge prev + gap + next into prev
@@ -696,7 +698,9 @@
 				const wmoCode = testWmoCodes[dayOffset % testWmoCodes.length];
 
 				const solidColor = WMO_CODES[wmoCode].color;
-				const fill = `url(#cloud-gradient-${wmoCode}-${msStart})`;
+				const fill = wmoGradientStore.value
+					? `url(#cloud-gradient-${wmoCode}-${msStart})`
+					: solidColor;
 				const { fillText, fillShadow } = getContrastColors(solidColor);
 				codes.push({
 					ms: msEnd,

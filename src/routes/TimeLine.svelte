@@ -1760,6 +1760,12 @@
 			drop-shadow(0 0 6px rgba(128, 128, 128, 0.4)) drop-shadow(0 0 12px rgba(128, 128, 128, 0.3));
 	}
 
+	/* Add light/dark glow to plot lines for better readability (embossed effect) */
+	div > :global(svg g[aria-label='line'] path) {
+		filter: drop-shadow(-1px -1px 2px rgba(255, 255, 255, 0.5))
+			drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.4));
+	}
+
 	div {
 		display: grid;
 		align-items: center;

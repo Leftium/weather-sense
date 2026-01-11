@@ -836,7 +836,7 @@
 		onTimeChange: (ms: number) => emit('weatherdata_requestedSetTime', { ms }),
 		onTrackingStart: (node: HTMLElement) => emit('weatherdata_requestedTrackingStart', { node }),
 		onTrackingEnd: () => emit('weatherdata_requestedTrackingEnd'),
-		onTopRegionTap: toggleSkyThroughWmo,
+		onTopRegionTap: wmoGradientStore.toggle,
 		topRegionRatio: 0.3, // Top 30% where the solid WMO label band is
 	};
 
@@ -908,6 +908,7 @@
 		draw, // plotVisibility checkboxes
 		showSkyThroughWmo, // WMO label band tap toggle
 		groupIcons, // Summary icon click (group/ungroup WMO codes)
+		wmoGradient: wmoGradientStore.value, // Gradient vs solid WMO backgrounds
 	});
 
 	// @ts-expect-error: x.type is valid.

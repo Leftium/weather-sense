@@ -86,6 +86,15 @@
 		isVertical = !(offsetWidth > 600 || offsetHeight / offsetWidth < 1.2);
 		mounted = true;
 	});
+
+	// Divider colors with contrast text
+	const dividerColors = [
+		{ bg: '#a8d8f0', ...getContrastColors('#a8d8f0') }, // No Precipitation (sky-clear)
+		{ bg: '#047878', ...getContrastColors('#047878') }, // Rain (cyan)
+		{ bg: '#5a6aad', ...getContrastColors('#5a6aad') }, // Freezing Rain (periwinkle)
+		{ bg: '#ed2aac', ...getContrastColors('#ed2aac') }, // Snow (fuchsia)
+		{ bg: '#f42c6f', ...getContrastColors('#f42c6f') }, // Thunder Storm (pink)
+	];
 </script>
 
 <div class="container-fluid flex-column {mode}" bind:offsetWidth bind:offsetHeight>
@@ -125,7 +134,14 @@
 						</article>
 					{/each}
 					{#each ['No Precipitation', 'Rain', 'Freezing Rain', 'Snow', 'Thunder Storm'] as title, index}
-						<article class="divider divider-{index}">{title}</article>
+						<article
+							class="divider divider-{index}"
+							style:background-color={dividerColors[index].bg}
+							style:color={dividerColors[index].fillText}
+							style:text-shadow={`1px 1px ${dividerColors[index].fillShadow}`}
+						>
+							{title}
+						</article>
 					{/each}
 
 					{#each [...Array(11)] as item}
@@ -140,14 +156,6 @@
 <style lang="scss">
 	@use 'sass:color';
 	@use '../../variables' as *;
-
-	// Color values for dividers
-	$amber-200: #ffbf00;
-	$grey-450: #808080;
-	$cyan-550: #047878; // Matches rain group
-	$periwinkle: #5a6aad; // Matches freezing rain group
-	$fuchsia-450: #ed2aac;
-	$pink-450: #f42c6f;
 
 	.grids-wrapper {
 		overflow-y: auto;
@@ -325,7 +333,6 @@
 			}
 
 			.divider {
-				background-color: $amber-200;
 				font-size: 1.2em;
 				font-weight: bold;
 				margin-bottom: 0;
@@ -334,13 +341,11 @@
 				grid-row: 1 / 4;
 				text-align: center;
 				margin-left: 1em;
-				color: white;
 				border-radius: 6px;
 			}
 
 			.divider-0 {
 				grid-column-start: 1;
-				background-color: $grey-450;
 			}
 
 			.group-clear {
@@ -357,7 +362,6 @@
 
 			.divider-1 {
 				grid-column-start: 5;
-				background-color: $cyan-550;
 			}
 
 			.group-drizzle {
@@ -374,7 +378,6 @@
 
 			.divider-2 {
 				grid-column-start: 9;
-				background-color: $periwinkle;
 			}
 
 			.group-icy-drizzle {
@@ -391,7 +394,6 @@
 
 			.divider-3 {
 				grid-column-start: 13;
-				background-color: $fuchsia-450;
 			}
 
 			.group-snow-grains {
@@ -408,7 +410,6 @@
 
 			.divider-4 {
 				grid-column-start: 17;
-				background-color: $pink-450;
 			}
 
 			.group-thunderstorm {
@@ -443,7 +444,6 @@
 			}
 
 			.divider {
-				background-color: $amber-200;
 				font-size: 1.2em;
 				font-weight: bold;
 				margin-bottom: 0;
@@ -453,7 +453,6 @@
 				height: 2em;
 				text-align: center;
 				margin-top: 2em;
-				color: white;
 				border-radius: 6px;
 				display: flex;
 				align-items: center;
@@ -462,7 +461,6 @@
 
 			.divider-0 {
 				grid-row-start: 1;
-				background-color: $grey-450;
 			}
 
 			.group-clear {
@@ -479,7 +477,6 @@
 
 			.divider-1 {
 				grid-row-start: 5;
-				background-color: $cyan-550;
 			}
 
 			.group-drizzle {
@@ -496,7 +493,6 @@
 
 			.divider-2 {
 				grid-row-start: 9;
-				background-color: $periwinkle;
 			}
 
 			.group-icy-drizzle {
@@ -513,7 +509,6 @@
 
 			.divider-3 {
 				grid-row-start: 13;
-				background-color: $fuchsia-450;
 			}
 
 			.group-snow-grains {
@@ -530,7 +525,6 @@
 
 			.divider-4 {
 				grid-row-start: 17;
-				background-color: $pink-450;
 			}
 
 			.group-thunderstorm {

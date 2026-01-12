@@ -507,6 +507,12 @@
 				Reset
 			</button>
 		</div>
+
+		<div class="button-group">
+			<button class="tile-btn unit-toggle" onclick={toggleUnits}>
+				°{nsWeatherData.units.temperature}, {nsWeatherData.units.temperature === 'C' ? 'km' : 'mi'}
+			</button>
+		</div>
 	</div>
 </div>
 
@@ -635,6 +641,7 @@
 	.button-bar {
 		display: flex;
 		justify-content: center;
+		gap: 12px;
 		margin-top: 6px;
 
 		.button-group {
@@ -704,6 +711,12 @@
 			&:disabled {
 				opacity: 0.4;
 				cursor: default;
+			}
+
+			&.unit-toggle {
+				width: 62px;
+				text-align: center;
+				white-space: nowrap;
 			}
 		}
 	}

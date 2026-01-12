@@ -802,7 +802,7 @@ export function makeNsWeatherData() {
 			return formatted;
 		}
 		if (unit === 'C') {
-			let formatted = `${celcius(n)?.toFixed(1)}°`;
+			let formatted = `${Math.round(celcius(n) ?? 0)}°`;
 			if (showUnits) {
 				formatted = formatted + 'C';
 			}

@@ -831,7 +831,7 @@ export function celcius(f: number | undefined) {
 // tempUnit: 'C' for Celsius, 'F' for Fahrenheit
 export function formatTemp(temp: number, tempUnit: 'C' | 'F'): string {
 	if (tempUnit === 'C') {
-		return `${celcius(temp)?.toFixed(1)}°`;
+		return `${Math.round(celcius(temp) ?? 0)}°`;
 	}
 	return `${Math.round(temp)}°`;
 }

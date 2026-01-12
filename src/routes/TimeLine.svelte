@@ -1553,7 +1553,7 @@
 			const lowOffset =
 				localRange > 0 ? ((localMax - dataForecast.actualLowTemp) / localRange) * 100 : 100;
 
-			// Define gradient and filters before using them
+			// Define gradient for temperature line (filters are defined globally in template)
 			marks.push(
 				() => htl.svg`
                   <defs>
@@ -1561,21 +1561,6 @@
                       <stop offset="${highOffset}%" stop-color="${colorAtHigh}" />
                       <stop offset="${lowOffset}%" stop-color="${colorAtLow}" />
                     </linearGradient>
-                    
-                    <!-- Embossed glow filter for plot lines (iOS-compatible) -->
-                    <filter id="emboss-glow-${msStart}" x="-50%" y="-50%" width="200%" height="200%">
-                      <!-- Light shadow (top-left) -->
-                      <feDropShadow dx="-1" dy="-1" stdDeviation="1" flood-color="white" flood-opacity="0.5" result="light"/>
-                      <!-- Dark shadow (bottom-right) -->
-                      <feDropShadow dx="1" dy="1" stdDeviation="1" flood-color="black" flood-opacity="0.4"/>
-                    </filter>
-                    
-                    <!-- Gray glow filter for WMO icons -->
-                    <filter id="icon-glow-${msStart}" x="-50%" y="-50%" width="200%" height="200%">
-                      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="gray" flood-opacity="0.6"/>
-                      <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="gray" flood-opacity="0.4"/>
-                      <feDropShadow dx="0" dy="0" stdDeviation="12" flood-color="gray" flood-opacity="0.3"/>
-                    </filter>
                   </defs>`,
 			);
 
@@ -1671,15 +1656,16 @@
 		div?.append(plot); // Then add the new chart.
 
 		// Apply SVG filters to plot elements (more reliable than CSS filters on iOS)
+		// Filters are defined globally in template, referenced here by ID
 		const svg = div?.querySelector('svg');
 		if (svg) {
 			// Apply embossed glow to plot lines
 			svg.querySelectorAll('g[aria-label="line"] path').forEach((path) => {
-				(path as SVGPathElement).style.filter = `url(#emboss-glow-${msStart})`;
+				(path as SVGPathElement).style.filter = 'url(#emboss-glow)';
 			});
 			// Apply gray glow to WMO icons
 			svg.querySelectorAll('g[aria-label="image"] image').forEach((img) => {
-				(img as SVGImageElement).style.filter = `url(#icon-glow-${msStart})`;
+				(img as SVGImageElement).style.filter = 'url(#icon-glow)';
 			});
 			// Allow tracker to overflow for extended ghost tracker line
 			if (extendTracker) {
@@ -1760,6 +1746,33 @@
 	</div>
 {/if}
 
+<!-- Global SVG filter definitions (shared across all plots, avoids duplication) -->
+<svg class="global-filters">
+	<defs>
+		<!-- Embossed glow filter for plot lines (iOS-compatible) -->
+		<filter id="emboss-glow" x="-50%" y="-50%" width="200%" height="200%">
+			<!-- Light shadow (top-left) -->
+			<feDropShadow
+				dx="-1"
+				dy="-1"
+				stdDeviation="1"
+				flood-color="white"
+				flood-opacity="0.5"
+				result="light"
+			/>
+			<!-- Dark shadow (bottom-right) -->
+			<feDropShadow dx="1" dy="1" stdDeviation="1" flood-color="black" flood-opacity="0.4" />
+		</filter>
+
+		<!-- Gray glow filter for WMO icons -->
+		<filter id="icon-glow" x="-50%" y="-50%" width="200%" height="200%">
+			<feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="gray" flood-opacity="0.6" />
+			<feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="gray" flood-opacity="0.4" />
+			<feDropShadow dx="0" dy="0" stdDeviation="12" flood-color="gray" flood-opacity="0.3" />
+		</filter>
+	</defs>
+</svg>
+
 <div
 	bind:this={div}
 	bind:clientWidth
@@ -1785,8 +1798,13 @@
 		pointer-events: none;
 	}
 
-	/* Filters for icons and plot lines are applied via SVG filter elements
-	   (see emboss-glow and icon-glow filters in plotData) for iOS compatibility */
+	/* Global SVG filters (hidden, only contains filter definitions) */
+	.global-filters {
+		position: absolute;
+		width: 0;
+		height: 0;
+		overflow: hidden;
+	}
 
 	div {
 		display: grid;

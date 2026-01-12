@@ -1553,7 +1553,7 @@
 			const lowOffset =
 				localRange > 0 ? ((localMax - dataForecast.actualLowTemp) / localRange) * 100 : 100;
 
-			// Define gradient before using it
+			// Define gradient and filters before using them
 			marks.push(
 				() => htl.svg`
                   <defs>
@@ -1561,6 +1561,21 @@
                       <stop offset="${highOffset}%" stop-color="${colorAtHigh}" />
                       <stop offset="${lowOffset}%" stop-color="${colorAtLow}" />
                     </linearGradient>
+                    
+                    <!-- Embossed glow filter for plot lines (iOS-compatible) -->
+                    <filter id="emboss-glow-${msStart}" x="-50%" y="-50%" width="200%" height="200%">
+                      <!-- Light shadow (top-left) -->
+                      <feDropShadow dx="-1" dy="-1" stdDeviation="1" flood-color="white" flood-opacity="0.5" result="light"/>
+                      <!-- Dark shadow (bottom-right) -->
+                      <feDropShadow dx="1" dy="1" stdDeviation="1" flood-color="black" flood-opacity="0.4"/>
+                    </filter>
+                    
+                    <!-- Gray glow filter for WMO icons -->
+                    <filter id="icon-glow-${msStart}" x="-50%" y="-50%" width="200%" height="200%">
+                      <feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="gray" flood-opacity="0.6"/>
+                      <feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="gray" flood-opacity="0.4"/>
+                      <feDropShadow dx="0" dy="0" stdDeviation="12" flood-color="gray" flood-opacity="0.3"/>
+                    </filter>
                   </defs>`,
 			);
 
@@ -1655,10 +1670,21 @@
 		div?.firstChild?.remove(); // First remove old chart, if any.
 		div?.append(plot); // Then add the new chart.
 
-		// Allow tracker to overflow for extended ghost tracker line
-		if (extendTracker) {
-			const svg = div?.querySelector('svg');
-			if (svg) svg.style.overflow = 'visible';
+		// Apply SVG filters to plot elements (more reliable than CSS filters on iOS)
+		const svg = div?.querySelector('svg');
+		if (svg) {
+			// Apply embossed glow to plot lines
+			svg.querySelectorAll('g[aria-label="line"] path').forEach((path) => {
+				(path as SVGPathElement).style.filter = `url(#emboss-glow-${msStart})`;
+			});
+			// Apply gray glow to WMO icons
+			svg.querySelectorAll('g[aria-label="image"] image').forEach((img) => {
+				(img as SVGImageElement).style.filter = `url(#icon-glow-${msStart})`;
+			});
+			// Allow tracker to overflow for extended ghost tracker line
+			if (extendTracker) {
+				svg.style.overflow = 'visible';
+			}
 		}
 
 		// Reset tracker cache since DOM was replaced, then render initial tracker
@@ -1759,17 +1785,8 @@
 		pointer-events: none;
 	}
 
-	/* Add glow behind WMO weather icons for better readability */
-	div > :global(svg g[aria-label='image'] image) {
-		filter: drop-shadow(0 0 3px rgba(128, 128, 128, 0.6))
-			drop-shadow(0 0 6px rgba(128, 128, 128, 0.4)) drop-shadow(0 0 12px rgba(128, 128, 128, 0.3));
-	}
-
-	/* Add light/dark glow to plot lines for better readability (embossed effect) */
-	div > :global(svg g[aria-label='line'] path) {
-		filter: drop-shadow(-1px -1px 2px rgba(255, 255, 255, 0.5))
-			drop-shadow(1px 1px 2px rgba(0, 0, 0, 0.4));
-	}
+	/* Filters for icons and plot lines are applied via SVG filter elements
+	   (see emboss-glow and icon-glow filters in plotData) for iOS compatibility */
 
 	div {
 		display: grid;

@@ -67,14 +67,13 @@
 		</datalist>
 	</div>
 
-	<div role="none" class="play-pause" {onclick}>
+	<button class="play-pause" {onclick}>
 		<iconify-icon
 			icon={`solar:${nsWeatherData.radarPlaying ? 'pause' : 'play'}-bold`}
 			width="1em"
 			height="1em"
-			style="color: #666"
 		></iconify-icon>
-	</div>
+	</button>
 </div>
 
 <style lang="scss">
@@ -92,7 +91,11 @@
 		cursor: pointer;
 		display: flex;
 		align-items: center;
-		padding-top: 1px;
+		padding: 1px 0.5em 0;
+		margin: 0;
+		border: none;
+		background: transparent;
+		color: #666;
 	}
 
 	.range-wrapper {

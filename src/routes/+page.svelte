@@ -21,16 +21,18 @@
 		colors,
 		aqiUsToLabel,
 		aqiEuropeToLabel,
-		getSkyColors,
 		getSkyColorsFullPalette,
-		colorsDelta,
 		contrastTextColor,
 		temperatureToColor,
 		DAY_START_HOUR,
 		mixColors,
-		lerpPaletteFast,
-		getSunAltitude,
 	} from '$lib/util.js';
+	import {
+		createSkyAnimator,
+		getInitialSkyColors,
+		DAY_COLORS,
+		type DayInfo,
+	} from '$lib/skyAnimation';
 	import type { WmoCodeInfo } from '$lib/util.js';
 	import { iconSetStore } from '$lib/iconSet.svelte';
 	import RadarMapLibre from './RadarMapLibre.svelte';
@@ -289,510 +291,55 @@
 	});
 
 	// Dynamic sky gradient with smooth animated color transitions
+	// Uses SkyAnimator for eased transitions on enter/leave/switch and time-based scrubbing
 
-	// Calculate initial sky colors based on timezone from request
-	// Estimate sunrise ~6am and sunset ~6pm local time
-	// Returns null if no timezone available (e.g., location passed via query param)
-	function getInitialColors(timezone: string | null): string[] | null {
-		if (!timezone) return null;
-		const now = dayjs().tz(timezone);
-		const todayStart = now.startOf('day');
-		const estimatedSunrise = todayStart.add(6, 'hour').valueOf(); // 6:00 AM
-		const estimatedSunset = todayStart.add(18, 'hour').valueOf(); // 6:00 PM
-		return getSkyColors(now.valueOf(), estimatedSunrise, estimatedSunset);
-	}
-
-	const DAY_COLORS = ['#f0f8ff', '#a8d8f0', '#6bb3e0']; // Fallback daytime colors
 	const initialTimezone = untrack(() => data.timezone); // Capture initial value (intentionally non-reactive)
-	const DEFAULT_COLORS = getInitialColors(initialTimezone) ?? DAY_COLORS;
-
-	// The display time (absolute ms) - tracks what time the sky colors represent
-	let displayMs = $state(Date.now());
-
-	// Throttled display ms - only this triggers Svelte reactivity, updated at 15fps
-	let throttledDisplayMs = $state(Date.now());
+	const DEFAULT_COLORS = getInitialSkyColors(initialTimezone) ?? DAY_COLORS;
 
 	// DOM refs for direct gradient updates (bypasses Svelte reactivity)
 	let stickyInfoEl: HTMLDivElement;
 	let skyGradientBgEl: HTMLDivElement;
 
-	// ============================================================================
-	// SKY ANIMATION STATE
-	// Two modes: 'time' (scrubbing through dawn/dusk) vs 'direct' (skip dawn/dusk)
-	// Direct mode uses easing functions for smooth transitions
-	// ============================================================================
+	// Track dimensions for seamless vertical gradient calculation
+	let stickyHeight = $state(200); // will be bound to element
+	let tilesHeight = $state(400); // will be bound to element
 
-	// Current displayed colors (for direct color animation)
-	let displayColors: string[] = DEFAULT_COLORS;
+	// Throttled display ms - triggers Svelte reactivity, updated at 15fps
+	let throttledDisplayMs = $state(Date.now());
 
-	// ============================================================================
-	// EASED DIRECT ANIMATION
-	// When target changes, start a new transition from current colors to target
-	// ============================================================================
+	// Create sky animator with callbacks
+	const skyAnimator = createSkyAnimator({
+		findDayForMs: (ms: number): DayInfo | undefined => {
+			const day = findDayForMs(ms);
+			return day ? { ms: day.ms, sunrise: day.sunrise, sunset: day.sunset } : undefined;
+		},
+		getTrackingState: () => ({
+			targetMs: weatherStore.rawMs,
+			trackedElement: weatherStore.trackedElement,
+		}),
+		getHeights: () => ({ stickyHeight, tilesHeight }),
+		getElements: () => ({ stickyEl: stickyInfoEl, tilesEl: skyGradientBgEl }),
+		defaultColors: DEFAULT_COLORS,
+	});
 
-	// ============================================================================
-	// DELAYED TRANSITION SYSTEM
-	// Wait for mouse to settle, then do fast-in slow-out transition
-	// ============================================================================
-
-	// Track whether we were tracking on the previous frame and which element
-	let wasTracking = false;
-	let lastTrackedElement: HTMLElement | null = null;
-
-	// Transition state (for enter/leave/switch)
-	const TRANSITION_DURATION = 300; // ms
-	const SETTLE_DELAY = 100; // ms - wait for mouse to settle before transitioning
-	let transitionStartTime: number | null = null;
-	let transitionStartColors: string[] = DEFAULT_COLORS;
-	let transitionTargetColors: string[] = DEFAULT_COLORS;
-	let transitionTargetMs: number = Date.now(); // The time we're transitioning to
-	let transitionRafId: number | null = null;
-	let settleTimeoutId: ReturnType<typeof setTimeout> | null = null;
-
-	// Time-based animation state (for scrubbing within plot)
-	const TARGET_COLOR_DELTA_PER_FRAME = 0.5 / 15; // Color change per frame at 15fps
-	const MIN_TIME_STEP = 30000; // Min 30 seconds per frame
-	const MAX_TIME_STEP = 14400000; // Max 4 hours per frame
-	const SNAP_THRESHOLD = 30000; // Snap when within 30 seconds
-	let scrubTargetMs: number = Date.now();
-
-	// easeOutExpo - fast start, slow end
-	function ease(t: number): number {
-		return t === 1 ? 1 : 1 - Math.pow(2, -10 * t);
-	}
-
-	/**
-	 * Get target colors for a given time
-	 */
-	function getTargetColors(targetMs: number): string[] {
-		const day = findDayForMs(targetMs);
-		if (!day) return DEFAULT_COLORS;
-		return getSkyColorsFullPalette(targetMs, day.sunrise, day.sunset);
-	}
-
-	/**
-	 * Count dawn/dusk transition zones that overlap with the range between two times.
-	 * A transition zone is sunrise/sunset ± 1 hour.
-	 */
-	function countTransitions(fromMs: number, toMs: number, sunrise: number, sunset: number): number {
-		const minMs = Math.min(fromMs, toMs);
-		const maxMs = Math.max(fromMs, toMs);
-		let count = 0;
-
-		// Check if sunrise transition zone (sunrise ± 1 hour) overlaps with range
-		if (sunrise - MS_IN_HOUR < maxMs && sunrise + MS_IN_HOUR > minMs) {
-			count++;
+	// Run sky animation on every frame tick (15fps from shell's RAF loop)
+	on('weatherdata_frameTick', () => {
+		const state = skyAnimator.tick();
+		// Update reactive state when not tracking (for CSS variables)
+		if (!weatherStore.trackedElement) {
+			throttledDisplayMs = state.displayMs;
 		}
-		// Check if sunset transition zone (sunset ± 1 hour) overlaps with range
-		if (sunset - MS_IN_HOUR < maxMs && sunset + MS_IN_HOUR > minMs) {
-			count++;
-		}
-		return count;
-	}
-
-	/**
-	 * Find which transition (sunrise or sunset) is closest to target.
-	 * Returns 'sunrise', 'sunset', or null if neither is between display and target.
-	 */
-	function findFinalTransition(
-		displayMs: number,
-		targetMs: number,
-		sunrise: number,
-		sunset: number,
-	): 'sunrise' | 'sunset' | null {
-		const minMs = Math.min(displayMs, targetMs);
-		const maxMs = Math.max(displayMs, targetMs);
-
-		// Check which transitions are in the range (zone overlaps)
-		const sunriseInRange = sunrise - MS_IN_HOUR < maxMs && sunrise + MS_IN_HOUR > minMs;
-		const sunsetInRange = sunset - MS_IN_HOUR < maxMs && sunset + MS_IN_HOUR > minMs;
-
-		if (!sunriseInRange && !sunsetInRange) return null;
-		if (sunriseInRange && !sunsetInRange) return 'sunrise';
-		if (!sunriseInRange && sunsetInRange) return 'sunset';
-
-		// Both in range - final is the one closest to target
-		const sunriseDist = Math.abs(sunrise - targetMs);
-		const sunsetDist = Math.abs(sunset - targetMs);
-		return sunriseDist < sunsetDist ? 'sunrise' : 'sunset';
-	}
-
-	/**
-	 * Check if displayMs is currently in the final transition zone.
-	 * Uses distance-based logic to handle cross-timezone cases where sunrise > sunset.
-	 */
-	function isInFinalTransition(
-		displayMs: number,
-		targetMs: number,
-		sunrise: number,
-		sunset: number,
-	): boolean {
-		const finalTrans = findFinalTransition(displayMs, targetMs, sunrise, sunset);
-		if (finalTrans === null) return false; // No transitions between display and target
-
-		const finalTime = finalTrans === 'sunrise' ? sunrise : sunset;
-
-		// We're in final transition if displayMs is within ±1hr of the final transition
-		return Math.abs(displayMs - finalTime) < MS_IN_HOUR;
-	}
-
-	/**
-	 * Get the edge of the final transition zone (where we should stop skipping).
-	 * Returns the edge closest to displayMs (the entry point into the final zone).
-	 */
-	function getFinalTransitionEdge(
-		displayMs: number,
-		targetMs: number,
-		sunrise: number,
-		sunset: number,
-	): number | null {
-		const finalTrans = findFinalTransition(displayMs, targetMs, sunrise, sunset);
-		if (finalTrans === null) return null;
-
-		const finalTime = finalTrans === 'sunrise' ? sunrise : sunset;
-		const direction = targetMs > displayMs ? 1 : -1;
-
-		// Return the edge we'll hit first when moving toward target
-		if (direction > 0) {
-			return finalTime - MS_IN_HOUR; // Start of zone (approaching from before)
-		} else {
-			return finalTime + MS_IN_HOUR; // End of zone (approaching from after)
-		}
-	}
-
-	/**
-	 * Run transition animation loop (throttled to 15fps to reduce GPU usage)
-	 */
-	const TRANSITION_FRAME_INTERVAL = 1000 / 15; // 15fps
-	let transitionLastFrameTime = 0;
-
-	function runTransition(now: number) {
-		if (transitionStartTime === null) {
-			transitionRafId = null;
-			return;
-		}
-
-		// Throttle to 15fps
-		if (now - transitionLastFrameTime < TRANSITION_FRAME_INTERVAL) {
-			transitionRafId = requestAnimationFrame(runTransition);
-			return;
-		}
-		transitionLastFrameTime = now;
-
-		const elapsed = now - transitionStartTime;
-		const progress = Math.min(1, elapsed / TRANSITION_DURATION);
-		const easedProgress = ease(progress);
-
-		// Lerp colors
-		displayColors = lerpPaletteFast(transitionStartColors, transitionTargetColors, easedProgress);
-		updateSkyGradientDOMWithColors(displayColors);
-
-		if (progress >= 1) {
-			// Done - update displayMs to the target time
-			displayMs = transitionTargetMs;
-			scrubTargetMs = transitionTargetMs; // Initialize scrub target for when scrubbing starts
-			transitionStartTime = null;
-			transitionRafId = null;
-		} else {
-			// Continue
-			transitionRafId = requestAnimationFrame(runTransition);
-		}
-	}
-
-	/**
-	 * Start an eased color transition immediately
-	 */
-	function startTransitionNow(targetColors: string[]) {
-		transitionStartColors = [...displayColors];
-		transitionTargetColors = targetColors;
-		transitionStartTime = performance.now();
-
-		// Start animation loop if not running
-		if (transitionRafId === null) {
-			transitionRafId = requestAnimationFrame(runTransition);
-		}
-	}
-
-	/**
-	 * Schedule a transition after settle delay
-	 * Defers color computation until after mouse settles to reduce work during rapid plot switching
-	 */
-	function startTransition(targetMs: number) {
-		// Cancel any pending transition
-		if (settleTimeoutId !== null) {
-			clearTimeout(settleTimeoutId);
-		}
-
-		// Wait for mouse to settle before computing colors and starting transition
-		settleTimeoutId = setTimeout(() => {
-			settleTimeoutId = null;
-			const targetColors = getTargetColors(targetMs);
-			startTransitionNow(targetColors);
-		}, SETTLE_DELAY);
-	}
-
-	/**
-	 * Cancel any pending or running transition
-	 */
-	function cancelTransition() {
-		if (settleTimeoutId !== null) {
-			clearTimeout(settleTimeoutId);
-			settleTimeoutId = null;
-		}
-		if (transitionRafId !== null) {
-			cancelAnimationFrame(transitionRafId);
-			transitionRafId = null;
-		}
-		transitionStartTime = null;
-	}
-
-	// Track scrub animation start for easing
-	let scrubStartDisplayMs: number = Date.now();
-
-	/**
-	 * Animate displayMs toward scrubTargetMs using time-based interpolation
-	 * - Fast start, slow end (eased)
-	 * - Slows down during dawn/dusk when colors change rapidly
-	 * - Speeds through intermediate transitions, only slows for final one
-	 */
-	function animateScrub() {
-		const totalDiff = scrubTargetMs - scrubStartDisplayMs;
-		const remainingDiff = scrubTargetMs - displayMs;
-		const absDiff = Math.abs(remainingDiff);
-
-		// If close enough, snap
-		if (absDiff < SNAP_THRESHOLD) {
-			displayMs = scrubTargetMs;
-			displayColors = getTargetColors(displayMs);
-			updateSkyGradientDOMWithColors(displayColors);
-			return;
-		}
-
-		const direction = Math.sign(remainingDiff);
-
-		// Get current day's sunrise/sunset for color calculation
-		const day = findDayForMs(displayMs);
-		if (!day) {
-			// Fallback to instant
-			displayMs = scrubTargetMs;
-			displayColors = getTargetColors(displayMs);
-			updateSkyGradientDOMWithColors(displayColors);
-			return;
-		}
-
-		// Determine if we should skip intermediate transitions
-		// Skip if: multiple transition zones AND not yet in final transition
-		const numTransitions = countTransitions(displayMs, scrubTargetMs, day.sunrise, day.sunset);
-		const inFinal = isInFinalTransition(displayMs, scrubTargetMs, day.sunrise, day.sunset);
-		const skipIntermediate = numTransitions > 1 && !inFinal;
-
-		let timeStep: number;
-
-		if (skipIntermediate) {
-			// Skip intermediate transitions - jump to edge of final transition zone
-			const edge = getFinalTransitionEdge(displayMs, scrubTargetMs, day.sunrise, day.sunset);
-			if (edge !== null) {
-				timeStep = Math.abs(edge - displayMs);
-			} else {
-				timeStep = MAX_TIME_STEP;
-			}
-		} else {
-			// Normal animation - use color-based speed
-			const sampleStep = 60000; // 1 minute sample
-			const sampleMs = displayMs + direction * sampleStep;
-
-			const currentColors = getSkyColors(displayMs, day.sunrise, day.sunset);
-			const sampleColors = getSkyColors(sampleMs, day.sunrise, day.sunset);
-			const colorDelta = colorsDelta(currentColors, sampleColors);
-
-			// Check sun altitude to detect "approaching transition" state
-			// Colors only change when sun altitude is between -18° and +6°
-			// Outside this range, colorDelta=0 even when close to sunrise/sunset
-			const sunAlt = getSunAltitude(displayMs, day.sunrise, day.sunset);
-			const altDeg = (sunAlt * 180) / Math.PI;
-			const ALTITUDE_TRANSITION_MAX = 6; // degrees - above this, colors don't change
-			const approachingTransition = altDeg > ALTITUDE_TRANSITION_MAX && altDeg < 30; // Between 6° and 30°
-
-			if (colorDelta >= 0.0001) {
-				// Colors are changing - use color-based animation
-				timeStep = (TARGET_COLOR_DELTA_PER_FRAME / colorDelta) * sampleStep;
-			} else if (approachingTransition) {
-				// Sun is above the color transition zone but approaching it
-				// Use a moderate step (6 min) to avoid jumping through the transition
-				timeStep = 6 * 60 * 1000; // 6 minutes per frame
-			} else {
-				// Deep day (alt > 30°) or deep night (alt < -18°) - use max step
-				timeStep = MAX_TIME_STEP;
-			}
-
-			// If there's a transition ahead and we're not in it yet, don't overshoot into it
-			if (numTransitions >= 1 && !inFinal) {
-				const edge = getFinalTransitionEdge(displayMs, scrubTargetMs, day.sunrise, day.sunset);
-				if (edge !== null) {
-					const distToEdge = Math.abs(edge - displayMs);
-					if (timeStep > distToEdge) {
-						timeStep = distToEdge;
-					}
-				}
-			}
-
-			// Apply easing: fast start, slow end
-			const progress = Math.abs(totalDiff) > 0 ? 1 - absDiff / Math.abs(totalDiff) : 1;
-			const easedMultiplier = 2 - ease(progress); // 2 at start (fast), 1 at end (slow)
-			timeStep = timeStep * easedMultiplier;
-		}
-
-		// Clamp time step
-		timeStep = Math.max(MIN_TIME_STEP, Math.min(MAX_TIME_STEP, timeStep));
-
-		// Don't overshoot target
-		if (timeStep > absDiff) {
-			timeStep = absDiff;
-		}
-
-		// Step toward target
-		displayMs = displayMs + direction * timeStep;
-
-		// Update colors and DOM
-		displayColors = getTargetColors(displayMs);
-		updateSkyGradientDOMWithColors(displayColors);
-	}
-
-	/**
-	 * Start a new scrub animation toward target
-	 */
-	function startScrub(targetMs: number) {
-		scrubTargetMs = targetMs;
-		scrubStartDisplayMs = displayMs;
-		animateScrub();
-	}
+	});
 
 	// Compute colors from throttled displayMs (only recalculates at 15fps)
-	// Use full palette (with white/purple) for sticky bg
 	const throttledColors = $derived.by(() => {
 		const day = findDayForMs(throttledDisplayMs);
 		if (!day) return DEFAULT_COLORS;
 		return getSkyColorsFullPalette(throttledDisplayMs, day.sunrise, day.sunset);
 	});
 
-	/**
-	 * Handle sky color updates
-	 * - Enter/leave/switch plot: 100ms delay, then 200ms eased transition
-	 * - Scrubbing within same plot: instant color change
-	 */
-	function handleSkyUpdate(
-		targetMs: number,
-		isTracking: boolean,
-		trackedElement: HTMLElement | null,
-	) {
-		const justStartedTracking = isTracking && !wasTracking;
-		const justStoppedTracking = !isTracking && wasTracking;
-		const switchedPlots = isTracking && wasTracking && trackedElement !== lastTrackedElement;
-		const targetChanged = justStartedTracking || justStoppedTracking || switchedPlots;
-
-		wasTracking = isTracking;
-		lastTrackedElement = trackedElement;
-
-		if (targetChanged) {
-			// Target changed - cancel any pending transition and start new one with delay
-			cancelTransition();
-
-			// Determine target: current cursor position if tracking, current time if not
-			const newTargetMs = isTracking ? targetMs : Date.now();
-			// Store target time for when transition completes
-			transitionTargetMs = newTargetMs;
-			// Don't update displayMs here - let the transition animate the colors
-			// displayMs will be updated when transition completes in runTransition()
-			if (!isTracking) {
-				throttledDisplayMs = newTargetMs;
-			}
-			// Defer color computation until after settle delay (reduces work during rapid plot switching)
-			startTransition(newTargetMs);
-			return;
-		}
-
-		if (isTracking) {
-			// If a transition is pending or running, let it complete before scrubbing
-			if (settleTimeoutId !== null || transitionStartTime !== null) {
-				return;
-			}
-
-			// Scrubbing within same plot - use time-based animation
-			// If target changed significantly, restart easing from current position
-			const targetMoved = Math.abs(targetMs - scrubTargetMs) > SNAP_THRESHOLD;
-			if (targetMoved) {
-				startScrub(targetMs);
-			} else {
-				// Continue toward existing target
-				animateScrub();
-			}
-		}
-
-		// Not tracking - do nothing (colors stay at current time)
-	}
-
-	/**
-	 * Main sky animation entry point - eased transitions on enter/leave/switch, no change while scrubbing
-	 */
-	function animateSky() {
-		const targetMs = weatherStore.rawMs; // Poll non-reactive value
-		const trackedElement = weatherStore.trackedElement;
-		const isTracking = !!trackedElement;
-
-		// Handle enter/leave/switch plot
-		handleSkyUpdate(targetMs, isTracking, trackedElement);
-
-		// Update reactive state when not tracking
-		if (!isTracking) {
-			throttledDisplayMs = displayMs;
-		}
-	}
-
 	// Detect iOS for gradient workaround (CSS @supports doesn't work for JS-generated styles)
 	const isIOS = browser && /iPad|iPhone|iPod/.test(navigator.userAgent);
-
-	/**
-	 * Update sky gradient DOM with given colors
-	 * Extracted to allow both time-based and direct color animation
-	 */
-	function updateSkyGradientDOMWithColors(colors: string[]) {
-		// Calculate boundary color for seamless vertical gradient
-		const total = stickyHeight + tilesHeight;
-		const ratio = stickyHeight / total;
-		let boundaryCol: string;
-		if (ratio <= 0.5) {
-			const t = ratio / 0.5;
-			boundaryCol = mixColors(colors[0], colors[1], t);
-		} else {
-			const t = (ratio - 0.5) / 0.5;
-			boundaryCol = mixColors(colors[1], colors[2], t);
-		}
-
-		// Horizontal gradient for vivid overlay
-		const gradientH = `linear-gradient(90deg, ${colors[2]} 0%, ${colors[1]} 50%, ${colors[0]} 100%)`;
-		// Seamless vertical gradients - sticky goes top to boundary, tiles goes boundary to bottom
-		const gradientVSticky = `linear-gradient(180deg, ${colors[0]} 0%, ${boundaryCol} 100%)`;
-		const gradientVTiles = `linear-gradient(180deg, ${boundaryCol} 0%, ${colors[2]} 100%)`;
-
-		if (stickyInfoEl) {
-			stickyInfoEl.style.background = `${gradientH}, ${gradientVSticky}`;
-			stickyInfoEl.style.backgroundBlendMode = 'overlay';
-			// Update text color for contrast
-			stickyInfoEl.style.color = contrastTextColor(colors[1]);
-		}
-		if (skyGradientBgEl) {
-			skyGradientBgEl.style.background = `${gradientH}, ${gradientVTiles}`;
-			skyGradientBgEl.style.backgroundBlendMode = 'overlay';
-			// Update button text colors for contrast (cascades to DailyTiles buttons)
-			skyGradientBgEl.style.setProperty('--btn-text-color', contrastTextColor(colors[1]));
-			skyGradientBgEl.style.setProperty('--btn-text-shadow', contrastTextColor(colors[1], true));
-		}
-	}
-
-	// Run sky animation on every frame tick (15fps from shell's RAF loop)
-	on('weatherdata_frameTick', () => {
-		animateSky();
-	});
 
 	// Build gradients from animated throttledColors
 	// Palettes are [light, mid, dark]
@@ -804,10 +351,6 @@
 			? `linear-gradient(90deg, ${throttledColors[2]} 0%, ${throttledColors[1]} 50%, ${throttledColors[0]} 100%)`
 			: `linear-gradient(45deg, ${throttledColors[2]} 0%, ${throttledColors[1]} 50%, ${throttledColors[0]} 100%)`,
 	);
-
-	// Track dimensions for seamless vertical gradient calculation
-	let stickyHeight = $state(200); // will be bound to element
-	let tilesHeight = $state(400); // will be bound to element
 
 	// Calculate the boundary color for seamless vertical gradient
 	// Gradient goes: color0 (top) -> color1 (middle) -> color2 (bottom)
@@ -894,7 +437,7 @@
 
 	onDestroy(() => {
 		clearEvents();
-		cancelTransition();
+		skyAnimator.destroy();
 	});
 
 	// Detect wide layout using matchMedia (separate breakpoints for collapsed vs expanded)

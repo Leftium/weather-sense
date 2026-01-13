@@ -432,6 +432,8 @@ export function initWeatherShell(data: WeatherData) {
 		if (!data.trackedElement) {
 			data.ms = params.ms;
 			emit('weatherdata_timeChange', { ms: params.ms });
+			// Also emit frameTick so TimeLine trackers update during radar playback
+			emit('weatherdata_frameTick', { ms: params.ms });
 		}
 
 		// Check if past radar end
@@ -444,6 +446,7 @@ export function initWeatherShell(data: WeatherData) {
 				data.ms = Date.now();
 				resetRadarOnPlay = true;
 				emit('weatherdata_timeChange', { ms: Date.now() });
+				emit('weatherdata_frameTick', { ms: Date.now() });
 			}
 		}
 	});

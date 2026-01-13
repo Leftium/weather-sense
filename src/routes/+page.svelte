@@ -287,6 +287,7 @@
 	}
 
 	const DAY_COLORS = ['#f0f8ff', '#a8d8f0', '#6bb3e0']; // Fallback daytime colors
+	// svelte-ignore state_referenced_locally -- intentionally capture initial value only
 	const DEFAULT_COLORS = getInitialColors(data.timezone) ?? DAY_COLORS;
 
 	// The display time (absolute ms) - tracks what time the sky colors represent

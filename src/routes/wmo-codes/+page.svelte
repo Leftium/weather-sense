@@ -233,10 +233,6 @@
 		background: $color-ghost-white;
 	}
 
-	.grid-container {
-		// overflow handled by .grids-wrapper
-	}
-
 	.wmo-grid {
 		display: grid;
 		justify-content: center;

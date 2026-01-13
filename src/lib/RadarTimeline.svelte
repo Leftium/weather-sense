@@ -67,7 +67,7 @@
 		</datalist>
 	</div>
 
-	<button class="play-pause" {onclick}>
+	<button class="play-pause" {onclick} aria-label={nsWeatherData.radarPlaying ? 'Pause' : 'Play'}>
 		<iconify-icon
 			icon={`solar:${nsWeatherData.radarPlaying ? 'pause' : 'play'}-bold`}
 			width="1em"

@@ -180,6 +180,7 @@
 	let containerDiv: HTMLDivElement;
 
 	// Tracker element ref - direct DOM manipulation to avoid Svelte reactivity overhead
+	// svelte-ignore non_reactive_update -- intentionally non-reactive for performance
 	let trackerRect: SVGRectElement | null = null;
 
 	// Update tracker position directly via DOM (bypasses Svelte reactivity)
@@ -744,17 +745,6 @@
 		height: 114px;
 		pointer-events: none;
 		z-index: 4; // Behind tracker line
-	}
-
-	.tracker-line {
-		position: absolute;
-		top: 2px;
-		bottom: 2px;
-		left: 0;
-		width: 2px;
-		transform: translateX(-1px); // Center the line on the position
-		pointer-events: none;
-		z-index: 5; // In front of precip bars, behind temp lines/labels
 	}
 
 	.overlay {

@@ -9,10 +9,12 @@
 
 	import { MS_IN_MINUTE, MS_IN_SECOND } from './util';
 
+	import type { WeatherStore } from '$lib/weather';
 	let {
 		radarLayers = $bindable(),
 		nsWeatherData,
-	}: { radarLayers: Record<string, RadarLayer>; nsWeatherData: NsWeatherData } = $props();
+	}: { radarLayers: Record<string, RadarLayer>; nsWeatherData: NsWeatherData | WeatherStore } =
+		$props();
 
 	const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 
@@ -31,11 +33,11 @@
 		return range;
 	}
 
-	on('weatherdata_updatedRadar', function ({ nsWeatherData }) {
-		//gg('nsWeatherData.radar', $state.snapshot(nsWeatherData.radar));
+	on('weatherdata_updatedRadar', function ({ radar }) {
+		//gg('radar', $state.snapshot(radar));
 
-		min = nsWeatherData.radar.msStart ?? min;
-		max = nsWeatherData.radar.msEnd ?? max;
+		min = radar.msStart ?? min;
+		max = radar.msEnd ?? max;
 	});
 
 	function oninput(this: HTMLInputElement) {

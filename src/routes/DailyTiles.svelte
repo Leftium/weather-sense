@@ -1,5 +1,6 @@
 <script lang="ts">
 	import type { NsWeatherData, WeatherDataEvents } from '$lib/ns-weather-data.svelte';
+	import type { WeatherStore } from '$lib/weather';
 	import {
 		colors,
 		wmoCode,
@@ -32,7 +33,7 @@
 		onAll,
 		onReset,
 	}: {
-		nsWeatherData: NsWeatherData;
+		nsWeatherData: NsWeatherData | WeatherStore;
 		forecastDaysVisible?: number;
 		maxForecastDays?: number;
 

@@ -27,6 +27,7 @@
 		getTemperatureStatsLegacy as getTemperatureStats,
 		getIntervals,
 		type TemperatureStats,
+		type WeatherStore,
 	} from '$lib/weather';
 
 	import { clamp, each, maxBy } from 'lodash-es';
@@ -93,7 +94,7 @@
 		tempStats,
 		debugTrackerMs,
 	}: {
-		nsWeatherData: NsWeatherData;
+		nsWeatherData: NsWeatherData | WeatherStore;
 		plotVisibility: PlotVisibility;
 		start?: number;
 		hours?: number;

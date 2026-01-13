@@ -67,16 +67,6 @@
 	const shell = initWeatherShell(weatherData);
 	onDestroy(() => shell.destroy());
 
-	// New snapshot from store (for components that migrate to new architecture)
-	const snapshot = $derived(weatherStore.snapshot);
-
-	// Debug: log when new snapshot arrives
-	$effect(() => {
-		if (snapshot) {
-			console.log('[NEW] Snapshot received:', snapshot.name, snapshot.daily?.length, 'days');
-		}
-	});
-
 	// Display bundle - all formatted display values derived from NS state
 	const display = $derived(getDisplayBundle(nsWeatherData));
 
@@ -973,7 +963,7 @@
 
 <div class="map-row container">
 	<div class="map">
-		<RadarMapLibre {nsWeatherData} />
+		<RadarMapLibre nsWeatherData={weatherStore} />
 	</div>
 </div>
 
@@ -1085,7 +1075,7 @@
 			style:--btn-text-shadow={textShadowColor}
 		>
 			<DailyTiles
-				{nsWeatherData}
+				nsWeatherData={weatherStore}
 				{forecastDaysVisible}
 				{maxForecastDays}
 				{groupIcons}
@@ -1149,7 +1139,7 @@
 				</div>
 				<div class="timeline today">
 					<TimeLine
-						{nsWeatherData}
+						nsWeatherData={weatherStore}
 						{plotVisibility}
 						{groupIcons}
 						start={Date.now() - 2 * MS_IN_HOUR}
@@ -1219,7 +1209,7 @@
 					</div>
 					<div class={['timeline', { today }]}>
 						<TimeLine
-							{nsWeatherData}
+							nsWeatherData={weatherStore}
 							{plotVisibility}
 							{groupIcons}
 							start={day.ms + DAY_START_HOUR * MS_IN_HOUR}

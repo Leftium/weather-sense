@@ -48,7 +48,7 @@ export type WeatherDataEvents = {
 	weatherdata_requestedFetchRainviewerData: undefined;
 
 	weatherdata_updatedRadar: {
-		nsWeatherData: NsWeatherData;
+		radar: Radar;
 	};
 
 	weatherdata_updatedData: undefined;
@@ -580,7 +580,7 @@ export function makeNsWeatherData() {
 				host: rainviewerData.host || '',
 				frames,
 			};
-			emit('weatherdata_updatedRadar', { nsWeatherData });
+			emit('weatherdata_updatedRadar', { radar: nsWeatherData.radar });
 		});
 
 		on('weatherdata_requestedSetLocation', async function (params) {

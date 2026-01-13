@@ -84,6 +84,8 @@ export function initWeatherShell(data: WeatherData) {
 
 	function emitSnapshot() {
 		emit('weatherdata_snapshot', getSnapshot(data));
+		// Also emit legacy event for components that haven't migrated yet
+		emit('weatherdata_updatedData');
 	}
 
 	// =========================================================================
@@ -413,6 +415,10 @@ export function initWeatherShell(data: WeatherData) {
 				data.name = name;
 			}
 		}
+
+		// Emit initial snapshot with location data (before fetch)
+		// This ensures components have coords/name immediately
+		emitSnapshot();
 
 		// Fetch data in parallel
 		await Promise.all([fetchOpenMeteoForecast(), fetchOpenMeteoAirQuality()]);

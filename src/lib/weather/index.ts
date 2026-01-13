@@ -27,7 +27,7 @@ export { weatherData, type WeatherData } from './data.svelte';
 export { initWeatherShell } from './shell';
 
 // Store (reactive snapshot receiver)
-export { weatherStore } from './store.svelte';
+export { weatherStore, type WeatherStore } from './store.svelte';
 
 // Calculations (pure functions)
 export {

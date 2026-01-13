@@ -19,7 +19,8 @@
 
 	let animationFrameId: number | null = null;
 
-	let { nsWeatherData }: { nsWeatherData: NsWeatherData } = $props();
+	import type { WeatherStore } from '$lib/weather';
+	let { nsWeatherData }: { nsWeatherData: NsWeatherData | WeatherStore } = $props();
 
 	const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 
@@ -131,7 +132,12 @@
 
 		///---------------------------------------------------------------------------------------///
 
-		function addRainviewerLayer(frame: RadarFrame, index: number, preload = false) {
+		function addRainviewerLayer(
+			frame: RadarFrame,
+			index: number,
+			preload = false,
+			visible = false,
+		) {
 			if (!frame?.path) {
 				return null;
 			}
@@ -160,7 +166,7 @@
 						id: layerId,
 						type: 'raster',
 						source: sourceId,
-						paint: { 'raster-opacity': 0 },
+						paint: { 'raster-opacity': visible ? 0.6 : 0 },
 					});
 				}
 
@@ -188,29 +194,26 @@
 		}
 
 		on('weatherdata_updatedRadar', function () {
-			//gg('Initialize Radar layers.');
 			if (!nsWeatherData.radar?.frames?.length) return;
-			if (!map) return; // Map must exist
+			if (!map) return;
 
-			// If map style isn't ready yet, wait for it to load
-			if (!map.isStyleLoaded()) {
-				map.once('load', () => {
-					const radarFrame = nsWeatherData.radar.frames[radarFrameIndex];
-					if (radarFrame) {
-						addRainviewerLayer(radarFrame, radarFrameIndex);
-						if (nsWeatherData.radar.frames[0]) {
-							addRainviewerLayer(nsWeatherData.radar.frames[0], 0, true);
-						}
+			function initRadarLayers() {
+				const radarFrame = nsWeatherData.radar.frames[radarFrameIndex];
+				if (radarFrame) {
+					addRainviewerLayer(radarFrame, radarFrameIndex, false, true);
+					if (nsWeatherData.radar.frames[0]) {
+						addRainviewerLayer(nsWeatherData.radar.frames[0], 0, true);
 					}
-				});
+				}
+			}
+
+			// If map style isn't ready yet, wait for styledata event
+			if (!map.isStyleLoaded()) {
+				map.once('styledata', initRadarLayers);
 				return;
 			}
 
-			const radarFrame = nsWeatherData.radar.frames[radarFrameIndex];
-			if (!radarFrame) return;
-
-			// Load and display current radar layer.
-			addRainviewerLayer(radarFrame, radarFrameIndex);
+			initRadarLayers();
 
 			// Pre-load next radar layers:
 			if (nsWeatherData.radar.frames[0]) {

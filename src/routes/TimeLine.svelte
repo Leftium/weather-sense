@@ -847,7 +847,7 @@
 		const LINEAR_SECTION = 70;
 		const CAP_BONUS = 3;
 
-		return (da: any[]) => {
+		return (da: { precipitation: number }[]) => {
 			const resultArray = da.map((d) => {
 				const p = d.precipitation;
 
@@ -873,7 +873,7 @@
 	}
 
 	function makeTransformTemperature(keyName = 'temperature', localMin?: number, localMax?: number) {
-		return function (da: any[]) {
+		return function (da: Record<string, number>[]) {
 			// Use local (day's) range if provided, otherwise fall back to visible/global
 			const stats = tempStats ?? nsWeatherData.temperatureStats;
 			const minTemp = localMin ?? stats.minTemperatureOnly;

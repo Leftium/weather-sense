@@ -32,6 +32,7 @@
 		lerpPaletteFast,
 		getSunAltitude,
 	} from '$lib/util.js';
+	import type { WmoCodeInfo } from '$lib/util.js';
 	import { iconSetStore } from '$lib/iconSet.svelte';
 	import RadarMapLibre from './RadarMapLibre.svelte';
 
@@ -253,7 +254,10 @@
 
 		if (!groupIcons) {
 			// Ungrouped: find the most severe weather code overall
-			const mostSevere = maxBy(hourlyInRange, (h) => wmoCode(h.weatherCode).wsCode ?? 0);
+			const mostSevere = maxBy(
+				hourlyInRange,
+				(h) => (wmoCode(h.weatherCode) as WmoCodeInfo).wsCode ?? 0,
+			);
 			return mostSevere?.weatherCode ?? null;
 		}
 

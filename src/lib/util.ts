@@ -21,7 +21,7 @@ export function createDebugLogger(name: string, enabled: boolean) {
 		},
 		finish: () => {
 			if (enabled && typeof window !== 'undefined') {
-				(window as any).debugLog = messages.join('\n');
+				(window as unknown as { debugLog: string }).debugLog = messages.join('\n');
 				console.log(`[${name}] Debug stored in window.debugLog - run: copy(debugLog)`);
 			}
 		},
@@ -70,20 +70,20 @@ export function temperatureToColor(temp: number, minTemp: number, maxTemp: numbe
 	return blue.range(red, { space: 'oklch' })(t).toString({ format: 'hex' });
 }
 
-export function jsonPretty(json: any) {
+export function jsonPretty(json: unknown) {
 	return JSON5.stringify(json, { space: 4, quote: '', replacer });
 }
 
-export function objectFromMap(value: any) {
+export function objectFromMap(value: unknown): unknown {
 	if (value instanceof Map) {
 		return Array.from(value).reduce(
-			(obj, [key, value]) => {
+			(obj, [key, val]) => {
 				// Prepend '_' to make numeric key valid unquoted object key:
-				key = isNaN(Number(key)) ? '' : '_' + key;
-				obj[key] = value;
+				const newKey = isNaN(Number(key)) ? String(key) : '_' + key;
+				obj[newKey] = val;
 				return obj;
 			},
-			{} as Record<any, any>,
+			{} as Record<string, unknown>,
 		);
 	} else {
 		return value;
@@ -91,7 +91,7 @@ export function objectFromMap(value: any) {
 }
 
 // Based on: https://stackoverflow.com/questions/29085197/how-do-you-json-stringify-an-es6-map
-export function replacer(_key: any, value: any) {
+export function replacer(_key: string, value: unknown): unknown {
 	if (value instanceof Map) {
 		return objectFromMap(value);
 	} else {
@@ -121,7 +121,7 @@ const contrastTextColorCache = new Map<string, string>();
 const CONTRAST_CACHE_MAX_SIZE = 500; // Limit cache size to prevent memory leaks
 
 export function contrastTextColor(
-	color: any,
+	color: string | Color | null | undefined,
 	shadow: boolean = false,
 	color1: string | Color = colorWhite,
 	color2: string | Color = colorBlack,
@@ -515,8 +515,10 @@ function makeWmo(wsCode: number, colorInput: string, description: string, iconNa
 	};
 }
 
+export type WmoCodeInfo = ReturnType<typeof makeWmo>;
+
 // prettier-ignore
-export const WMO_CODES: Record<number, any> = {
+export const WMO_CODES: Record<number, WmoCodeInfo> = {
 	0:  makeWmo(     2, 'slate.150',   'Clear',            'clear'),
 	1:  makeWmo(   1_1, 'slate.250',   'Mostly Clear',     'mostly-clear'),
 	2:  makeWmo(   1_2, 'slate.350',   'Partly Cloudy',    'partly-cloudy'),
@@ -807,7 +809,10 @@ export function getGroupedWmoCode(
 	}
 
 	// Pick the most severe from the group representatives
-	const mostSevereGroup = maxByFn(groupedCodes, (g) => wmoCode(g.weatherCode).wsCode ?? 0);
+	const mostSevereGroup = maxByFn(
+		groupedCodes,
+		(g) => (wmoCode(g.weatherCode) as WmoCodeInfo).wsCode ?? 0,
+	);
 	return mostSevereGroup?.weatherCode ?? null;
 }
 
@@ -855,13 +860,13 @@ export function getDayWmoCode(
 	return getGroupedWmoCode(hourlyInRange ?? [], maxByFn) ?? fallbackCode;
 }
 
-export function summarize(arrayOrObject: unknown[] | undefined | null) {
+export function summarize(arrayOrObject: unknown) {
 	if (arrayOrObject) {
 		if (Array.isArray(arrayOrObject)) {
 			const array = arrayOrObject;
 			const length = arrayOrObject.length;
 
-			const summary = [`length: ${length}`] as any[];
+			const summary: (string | unknown)[] = [`length: ${length}`];
 			if (length > 0) {
 				summary.push(array[0]);
 			}
@@ -881,10 +886,10 @@ export function summarize(arrayOrObject: unknown[] | undefined | null) {
 
 			return summary;
 		} else if (typeof arrayOrObject === 'object' && arrayOrObject !== null) {
-			const object = arrayOrObject;
+			const object = arrayOrObject as Record<string, unknown>;
 			const keys = Object.keys(object);
 			const numKeys = keys.length;
-			const summary = {} as Record<any, any>;
+			const summary: Record<string, unknown> = {};
 
 			summary.numKeys = numKeys;
 

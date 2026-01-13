@@ -1,51 +1,67 @@
 /**
- * Reactive store for weather snapshots.
+ * Reactive store for weather data.
  *
- * Components use this to receive read-only snapshots via events.
- * This decouples components from the data layer.
+ * FULLY DECOUPLED: Components receive all state via events.
+ * Store has NO direct imports from data layer.
  *
- * Usage:
- * ```svelte
- * <script>
- *   import { weatherStore } from '$lib/weather';
- *   const { snapshot, frameMs } = weatherStore;
- * </script>
+ * Architecture:
+ * - Shell emits events when state changes
+ * - Store subscribes to events and updates local $state
+ * - Components read from store getters
  *
- * {#if snapshot}
- *   <p>{snapshot.temperature}</p>
- * {/if}
- * ```
+ * This ensures:
+ * - Read-only outside (getters only)
+ * - Write via events (no direct mutation)
+ * - True decoupling (no weatherData import)
  */
 
 import { getEmitter } from '$lib/emitter';
-import type { WeatherDataEvents, Snapshot, ForecastItem, AirQualityItem } from './types';
-import { weatherData } from './data.svelte';
+import type { WeatherDataEvents, Snapshot, ForecastItem, AirQualityItem, Radar } from './types';
 import { buildForecastMap, buildAirQualityMap, tzFormat } from './calc';
 
 const { on } = getEmitter<WeatherDataEvents>(import.meta);
 
-/** Current snapshot (cold state) */
-let snapshot = $state<Snapshot | null>(null);
+// =============================================================================
+// COLD STATE (updated via snapshot events)
+// =============================================================================
 
-/** Current frame time (hot state, updates at 15fps during scrubbing) */
-let frameMs = $state(Date.now());
+/** Current snapshot (null until first fetch) */
+let snapshot = $state<Snapshot | null>(null);
 
 /** Derived lookup Maps (rebuilt when snapshot changes) */
 let dataForecast = $state<Map<number, ForecastItem>>(new Map());
 let dataAirQuality = $state<Map<number, AirQualityItem>>(new Map());
 
-// Subscribe to events
+// =============================================================================
+// HOT STATE (updated via individual events at 15fps)
+// =============================================================================
+
+/** Current display time in ms */
+let ms = $state(Date.now());
+
+/** Non-reactive ms for polling (updated alongside ms) */
+let rawMs = Date.now();
+
+/** Radar data (updated frequently during playback) */
+let radar = $state<Radar>({ generated: 0, host: '', frames: [] });
+
+/** Whether radar animation is playing */
+let radarPlaying = $state(false);
+
+/** Currently tracked DOM element */
+let trackedElement = $state<HTMLElement | null>(null);
+
+// =============================================================================
+// EVENT SUBSCRIPTIONS
+// =============================================================================
+
 on('weatherdata_snapshot', (data) => {
 	snapshot = data;
-	// Rebuild lookup Maps from snapshot data
+	// Rebuild lookup Maps from snapshot's raw data
 	if (data) {
-		dataForecast = buildForecastMap(
-			weatherData.omForecast,
-			data.timezone,
-			data.timezoneAbbreviation,
-		);
+		dataForecast = buildForecastMap(data.omForecast, data.timezone, data.timezoneAbbreviation);
 		dataAirQuality = buildAirQualityMap(
-			weatherData.omAirQuality,
+			data.omAirQuality,
 			data.timezone,
 			data.timezoneAbbreviation,
 		);
@@ -53,61 +69,65 @@ on('weatherdata_snapshot', (data) => {
 });
 
 on('weatherdata_frameTick', (data) => {
-	frameMs = data.ms;
+	ms = data.ms;
+	rawMs = data.ms;
 });
 
-/**
- * Weather store - reactive snapshot receiver.
- *
- * Components read from this instead of importing data directly.
- *
- * Hot state is read directly from weatherData for reactivity.
- */
+on('weatherdata_updatedRadar', (data) => {
+	radar = data.radar;
+});
+
+on('weatherdata_playStateChange', (data) => {
+	radarPlaying = data.playing;
+});
+
+on('weatherdata_trackingChange', (data) => {
+	trackedElement = data.element;
+});
+
+on('weatherdata_timeChange', (data) => {
+	ms = data.ms;
+	rawMs = data.ms;
+});
+
+// =============================================================================
+// EXPORTED STORE (read-only getters)
+// =============================================================================
+
 export const weatherStore = {
-	/** Full snapshot of weather data (null until first fetch) */
+	// --- Snapshot (cold state) ---
 	get snapshot() {
 		return snapshot;
 	},
 
-	/** Current display time in ms (updates at 15fps during scrubbing) */
-	get frameMs() {
-		return frameMs;
-	},
-
-	// --- Hot state (direct from data layer for reactivity) ---
-
-	/** Whether radar animation is playing */
-	get radarPlaying() {
-		return weatherData.radarPlaying;
-	},
-
-	/** Currently tracked DOM element */
-	get trackedElement() {
-		return weatherData.trackedElement;
-	},
-
-	/** Non-reactive ms for polling */
-	get rawMs() {
-		return weatherData.rawMs;
-	},
-
-	// --- Compatibility getters (for migration from old NS) ---
-	// These mirror the old nsWeatherData shape
-
+	// --- Hot state ---
 	get ms() {
-		return weatherData.ms;
+		return ms;
 	},
 
+	get rawMs() {
+		return rawMs;
+	},
+
+	get radar() {
+		return radar;
+	},
+
+	get radarPlaying() {
+		return radarPlaying;
+	},
+
+	get trackedElement() {
+		return trackedElement;
+	},
+
+	// --- Convenience getters from snapshot ---
 	get daily() {
 		return snapshot?.daily ?? [];
 	},
 
 	get hourly() {
 		return snapshot?.hourly ?? [];
-	},
-
-	get radar() {
-		return weatherData.radar;
 	},
 
 	get units() {
@@ -122,6 +142,10 @@ export const weatherStore = {
 		return snapshot?.timezoneAbbreviation ?? 'UTC';
 	},
 
+	get utcOffsetSeconds() {
+		return snapshot?.utcOffsetSeconds ?? 0;
+	},
+
 	get coords() {
 		return snapshot?.coords ?? null;
 	},
@@ -130,7 +154,15 @@ export const weatherStore = {
 		return snapshot?.name ?? null;
 	},
 
-	/** Forecast lookup Map (for getHourlyAt, getTemperatureStats, etc.) */
+	get source() {
+		return snapshot?.source ?? '???';
+	},
+
+	get current() {
+		return snapshot?.current ?? null;
+	},
+
+	/** Forecast lookup Map */
 	get dataForecast() {
 		return dataForecast;
 	},
@@ -138,21 +170,6 @@ export const weatherStore = {
 	/** Air quality lookup Map */
 	get dataAirQuality() {
 		return dataAirQuality;
-	},
-
-	/** UTC offset in seconds */
-	get utcOffsetSeconds() {
-		return weatherData.utcOffsetSeconds;
-	},
-
-	/** Source of location data */
-	get source() {
-		return weatherData.source;
-	},
-
-	/** Current weather (from omForecast.current) */
-	get current() {
-		return weatherData.omForecast?.current ?? null;
 	},
 
 	/** Format time in location's timezone */
@@ -166,5 +183,4 @@ export const weatherStore = {
 	},
 };
 
-/** Type for weatherStore (compatible with old NsWeatherData interface) */
 export type WeatherStore = typeof weatherStore;

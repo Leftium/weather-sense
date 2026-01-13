@@ -431,22 +431,26 @@ export function initWeatherShell(data: WeatherData) {
 		// Only update reactive ms when NOT tracking
 		if (!data.trackedElement) {
 			data.ms = params.ms;
+			emit('weatherdata_timeChange', { ms: params.ms });
 		}
 
 		// Check if past radar end
 		const msMaxRadar = (data.radar.frames.at(-1)?.ms || 0) + 10 * MS_IN_MINUTE;
 		if (data.rawMs > msMaxRadar) {
 			data.radarPlaying = false;
+			emit('weatherdata_playStateChange', { playing: false });
 			if (!data.trackedElement) {
 				data.rawMs = Date.now();
 				data.ms = Date.now();
 				resetRadarOnPlay = true;
+				emit('weatherdata_timeChange', { ms: Date.now() });
 			}
 		}
 	});
 
 	on('weatherdata_requestedTrackingStart', (params) => {
 		data.trackedElement = params.node;
+		emit('weatherdata_trackingChange', { element: params.node });
 		startFrameLoop();
 	});
 
@@ -457,16 +461,19 @@ export function initWeatherShell(data: WeatherData) {
 
 		stopFrameLoop();
 
+		emit('weatherdata_trackingChange', { element: null });
 		emit('weatherdata_frameTick', { ms: data.rawMs });
 		emit('weatherdata_trackingEnded');
 	});
 
 	on('weatherdata_requestedTogglePlay', () => {
 		data.radarPlaying = !data.radarPlaying;
+		emit('weatherdata_playStateChange', { playing: data.radarPlaying });
 
 		if (resetRadarOnPlay && data.radar.frames?.length) {
 			data.rawMs = data.radar.frames[0].ms;
 			data.ms = data.radar.frames[0].ms;
+			emit('weatherdata_timeChange', { ms: data.ms });
 		}
 		resetRadarOnPlay = false;
 	});

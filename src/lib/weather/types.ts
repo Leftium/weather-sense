@@ -162,6 +162,15 @@ export type WeatherDataEvents = {
 
 	/** Tracking ended notification */
 	weatherdata_trackingEnded: undefined;
+
+	/** Play state changed */
+	weatherdata_playStateChange: { playing: boolean };
+
+	/** Tracking element changed */
+	weatherdata_trackingChange: { element: HTMLElement | null };
+
+	/** Time changed (non-frameTick updates) */
+	weatherdata_timeChange: { ms: number };
 };
 
 // =============================================================================
@@ -213,13 +222,22 @@ export type Snapshot = DisplayBundle & {
 	units: Units;
 	timezone: string;
 	timezoneAbbreviation: string;
+	utcOffsetSeconds: number;
 
 	// Location
 	coords: Coordinates | null;
 	name: string | null;
+	source: string;
+
+	// Current weather
+	current: CurrentForecast | null;
 
 	// Current time
 	ms: number;
+
+	// Raw forecast data for building lookup Maps
+	omForecast: OmForecast | null;
+	omAirQuality: OmAirQuality | null;
 };
 
 // =============================================================================

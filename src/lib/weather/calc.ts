@@ -240,13 +240,22 @@ export function getSnapshot(data: WeatherData): Snapshot {
 		units: data.units,
 		timezone: data.timezone,
 		timezoneAbbreviation: data.timezoneAbbreviation,
+		utcOffsetSeconds: data.utcOffsetSeconds,
 
 		// Location
 		coords: data.coords,
 		name: data.name,
+		source: data.source,
+
+		// Current weather
+		current: data.omForecast?.current ?? null,
 
 		// Current time
 		ms: data.ms,
+
+		// Raw data for lookup Maps (store rebuilds these)
+		omForecast: data.omForecast,
+		omAirQuality: data.omAirQuality,
 	};
 }
 

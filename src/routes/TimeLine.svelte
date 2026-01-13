@@ -19,7 +19,7 @@
 
 <script lang="ts">
 	import {
-		getTemperatureStatsLegacy as getTemperatureStats,
+		getTemperatureStats,
 		getIntervals,
 		type TemperatureStats,
 		type WeatherStore,

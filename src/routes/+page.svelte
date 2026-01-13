@@ -35,9 +35,9 @@
 	import { iconSetStore } from '$lib/iconSet.svelte';
 	import RadarMapLibre from './RadarMapLibre.svelte';
 	import {
-		getDisplayBundleLegacy as getDisplayBundle,
+		getDisplayBundleFromStore as getDisplayBundle,
 		formatTemp,
-		getTemperatureStatsLegacy as getTemperatureStats,
+		getTemperatureStats,
 		type TemperatureStats,
 		FORECAST_DAYS,
 		weatherData,

@@ -46,13 +46,11 @@ export {
 	buildAirQualityMap,
 	// Bundles
 	getDisplayBundle,
+	getDisplayBundleFromStore,
 	getSnapshot,
 	// Derived
 	getTemperatureStats,
 	getIntervals,
-	// Legacy (for migration period)
-	getDisplayBundleLegacy,
-	getTemperatureStatsLegacy,
 } from './calc';
 
 // Types

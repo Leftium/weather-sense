@@ -329,14 +329,14 @@ export function getIntervals(
 }
 
 // =============================================================================
-// LEGACY COMPATIBILITY - For old NS during migration
+// STORE-BASED DISPLAY BUNDLE
 // =============================================================================
 
 /**
- * Legacy getDisplayBundle for old NsWeatherData shape.
- * @deprecated Use getDisplayBundle(data, forecastMap, airQualityMap) instead
+ * Get display bundle from a store-like object (weatherStore or similar).
+ * This is a convenience function that pulls values from getters.
  */
-export function getDisplayBundleLegacy(ns: {
+export function getDisplayBundleFromStore(store: {
 	ms: number;
 	timezone: string;
 	timezoneAbbreviation: string;
@@ -345,13 +345,13 @@ export function getDisplayBundleLegacy(ns: {
 	dataForecast: Map<number, ForecastItem>;
 	dataAirQuality: Map<number, AirQualityItem>;
 }): DisplayBundle {
-	const hourly = getHourlyAt(ns.dataForecast, ns.ms, ns.timezone);
-	const aq = getAirQualityAt(ns.dataAirQuality, ns.ms, ns.timezone);
+	const hourly = getHourlyAt(store.dataForecast, store.ms, store.timezone);
+	const aq = getAirQualityAt(store.dataAirQuality, store.ms, store.timezone);
 
 	return {
-		temperature: formatTemp(hourly?.temperature, ns.units.temperature),
+		temperature: formatTemp(hourly?.temperature, store.units.temperature),
 		humidity: formatPercent(hourly?.humidity),
-		dewPoint: formatTemp(hourly?.dewPoint, ns.units.temperature),
+		dewPoint: formatTemp(hourly?.dewPoint, store.units.temperature),
 		precipitation: formatPrecip(hourly?.precipitation),
 		precipChance: formatPercent(hourly?.precipitationProbability),
 		weatherCode: hourly?.weatherCode ?? null,
@@ -360,9 +360,9 @@ export function getDisplayBundleLegacy(ns: {
 		aqiUs: formatAqi(aq?.aqiUs),
 		aqiEurope: formatAqi(aq?.aqiEurope),
 
-		time: formatTime(ns.ms, ns.timezone, ns.timezoneAbbreviation, 'h:mm:ss A'),
-		date: formatTime(ns.ms, ns.timezone, ns.timezoneAbbreviation, 'ddd MMM D'),
-		location: ns.name ?? 'Loading...',
+		time: formatTime(store.ms, store.timezone, store.timezoneAbbreviation, 'h:mm:ss A'),
+		date: formatTime(store.ms, store.timezone, store.timezoneAbbreviation, 'ddd MMM D'),
+		location: store.name ?? 'Loading...',
 
 		raw: {
 			temperature: hourly?.temperature ?? null,
@@ -374,16 +374,6 @@ export function getDisplayBundleLegacy(ns: {
 			aqiEurope: aq?.aqiEurope ?? null,
 		},
 	};
-}
-
-/**
- * Legacy getTemperatureStats for old NS dataForecast Map.
- * Same signature as before, just re-exported for compatibility.
- */
-export function getTemperatureStatsLegacy(
-	dataForecast: Map<number, ForecastItem> | null | undefined,
-): TemperatureStats | null {
-	return getTemperatureStats(dataForecast);
 }
 
 // =============================================================================

@@ -182,10 +182,10 @@ export function getDisplayBundle(ns: NsWeatherData): DisplayBundle {
 // =============================================================================
 
 export type TemperatureStats = {
-	min: number;
-	max: number;
-	range: number;
-	minTempOnly: number;
+	minTemperature: number;
+	maxTemperature: number;
+	temperatureRange: number;
+	minTemperatureOnly: number;
 };
 
 /** Calculate temperature statistics for y-axis scaling */
@@ -203,9 +203,66 @@ export function getTemperatureStats(
 	const minDewPoint = Math.min(...dewPoints);
 
 	return {
-		min: Math.min(minTemp, minDewPoint),
-		max: maxTemp,
-		range: maxTemp - Math.min(minTemp, minDewPoint),
-		minTempOnly: minTemp,
+		minTemperature: Math.min(minTemp, minDewPoint),
+		maxTemperature: maxTemp,
+		temperatureRange: maxTemp - Math.min(minTemp, minDewPoint),
+		minTemperatureOnly: minTemp,
 	};
+}
+
+// =============================================================================
+// INTERVALS - Time intervals combining hourly forecast and radar frames
+// =============================================================================
+
+const MS_IN_MINUTE = 60 * 1000;
+
+export type IntervalItem = {
+	ms: number;
+	x2: number;
+};
+
+type HourlyItem = { ms: number };
+type RadarFrame = { ms: number };
+
+/**
+ * Build time intervals from hourly forecast and radar frames.
+ * Each interval spans from one timestamp to just before the next.
+ */
+export function getIntervals(
+	hourly: HourlyItem[] | null | undefined,
+	radarFrames: RadarFrame[] | null | undefined,
+): IntervalItem[] {
+	if (!hourly?.length) return [];
+
+	const msSet = new Set<number>();
+
+	// Add hourly timestamps
+	for (const item of hourly) {
+		msSet.add(item.ms);
+	}
+
+	// Add radar frame timestamps
+	if (radarFrames?.length) {
+		for (const frame of radarFrames) {
+			msSet.add(frame.ms);
+		}
+		// Add end boundary for last radar frame (10 minutes after)
+		const finalFrame = radarFrames.at(-1);
+		if (finalFrame) {
+			msSet.add(finalFrame.ms + 10 * MS_IN_MINUTE);
+		}
+	}
+
+	// Sort and build intervals
+	const sortedMs = [...msSet].sort((a, b) => a - b);
+	const intervals: IntervalItem[] = [];
+
+	for (let i = 0; i < sortedMs.length - 1; i++) {
+		intervals.push({
+			ms: sortedMs[i],
+			x2: sortedMs[i + 1] - 1,
+		});
+	}
+
+	return intervals;
 }

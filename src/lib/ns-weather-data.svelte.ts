@@ -20,7 +20,7 @@
  * - coords, timezone, units, hourly, daily, dataForecast, radar, etc.
  */
 
-import { forEach, maxBy, minBy, uniq } from 'lodash-es';
+import { forEach } from 'lodash-es';
 
 import { getEmitter } from '$lib/emitter';
 import { gg } from '@leftium/gg';
@@ -227,38 +227,7 @@ export function makeNsWeatherData() {
 		hourly: AirQuality[];
 	} = $state(null);
 
-	// Min/max including dew point (for y-axis scaling to fit all temp-like data)
-	const minTemperature = $derived.by(() => {
-		return !omForecast
-			? 0
-			: Math.min(
-					minBy(omForecast.hourly, 'temperature')?.temperature ?? Number.MAX_VALUE,
-					minBy(omForecast.hourly, 'dewPoint')?.dewPoint ?? Number.MAX_VALUE,
-				);
-	});
-
-	const maxTemperature = $derived.by(() => {
-		return !omForecast
-			? 0
-			: (maxBy(omForecast.hourly, 'temperature')?.temperature ?? Number.MIN_VALUE);
-	});
-
-	const temperatureRange = $derived(maxTemperature - minTemperature);
-
-	// Temperature-only min (for gradient coloring - excludes dew point)
-	const minTemperatureOnly = $derived.by(() => {
-		return !omForecast
-			? 0
-			: (minBy(omForecast.hourly, 'temperature')?.temperature ?? Number.MAX_VALUE);
-	});
-
-	const temperatureStats = $derived({
-		minTemperature,
-		maxTemperature,
-		temperatureRange,
-		// Temperature-only range for gradient coloring
-		minTemperatureOnly,
-	});
+	// temperatureStats moved to weather-utils.ts - use getTemperatureStats(ns.dataForecast)
 
 	const dataAirQuality = $derived.by(() => {
 		gg('dataAirQuality:derive');
@@ -333,48 +302,7 @@ export function makeNsWeatherData() {
 		return newData;
 	});
 
-	type IntervalItem = {
-		msPretty?: string;
-		x2Pretty?: string;
-		ms: number;
-		x2: number;
-	};
-
-	const intervals = $derived.by(() => {
-		if (!browser || !omForecast) {
-			return [];
-		}
-
-		const msIntervals: number[] = [];
-		const intervals: IntervalItem[] = [];
-
-		omForecast.hourly.forEach((item) => {
-			msIntervals.push(item.ms);
-		});
-
-		radar.frames.forEach((item) => {
-			msIntervals.push(item.ms);
-		});
-
-		const finalFrame = radar.frames.at(-1);
-		if (finalFrame) {
-			msIntervals.push(finalFrame.ms + 10 * MS_IN_MINUTE);
-		}
-
-		uniq(msIntervals)
-			.sort()
-			.forEach((ms, index, msIntervals) => {
-				const x2 = msIntervals[index + 1] - 1;
-				intervals.push({
-					msPretty: nsWeatherData.tzFormat(ms),
-					x2Pretty: nsWeatherData.tzFormat(x2),
-					ms,
-					x2,
-				});
-			});
-
-		return intervals;
-	});
+	// intervals moved to weather-utils.ts - use getIntervals(ns.hourly, ns.radar?.frames)
 
 	const units = $state({
 		temperature: 'F' as 'C' | 'F',
@@ -843,17 +771,13 @@ export function makeNsWeatherData() {
 			return dataForecast;
 		},
 
-		get temperatureStats() {
-			return temperatureStats;
-		},
+		// temperatureStats removed - use getTemperatureStats(ns.dataForecast) from weather-utils.ts
 
 		get units() {
 			return units;
 		},
 
-		get intervals() {
-			return intervals;
-		},
+		// intervals removed - use getIntervals(ns.hourly, ns.radar?.frames) from weather-utils.ts
 
 		// Display values moved to $lib/weather-utils.ts - use getDisplayBundle(ns) instead
 
@@ -869,9 +793,7 @@ export function makeNsWeatherData() {
 			return utcOffsetSeconds;
 		},
 
-		get utcOffsetMs() {
-			return utcOffsetSeconds * MS_IN_SECOND;
-		},
+		// utcOffsetMs removed - use utcOffsetSeconds * MS_IN_SECOND
 
 		// format() method moved to $lib/weather-utils.ts - use formatTemp() instead
 

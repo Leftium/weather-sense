@@ -34,7 +34,12 @@
 	import type { WmoCodeInfo } from '$lib/util.js';
 	import { iconSetStore } from '$lib/iconSet.svelte';
 	import RadarMapLibre from './RadarMapLibre.svelte';
-	import { getDisplayBundle, formatTemp } from '$lib/weather-utils';
+	import {
+		getDisplayBundle,
+		formatTemp,
+		getTemperatureStats,
+		type TemperatureStats,
+	} from '$lib/weather-utils';
 
 	import { clearEvents, getEmitter } from '$lib/emitter.js';
 	import { browser, dev } from '$app/environment';
@@ -846,18 +851,20 @@
 	const textShadowColor = $derived(contrastTextColor(throttledColors[1], true));
 
 	// Calculate temp range based on visible hourly plot days only
-	const visibleTempStats = $derived.by(() => {
+	const visibleTempStats = $derived.by((): TemperatureStats | null => {
 		const visibleDays = (nsWeatherData.daily || []).filter(
 			(day) => day.fromToday > -2 && day.fromToday < forecastDaysVisible,
 		);
 		if (visibleDays.length === 0) {
-			return nsWeatherData.temperatureStats;
+			return getTemperatureStats(nsWeatherData.dataForecast);
 		}
 		const minTemp = Math.min(...visibleDays.map((d) => d.temperatureMin));
 		const maxTemp = Math.max(...visibleDays.map((d) => d.temperatureMax));
 		return {
-			minTemperatureOnly: minTemp,
+			minTemperature: minTemp, // For visible days, use same as minTemperatureOnly
 			maxTemperature: maxTemp,
+			temperatureRange: maxTemp - minTemp,
+			minTemperatureOnly: minTemp,
 		};
 	});
 
@@ -1076,14 +1083,14 @@
 			<div class="hourly-row">
 				<div
 					class="temp-gradient-bar"
-					style:--color-high={nsWeatherData.daily?.[2]
+					style:--color-high={nsWeatherData.daily?.[2] && visibleTempStats
 						? temperatureToColor(
 								nsWeatherData.daily[2].temperatureMax,
 								visibleTempStats.minTemperatureOnly,
 								visibleTempStats.maxTemperature,
 							)
 						: '#ccc'}
-					style:--color-low={nsWeatherData.daily?.[2]
+					style:--color-low={nsWeatherData.daily?.[2] && visibleTempStats
 						? temperatureToColor(
 								nsWeatherData.daily[2].temperatureMin,
 								visibleTempStats.minTemperatureOnly,
@@ -1143,13 +1150,13 @@
 				{@const today = day.fromToday === 0}
 				{@const colorHigh = temperatureToColor(
 					day.temperatureMax,
-					visibleTempStats.minTemperatureOnly,
-					visibleTempStats.maxTemperature,
+					visibleTempStats?.minTemperatureOnly ?? 0,
+					visibleTempStats?.maxTemperature ?? 100,
 				)}
 				{@const colorLow = temperatureToColor(
 					day.temperatureMin,
-					visibleTempStats.minTemperatureOnly,
-					visibleTempStats.maxTemperature,
+					visibleTempStats?.minTemperatureOnly ?? 0,
+					visibleTempStats?.maxTemperature ?? 100,
 				)}
 				{@const dayWmoCode = getDayWmoCode(
 					day.ms,

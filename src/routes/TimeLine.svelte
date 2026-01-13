@@ -23,6 +23,7 @@
 		NsWeatherData,
 		WeatherDataEvents,
 	} from '$lib/ns-weather-data.svelte';
+	import { getTemperatureStats, getIntervals, type TemperatureStats } from '$lib/weather-utils';
 
 	import { clamp, each, maxBy } from 'lodash-es';
 	import * as d3 from 'd3';
@@ -48,6 +49,7 @@
 		MS_IN_DAY,
 		MS_IN_HOUR,
 		MS_IN_MINUTE,
+		MS_IN_SECOND,
 		DAY_START_HOUR,
 		WMO_CODES,
 		precipitationGroup,
@@ -97,7 +99,7 @@
 		past?: boolean;
 		trackerColor?: string;
 		groupIcons?: boolean;
-		tempStats?: { minTemperatureOnly: number; maxTemperature: number };
+		tempStats?: TemperatureStats | null;
 		debugTrackerMs?: number;
 	} = $props();
 
@@ -126,6 +128,12 @@
 
 	const msStart = $derived(+dayjs.tz(start, nsWeatherData.timezone).startOf('hour'));
 	const msEnd = $derived(msStart + hours * MS_IN_HOUR);
+
+	// Fallback temperature stats computed from dataForecast
+	const defaultTempStats = $derived(getTemperatureStats(nsWeatherData.dataForecast));
+
+	// Time intervals for tracker (combined hourly + radar frames)
+	const intervals = $derived(getIntervals(nsWeatherData.hourly, nsWeatherData.radar?.frames));
 
 	// Unique gradient ID for this TimeLine instance
 	const gradientId = $derived(`temp-gradient-${msStart}`);
@@ -875,9 +883,9 @@
 	function makeTransformTemperature(keyName = 'temperature', localMin?: number, localMax?: number) {
 		return function (da: Record<string, number>[]) {
 			// Use local (day's) range if provided, otherwise fall back to visible/global
-			const stats = tempStats ?? nsWeatherData.temperatureStats;
-			const minTemp = localMin ?? stats.minTemperatureOnly;
-			const maxTemp = localMax ?? stats.maxTemperature;
+			const stats = tempStats ?? defaultTempStats;
+			const minTemp = localMin ?? stats?.minTemperatureOnly ?? 0;
+			const maxTemp = localMax ?? stats?.maxTemperature ?? 100;
 			const range = maxTemp - minTemp;
 			if (range === 0) return da.map(() => 50); // Flat line in middle if no range
 			return da.map((d) => (100 * (d[keyName] - minTemp)) / range);
@@ -1048,7 +1056,7 @@
 		const pg = d3.select(div).select<SVGSVGElement>('svg');
 		if (pg.empty()) return;
 
-		const interval = nsWeatherData.intervals.find((item) => ms >= item.ms && ms <= item.x2);
+		const interval = intervals.find((item) => ms >= item.ms && ms <= item.x2);
 
 		const msIntervalStart = interval?.ms ?? ms;
 		const length = interval ? interval.x2 - interval.ms : 1;
@@ -1063,11 +1071,13 @@
 			const dayStartOffsetMs = DAY_START_HOUR * MS_IN_HOUR;
 			const msGhost =
 				msStart +
-				((((ms + nsWeatherData.utcOffsetMs - dayStartOffsetMs) % MS_IN_DAY) + MS_IN_DAY) %
+				((((ms + nsWeatherData.utcOffsetSeconds * MS_IN_SECOND - dayStartOffsetMs) % MS_IN_DAY) +
+					MS_IN_DAY) %
 					MS_IN_DAY);
 			const msGhostInterval =
 				msStart +
-				((((msIntervalStart + nsWeatherData.utcOffsetMs - dayStartOffsetMs) % MS_IN_DAY) +
+				((((msIntervalStart + nsWeatherData.utcOffsetSeconds * MS_IN_SECOND - dayStartOffsetMs) %
+					MS_IN_DAY) +
 					MS_IN_DAY) %
 					MS_IN_DAY);
 
@@ -1123,7 +1133,8 @@
 			const dayStartOffsetMs = DAY_START_HOUR * MS_IN_HOUR;
 			const msGhost =
 				msStart +
-				((((debugTrackerMs + nsWeatherData.utcOffsetMs - dayStartOffsetMs) % MS_IN_DAY) +
+				((((debugTrackerMs + nsWeatherData.utcOffsetSeconds * MS_IN_SECOND - dayStartOffsetMs) %
+					MS_IN_DAY) +
 					MS_IN_DAY) %
 					MS_IN_DAY);
 			const xGhost = xScale.apply(msGhost);
@@ -1539,8 +1550,9 @@
 			// Calculate gradient colors based on where day's temps fall in visible TEMPERATURE range
 			// Use temperature-only range (excludes dew point) so cold days show blue
 			// Use actualHighTemp/actualLowTemp (not affected by ghostTracker dot positioning)
-			const stats = tempStats ?? nsWeatherData.temperatureStats;
-			const { minTemperatureOnly: globalMin, maxTemperature: globalMax } = stats;
+			const stats = tempStats ?? defaultTempStats;
+			const globalMin = stats?.minTemperatureOnly ?? 0;
+			const globalMax = stats?.maxTemperature ?? 100;
 
 			// Colors for temperature high/low based on global temp range
 			const colorAtHigh = temperatureToColor(dataForecast.actualHighTemp, globalMin, globalMax);

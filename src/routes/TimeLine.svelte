@@ -23,7 +23,11 @@
 		NsWeatherData,
 		WeatherDataEvents,
 	} from '$lib/ns-weather-data.svelte';
-	import { getTemperatureStats, getIntervals, type TemperatureStats } from '$lib/weather-utils';
+	import {
+		getTemperatureStatsLegacy as getTemperatureStats,
+		getIntervals,
+		type TemperatureStats,
+	} from '$lib/weather';
 
 	import { clamp, each, maxBy } from 'lodash-es';
 	import * as d3 from 'd3';

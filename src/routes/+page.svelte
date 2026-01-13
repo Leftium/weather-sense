@@ -35,11 +35,11 @@
 	import { iconSetStore } from '$lib/iconSet.svelte';
 	import RadarMapLibre from './RadarMapLibre.svelte';
 	import {
-		getDisplayBundle,
+		getDisplayBundleLegacy as getDisplayBundle,
 		formatTemp,
-		getTemperatureStats,
+		getTemperatureStatsLegacy as getTemperatureStats,
 		type TemperatureStats,
-	} from '$lib/weather-utils';
+	} from '$lib/weather';
 
 	import { clearEvents, getEmitter } from '$lib/emitter.js';
 	import { browser, dev } from '$app/environment';
@@ -49,6 +49,8 @@
 	const STORAGE_KEY_UNITS = 'weather-sense:units';
 
 	import { FORECAST_DAYS, makeNsWeatherData } from '$lib/ns-weather-data.svelte.js';
+	// New architecture (running in parallel during migration)
+	import { weatherData, initWeatherShell, weatherStore } from '$lib/weather';
 	import { slide } from 'svelte/transition';
 	import { maxBy } from 'lodash-es';
 	import dayjs from 'dayjs';
@@ -60,6 +62,20 @@
 
 	const nsWeatherData = makeNsWeatherData();
 	const { emit, on } = getEmitter<WeatherDataEvents>(import.meta);
+
+	// Initialize new shell (parallel to old NS during migration)
+	const shell = initWeatherShell(weatherData);
+	onDestroy(() => shell.destroy());
+
+	// New snapshot from store (for components that migrate to new architecture)
+	const snapshot = $derived(weatherStore.snapshot);
+
+	// Debug: log when new snapshot arrives
+	$effect(() => {
+		if (snapshot) {
+			console.log('[NEW] Snapshot received:', snapshot.name, snapshot.daily?.length, 'days');
+		}
+	});
 
 	// Display bundle - all formatted display values derived from NS state
 	const display = $derived(getDisplayBundle(nsWeatherData));

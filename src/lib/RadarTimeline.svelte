@@ -6,7 +6,7 @@
 	import { untrack } from 'svelte';
 
 	import { getEmitter } from '$lib/emitter';
-	import { gg } from '@leftium/gg';
+
 	import { MS_IN_MINUTE, MS_IN_SECOND } from './util';
 
 	let {
@@ -54,7 +54,7 @@
 			<input type="range" {min} {max} value={clamp(nsWeatherData.ms, min, max)} {step} {oninput} />
 		{/key}
 		<datalist id="radar-markers">
-			{#each range as ms, index}
+			{#each range as ms, index (ms)}
 				{@const isMinorIndex = index % 4}
 				<div
 					class="tick"

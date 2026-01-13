@@ -2,14 +2,12 @@
 	import maplibregl from 'maplibre-gl';
 	import 'maplibre-gl/dist/maplibre-gl.css';
 	import 'iconify-icon';
-	import haversine from 'haversine-distance';
 
 	import type { RadarFrame, RadarLayer } from '$lib/types.js';
 	import type { NsWeatherData, WeatherDataEvents } from '$lib/ns-weather-data.svelte.js';
 
 	import { onDestroy, onMount } from 'svelte';
 
-	import { gg } from '@leftium/gg';
 	import { getEmitter } from '$lib/emitter.js';
 	import RadarTimeline from '$lib/RadarTimeline.svelte';
 	import { dev } from '$app/environment';
@@ -53,7 +51,7 @@
 	onMount(async () => {
 		const lat = nsWeatherData.coords?.latitude ?? 0;
 		const lon = nsWeatherData.coords?.longitude ?? 0;
-		const accuracy = nsWeatherData.coords?.accuracy ?? 0;
+		// const accuracy = nsWeatherData.coords?.accuracy ?? 0; // TODO: use for location marker
 
 		emit('weatherdata_requestedFetchRainviewerData');
 

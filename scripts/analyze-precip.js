@@ -106,7 +106,7 @@ function analyzeData(data) {
 		const precip = precipitation[i] || 0;
 		const rainAmount = rain[i] || 0;
 		const snowAmount = snowfall[i] || 0; // in cm, convert to mm water equivalent
-		const snowWaterEquiv = snowAmount / 0.7; // ~7cm snow = 10mm water
+		// snowWaterEquiv = snowAmount / 0.7; // ~7cm snow = 10mm water (unused)
 
 		const group = CODE_TO_GROUP[code] || 'Unknown';
 
@@ -165,7 +165,7 @@ function percentile(arr, p) {
 
 function analyzeDailyData(data) {
 	const { daily } = data;
-	const { time, precipitation_sum, rain_sum, snowfall_sum, weather_code } = daily;
+	const { time, precipitation_sum, rain_sum, snowfall_sum } = daily;
 
 	const dailyStats = {
 		all: [],

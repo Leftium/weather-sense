@@ -7,7 +7,6 @@
 
 	import {
 		MS_IN_HOUR,
-		MS_IN_DAY,
 		TEMP_COLOR_HOT,
 		TEMP_COLOR_COLD,
 		jsonPretty,
@@ -87,7 +86,7 @@
 	// Save plotVisibility to localStorage when it changes (after initial load)
 	$effect(() => {
 		// Read plotVisibility to track changes
-		const _ = JSON.stringify(plotVisibility);
+		JSON.stringify(plotVisibility);
 		if (browser && prefsLoaded) {
 			localStorage.setItem(STORAGE_KEY_PLOT_VISIBILITY, JSON.stringify(plotVisibility));
 		}
@@ -238,9 +237,6 @@
 		return day || nsWeatherData.daily?.find((d) => d.fromToday === 0);
 	}
 
-	// Find the day that contains the current ms timestamp
-	const currentDay = $derived.by(() => findDayForMs(nsWeatherData.ms));
-
 	// Get representative WMO code for the 24-hour hourly plot
 	// When groupIcons=true: groups codes like TimeLine does, then picks most severe group representative
 	// When groupIcons=false: picks most severe code overall (highest wsCode value)
@@ -287,8 +283,8 @@
 	}
 
 	const DAY_COLORS = ['#f0f8ff', '#a8d8f0', '#6bb3e0']; // Fallback daytime colors
-	// svelte-ignore state_referenced_locally -- intentionally capture initial value only
-	const DEFAULT_COLORS = getInitialColors(data.timezone) ?? DAY_COLORS;
+	const initialTimezone = data.timezone; // Capture initial value (intentionally non-reactive)
+	const DEFAULT_COLORS = getInitialColors(initialTimezone) ?? DAY_COLORS;
 
 	// The display time (absolute ms) - tracks what time the sky colors represent
 	let displayMs = $state(Date.now());
@@ -308,16 +304,6 @@
 
 	// Current displayed colors (for direct color animation)
 	let displayColors: string[] = DEFAULT_COLORS;
-
-	// Animation mode: 'time' = animate through time (dawn/dusk), 'direct' = lerp colors directly
-	type SkyAnimationMode = 'time' | 'direct';
-	let skyAnimationMode: SkyAnimationMode = 'direct';
-
-	// Track last target ms to detect fast scrubbing
-	let lastTargetMs = Date.now();
-
-	// Fast scrub threshold: if time jumps more than this per frame, use direct mode
-	const FAST_SCRUB_THRESHOLD = 30 * 60 * 1000; // 30 minutes
 
 	// ============================================================================
 	// EASED DIRECT ANIMATION
@@ -541,7 +527,6 @@
 	}
 
 	// Track scrub animation start for easing
-	let scrubStartMs: number = Date.now();
 	let scrubStartDisplayMs: number = Date.now();
 
 	/**
@@ -658,7 +643,6 @@
 	 */
 	function startScrub(targetMs: number) {
 		scrubTargetMs = targetMs;
-		scrubStartMs = performance.now();
 		scrubStartDisplayMs = displayMs;
 		animateScrub();
 	}
@@ -669,12 +653,6 @@
 		const day = findDayForMs(throttledDisplayMs);
 		if (!day) return DEFAULT_COLORS;
 		return getSkyColorsFullPalette(throttledDisplayMs, day.sunrise, day.sunset);
-	});
-
-	// Immediate colors (no animation) for tracker
-	const targetColors = $derived.by(() => {
-		if (!currentDay) return DEFAULT_COLORS;
-		return getSkyColorsFullPalette(nsWeatherData.ms, currentDay.sunrise, currentDay.sunset);
 	});
 
 	/**
@@ -815,21 +793,6 @@
 	// Gradient goes: color0 (top) -> color1 (middle) -> color2 (bottom)
 	const totalHeight = $derived(stickyHeight + tilesHeight);
 	const stickyRatio = $derived(stickyHeight / totalHeight);
-
-	// Interpolate color at the boundary between sticky and tiles
-	const boundaryColor = $derived.by(() => {
-		// stickyRatio tells us where in the 0-1 gradient range the boundary falls
-		// Gradient: 0% = color0, 50% = color1, 100% = color2
-		if (stickyRatio <= 0.5) {
-			// Boundary is in the top half (color0 -> color1)
-			const t = stickyRatio / 0.5; // normalize to 0-1
-			return mixColors(throttledColors[0], throttledColors[1], t);
-		} else {
-			// Boundary is in the bottom half (color1 -> color2)
-			const t = (stickyRatio - 0.5) / 0.5; // normalize to 0-1
-			return mixColors(throttledColors[1], throttledColors[2], t);
-		}
-	});
 
 	// Boundary color for seamless vertical gradients (using throttled colors)
 	const throttledBoundaryColor = $derived.by(() => {
@@ -1154,7 +1117,7 @@
 
 			<hr class="timeline-divider" />
 
-			{#each (nsWeatherData.daily || []).filter((day) => day.fromToday > -2 && day.fromToday < forecastDaysVisible) as day, index}
+			{#each (nsWeatherData.daily || []).filter((day) => day.fromToday > -2 && day.fromToday < forecastDaysVisible) as day (day.ms)}
 				{@const past = day.fromToday < 0}
 				{@const today = day.fromToday === 0}
 				{@const colorHigh = temperatureToColor(
@@ -1233,8 +1196,10 @@
 			<div class="footer-column">
 				<h3>Useful Info</h3>
 				<ul>
-					<li><a href="wmo-codes">WMO Codes</a></li>
-					<li><a href="aqi">AQI Levels</a></li>
+					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+					<li><a href="/wmo-codes">WMO Codes</a></li>
+					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
+					<li><a href="/aqi">AQI Levels</a></li>
 				</ul>
 			</div>
 			<div class="footer-column">

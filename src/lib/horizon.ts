@@ -201,7 +201,7 @@ export function renderSkyGradient(altitude: number): SkyGradientResult {
 
 		const viewDirection = norm([0, s, focalZ]);
 
-		let inscattered: Vec3 = [0, 0, 0];
+		const inscattered: Vec3 = [0, 0, 0];
 
 		const tExitTop = intersectSphere(cameraPosition, viewDirection, TOP_RADIUS);
 		if (tExitTop !== null && tExitTop > 0) {

@@ -5,13 +5,14 @@
 
 <div class="container">
 	<nav>
+		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 		<a href="/">← Back to WeatherSense</a>
 	</nav>
 
 	<article>
 		<h1>EU AQI</h1>
 		<div class="levels">
-			{#each AQI_INDEX_EUROPE as aqiLevel}
+			{#each AQI_INDEX_EUROPE as aqiLevel (aqiLevel.text)}
 				<details>
 					<!-- svelte-ignore a11y_no_redundant_roles -->
 					<summary role="button" style:background-color={aqiLevel.color}>
@@ -19,6 +20,7 @@
 						<span class="label" style:color={aqiLevel.textColor}>{aqiLevel.text}</span>
 					</summary>
 					<div class="description">
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted static content -->
 						<p>{@html aqiLevel.description}</p>
 					</div>
 				</details>
@@ -34,7 +36,7 @@
 	<article>
 		<h1>US AQI</h1>
 		<div class="levels">
-			{#each AQI_INDEX_US as aqiLevel}
+			{#each AQI_INDEX_US as aqiLevel (aqiLevel.text)}
 				<details>
 					<!-- svelte-ignore a11y_no_redundant_roles -->
 					<summary role="button" style:background-color={aqiLevel.color}>
@@ -42,6 +44,7 @@
 						<span class="label" style:color={aqiLevel.textColor}>{aqiLevel.text}</span>
 					</summary>
 					<div class="description">
+						<!-- eslint-disable-next-line svelte/no-at-html-tags -- trusted static content -->
 						<p>{@html aqiLevel.description}</p>
 					</div>
 				</details>

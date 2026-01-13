@@ -99,6 +99,7 @@
 
 <div class="container-fluid flex-column {mode}" bind:offsetWidth bind:offsetHeight>
 	<nav>
+		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 		<a href="/">← Back</a>
 		<span class="separator">|</span>
 		<a href="https://blog.leftium.com/2024/07/wmo-codes.html">About</a>
@@ -119,7 +120,7 @@
 		<div class="grids-wrapper">
 			<div class="grid-container">
 				<div class="wmo-grid">
-					{#each wmoCodes as wmo}
+					{#each wmoCodes as wmo (wmo.code)}
 						<article
 							style:background={wmo.background}
 							class="wmo-item group-{wmo.group} level-{wmo.level}"
@@ -133,7 +134,7 @@
 							</div>
 						</article>
 					{/each}
-					{#each ['No Precipitation', 'Rain', 'Freezing Rain', 'Snow', 'Thunder Storm'] as title, index}
+					{#each ['No Precipitation', 'Rain', 'Freezing Rain', 'Snow', 'Thunder Storm'] as title, index (title)}
 						<article
 							class="divider divider-{index}"
 							style:background-color={dividerColors[index].bg}
@@ -144,7 +145,7 @@
 						</article>
 					{/each}
 
-					{#each [...Array(11)] as item}
+					{#each Array.from({ length: 11 }, (_, i) => i) as i (i)}
 						<article class="wmo-item ghost-item"></article>
 					{/each}
 				</div>

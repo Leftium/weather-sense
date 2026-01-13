@@ -1,5 +1,3 @@
-import { gg } from '@leftium/gg';
-
 export const load = async (loadEvent) => {
 	const ipAddress = loadEvent.getClientAddress();
 	const { headers } = loadEvent.request;

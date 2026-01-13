@@ -20,13 +20,13 @@
  * - coords, timezone, units, hourly, daily, dataForecast, radar, etc.
  */
 
-import { forEach, get, map, maxBy, minBy, uniq } from 'lodash-es';
+import { forEach, get, maxBy, minBy, uniq } from 'lodash-es';
 
 import { getEmitter } from '$lib/emitter';
 import { gg } from '@leftium/gg';
 import type { Coordinates, Radar } from '$lib/types';
 import { MS_IN_MINUTE, MS_IN_SECOND, celcius, startOf } from './util';
-import { browser, dev } from '$app/environment';
+import { browser } from '$app/environment';
 
 export type WeatherDataEvents = {
 	weatherdata_requestedSetLocation: {
@@ -262,6 +262,7 @@ export function makeNsWeatherData() {
 
 	const dataAirQuality = $derived.by(() => {
 		gg('dataAirQuality:derive');
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- Map is recreated on each derivation
 		const newData: Map<number, AirQualityItem> = new Map();
 		if (!browser || !omAirQuality) {
 			gg('dataAirQuality:empty');
@@ -292,6 +293,7 @@ export function makeNsWeatherData() {
 
 	const dataForecast = $derived.by(() => {
 		gg('dataForecast:derive');
+		// eslint-disable-next-line svelte/prefer-svelte-reactivity -- Map is recreated on each derivation
 		const newData: Map<number, ForecastItem> = new Map();
 		if (!browser || !omForecast) {
 			gg('dataForecast:empty');
@@ -303,10 +305,9 @@ export function makeNsWeatherData() {
 
 		omForecast.hourly.forEach((item) => {
 			const ms = item.ms;
-			const hour = dayjs.tz(ms, timezone).get('hour');
 
-			// Fake precipitation in dev mode:
-			const precipitation = false && dev ? (10 / 23) * hour : (item.precipitation ?? 0);
+			// Precipitation
+			const precipitation = item.precipitation ?? 0;
 
 			newData.set(ms, {
 				msPretty: nsWeatherData.tzFormat(ms, DATEFORMAT_MASK),
@@ -339,7 +340,7 @@ export function makeNsWeatherData() {
 		x2: number;
 	};
 
-	let intervals = $derived.by(() => {
+	const intervals = $derived.by(() => {
 		if (!browser || !omForecast) {
 			return [];
 		}
@@ -375,11 +376,11 @@ export function makeNsWeatherData() {
 		return intervals;
 	});
 
-	let units = $state({
+	const units = $state({
 		temperature: 'F' as 'C' | 'F',
 	});
 
-	let trackedElement: HTMLElement | null = $state(null);
+	// const trackedElement: HTMLElement | null = $state(null); // TODO: implement tracking
 
 	const unitsUsed: Record<string, keyof typeof units> = {
 		temperature: 'temperature',
@@ -556,7 +557,7 @@ export function makeNsWeatherData() {
 
 				return object as HourlyForecast;
 			})
-			.filter((hourlyForecast: HourlyForecast, index: number) => {
+			.filter((hourlyForecast: HourlyForecast) => {
 				return hourlyForecast.weatherCode !== null;
 			});
 
@@ -589,7 +590,7 @@ export function makeNsWeatherData() {
 
 				return object as DailyForecast;
 			})
-			.filter((dailyForecast: DailyForecast, index: number) => {
+			.filter((dailyForecast: DailyForecast) => {
 				return dailyForecast.weatherCode !== null;
 			});
 

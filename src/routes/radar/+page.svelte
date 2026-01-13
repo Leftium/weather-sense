@@ -13,24 +13,21 @@
 	const rvColorSchemeNames = Object.keys(rainviewerColorsTable);
 	rvColorSchemeNames.shift();
 
-	const rvDbz = rainviewerColorsTable['dBZ / RGBA'].filter((_, i, array) => i < array.length / 2);
+	const rvDbz = rainviewerColorsTable['dBZ / RGBA'].filter((_, i, arr) => i < arr.length / 2);
 
-	const rvColorSchemes = rvColorSchemeNames.reduce(
-		(accumulator, colorSchemeName, currentIndex, array) => {
-			const colorsAll = rainviewerColorsTable[colorSchemeName as ColorSchemeName];
-			const colorsRain = colorsAll.slice(0, colorsAll.length / 2);
-			const colorsSnow = colorsAll.slice(colorsAll.length / 2, colorsAll.length);
+	const rvColorSchemes = rvColorSchemeNames.reduce((accumulator, colorSchemeName) => {
+		const colorsAll = rainviewerColorsTable[colorSchemeName as ColorSchemeName];
+		const colorsRain = colorsAll.slice(0, colorsAll.length / 2);
+		const colorsSnow = colorsAll.slice(colorsAll.length / 2, colorsAll.length);
 
-			const rain = rvDbz.reduce((obj, k, i) => ({ ...obj, [k]: colorsRain[i] }), {});
-			const snow = rvDbz.reduce((obj, k, i) => ({ ...obj, [k]: colorsSnow[i] }), {});
+		const rain = rvDbz.reduce((obj, k, i) => ({ ...obj, [k]: colorsRain[i] }), {});
+		const snow = rvDbz.reduce((obj, k, i) => ({ ...obj, [k]: colorsSnow[i] }), {});
 
-			return {
-				...accumulator,
-				[colorSchemeName]: { rain, snow },
-			};
-		},
-		{},
-	) as Record<string, { rain: string[]; snow: string[] }>;
+		return {
+			...accumulator,
+			[colorSchemeName]: { rain, snow },
+		};
+	}, {}) as Record<string, { rain: string[]; snow: string[] }>;
 
 	const borders: Record<string, { rain: number[] }> = {};
 
@@ -88,6 +85,7 @@
 
 <div class="container-fluid">
 	<center>
+		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 		<a href="/">Back to WeatherSense</a>
 	</center>
 
@@ -95,25 +93,25 @@
 		<table border="0">
 			<thead>
 				<tr>
-					{#each tableHeaders as header}
+					{#each tableHeaders as header (header)}
 						<th>{header}</th>
 					{/each}
-					{#each rvColorSchemeNames as colorSchemeName, index}
+					{#each rvColorSchemeNames as colorSchemeName, index (colorSchemeName)}
 						<th>R{index} {colorSchemeName}</th>
 					{/each}
 				</tr>
 			</thead>
 			<tbody>
-				{#each dbzBuckets as row}
+				{#each dbzBuckets as row (row.dbz)}
 					<tr>
-						{#each ['dbz', 'r'] as key}
+						{#each ['dbz', 'r'] as key (key)}
 							<td
 								style:border-top={borders.headers.rain.includes(row.dbz) ? '1px solid grey;' : ''}
 								style:text-align="right">{row[key as keyof typeof row]}</td
 							>
 						{/each}
 
-						{#each rvColorSchemeNames as rvColorSchemeName}
+						{#each rvColorSchemeNames as rvColorSchemeName (rvColorSchemeName)}
 							{@const rainColor = rvColorSchemes[rvColorSchemeName].rain[row.dbz]}
 							{@const color = contrastTextColor(rainColor)}
 							<td
@@ -124,7 +122,7 @@
 									: ''}
 							>
 								<div style="display: inline-block; vertical-align: top; line-height: 0;">
-									{#each { length: 5 }, index}
+									{#each Array.from({ length: 5 }, (_, i) => i) as index (index)}
 										{@const dbz = row.dbz + index}
 										{@const bgColor = rvColorSchemes[rvColorSchemeName].rain[dbz]}
 										<div

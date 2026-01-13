@@ -165,7 +165,7 @@ export function trackable(node: HTMLElement, options: TrackableOptions) {
 		// else: already tracking this node, do nothing
 	}
 
-	function handleMouseLeave(e: MouseEvent) {
+	function handleMouseLeave() {
 		mouseIsOver = false;
 		if (options.getTrackedElement() === node && !trackUntilMouseUp) {
 			// Delay tracking end to allow transfer to adjacent plot

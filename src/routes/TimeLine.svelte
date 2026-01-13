@@ -8,12 +8,13 @@
 	const STORAGE_KEY = 'showSkyThroughWmo';
 	let showSkyThroughWmo = $state(browser ? localStorage.getItem(STORAGE_KEY) === 'true' : false);
 
-	function toggleSkyThroughWmo() {
-		showSkyThroughWmo = !showSkyThroughWmo;
-		if (browser) {
-			localStorage.setItem(STORAGE_KEY, String(showSkyThroughWmo));
-		}
-	}
+	// TODO: expose toggle in UI
+	// function toggleSkyThroughWmo() {
+	// 	showSkyThroughWmo = !showSkyThroughWmo;
+	// 	if (browser) {
+	// 		localStorage.setItem(STORAGE_KEY, String(showSkyThroughWmo));
+	// 	}
+	// }
 </script>
 
 <script lang="ts">
@@ -23,7 +24,7 @@
 		WeatherDataEvents,
 	} from '$lib/ns-weather-data.svelte';
 
-	import { clamp, each, forEachRight, maxBy } from 'lodash-es';
+	import { clamp, each, maxBy } from 'lodash-es';
 	import * as d3 from 'd3';
 
 	import { gg } from '@leftium/gg';
@@ -44,12 +45,10 @@
 		getSkyColors,
 		getWeatherIcon,
 		getWmoOverlayGradient,
-		MS_IN_10_MINUTES,
 		MS_IN_DAY,
 		MS_IN_HOUR,
 		MS_IN_MINUTE,
 		DAY_START_HOUR,
-		startOf,
 		WMO_CODES,
 		precipitationGroup,
 		temperatureToColor,
@@ -82,7 +81,7 @@
 		xAxis = true,
 		ghostTracker = false,
 		extendTracker = false,
-		past = false,
+		past = false, // eslint-disable-line @typescript-eslint/no-unused-vars
 		trackerColor = 'yellow',
 		groupIcons = true,
 		tempStats,
@@ -204,7 +203,8 @@
 			// Generic AQI level grouping function
 			function groupAqiLevels(
 				getLabelFn: (item: AqiItem) => { text: string; color: string },
-				getPrevValueFn: (item: AqiItem) => number,
+				// eslint-disable-next-line @typescript-eslint/no-unused-vars
+				_getPrevValueFn: (item: AqiItem) => number,
 			) {
 				return filteredAirQuality.reduce((accumulator: AqiItem[], currItem) => {
 					const prevItem = accumulator.at(-1);
@@ -316,11 +316,11 @@
 			isDay: boolean; // true for daytime
 		};
 
-		// Find sunrise/sunset for a given timestamp
-		function getSunTimes(ms: number): { sunrise: number; sunset: number } | null {
-			const day = nsWeatherData.daily?.find((d) => d.ms <= ms && d.ms + MS_IN_DAY > ms);
-			return day ? { sunrise: day.sunrise, sunset: day.sunset } : null;
-		}
+		// Find sunrise/sunset for a given timestamp (unused, kept for potential future use)
+		// function getSunTimes(ms: number): { sunrise: number; sunset: number } | null {
+		// 	const day = nsWeatherData.daily?.find((d) => d.ms <= ms && d.ms + MS_IN_DAY > ms);
+		// 	return day ? { sunrise: day.sunrise, sunset: day.sunset } : null;
+		// }
 
 		// Convert radians to degrees
 		function radToDeg(rad: number): number {
@@ -1091,7 +1091,8 @@
 	}
 
 	// Update debug tracker position (dashed line showing displayMs / eased animation)
-	function updateDebugTracker(ms: number) {
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	function updateDebugTracker(_ms: number) {
 		if (!debugTrackerMs) return;
 
 		const pg = d3.select(div).select<SVGSVGElement>('svg');
@@ -1652,8 +1653,10 @@
 		//@ts-expect-error: x.type is valid.
 		const plot = Plot.plot({ ...plotOptions, marks });
 
+		/* eslint-disable svelte/no-dom-manipulating -- Observable Plot requires direct DOM manipulation */
 		div?.firstChild?.remove(); // First remove old chart, if any.
 		div?.append(plot); // Then add the new chart.
+		/* eslint-enable svelte/no-dom-manipulating */
 
 		// Apply SVG filters to plot elements (more reliable than CSS filters on iOS)
 		// Filters are defined globally in template, referenced here by ID
@@ -1697,7 +1700,7 @@
 
 	// Update entire plot when UI state changes (plotTriggers centralizes all dependencies)
 	$effect(() => {
-		plotTriggers;
+		void plotTriggers; // Read to track dependency
 		untrack(() => plotData());
 	});
 
@@ -1713,7 +1716,7 @@
 	onMount(() => {
 		// Update entire plot.
 		// Runs when parent div is resized.
-		const resizeObserver = new ResizeObserver((entries) => {
+		const resizeObserver = new ResizeObserver(() => {
 			plotData();
 		});
 		resizeObserver.observe(div);
@@ -1733,11 +1736,11 @@
 
 {#if !adjustedLabelWidths}
 	<div class="labels-for-widths">
-		{#each Object.values(WMO_CODES) as props}
+		{#each Object.values(WMO_CODES) as props (props.description)}
 			<div bind:this={labelElements[props.description]}>{props.description}</div>
 		{/each}
 
-		{#each [...AQI_INDEX_US, ...AQI_INDEX_EUROPE] as { text }}
+		{#each [...AQI_INDEX_US, ...AQI_INDEX_EUROPE] as { text } (text)}
 			<div bind:this={labelElements[text]}>{text}</div>
 		{/each}
 

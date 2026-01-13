@@ -180,7 +180,6 @@
 	let containerDiv: HTMLDivElement;
 
 	// Tracker element ref - direct DOM manipulation to avoid Svelte reactivity overhead
-	// svelte-ignore non_reactive_update -- intentionally non-reactive for performance
 	let trackerRect: SVGRectElement | null = null;
 
 	// Update tracker position directly via DOM (bypasses Svelte reactivity)
@@ -283,7 +282,7 @@
 	<!-- Wrapper to constrain trackable area to just the tiles -->
 	<div class="tiles-track-area" use:trackable={trackableOptions}>
 		<div class="tiles">
-			{#each isLoading ? Array(placeholderCount) : days as day, i}
+			{#each isLoading ? Array(placeholderCount) : days as day, i (isLoading ? i : day.ms)}
 				{@const past = !isLoading && day.fromToday < 0}
 				{@const today = !isLoading && day.fromToday === 0}
 				{@const tileWmoCode = !isLoading
@@ -324,7 +323,7 @@
 					in:fade={{ duration: 300 }}
 				>
 					<!-- Precipitation bars -->
-					{#each days as day, i}
+					{#each days as day, i (day.ms)}
 						{@const barHeight = precipHeight(day.precipitation)}
 						{@const barX = (i + 0.5) * TILE_WIDTH - PRECIP_BAR_WIDTH / 2}
 						{@const barY = PRECIP_BAR_BOTTOM - barHeight}
@@ -357,14 +356,14 @@
 					/>
 
 					<!-- High temperature dots -->
-					{#each days as day, i}
+					{#each days as day, i (day.ms)}
 						{@const x = (i + 0.5) * TILE_WIDTH}
 						{@const y = tempToY(day.temperatureMax)}
 						<circle cx={x} cy={y} r="3" fill={TEMP_COLOR_HOT} />
 					{/each}
 
 					<!-- Low temperature dots -->
-					{#each days as day, i}
+					{#each days as day, i (day.ms)}
 						{@const x = (i + 0.5) * TILE_WIDTH}
 						{@const y = tempToY(day.temperatureMin)}
 						<circle cx={x} cy={y} r="3" fill={TEMP_COLOR_COLD} />
@@ -412,7 +411,7 @@
 					</defs>
 
 					<!-- Precipitation labels -->
-					{#each days as day, i}
+					{#each days as day, i (day.ms)}
 						{#if day.precipitation > 0}
 							<text
 								x={(i + 1) * TILE_WIDTH - 4}
@@ -429,7 +428,7 @@
 					{/each}
 
 					<!-- High temperature labels -->
-					{#each days as day, i}
+					{#each days as day, i (day.ms)}
 						{@const x = (i + 0.5) * TILE_WIDTH}
 						{@const y = tempToY(day.temperatureMax)}
 						<text
@@ -451,7 +450,7 @@
 					{/each}
 
 					<!-- Low temperature labels -->
-					{#each days as day, i}
+					{#each days as day, i (day.ms)}
 						{@const x = (i + 0.5) * TILE_WIDTH}
 						{@const y = tempToY(day.temperatureMin)}
 						<text

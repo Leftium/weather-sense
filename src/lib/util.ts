@@ -2,8 +2,6 @@ import { get } from 'lodash-es';
 import JSON5 from 'json5';
 import Color from 'colorjs.io';
 
-import { gg } from '@leftium/gg';
-
 import picoColors from '$lib/pico-color-palette.json';
 import dayjs from 'dayjs';
 
@@ -184,7 +182,7 @@ export function getContrastColors(fill: string): { fillText: string; fillShadow:
 const format = (num: number, width = 2) => `${Math.round(num)}`.padStart(width, '0');
 
 export function prettyLch(color: Color) {
-	const [L, C, H] = color.oklch;
+	const [L, , H] = color.oklch;
 	const A = color.alpha ?? 1;
 
 	return `${format(H || 0, 3)}h ${format((L ?? 0) * 100)}l ${format(A * 100)}a`;
@@ -732,7 +730,7 @@ export function getGroupedWmoCode(
 
 	// Build grouped codes
 	type GroupedCode = { weatherCode: number; counts: Record<number, number> };
-	const groupedCodes = hourlyData.reduce((accumulator: GroupedCode[], current, index, array) => {
+	const groupedCodes = hourlyData.reduce((accumulator: GroupedCode[], current) => {
 		const prevItem = accumulator.at(-1);
 		const prevCode = prevItem?.weatherCode;
 		const prevPrecipGroup =
@@ -1237,7 +1235,8 @@ function getSkyColorsInternal(
 	ms: number,
 	sunrise: number,
 	sunset: number,
-	_colorSpace = 'srgb-linear', // Kept for API compatibility, but cache uses srgb
+	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+	_colorSpace: string = 'srgb-linear', // Kept for API compatibility, but cache uses srgb
 	forSkyStrip = false,
 ): string[] {
 	const altitudeRad = getSunAltitude(ms, sunrise, sunset);
@@ -1245,7 +1244,7 @@ function getSkyColorsInternal(
 
 	// Handle cross-midnight case for solar noon calculation
 	// When sunrise > sunset (cross-timezone viewing), normalize times
-	let normalizedSunrise = sunrise;
+	const normalizedSunrise = sunrise;
 	let normalizedSunset = sunset;
 	let normalizedMs = ms;
 

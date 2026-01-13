@@ -287,7 +287,7 @@
 	}
 
 	const DAY_COLORS = ['#f0f8ff', '#a8d8f0', '#6bb3e0']; // Fallback daytime colors
-	const initialTimezone = data.timezone; // Capture initial value (intentionally non-reactive)
+	const initialTimezone = untrack(() => data.timezone); // Capture initial value (intentionally non-reactive)
 	const DEFAULT_COLORS = getInitialColors(initialTimezone) ?? DAY_COLORS;
 
 	// The display time (absolute ms) - tracks what time the sky colors represent

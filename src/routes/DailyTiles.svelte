@@ -179,8 +179,7 @@
 	// Ref for trackable container
 	let containerDiv: HTMLDivElement;
 
-	// Tracker element ref - direct DOM manipulation to avoid Svelte reactivity overhead
-	let trackerRect: SVGRectElement | null = null;
+	let trackerRect: SVGRectElement | null = $state(null);
 
 	// Update tracker position directly via DOM (bypasses Svelte reactivity)
 	function setTrackerPosition(x: number | null, color: string = 'yellow') {

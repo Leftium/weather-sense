@@ -361,3 +361,254 @@ Once all consumers migrated, remove duplicate `on()` registrations.
 4. **Multiple NS coordination?**
    - NS-A method calls NS-B method directly?
    - Or still via events for decoupling?
+
+---
+
+## Decoupled Reads: Event-Based State Distribution
+
+The current NS pattern couples components to NS via getters:
+
+```typescript
+// Every component imports NS and reads directly
+const nsWeatherData = getNsWeatherData();
+{
+	nsWeatherData.coords;
+}
+{
+	nsWeatherData.displayTemperature;
+}
+```
+
+**Problems:**
+
+- Components tightly coupled to NS structure
+- Hard to test (must mock entire NS)
+- Refactoring NS breaks all consumers
+- Can't easily run components in isolation
+
+### Proposed: Components Subscribe via Events
+
+Instead of getters, components receive state updates via events:
+
+```typescript
+// Component subscribes to state updates
+const weather = useWeatherState(); // hook handles subscription
+
+// Reactive local state, decoupled from NS internals
+{
+	weather.coords;
+}
+{
+	weather.displayTemperature;
+}
+```
+
+**Challenge**: Sending full state on every update is expensive, especially during 15fps scrubbing.
+
+**Solution**: Use patches for incremental updates.
+
+### Snapshot + Patch Pattern
+
+```typescript
+// Full state for: initial load, new subscribers, error recovery
+emit('weatherdata_snapshot', {
+	version: 42,
+	state: fullState,
+});
+
+// Patches for: incremental updates (especially hot state)
+emit('weatherdata_patch', {
+	version: 43,
+	baseVersion: 42,
+	patches: [{ op: 'replace', path: '/ms', value: 1705363200000 }],
+});
+```
+
+#### When to Use Each
+
+| Scenario                             | Send                  |
+| ------------------------------------ | --------------------- |
+| Component mounts                     | Snapshot              |
+| Cold state changes (fetch, location) | Snapshot (simpler)    |
+| Hot state changes (15fps scrub)      | Patches (performance) |
+| Version mismatch detected            | Snapshot (recovery)   |
+
+#### Simplified Hybrid
+
+Skip patches for cold state entirely - only use for hot path:
+
+```typescript
+// Cold: full state, infrequent
+emit('weatherdata_snapshot', fullColdState);
+
+// Hot: minimal patch object at 15fps
+emit('weatherdata_hotPatch', { ms: 1705363200000, trackedElement: null });
+```
+
+### Version-Based Consistency
+
+Ensure patches apply in order:
+
+```typescript
+type PatchEvent = {
+	baseVersion: number; // Apply only if local version matches
+	version: number; // Version after applying
+	patches: Patch[];
+};
+
+on('weatherdata_patch', (event) => {
+	if (localVersion !== event.baseVersion) {
+		// Missed patches - request full snapshot
+		emit('weatherdata_requestSnapshot');
+		return;
+	}
+
+	localState = applyPatches(localState, event.patches);
+	localVersion = event.version;
+});
+```
+
+**Alternative**: Use content hashes instead of versions to catch corruption bugs too.
+
+### Generating Patches with Mutative
+
+Use [Mutative](https://github.com/unadlib/mutative) (not Immer) for patch generation:
+
+```typescript
+import { create } from 'mutative';
+
+let version = 0;
+
+function updateState(recipe: (draft: State) => void) {
+	const [nextState, patches] = create(state, recipe, { enablePatches: true });
+
+	if (patches.length > 0) {
+		version++;
+		state = nextState;
+		emit('weatherdata_patch', {
+			baseVersion: version - 1,
+			version,
+			patches,
+		});
+	}
+}
+
+// Usage
+updateState((draft) => {
+	draft.coords = { latitude: 37.7, longitude: -122.4 };
+	draft.name = 'San Francisco';
+});
+```
+
+#### Why Mutative over Immer?
+
+| Aspect            | Immer                   | Mutative           |
+| ----------------- | ----------------------- | ------------------ |
+| Mechanism         | Proxy-based             | Copy-on-write      |
+| Performance       | Slower (proxy overhead) | ~10x faster        |
+| Bundle size       | ~5KB                    | ~3KB               |
+| API               | `produce()`             | Same API (drop-in) |
+| Hot path friendly | No                      | **Yes**            |
+
+Mutative's copy-on-write avoids proxy overhead, making it safe for hot state updates.
+
+#### Hot Path Optimization
+
+For maximum performance during 15fps scrubbing, skip Mutative entirely:
+
+```typescript
+// Hot path - manual patch, no library overhead
+let pendingHotPatch: Partial<HotState> = {};
+
+function setMs(ms: number) {
+	_hot.ms = ms;
+	_hot.rawMs = ms;
+	pendingHotPatch.ms = ms;
+}
+
+// RAF loop batches and emits
+function frameTick() {
+	if (Object.keys(pendingHotPatch).length > 0) {
+		emit('weatherdata_hotPatch', pendingHotPatch);
+		pendingHotPatch = {};
+	}
+}
+```
+
+### Consumer Hook Implementation
+
+```typescript
+// lib/useWeatherState.svelte.ts
+import { getEmitter } from '$lib/emitter';
+import { apply } from 'mutative';
+
+export function useWeatherState() {
+	let state = $state<WeatherState | null>(null);
+	let version = $state(0);
+
+	const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
+
+	// Request initial snapshot
+	$effect(() => {
+		emit('weatherdata_requestSnapshot');
+	});
+
+	// Handle full snapshots
+	on('weatherdata_snapshot', (event) => {
+		state = event.state;
+		version = event.version;
+	});
+
+	// Handle patches
+	on('weatherdata_patch', (event) => {
+		if (version !== event.baseVersion) {
+			// Out of sync - request fresh snapshot
+			emit('weatherdata_requestSnapshot');
+			return;
+		}
+
+		state = apply(state, event.patches);
+		version = event.version;
+	});
+
+	// Handle hot patches (no version check - last write wins)
+	on('weatherdata_hotPatch', (patch) => {
+		if (state) {
+			Object.assign(state, patch);
+		}
+	});
+
+	return {
+		get current() {
+			return state;
+		},
+		get version() {
+			return version;
+		},
+	};
+}
+```
+
+### Trade-offs Summary
+
+| Aspect         | Getters (Current)      | Event + Patches       |
+| -------------- | ---------------------- | --------------------- |
+| Infrastructure | ~0 lines               | ~100-150 lines (once) |
+| Per-component  | Import + wire NS       | `useWeatherState()`   |
+| Coupling       | Direct to NS internals | Only to event schema  |
+| Testing        | Mock entire NS         | Emit test events      |
+| Refactoring NS | Breaks components      | Components unchanged  |
+| Bundle size    | 0                      | +3KB (Mutative)       |
+
+**Net result**: More upfront infrastructure, but less per-component boilerplate and better isolation.
+
+### Implementation Checklist
+
+- [ ] Add Mutative dependency: `pnpm add mutative`
+- [ ] Create `useWeatherState()` hook
+- [ ] Add version tracking to NS
+- [ ] Emit snapshots on cold state changes
+- [ ] Emit patches (or simple objects) for hot state
+- [ ] Handle `weatherdata_requestSnapshot` event
+- [ ] Migrate one component as proof of concept
+- [ ] Measure performance impact

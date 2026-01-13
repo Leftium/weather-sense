@@ -11,29 +11,20 @@
 
 import { browser } from '$app/environment';
 import { getEmitter } from '$lib/emitter';
+import { MS_IN_SECOND, MS_IN_MINUTE } from '$lib/util';
 import { gg } from '@leftium/gg';
 
 import type { WeatherData } from './data.svelte';
 import { getSnapshot, tzFormat } from './calc';
-import type {
-	WeatherDataEvents,
-	HourlyForecast,
-	DailyForecast,
-	AirQuality,
-	PAST_DAYS,
-	FORECAST_DAYS,
-} from './types';
+import type { WeatherDataEvents, HourlyForecast, DailyForecast, AirQuality } from './types';
+import { PAST_DAYS, FORECAST_DAYS } from './types';
 
 // =============================================================================
 // CONSTANTS
 // =============================================================================
 
-const MS_IN_SECOND = 1000;
-const MS_IN_MINUTE = 60 * MS_IN_SECOND;
 const FRAME_INTERVAL = 1000 / 15; // 15fps
 const DATEFORMAT_MASK = 'MM-DD hh:mma z';
-const PAST_DAYS_VALUE = 2;
-const FORECAST_DAYS_VALUE = 10;
 
 // Key mappings for Open-Meteo API response parsing
 const hourlyKeys: Record<string, string> = {
@@ -107,7 +98,7 @@ export function initWeatherShell(data: WeatherData) {
 		const url =
 			`https://api.open-meteo.com/v1/forecast` +
 			`?latitude=${data.coords.latitude}&longitude=${data.coords.longitude}` +
-			`&timeformat=unixtime&timezone=auto&past_days=${PAST_DAYS_VALUE}&forecast_days=${FORECAST_DAYS_VALUE}` +
+			`&timeformat=unixtime&timezone=auto&past_days=${PAST_DAYS}&forecast_days=${FORECAST_DAYS}` +
 			`&temperature_unit=fahrenheit` +
 			`&current=temperature_2m,relative_humidity_2m,is_day,precipitation,rain,showers,snowfall,weather_code` +
 			`&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,weather_code,dew_point_2m,is_day` +
@@ -176,13 +167,13 @@ export function initWeatherShell(data: WeatherData) {
 			.map((unixtime: number, index: number) => {
 				const ms = unixtime * MS_IN_SECOND;
 				const compactDate =
-					index === PAST_DAYS_VALUE
+					index === PAST_DAYS
 						? 'Today'
 						: tzFormat(
 								ms,
 								data.timezone,
 								data.timezoneAbbreviation,
-								index < PAST_DAYS_VALUE - 7 || index > PAST_DAYS_VALUE + 7 ? 'MMM-DD' : 'dd-DD',
+								index < PAST_DAYS - 7 || index > PAST_DAYS + 7 ? 'MMM-DD' : 'dd-DD',
 							);
 
 				const sunrise = json.daily.sunrise[index] * MS_IN_SECOND;
@@ -192,7 +183,7 @@ export function initWeatherShell(data: WeatherData) {
 					msPretty: tzFormat(ms, data.timezone, data.timezoneAbbreviation, DATEFORMAT_MASK),
 					compactDate,
 					ms,
-					fromToday: index - PAST_DAYS_VALUE,
+					fromToday: index - PAST_DAYS,
 					sunrise,
 					sunset,
 				};
@@ -230,7 +221,7 @@ export function initWeatherShell(data: WeatherData) {
 		const url =
 			`https://air-quality-api.open-meteo.com/v1/air-quality` +
 			`?latitude=${data.coords.latitude}&longitude=${data.coords.longitude}` +
-			`&timeformat=unixtime&timezone=auto&past_days=${PAST_DAYS_VALUE}&forecast_days=${Math.min(7, FORECAST_DAYS_VALUE)}` +
+			`&timeformat=unixtime&timezone=auto&past_days=${PAST_DAYS}&forecast_days=${Math.min(7, FORECAST_DAYS)}` +
 			`&current=us_aqi,european_aqi` +
 			`&hourly=us_aqi,european_aqi`;
 

@@ -42,8 +42,6 @@ export const MS_IN_MINUTE = 60 * MS_IN_SECOND;
 export const MS_IN_HOUR = 60 * MS_IN_MINUTE;
 export const MS_IN_DAY = 24 * MS_IN_HOUR;
 
-export const MS_IN_10_MINUTES = 10 * MS_IN_MINUTE;
-
 // Start "day" plots at 4 AM to capture full daylight cycle (earliest sunrise ~4:25 AM in most populated areas)
 export const DAY_START_HOUR = 4;
 
@@ -345,35 +343,6 @@ export function getCloudGradientCSS(wmoCode: number, angle = 315): string {
 	// Solid zones at ends (15% each) with smooth transition in middle
 	// 315deg: bottom-right to top-left (dark at bottom-right, light at top-left)
 	return `linear-gradient(${angle}deg, ${colors[0]} 0%, ${colors[0]} 15%, ${colors[1]} 50%, ${colors[2]} 85%, ${colors[2]} 100%)`;
-}
-
-/**
- * Get opacity for WMO weather code overlay (how much sky shows through)
- * Clear conditions are transparent, cloudy/precipitation more opaque
- * @param wmoCode - WMO weather code (0-99)
- * @returns Opacity value 0-1 (0 = fully transparent, 1 = fully opaque)
- */
-export function getWmoOpacity(wmoCode: number): number {
-	// Clear sky - fully transparent
-	if (wmoCode === 0) return 0;
-
-	// Mostly clear
-	if (wmoCode === 1) return 0.1;
-
-	// Partly cloudy
-	if (wmoCode === 2) return 0.2;
-
-	// Overcast
-	if (wmoCode === 3) return 0.4;
-
-	// Fog
-	if (wmoCode === 45 || wmoCode === 48) return 0.6;
-
-	// Thunderstorm (95-99)
-	if (wmoCode >= 95) return 0.6;
-
-	// All precipitation (drizzle, rain, snow, showers): moderate opacity
-	return 0.3;
 }
 
 /**
@@ -999,41 +968,6 @@ function fastLerpPalette(palette1: string[], palette2: string[], t: number): str
 // Export for direct color animation (skip dawn/dusk)
 export { fastLerpPalette as lerpPaletteFast };
 
-// Fast step colors toward target by a fixed step (RGB-based, no Color.js)
-// Returns new colors array, or target if close enough
-export function stepColorsFast(current: string[], target: string[], stepSize: number): string[] {
-	const delta = colorsDeltaFast(current, target);
-	if (delta <= stepSize) {
-		// Close enough, snap to target
-		return target;
-	}
-	// Move stepSize/delta fraction toward target
-	const factor = stepSize / delta;
-	return fastLerpPalette(current, target, factor);
-}
-
-// Fast check if two color arrays are close enough (RGB-based)
-export function colorsAreCloseFast(
-	colors1: string[],
-	colors2: string[],
-	threshold: number = 0.01,
-): boolean {
-	return colorsDeltaFast(colors1, colors2) < threshold;
-}
-
-// Fast color delta using RGB (for internal use and export)
-function colorsDeltaFast(colors1: string[], colors2: string[]): number {
-	let maxDelta = 0;
-	for (let i = 0; i < colors1.length; i++) {
-		const [r1, g1, b1] = hexToRgb(colors1[i]);
-		const [r2, g2, b2] = hexToRgb(colors2[i]);
-		// Euclidean distance in RGB, normalized to 0-1 range
-		const dist = Math.sqrt((r2 - r1) ** 2 + (g2 - g1) ** 2 + (b2 - b1) ** 2) / 441;
-		maxDelta = Math.max(maxDelta, dist);
-	}
-	return maxDelta;
-}
-
 // ============================================================================
 // PRE-COMPUTED SKY COLOR CACHE
 // Eliminates Color.js from render loop by pre-computing all altitude steps
@@ -1166,53 +1100,10 @@ function interpolatePalettes(
 	});
 }
 
-// Lerp between two color arrays by a factor (for animation)
-export function lerpColors(current: string[], target: string[], factor: number): string[] {
-	return current.map((color1, i) => {
-		const c1 = new Color(color1);
-		const c2 = new Color(target[i]);
-		const mixed = c1.mix(c2, factor, { space: 'oklch' });
-		return mixed.toString({ format: 'hex' });
-	});
-}
-
 // Mix two colors by a factor (0 = color1, 1 = color2)
 // Uses fast RGB interpolation for performance in hot render paths
 export function mixColors(color1: string, color2: string, factor: number): string {
 	return fastMixRgb(color1, color2, factor);
-}
-
-// Move colors toward target by a fixed step in OKLCH space (linear animation)
-export function stepColors(current: string[], target: string[], stepSize: number): string[] {
-	return current.map((color1, i) => {
-		const c1 = new Color(color1);
-		const c2 = new Color(target[i]);
-		const delta = c1.deltaEOK(c2);
-
-		if (delta <= stepSize) {
-			// Close enough, snap to target
-			return target[i];
-		}
-
-		// Move stepSize/delta fraction toward target (linear step)
-		const factor = stepSize / delta;
-		const mixed = c1.mix(c2, factor, { space: 'oklch' });
-		return mixed.toString({ format: 'hex' });
-	});
-}
-
-// Check if two color arrays are close enough (for snapping)
-export function colorsAreClose(
-	colors1: string[],
-	colors2: string[],
-	threshold: number = 0.01,
-): boolean {
-	return colors1.every((color1, i) => {
-		const c1 = new Color(color1);
-		const c2 = new Color(colors2[i]);
-		const delta = c1.deltaEOK(c2);
-		return delta < threshold;
-	});
 }
 
 // Get max color delta between two color arrays
@@ -1295,26 +1186,4 @@ export function getSkyColorsFullPalette(
 	colorSpace = 'srgb-linear',
 ): string[] {
 	return getSkyColorsInternal(ms, sunrise, sunset, colorSpace, false);
-}
-
-export function getSkyGradient(ms: number, sunrise: number, sunset: number): string {
-	const colors = getSkyColorsFullPalette(ms, sunrise, sunset);
-	return `linear-gradient(-135deg, ${colors[0]} 0%, ${colors[1]} 50%, ${colors[2]} 100%)`;
-}
-
-export function getTileGradient(ms: number, sunrise: number, sunset: number): string {
-	const colors = getSkyColorsFullPalette(ms, sunrise, sunset);
-	return `linear-gradient(135deg, ${colors[0]} 0%, ${colors[1]} 50%, ${colors[2]} 100%)`;
-}
-
-export function getTextColor(ms: number, sunrise: number, sunset: number): string {
-	const colors = getSkyColorsFullPalette(ms, sunrise, sunset);
-	// Use middle color as dominant background color for contrast calculation
-	return contrastTextColor(colors[1]);
-}
-
-export function getTextShadowColor(ms: number, sunrise: number, sunset: number): string {
-	const colors = getSkyColors(ms, sunrise, sunset);
-	// Shadow is opposite of text color for contrast
-	return contrastTextColor(colors[1], true);
 }

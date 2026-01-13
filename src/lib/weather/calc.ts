@@ -15,7 +15,7 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezonePlugin from 'dayjs/plugin/timezone';
 
-import { startOf, celcius } from '$lib/util';
+import { startOf, celcius, MS_IN_MINUTE } from '$lib/util';
 import type { WeatherData } from './data.svelte';
 import type {
 	ForecastItem,
@@ -31,13 +31,6 @@ import type {
 
 dayjs.extend(utc);
 dayjs.extend(timezonePlugin);
-
-// =============================================================================
-// CONSTANTS
-// =============================================================================
-
-const MS_IN_MINUTE = 60 * 1000;
-const MS_IN_SECOND = 1000;
 
 // =============================================================================
 // TIME FORMATTING

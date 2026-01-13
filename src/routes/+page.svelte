@@ -25,7 +25,6 @@
 		getSkyColorsFullPalette,
 		colorsDelta,
 		contrastTextColor,
-		formatTemp,
 		temperatureToColor,
 		DAY_START_HOUR,
 		mixColors,
@@ -35,6 +34,7 @@
 	import type { WmoCodeInfo } from '$lib/util.js';
 	import { iconSetStore } from '$lib/iconSet.svelte';
 	import RadarMapLibre from './RadarMapLibre.svelte';
+	import { getDisplayBundle, formatTemp } from '$lib/weather-utils';
 
 	import { clearEvents, getEmitter } from '$lib/emitter.js';
 	import { browser, dev } from '$app/environment';
@@ -55,6 +55,9 @@
 
 	const nsWeatherData = makeNsWeatherData();
 	const { emit, on } = getEmitter<WeatherDataEvents>(import.meta);
+
+	// Display bundle - all formatted display values derived from NS state
+	const display = $derived(getDisplayBundle(nsWeatherData));
 
 	let { data } = $props();
 
@@ -113,7 +116,7 @@
 			checked: plotVisibility.temp,
 			bindKey: 'temp',
 			toggleUnits: true,
-			getValue: () => nsWeatherData.format('displayTemperature'),
+			getValue: () => display.temperature,
 		},
 		tempRange: {
 			key: 'tempRange',
@@ -121,8 +124,18 @@
 			checked: plotVisibility.tempRange,
 			bindKey: 'tempRange',
 			toggleUnits: true,
-			getValue: () => nsWeatherData.format('daily[2].temperatureMin', false),
-			getValueEnd: () => nsWeatherData.format('daily[2].temperatureMax', false),
+			getValue: () =>
+				formatTemp(
+					nsWeatherData.daily?.[2]?.temperatureMin,
+					nsWeatherData.units.temperature,
+					false,
+				),
+			getValueEnd: () =>
+				formatTemp(
+					nsWeatherData.daily?.[2]?.temperatureMax,
+					nsWeatherData.units.temperature,
+					false,
+				),
 		},
 		dewPoint: {
 			key: 'dewPoint',
@@ -131,7 +144,7 @@
 			checked: plotVisibility.dewPoint,
 			bindKey: 'dewPoint',
 			toggleUnits: true,
-			getValue: () => nsWeatherData.format('displayDewPoint', false),
+			getValue: () => formatTemp(display.raw.dewPoint, nsWeatherData.units.temperature, false),
 		},
 		humidity: {
 			key: 'humidity',
@@ -139,7 +152,7 @@
 			color: colors.humidity,
 			checked: plotVisibility.humidity,
 			bindKey: 'humidity',
-			getValue: () => `${nsWeatherData.displayHumidity}%`,
+			getValue: () => display.humidity,
 		},
 		precip: {
 			key: 'precip',
@@ -147,7 +160,7 @@
 			color: colors.precipitation,
 			checked: plotVisibility.precip,
 			bindKey: 'precip',
-			getValue: () => `${nsWeatherData.displayPrecipitation}mm`,
+			getValue: () => display.precipitation,
 		},
 		chance: {
 			key: 'chance',
@@ -155,23 +168,23 @@
 			color: colors.precipitationProbability,
 			checked: plotVisibility.chance,
 			bindKey: 'chance',
-			getValue: () => `${nsWeatherData.displayPrecipitationProbability}%`,
+			getValue: () => display.precipChance,
 		},
 		euAqi: {
 			key: 'euAqi',
 			label: 'EU AQI:',
-			color: aqiEuropeToLabel(nsWeatherData.displayAqiEurope ?? null).color,
+			color: aqiEuropeToLabel(display.raw.aqiEurope).color,
 			checked: plotVisibility.euAqi,
 			bindKey: 'euAqi',
-			getValue: () => `${nsWeatherData.displayAqiEurope}`,
+			getValue: () => display.aqiEurope,
 		},
 		usAqi: {
 			key: 'usAqi',
 			label: 'US AQI:',
-			color: aqiUsToLabel(nsWeatherData.displayAqiUs ?? null).color,
+			color: aqiUsToLabel(display.raw.aqiUs).color,
 			checked: plotVisibility.usAqi,
 			bindKey: 'usAqi',
-			getValue: () => `${nsWeatherData.displayAqiUs}`,
+			getValue: () => display.aqiUs,
 		},
 		showAll: {
 			key: 'showAll',
@@ -958,16 +971,12 @@
 	</div>
 	<div class="current">
 		<div class="condition">
-			<span>{wmoCode(nsWeatherData.displayWeatherCode).description}</span>
+			<span>{wmoCode(display.weatherCode ?? undefined).description}</span>
 		</div>
 
 		<img
 			class="icon"
-			src={getWeatherIcon(
-				nsWeatherData.displayWeatherCode ?? 0,
-				iconSetStore.value,
-				nsWeatherData.displayIsDay,
-			)}
+			src={getWeatherIcon(display.weatherCode ?? 0, iconSetStore.value, display.isDay)}
 			alt=""
 		/>
 
@@ -1100,10 +1109,18 @@
 					<div class="day today">24hrs</div>
 					<div class="high-low">
 						<span class="high" style:color={TEMP_COLOR_HOT} use:toggleUnits={{ temperature: true }}>
-							{nsWeatherData.format('daily[2].temperatureMax', false)}
+							{formatTemp(
+								nsWeatherData.daily?.[2]?.temperatureMax,
+								nsWeatherData.units.temperature,
+								false,
+							)}
 						</span>
 						<span class="low" style:color={TEMP_COLOR_COLD} use:toggleUnits={{ temperature: true }}>
-							{nsWeatherData.format('daily[2].temperatureMin', false)}
+							{formatTemp(
+								nsWeatherData.daily?.[2]?.temperatureMin,
+								nsWeatherData.units.temperature,
+								false,
+							)}
 						</span>
 					</div>
 				</div>
@@ -1168,12 +1185,12 @@
 								class="high"
 								style:color={TEMP_COLOR_HOT}
 								use:toggleUnits={{ temperature: true }}
-								>{formatTemp(day.temperatureMax, nsWeatherData.units.temperature)}</span
+								>{formatTemp(day.temperatureMax, nsWeatherData.units.temperature, false)}</span
 							><span
 								class="low"
 								style:color={TEMP_COLOR_COLD}
 								use:toggleUnits={{ temperature: true }}
-								>{formatTemp(day.temperatureMin, nsWeatherData.units.temperature)}</span
+								>{formatTemp(day.temperatureMin, nsWeatherData.units.temperature, false)}</span
 							>
 						</div>
 					</div>

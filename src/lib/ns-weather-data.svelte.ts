@@ -20,12 +20,12 @@
  * - coords, timezone, units, hourly, daily, dataForecast, radar, etc.
  */
 
-import { forEach, get, maxBy, minBy, uniq } from 'lodash-es';
+import { forEach, maxBy, minBy, uniq } from 'lodash-es';
 
 import { getEmitter } from '$lib/emitter';
 import { gg } from '@leftium/gg';
 import type { Coordinates, Radar } from '$lib/types';
-import { MS_IN_MINUTE, MS_IN_SECOND, celcius, startOf } from './util';
+import { MS_IN_MINUTE, MS_IN_SECOND, startOf } from './util';
 import { browser } from '$app/environment';
 
 export type WeatherDataEvents = {
@@ -381,14 +381,6 @@ export function makeNsWeatherData() {
 	});
 
 	// const trackedElement: HTMLElement | null = $state(null); // TODO: implement tracking
-
-	const unitsUsed: Record<string, keyof typeof units> = {
-		temperature: 'temperature',
-		temperatureMax: 'temperature',
-		temperatureMin: 'temperature',
-		displayTemperature: 'temperature',
-		displayDewPoint: 'temperature',
-	};
 
 	const hourlyKeys = {
 		weather_code: 'weatherCode',
@@ -794,24 +786,6 @@ export function makeNsWeatherData() {
 		});
 	}
 
-	function formatTemperature(n: number, { unit, showUnits }: { unit: string; showUnits: boolean }) {
-		if (unit === 'F') {
-			let formatted = `${Math.floor(n)}°`;
-			if (showUnits) {
-				formatted = formatted + 'F';
-			}
-			return formatted;
-		}
-		if (unit === 'C') {
-			let formatted = `${Math.round(celcius(n) ?? 0)}°`;
-			if (showUnits) {
-				formatted = formatted + 'C';
-			}
-			return formatted;
-		}
-		return null;
-	}
-
 	const nsWeatherData = {
 		get source() {
 			return source;
@@ -881,42 +855,7 @@ export function makeNsWeatherData() {
 			return intervals;
 		},
 
-		// --- Display values (derived from hot.ms - use sparingly) ---
-		get displayTemperature() {
-			return dataForecast.get(startOf(_hot.ms, 'hour', timezone))?.temperature;
-		},
-
-		get displayWeatherCode() {
-			return dataForecast.get(startOf(_hot.ms, 'hour', timezone))?.weatherCode;
-		},
-
-		get displayIsDay() {
-			return dataForecast.get(startOf(_hot.ms, 'hour', timezone))?.isDay ?? true;
-		},
-
-		get displayHumidity() {
-			return dataForecast.get(startOf(_hot.ms, 'hour', timezone))?.humidity;
-		},
-
-		get displayDewPoint() {
-			return dataForecast.get(startOf(_hot.ms, 'hour', timezone))?.dewPoint;
-		},
-
-		get displayPrecipitation() {
-			return dataForecast.get(startOf(_hot.ms, 'hour', timezone))?.precipitation.toFixed(1);
-		},
-
-		get displayPrecipitationProbability() {
-			return dataForecast.get(startOf(_hot.ms, 'hour', timezone))?.precipitationProbability;
-		},
-
-		get displayAqiUs() {
-			return dataAirQuality.get(startOf(_hot.ms, 'hour', timezone))?.aqiUs;
-		},
-
-		get displayAqiEurope() {
-			return dataAirQuality.get(startOf(_hot.ms, 'hour', timezone))?.aqiEurope;
-		},
+		// Display values moved to $lib/weather-utils.ts - use getDisplayBundle(ns) instead
 
 		get timezone() {
 			return timezone;
@@ -934,17 +873,7 @@ export function makeNsWeatherData() {
 			return utcOffsetSeconds * MS_IN_SECOND;
 		},
 
-		// Converts units, rounds to appropriate digits, and adds units label.
-		format(dataPath: string, showUnits = true) {
-			const key = dataPath.replace(/.*\./, '') as keyof typeof unitsUsed;
-			const unit = units[unitsUsed[key]];
-			const n = get(nsWeatherData, dataPath);
-
-			if (n === undefined) {
-				return '...';
-			}
-			return formatTemperature(n, { unit, showUnits }) || `${n} unknown unit: ${unit}`;
-		},
+		// format() method moved to $lib/weather-utils.ts - use formatTemp() instead
 
 		tzFormat(ms: number, format = 'ddd MMM D, h:mm:ss.SSSa z') {
 			return dayjs.tz(ms, timezone).format(format).replace('z', timezoneAbbreviation);

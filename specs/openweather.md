@@ -1736,6 +1736,236 @@ WeatherKit uses string-based condition codes similar to WMO but with Apple-speci
 
 ---
 
+## Architecture Review Notes
+
+Notes from code review of `ns-weather-data.svelte.ts` in context of multi-provider support.
+
+### Events vs Direct Functions
+
+The current NS pattern uses events for mutations:
+
+```typescript
+// External code emits events to request changes
+emit('weatherdata_requestedSetTime', { ms: newTime });
+
+// NS handles the event internally
+on('weatherdata_requestedSetTime', (params) => {
+	_hot.rawMs = params.ms;
+	_hot.ms = params.ms;
+});
+```
+
+**Why keep events instead of direct functions?**
+
+| Approach                   | Allows External Writes?                | Benefits                                            |
+| -------------------------- | -------------------------------------- | --------------------------------------------------- |
+| Events (current)           | No - all mutations go through handlers | Auditability, validation, side effects in one place |
+| Direct mutation functions  | Yes - breaks encapsulation             | Simpler API but loses traceability                  |
+| Functions that emit events | No - same as current                   | Syntactic sugar only                                |
+
+**Recommendation**: Keep event pattern for debugging and auditability. The indirection is valuable when multiple providers are updating state.
+
+### Critical Gaps for Multi-Provider
+
+#### 1. No Provider Abstraction Layer
+
+**Severity: High**
+
+The spec mentions 4+ potential providers but no interface. Each provider is ad-hoc with inline fetch functions.
+
+**Recommendation**: Define abstraction before adding OpenWeather:
+
+```typescript
+// lib/providers/types.ts
+type ProviderConfig = {
+  id: 'om' | 'ow' | 'pw';
+  name: string;
+  fetch: (coords: Coordinates) => Promise<RawResponse>;
+  normalize: (raw: RawResponse) => NormalizedData;
+  isAvailable: () => boolean;
+};
+
+// lib/providers/open-meteo.ts
+export const openMeteoProvider: ProviderConfig = { ... };
+
+// lib/providers/openweather.ts
+export const openWeatherProvider: ProviderConfig = { ... };
+```
+
+#### 2. No Error State Management
+
+**Severity: High**
+
+With parallel fetches, partial failures are silent:
+
+```typescript
+await Promise.all([
+	fetchOpenMeteoForecast(), // Success
+	fetchOpenMeteoAirQuality(), // Success
+	fetchOpenWeatherOneCall(), // Fails silently
+]);
+```
+
+**Recommendation**: Add provider status tracking:
+
+```typescript
+let providerStatus = $state<Record<string, 'idle' | 'loading' | 'success' | 'error'>>({
+	om: 'idle',
+	omAir: 'idle',
+	ow: 'idle',
+});
+
+let providerErrors = $state<Record<string, Error | null>>({
+	om: null,
+	omAir: null,
+	ow: null,
+});
+```
+
+#### 3. Timestamp Alignment Complexity
+
+**Severity: Medium**
+
+The merge function assumes timestamps align between providers:
+
+```typescript
+const existing = hourlyMap.get(ms);
+if (existing) {
+  existing._ow = { ... };
+}
+```
+
+**Reality**:
+
+- Open-Meteo returns **local timezone** timestamps (e.g., `2024-01-15T00:00` in `America/Los_Angeles`)
+- OpenWeather returns **UTC** timestamps (`dt` is Unix epoch in seconds)
+
+**Decision: Store all timestamps as UTC internally**
+
+| Approach         | Pros                                                                                                  | Cons                                                                                       |
+| ---------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
+| **UTC (chosen)** | Universal key, provider-agnostic, no timezone dependency for merging, simpler math, standard practice | Display requires conversion (already done via `tzFormat()`)                                |
+| Local            | Matches user mental model                                                                             | Timezone must be known first, DST ambiguity, provider mismatch, location change complexity |
+
+**Key insight**: Conversion is required either way. Converting at display time (UTC → local) is simpler, stateless, and already implemented.
+
+**Recommendation**: Normalize all timestamps to UTC milliseconds:
+
+```typescript
+const MS_IN_HOUR = 60 * 60 * 1000;
+
+// Snap to hour boundary in UTC
+function normalizeToUtcHour(utcMs: number): number {
+	return Math.floor(utcMs / MS_IN_HOUR) * MS_IN_HOUR;
+}
+
+// Open-Meteo gives local timestamps - convert to UTC
+// Note: OM's unixtime is seconds since epoch in LOCAL time (quirk of their API)
+function omTimestampToUtc(localUnixSeconds: number, utcOffsetSeconds: number): number {
+	return (localUnixSeconds - utcOffsetSeconds) * 1000;
+}
+
+// OpenWeather already UTC - just convert to ms
+function owTimestampToUtc(unixSeconds: number): number {
+	return unixSeconds * 1000;
+}
+```
+
+**Migration note**: Current codebase uses `item.ms` directly from Open-Meteo without UTC conversion. This works because we only have one provider, but will break merging when OW is added.
+
+**Reality**:
+
+- Open-Meteo uses **local timezone** timestamps
+- OpenWeather uses **UTC** timestamps (`dt` is Unix epoch)
+
+**Recommendation**: Add explicit timestamp normalization:
+
+```typescript
+function normalizeToLocalHour(unixSeconds: number, tzOffsetSeconds: number): number {
+	const utcMs = unixSeconds * 1000;
+	const localMs = utcMs + tzOffsetSeconds * 1000;
+	return startOf(localMs, 'hour'); // Snap to hour boundary
+}
+```
+
+#### 4. Migration Path for `_raw` Structure
+
+**Severity: Medium**
+
+The spec proposes new `_raw` structure but doesn't address how existing `omForecast`/`omAirQuality` transition.
+
+**Recommendation**: Use getter-based wrapper for backward compatibility:
+
+```typescript
+// Backward compatible - _raw.om IS omForecast
+let _raw = {
+	get om() {
+		return omForecast;
+	},
+	get omAir() {
+		return omAirQuality;
+	},
+	ow: $state(null),
+};
+```
+
+### Architecture Diagram (Multi-Provider)
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         API Layer                                │
+│  /api/openweather/onecall  │  Open-Meteo (direct)  │  RainViewer │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    Provider Fetch Functions                      │
+│  fetchOpenMeteoForecast()  │  fetchOpenWeatherOneCall()  │ ...  │
+│  (each sets providerStatus, handles errors, emits events)        │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    _raw (Raw Responses)                          │
+│  { om: OMResponse, omAir: OMAirResponse, ow: OWResponse }       │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼ mergeProviderData()
+┌─────────────────────────────────────────────────────────────────┐
+│                    unified (Derived)                             │
+│  { hourly: UnifiedHourly[], daily: UnifiedDaily[], ... }        │
+│  Primary fields from OM, secondary nested as _ow, _pw, etc.     │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│                    nsWeatherData (Public API)                    │
+│  Getters for unified, _raw, providerStatus, dataMinutely, etc.  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Updated Recommendations Summary
+
+| Priority   | Issue                   | Recommendation                                      |
+| ---------- | ----------------------- | --------------------------------------------------- |
+| **High**   | No provider abstraction | Define `ProviderConfig` interface before adding OW  |
+| **High**   | No error aggregation    | Add `providerStatus` + `providerErrors` state       |
+| **Medium** | Timestamp alignment     | Add `normalizeToLocalHour()` helper                 |
+| **Medium** | Migration complexity    | Use getter-based `_raw` wrapper for backward compat |
+| **Low**    | Console timers          | Wrap in `if (dev)` guards                           |
+
+### Pre-Implementation Checklist
+
+Before starting Phase 1, address these architecture gaps:
+
+- [ ] Define `ProviderConfig` type in `lib/providers/types.ts`
+- [ ] Add `providerStatus` and `providerErrors` state to NS
+- [ ] Create UTC timestamp helpers (`omTimestampToUtc()`, `owTimestampToUtc()`, `normalizeToUtcHour()`)
+- [ ] Plan `_raw` migration strategy (getter wrapper vs refactor)
+- [ ] Wrap `console.time`/`console.timeEnd` in dev guards
+
+---
+
 ## Testing Notes
 
 1. **Without API key**: Verify graceful degradation - no errors, just missing OW data

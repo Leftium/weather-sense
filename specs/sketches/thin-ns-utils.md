@@ -4,7 +4,7 @@ This file demonstrates the proposed refactoring:
 
 - NS reduced from 29 top-level properties to **6** (max depth 2)
 - Pure utility functions for lookups, formatting, derived values
-- Components compose utils with raw state
+- Components compose utils with raw state via `getDisplayBundle(ns)`
 
 ---
 
@@ -104,10 +104,6 @@ export function makeNsWeatherData() {
 	// GROUPED OBJECTS (stable references with nested getters)
 	// ---------------------------------------------------------------------------
 
-	// Using nested getters ensures:
-	// 1. Stable object references (no new objects on each access)
-	// 2. Fine-grained reactivity (only re-render when specific property changes)
-
 	const hot = {
 		get ms() {
 			return ms;
@@ -181,7 +177,6 @@ export function makeNsWeatherData() {
 		providerStatus = { ...providerStatus, om: 'loading', omAir: 'loading' };
 
 		// Fetch logic would go here...
-		// await Promise.all([fetchForecast(), fetchAirQuality()]);
 	});
 
 	on('weatherdata_requestedToggleUnits', (params) => {
@@ -198,14 +193,12 @@ export function makeNsWeatherData() {
 
 	on('weatherdata_requestedTrackingStart', ({ node }) => {
 		trackedElement = node;
-		// Start RAF loop...
 	});
 
 	on('weatherdata_requestedTrackingEnd', () => {
 		trackedElement = null;
 		rawMs = Date.now();
 		ms = Date.now();
-		// Stop RAF loop...
 	});
 
 	// ---------------------------------------------------------------------------
@@ -354,70 +347,7 @@ export function formatAqi(n: number | null | undefined): string {
 }
 
 // =============================================================================
-// DISPLAY HELPERS - Lookup + Format using NS directly
-// =============================================================================
-
-/** Get formatted temperature at current time */
-export function getDisplayTemp(ns: NsWeatherData): string {
-	const hourly = getHourlyAt(ns.data.hourly, ns.hot.ms, ns.tz.timezone);
-	return formatTemp(hourly?.temperature, ns.units.temperature);
-}
-
-/** Get formatted humidity at current time */
-export function getDisplayHumidity(ns: NsWeatherData): string {
-	const hourly = getHourlyAt(ns.data.hourly, ns.hot.ms, ns.tz.timezone);
-	return formatPercent(hourly?.humidity);
-}
-
-/** Get formatted dew point at current time */
-export function getDisplayDewPoint(ns: NsWeatherData): string {
-	const hourly = getHourlyAt(ns.data.hourly, ns.hot.ms, ns.tz.timezone);
-	return formatTemp(hourly?.dewPoint, ns.units.temperature);
-}
-
-/** Get formatted precipitation at current time */
-export function getDisplayPrecip(ns: NsWeatherData): string {
-	const hourly = getHourlyAt(ns.data.hourly, ns.hot.ms, ns.tz.timezone);
-	return formatPrecip(hourly?.precipitation);
-}
-
-/** Get formatted precipitation probability at current time */
-export function getDisplayPrecipChance(ns: NsWeatherData): string {
-	const hourly = getHourlyAt(ns.data.hourly, ns.hot.ms, ns.tz.timezone);
-	return formatPercent(hourly?.precipitationProbability);
-}
-
-/** Get weather code at current time */
-export function getDisplayWeatherCode(ns: NsWeatherData): number | null {
-	const hourly = getHourlyAt(ns.data.hourly, ns.hot.ms, ns.tz.timezone);
-	return hourly?.weatherCode ?? null;
-}
-
-/** Get isDay at current time */
-export function getDisplayIsDay(ns: NsWeatherData): boolean {
-	const hourly = getHourlyAt(ns.data.hourly, ns.hot.ms, ns.tz.timezone);
-	return hourly?.isDay ?? true;
-}
-
-/** Get formatted AQI (US) at current time */
-export function getDisplayAqiUs(ns: NsWeatherData): string {
-	const aq = getAirQualityAt(ns.data.airQuality, ns.hot.ms, ns.tz.timezone);
-	return formatAqi(aq?.aqiUs);
-}
-
-/** Get formatted AQI (Europe) at current time */
-export function getDisplayAqiEurope(ns: NsWeatherData): string {
-	const aq = getAirQualityAt(ns.data.airQuality, ns.hot.ms, ns.tz.timezone);
-	return formatAqi(aq?.aqiEurope);
-}
-
-/** Get formatted current time */
-export function getDisplayTime(ns: NsWeatherData, format = 'h:mm:ss A'): string {
-	return formatTime(ns.hot.ms, ns.tz.timezone, ns.tz.abbreviation, format);
-}
-
-// =============================================================================
-// BUNDLE - Get all common display values at once
+// BUNDLE - Get all common display values at once (PREFERRED PATTERN)
 // =============================================================================
 
 export type DisplayBundle = {
@@ -531,29 +461,7 @@ export function buildIntervals(ns: NsWeatherData): IntervalItem[] {
 
 ## Part 3: Component Usage Examples
 
-### Example 1: Simple component using individual utils
-
-```svelte
-<script lang="ts">
-	import { getNsWeatherData } from '$lib/ns-weather-data.svelte';
-	import { getDisplayTemp, getDisplayTime, getDisplayHumidity } from '$lib/weather-utils';
-
-	const ns = getNsWeatherData();
-
-	const temp = $derived(getDisplayTemp(ns));
-	const time = $derived(getDisplayTime(ns));
-	const humidity = $derived(getDisplayHumidity(ns));
-</script>
-
-<div class="current-weather">
-	<h1>{ns.location.name ?? 'Loading...'}</h1>
-	<p class="temp">{temp}</p>
-	<p class="time">{time}</p>
-	<p>Humidity: {humidity}</p>
-</div>
-```
-
-### Example 2: Component using bundle for many values
+### Example 1: Using bundle (preferred for multiple values)
 
 ```svelte
 <script lang="ts">
@@ -577,38 +485,7 @@ export function buildIntervals(ns: NsWeatherData): IntervalItem[] {
 </div>
 ```
 
-### Example 3: Component that needs raw values (Timeline)
-
-```svelte
-<script lang="ts">
-	import { getNsWeatherData } from '$lib/ns-weather-data.svelte';
-	import { getEmitter } from '$lib/emitter';
-	import { buildIntervals, getDisplayTime } from '$lib/weather-utils';
-
-	const ns = getNsWeatherData();
-	const { emit } = getEmitter('weatherdata');
-
-	// Raw ms for positioning
-	const currentMs = $derived(ns.hot.ms);
-
-	// Derived intervals
-	const intervals = $derived(buildIntervals(ns));
-
-	// Formatted time for display
-	const timeLabel = $derived(getDisplayTime(ns));
-
-	function handleScrub(newMs: number) {
-		emit('weatherdata_requestedSetTime', { ms: newMs });
-	}
-</script>
-
-<div class="timeline">
-	<span class="time-label">{timeLabel}</span>
-	<Scrubber value={currentMs} {intervals} onchange={handleScrub} />
-</div>
-```
-
-### Example 4: Component with custom formatting
+### Example 2: Raw values + custom formatting
 
 ```svelte
 <script lang="ts">
@@ -632,6 +509,37 @@ export function buildIntervals(ns: NsWeatherData): IntervalItem[] {
 <div class="precise-display">
 	<p>{preciseTemp}</p>
 	<p>{time24}</p>
+</div>
+```
+
+### Example 3: Timeline component (raw ms + derived intervals)
+
+```svelte
+<script lang="ts">
+	import { getNsWeatherData } from '$lib/ns-weather-data.svelte';
+	import { getEmitter } from '$lib/emitter';
+	import { buildIntervals, formatTime } from '$lib/weather-utils';
+
+	const ns = getNsWeatherData();
+	const { emit } = getEmitter('weatherdata');
+
+	// Raw ms for positioning
+	const currentMs = $derived(ns.hot.ms);
+
+	// Derived intervals
+	const intervals = $derived(buildIntervals(ns));
+
+	// Formatted time for display
+	const timeLabel = $derived(formatTime(ns.hot.ms, ns.tz.timezone, ns.tz.abbreviation, 'h:mm A'));
+
+	function handleScrub(newMs: number) {
+		emit('weatherdata_requestedSetTime', { ms: newMs });
+	}
+</script>
+
+<div class="timeline">
+	<span class="time-label">{timeLabel}</span>
+	<Scrubber value={currentMs} {intervals} onchange={handleScrub} />
 </div>
 ```
 
@@ -710,7 +618,6 @@ describe('getHourlyAt', () => {
 	});
 
 	it('snaps to hour boundary', () => {
-		// 30 minutes past the hour should snap to the hour
 		const result = getHourlyAt(mockData, 1705363200000 + 30 * 60 * 1000, 'UTC');
 		expect(result?.temperature).toBe(72);
 	});
@@ -788,6 +695,6 @@ describe('getTemperatureStats', () => {
 | Top-level properties | 29      | **6**                   |
 | Max depth            | 1       | 2                       |
 | Getters in NS        | 29      | 16 (nested in 6 groups) |
-| Display logic        | In NS   | In utils                |
+| Display logic        | In NS   | In utils (bundle)       |
 | Derived values       | In NS   | In utils                |
 | Testing              | Mock NS | Pure functions          |

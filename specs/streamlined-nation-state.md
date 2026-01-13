@@ -2,7 +2,67 @@
 
 ## TL;DR
 
-Current NS pattern is verbose - event name repeated 3 times (type def, handler, emit). Proposed: method-based API where calling `ns.setTime({ ms })` both mutates state AND emits event. Single source of truth.
+Current NS pattern has two issues:
+
+1. **Verbose events** - Event name repeated 3 times (type def, handler, emit)
+2. **God object** - NS has ~40 getters mixing raw state, lookups, and formatting
+
+Proposed solutions (orthogonal, can adopt independently):
+
+1. **Streamlined createNs()** - Method-based API reduces event boilerplate
+2. **Thin NS + Pure Utils** - Extract formatting/lookups to pure functions, NS keeps only raw state (~7 getters)
+3. **Event-based distribution** - Optional snapshot/patch events for read-side decoupling
+
+---
+
+## Architecture Layers
+
+These improvements are independent and can be adopted in any order:
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Components                                                  │
+│  - Use utils for formatting/lookups                          │
+│  - Read state via getters OR event subscription              │
+│  - Write via emit() or ns.method()                           │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Pure Utils (weather-utils.ts)                               │
+│  - formatTemp(), formatTime(), getHourlyAt()                 │
+│  - Stateless, testable, reusable                             │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Thin NS (ns-weather-data.svelte.ts)                         │
+│  - Raw state only (~7 getters)                               │
+│  - Event handlers for mutations                              │
+│  - Optional: snapshot/patch emission                         │
+└─────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────┐
+│  Data Layer (providers, _raw, unified)                       │
+│  - Multi-provider fetch                                      │
+│  - UTC normalization                                         │
+│  - Provider status tracking                                  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### Adoption Path
+
+| Step | Change                     | Scope    | Benefit                            |
+| ---- | -------------------------- | -------- | ---------------------------------- |
+| 1    | Extract utils from NS      | Refactor | Testable pure functions            |
+| 2    | Slim down NS getters       | Refactor | Smaller NS, clearer responsibility |
+| 3    | Add provider status/errors | Addition | Better error handling              |
+| 4    | Add createNs() helper      | Optional | Less event boilerplate             |
+| 5    | Add snapshot/patch events  | Optional | Read-side decoupling               |
+| 6    | Add multi-provider         | Feature  | OpenWeather integration            |
+
+---
 
 ---
 
@@ -612,3 +672,851 @@ export function useWeatherState() {
 - [ ] Handle `weatherdata_requestSnapshot` event
 - [ ] Migrate one component as proof of concept
 - [ ] Measure performance impact
+
+---
+
+## Thin NS + Pure Utils
+
+### Problem: God Object
+
+Current NS mixes concerns:
+
+```typescript
+// Raw state (necessary) - ~7 getters
+get coords() { return coords; }
+get forecast() { return forecast; }
+get ms() { return _hot.ms; }
+
+// Lookups (could be utils) - ~10 getters
+get displayTemperature() {
+  return dataForecast.get(startOf(_hot.ms, 'hour', timezone))?.temperature;
+}
+
+// Formatting (could be utils) - ~5 methods
+format(dataPath: string, showUnits = true) { ... }
+tzFormat(ms: number, format = '...') { ... }
+
+// Derived state (could be utils) - ~15 getters
+get temperatureStats() { ... }
+get intervals() { ... }
+```
+
+**Result**: ~40 getters/methods, hard to test, tightly coupled.
+
+### Solution: Extract to Pure Utils
+
+#### NS - Just Raw State
+
+```typescript
+// ns-weather-data.svelte.ts
+
+export function makeNsWeatherData() {
+  // State
+  let coords = $state<Coordinates | null>(null);
+  let name = $state<string | null>(null);
+  let ms = $state(Date.now());
+  let timezone = $state('UTC');
+  let timezoneAbbreviation = $state('UTC');
+  let units = $state({ temperature: 'F' as const });
+  let forecast = $state<Forecast | null>(null);
+  let radar = $state<Radar | null>(null);
+  let providerStatus = $state<Record<string, ProviderStatus>>({});
+
+  // Handlers (via events)
+  on('setLocation', async (params) => { ... });
+  on('setTime', (params) => { ms = params.ms; });
+  on('toggleUnits', () => { ... });
+
+  // Minimal API - just raw state
+  return {
+    get coords() { return coords; },
+    get name() { return name; },
+    get ms() { return ms; },
+    get timezone() { return timezone; },
+    get timezoneAbbreviation() { return timezoneAbbreviation; },
+    get units() { return units; },
+    get forecast() { return forecast; },
+    get radar() { return radar; },
+    get providerStatus() { return providerStatus; },
+  };
+}
+```
+
+**~9 getters** instead of ~40.
+
+#### Utils - Pure Functions
+
+```typescript
+// lib/weather-utils.ts
+
+import { startOf, celcius } from './util';
+import dayjs from 'dayjs';
+
+// =============================================================================
+// LOOKUPS
+// =============================================================================
+
+export function getHourlyAt(
+	forecast: Forecast | null,
+	ms: number,
+	timezone: string,
+): HourlyForecast | null {
+	if (!forecast) return null;
+	const hourMs = startOf(ms, 'hour', timezone);
+	return forecast.hourly.get(hourMs) ?? null;
+}
+
+export function getDailyAt(
+	forecast: Forecast | null,
+	ms: number,
+	timezone: string,
+): DailyForecast | null {
+	if (!forecast) return null;
+	const dayMs = startOf(ms, 'day', timezone);
+	return forecast.daily.find((d) => d.ms === dayMs) ?? null;
+}
+
+export function getRadarFrameAt(radar: Radar | null, ms: number): RadarFrame | null {
+	if (!radar?.frames.length) return null;
+	// Find frame closest to ms
+	return radar.frames.reduce((closest, frame) =>
+		Math.abs(frame.ms - ms) < Math.abs(closest.ms - ms) ? frame : closest,
+	);
+}
+
+// =============================================================================
+// FORMATTING
+// =============================================================================
+
+export function formatTemp(n: number | null | undefined, unit: 'F' | 'C'): string {
+	if (n == null) return '--';
+	const value = unit === 'C' ? celcius(n) : n;
+	return `${Math.round(value)}°${unit}`;
+}
+
+export function formatTime(ms: number, timezone: string, format = 'h:mm A'): string {
+	return dayjs.tz(ms, timezone).format(format);
+}
+
+export function formatPercent(n: number | null | undefined): string {
+	if (n == null) return '--';
+	return `${Math.round(n)}%`;
+}
+
+export function formatPrecip(mm: number | null | undefined): string {
+	if (mm == null) return '--';
+	return `${mm.toFixed(1)} mm`;
+}
+
+// =============================================================================
+// COMBINED HELPERS (convenience)
+// =============================================================================
+
+/** Get formatted temperature at current time */
+export function getDisplayTemp(
+	forecast: Forecast | null,
+	ms: number,
+	timezone: string,
+	unit: 'F' | 'C',
+): string {
+	const hourly = getHourlyAt(forecast, ms, timezone);
+	return formatTemp(hourly?.temperature, unit);
+}
+
+/** Get formatted humidity at current time */
+export function getDisplayHumidity(
+	forecast: Forecast | null,
+	ms: number,
+	timezone: string,
+): string {
+	const hourly = getHourlyAt(forecast, ms, timezone);
+	return formatPercent(hourly?.humidity);
+}
+
+/** Get weather icon name at current time */
+export function getDisplayIcon(forecast: Forecast | null, ms: number, timezone: string): string {
+	const hourly = getHourlyAt(forecast, ms, timezone);
+	return wmoToIcon(hourly?.weatherCode, hourly?.isDay) ?? 'unknown';
+}
+
+// =============================================================================
+// DERIVED DATA
+// =============================================================================
+
+export function getTemperatureStats(forecast: Forecast | null): {
+	min: number;
+	max: number;
+	range: number;
+} | null {
+	if (!forecast?.hourly.size) return null;
+
+	const temps = [...forecast.hourly.values()].map((h) => h.temperature);
+	const min = Math.min(...temps);
+	const max = Math.max(...temps);
+
+	return { min, max, range: max - min };
+}
+
+export function buildIntervals(forecast: Forecast | null, radar: Radar | null): IntervalItem[] {
+	// ... interval building logic ...
+}
+```
+
+#### Component Usage
+
+```svelte
+<!-- WeatherCard.svelte -->
+<script lang="ts">
+	import { getNsWeatherData } from '$lib/ns-weather-data.svelte';
+	import { getDisplayTemp, formatTime, getHourlyAt, formatPercent } from '$lib/weather-utils';
+
+	const ns = getNsWeatherData();
+
+	// Compose utils with raw state
+	const temp = $derived(getDisplayTemp(ns.forecast, ns.ms, ns.timezone, ns.units.temperature));
+	const time = $derived(formatTime(ns.ms, ns.timezone));
+	const humidity = $derived(formatPercent(getHourlyAt(ns.forecast, ns.ms, ns.timezone)?.humidity));
+</script>
+
+<div class="card">
+	<h1>{ns.name ?? 'Loading...'}</h1>
+	<p class="temp">{temp}</p>
+	<p class="time">{time}</p>
+	<p class="humidity">Humidity: {humidity}</p>
+</div>
+```
+
+#### Bundle Pattern (Reduce Verbosity)
+
+For components that need many display values:
+
+```typescript
+// weather-utils.ts
+
+/** Bundle common display values for a point in time */
+export function getDisplayBundle(
+	forecast: Forecast | null,
+	ms: number,
+	timezone: string,
+	units: { temperature: 'F' | 'C' },
+) {
+	const hourly = getHourlyAt(forecast, ms, timezone);
+
+	return {
+		temp: formatTemp(hourly?.temperature, units.temperature),
+		humidity: formatPercent(hourly?.humidity),
+		dewPoint: formatTemp(hourly?.dewPoint, units.temperature),
+		precipChance: formatPercent(hourly?.precipitationProbability),
+		precip: formatPrecip(hourly?.precipitation),
+		icon: wmoToIcon(hourly?.weatherCode, hourly?.isDay) ?? 'unknown',
+		time: formatTime(ms, timezone, 'h:mm A'),
+		date: formatTime(ms, timezone, 'MMM D'),
+	};
+}
+```
+
+```svelte
+<!-- Component using bundle -->
+<script lang="ts">
+	import { getNsWeatherData } from '$lib/ns-weather-data.svelte';
+	import { getDisplayBundle } from '$lib/weather-utils';
+
+	const ns = getNsWeatherData();
+	const display = $derived(getDisplayBundle(ns.forecast, ns.ms, ns.timezone, ns.units));
+</script>
+
+<p>{display.temp}</p><p>{display.time}</p><p>{display.humidity}</p>
+```
+
+### Comparison
+
+| Aspect                   | Current (God Object)         | Thin NS + Utils                 |
+| ------------------------ | ---------------------------- | ------------------------------- |
+| NS getters               | ~40                          | ~9                              |
+| NS responsibility        | State + lookups + formatting | State only                      |
+| Testing                  | Must mock NS                 | Utils are pure, trivial to test |
+| Reusability              | Tied to NS instance          | Utils work anywhere             |
+| Component verbosity      | Low                          | Medium (mitigated with bundles) |
+| Adding new derived value | Modify NS                    | Add util function               |
+
+### Testing Utils
+
+```typescript
+// weather-utils.test.ts
+
+import { describe, it, expect } from 'vitest';
+import { formatTemp, getHourlyAt, getDisplayTemp } from './weather-utils';
+
+describe('formatTemp', () => {
+	it('formats Fahrenheit', () => {
+		expect(formatTemp(72.4, 'F')).toBe('72°F');
+	});
+
+	it('formats Celsius', () => {
+		expect(formatTemp(72, 'C')).toBe('22°C');
+	});
+
+	it('handles null', () => {
+		expect(formatTemp(null, 'F')).toBe('--');
+	});
+});
+
+describe('getHourlyAt', () => {
+	const mockForecast = {
+		hourly: new Map([
+			[1705363200000, { temperature: 72, humidity: 65 }],
+			[1705366800000, { temperature: 70, humidity: 68 }],
+		]),
+	};
+
+	it('returns hourly data at exact time', () => {
+		const result = getHourlyAt(mockForecast, 1705363200000, 'UTC');
+		expect(result?.temperature).toBe(72);
+	});
+
+	it('returns null for missing forecast', () => {
+		expect(getHourlyAt(null, 1705363200000, 'UTC')).toBeNull();
+	});
+});
+```
+
+No NS mocking needed - just pure function inputs and outputs.
+
+---
+
+## Sketch: Refactored NS Definition
+
+Complete example showing streamlined NS with event-based state distribution.
+
+### Type Definitions
+
+```typescript
+// lib/ns-weather-data.svelte.ts
+
+import { create } from 'mutative';
+import { getEmitter } from '$lib/emitter';
+import type { Coordinates, Radar } from '$lib/types';
+
+// ============================================================================
+// STATE TYPES
+// ============================================================================
+
+/** Hot state - changes at 15fps during scrubbing */
+type HotState = {
+	ms: number;
+	rawMs: number;
+	radarPlaying: boolean;
+	trackedElement: HTMLElement | null;
+};
+
+/** Cold state - changes on fetch/user action */
+type ColdState = {
+	// Location
+	coords: Coordinates | null;
+	name: string | null;
+	source: string;
+
+	// Timezone
+	timezone: string;
+	timezoneAbbreviation: string;
+	utcOffsetSeconds: number;
+
+	// Data
+	forecast: ForecastData | null;
+	airQuality: AirQualityData | null;
+	radar: Radar;
+
+	// Units
+	units: { temperature: 'C' | 'F' };
+
+	// Provider status
+	providerStatus: Record<string, 'idle' | 'loading' | 'success' | 'error'>;
+	providerErrors: Record<string, Error | null>;
+};
+
+/** Combined state for snapshots */
+type WeatherState = {
+	hot: HotState;
+	cold: ColdState;
+	version: number;
+};
+
+// ============================================================================
+// EVENT TYPES
+// ============================================================================
+
+type WeatherDataEvents = {
+	// === Commands (external → NS) ===
+	setLocation: { source: string; coords?: Coordinates; name?: string };
+	setTime: { ms: number };
+	toggleUnits: { temperature?: boolean | 'C' | 'F' };
+	togglePlay: undefined;
+	startTracking: { node: HTMLElement };
+	endTracking: undefined;
+	fetchRadar: undefined;
+	requestSnapshot: undefined;
+
+	// === Notifications (NS → external) ===
+	snapshot: { version: number; state: WeatherState };
+	patch: { baseVersion: number; version: number; patches: Patch[] };
+	hotPatch: Partial<HotState>;
+	trackingEnded: undefined;
+};
+
+type Patch = {
+	op: 'replace' | 'add' | 'remove';
+	path: string;
+	value?: unknown;
+};
+```
+
+### NS Factory
+
+```typescript
+// ============================================================================
+// NS FACTORY
+// ============================================================================
+
+export function makeNsWeatherData() {
+	const { on, emit } = getEmitter<WeatherDataEvents>('weatherdata');
+
+	// --------------------------------------------------------------------------
+	// STATE
+	// --------------------------------------------------------------------------
+
+	let version = 0;
+
+	const hot: HotState = $state({
+		ms: Date.now(),
+		rawMs: Date.now(),
+		radarPlaying: false,
+		trackedElement: null,
+	});
+
+	const cold: ColdState = $state({
+		coords: null,
+		name: null,
+		source: '???',
+		timezone: 'Greenwich',
+		timezoneAbbreviation: 'GMT',
+		utcOffsetSeconds: 0,
+		forecast: null,
+		airQuality: null,
+		radar: { generated: 0, host: '', frames: [] },
+		units: { temperature: 'F' },
+		providerStatus: { om: 'idle', omAir: 'idle', ow: 'idle' },
+		providerErrors: { om: null, omAir: null, ow: null },
+	});
+
+	// --------------------------------------------------------------------------
+	// HELPERS
+	// --------------------------------------------------------------------------
+
+	function getSnapshot(): WeatherState {
+		return {
+			hot: $state.snapshot(hot),
+			cold: $state.snapshot(cold),
+			version,
+		};
+	}
+
+	function emitSnapshot() {
+		emit('snapshot', { version, state: getSnapshot() });
+	}
+
+	function updateCold(recipe: (draft: ColdState) => void) {
+		const [nextCold, patches] = create($state.snapshot(cold), recipe, {
+			enablePatches: true,
+		});
+
+		if (patches.length > 0) {
+			const baseVersion = version;
+			version++;
+			Object.assign(cold, nextCold);
+			emit('patch', { baseVersion, version, patches });
+		}
+	}
+
+	// Hot state batching for 15fps
+	let pendingHotPatch: Partial<HotState> = {};
+	let frameRafId: number | null = null;
+
+	function emitHotPatch() {
+		if (Object.keys(pendingHotPatch).length > 0) {
+			emit('hotPatch', pendingHotPatch);
+			pendingHotPatch = {};
+		}
+	}
+
+	// --------------------------------------------------------------------------
+	// COMMAND HANDLERS
+	// --------------------------------------------------------------------------
+
+	const handlers = {
+		setLocation: async ({ source, coords, name }: WeatherDataEvents['setLocation']) => {
+			updateCold((draft) => {
+				draft.source = source;
+				if (coords) draft.coords = coords;
+				if (name) draft.name = name;
+				draft.providerStatus.om = 'loading';
+				draft.providerStatus.omAir = 'loading';
+			});
+
+			// Fetch in parallel
+			await Promise.all([fetchOpenMeteoForecast(), fetchOpenMeteoAirQuality()]);
+		},
+
+		setTime: ({ ms }: WeatherDataEvents['setTime']) => {
+			hot.rawMs = ms;
+
+			if (!hot.trackedElement) {
+				hot.ms = ms;
+			}
+
+			// Queue for batched emit
+			pendingHotPatch.ms = ms;
+			pendingHotPatch.rawMs = ms;
+		},
+
+		toggleUnits: ({ temperature }: WeatherDataEvents['toggleUnits']) => {
+			updateCold((draft) => {
+				if (temperature === 'C' || temperature === 'F') {
+					draft.units.temperature = temperature;
+				} else if (temperature) {
+					draft.units.temperature = draft.units.temperature === 'F' ? 'C' : 'F';
+				}
+			});
+		},
+
+		togglePlay: () => {
+			hot.radarPlaying = !hot.radarPlaying;
+			pendingHotPatch.radarPlaying = hot.radarPlaying;
+		},
+
+		startTracking: ({ node }: WeatherDataEvents['startTracking']) => {
+			hot.trackedElement = node;
+			pendingHotPatch.trackedElement = node;
+
+			// Start RAF loop for batched hot patches
+			if (frameRafId === null) {
+				const FRAME_INTERVAL = 1000 / 15;
+				let lastFrameTime = performance.now();
+
+				function frameTick(now: number) {
+					if (frameRafId === null) return;
+
+					if (now - lastFrameTime >= FRAME_INTERVAL) {
+						lastFrameTime = now;
+						hot.ms = hot.rawMs;
+						pendingHotPatch.ms = hot.rawMs;
+						emitHotPatch();
+					}
+
+					frameRafId = requestAnimationFrame(frameTick);
+				}
+				frameRafId = requestAnimationFrame(frameTick);
+			}
+		},
+
+		endTracking: () => {
+			hot.trackedElement = null;
+			hot.rawMs = Date.now();
+			hot.ms = Date.now();
+
+			// Stop RAF loop
+			if (frameRafId !== null) {
+				cancelAnimationFrame(frameRafId);
+				frameRafId = null;
+			}
+
+			// Final emit
+			pendingHotPatch = { ms: hot.ms, rawMs: hot.rawMs, trackedElement: null };
+			emitHotPatch();
+
+			emit('trackingEnded', undefined);
+		},
+
+		fetchRadar: async () => {
+			// ... radar fetch logic ...
+		},
+
+		requestSnapshot: () => {
+			emitSnapshot();
+		},
+	};
+
+	// --------------------------------------------------------------------------
+	// FETCH FUNCTIONS
+	// --------------------------------------------------------------------------
+
+	async function fetchOpenMeteoForecast() {
+		if (!cold.coords) return;
+
+		try {
+			const response = await fetch(buildForecastUrl(cold.coords));
+			const json = await response.json();
+
+			updateCold((draft) => {
+				draft.forecast = normalizeForecast(json);
+				draft.timezone = json.timezone;
+				draft.timezoneAbbreviation = json.timezone_abbreviation;
+				draft.utcOffsetSeconds = json.utc_offset_seconds;
+				draft.providerStatus.om = 'success';
+				draft.providerErrors.om = null;
+			});
+		} catch (error) {
+			updateCold((draft) => {
+				draft.providerStatus.om = 'error';
+				draft.providerErrors.om = error as Error;
+			});
+		}
+	}
+
+	async function fetchOpenMeteoAirQuality() {
+		// Similar pattern...
+	}
+
+	// --------------------------------------------------------------------------
+	// REGISTER EVENT HANDLERS
+	// --------------------------------------------------------------------------
+
+	on('setLocation', handlers.setLocation);
+	on('setTime', handlers.setTime);
+	on('toggleUnits', handlers.toggleUnits);
+	on('togglePlay', handlers.togglePlay);
+	on('startTracking', handlers.startTracking);
+	on('endTracking', handlers.endTracking);
+	on('fetchRadar', handlers.fetchRadar);
+	on('requestSnapshot', handlers.requestSnapshot);
+
+	// --------------------------------------------------------------------------
+	// PUBLIC API
+	// --------------------------------------------------------------------------
+
+	return {
+		// Methods (call directly or via event)
+		...handlers,
+
+		// Snapshot for initial sync
+		getSnapshot,
+
+		// Format helpers (stateless, safe to expose)
+		tzFormat: (ms: number, format = 'ddd MMM D, h:mm:ss.SSSa z') => {
+			return dayjs.tz(ms, cold.timezone).format(format).replace('z', cold.timezoneAbbreviation);
+		},
+
+		format: (value: number, type: 'temperature') => {
+			// Unit conversion + formatting
+		},
+	};
+}
+
+export type NsWeatherData = ReturnType<typeof makeNsWeatherData>;
+```
+
+### Consumer Hook
+
+```typescript
+// lib/useWeatherState.svelte.ts
+
+import { getEmitter } from '$lib/emitter';
+import { apply } from 'mutative';
+import type { WeatherState } from './ns-weather-data.svelte';
+
+export function useWeatherState() {
+	const { on, emit } = getEmitter<WeatherDataEvents>('weatherdata');
+
+	let state = $state<WeatherState | null>(null);
+	let version = $state(-1);
+
+	// Request initial snapshot on mount
+	$effect(() => {
+		emit('requestSnapshot', undefined);
+	});
+
+	// Handle snapshots
+	on('snapshot', (event) => {
+		state = event.state;
+		version = event.version;
+	});
+
+	// Handle cold patches
+	on('patch', (event) => {
+		if (!state) return;
+
+		if (version !== event.baseVersion) {
+			// Out of sync - request fresh snapshot
+			emit('requestSnapshot', undefined);
+			return;
+		}
+
+		// Apply patches to cold state
+		state = {
+			...state,
+			cold: apply(state.cold, event.patches),
+			version: event.version,
+		};
+		version = event.version;
+	});
+
+	// Handle hot patches (no version check - last write wins)
+	on('hotPatch', (patch) => {
+		if (state) {
+			state = {
+				...state,
+				hot: { ...state.hot, ...patch },
+			};
+		}
+	});
+
+	return {
+		// Reactive getters
+		get state() {
+			return state;
+		},
+		get version() {
+			return version;
+		},
+		get ready() {
+			return state !== null;
+		},
+
+		// Convenience accessors
+		get coords() {
+			return state?.cold.coords ?? null;
+		},
+		get name() {
+			return state?.cold.name ?? null;
+		},
+		get ms() {
+			return state?.hot.ms ?? Date.now();
+		},
+		get timezone() {
+			return state?.cold.timezone ?? 'UTC';
+		},
+		get forecast() {
+			return state?.cold.forecast ?? null;
+		},
+		get units() {
+			return state?.cold.units ?? { temperature: 'F' };
+		},
+		get providerStatus() {
+			return state?.cold.providerStatus ?? {};
+		},
+
+		// Derived values
+		get displayTemperature() {
+			if (!state?.cold.forecast) return null;
+			const hourMs = startOfHour(state.hot.ms);
+			return state.cold.forecast.hourly.get(hourMs)?.temperature;
+		},
+	};
+}
+```
+
+### Component Usage
+
+```svelte
+<!-- src/routes/WeatherDisplay.svelte -->
+<script lang="ts">
+	import { useWeatherState } from '$lib/useWeatherState.svelte';
+	import { getEmitter } from '$lib/emitter';
+
+	const weather = useWeatherState();
+	const { emit } = getEmitter('weatherdata');
+
+	function handleLocationChange(coords: Coordinates) {
+		emit('setLocation', { source: 'user', coords });
+	}
+
+	function handleScrub(ms: number) {
+		emit('setTime', { ms });
+	}
+
+	function toggleUnits() {
+		emit('toggleUnits', { temperature: true });
+	}
+</script>
+
+{#if !weather.ready}
+	<p>Loading...</p>
+{:else}
+	<div class="weather">
+		<h1>{weather.name ?? 'Unknown Location'}</h1>
+
+		{#if weather.displayTemperature != null}
+			<p class="temp">
+				{weather.displayTemperature}°{weather.units.temperature}
+			</p>
+		{/if}
+
+		<button onclick={toggleUnits}>
+			Switch to °{weather.units.temperature === 'F' ? 'C' : 'F'}
+		</button>
+
+		<!-- Provider status indicators -->
+		<div class="status">
+			{#each Object.entries(weather.providerStatus) as [provider, status]}
+				<span class="provider {status}">{provider}: {status}</span>
+			{/each}
+		</div>
+
+		<!-- Timeline scrubbing -->
+		<Timeline ms={weather.ms} onscrub={handleScrub} />
+	</div>
+{/if}
+```
+
+### Comparison: Before vs After
+
+#### Before (Getter-Based)
+
+```svelte
+<script>
+	import { getNsWeatherData } from '$lib/ns-weather-data.svelte';
+	import { getEmitter } from '$lib/emitter';
+
+	const nsWeatherData = getNsWeatherData();
+	const { emit } = getEmitter(import.meta);
+
+	// Direct reads - tightly coupled to NS structure
+	$: coords = nsWeatherData.coords;
+	$: name = nsWeatherData.name;
+	$: ms = nsWeatherData.ms;
+	$: temp = nsWeatherData.displayTemperature;
+</script>
+
+<h1>{nsWeatherData.name}</h1>
+<p>{nsWeatherData.displayTemperature}°{nsWeatherData.units.temperature}</p>
+```
+
+#### After (Event-Based)
+
+```svelte
+<script>
+	import { useWeatherState } from '$lib/useWeatherState.svelte';
+	import { getEmitter } from '$lib/emitter';
+
+	const weather = useWeatherState();
+	const { emit } = getEmitter('weatherdata');
+
+	// Decoupled - only knows event schema + state shape
+</script>
+
+{#if weather.ready}
+	<h1>{weather.name}</h1>
+	<p>{weather.displayTemperature}°{weather.units.temperature}</p>
+{/if}
+```
+
+### Key Differences
+
+| Aspect              | Before                 | After                     |
+| ------------------- | ---------------------- | ------------------------- |
+| Import              | NS factory             | Hook + emitter            |
+| Coupling            | Direct to NS internals | Event schema only         |
+| Initialization      | Immediate              | Async (wait for snapshot) |
+| Testing             | Mock NS factory        | Emit test events          |
+| Component isolation | Must have NS context   | Self-contained            |
+| Hot updates         | Direct read            | Batched via hotPatch      |
+| Cold updates        | Direct read            | Via snapshot/patch        |

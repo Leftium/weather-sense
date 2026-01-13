@@ -78,6 +78,9 @@ export function initWeatherShell(data: WeatherData) {
 	let lastFrameTime = 0;
 	let resetRadarOnPlay = true;
 
+	// Idle minute-aligned timer state
+	let idleTimeoutId: ReturnType<typeof setTimeout> | null = null;
+
 	// =========================================================================
 	// SNAPSHOT EMISSION
 	// =========================================================================
@@ -369,6 +372,9 @@ export function initWeatherShell(data: WeatherData) {
 	function startFrameLoop() {
 		if (frameRafId !== null) return;
 
+		// Stop idle timer when frame loop starts
+		stopIdleTimer();
+
 		lastFrameTime = performance.now();
 
 		function frameTick(now: number) {
@@ -410,6 +416,8 @@ export function initWeatherShell(data: WeatherData) {
 				frameRafId = requestAnimationFrame(frameTick);
 			} else {
 				frameRafId = null;
+				// Switch to idle timer when frame loop stops
+				startIdleTimer();
 			}
 		}
 
@@ -420,6 +428,44 @@ export function initWeatherShell(data: WeatherData) {
 		if (frameRafId !== null) {
 			cancelAnimationFrame(frameRafId);
 			frameRafId = null;
+		}
+	}
+
+	// =========================================================================
+	// IDLE MINUTE-ALIGNED TIMER
+	// Updates tracker to current time once per minute when not tracking/playing
+	// =========================================================================
+
+	function startIdleTimer() {
+		if (idleTimeoutId !== null) return; // Already running
+
+		function scheduleNextMinute() {
+			const now = Date.now();
+			const msUntilNextMinute = MS_IN_MINUTE - (now % MS_IN_MINUTE) + 100; // +100ms buffer
+
+			idleTimeoutId = setTimeout(() => {
+				// Only update if still idle (not tracking or playing)
+				if (!data.trackedElement && !data.radarPlaying) {
+					const currentMs = Date.now();
+					data.rawMs = currentMs;
+					data.ms = currentMs;
+					emit('weatherdata_frameTick', { ms: currentMs });
+
+					// Schedule next minute
+					scheduleNextMinute();
+				} else {
+					idleTimeoutId = null;
+				}
+			}, msUntilNextMinute);
+		}
+
+		scheduleNextMinute();
+	}
+
+	function stopIdleTimer() {
+		if (idleTimeoutId !== null) {
+			clearTimeout(idleTimeoutId);
+			idleTimeoutId = null;
 		}
 	}
 
@@ -546,12 +592,20 @@ export function initWeatherShell(data: WeatherData) {
 	});
 
 	// =========================================================================
+	// INITIALIZATION
+	// =========================================================================
+
+	// Start idle timer immediately so tracker updates each minute
+	startIdleTimer();
+
+	// =========================================================================
 	// CLEANUP
 	// =========================================================================
 
 	return {
 		destroy() {
 			stopFrameLoop();
+			stopIdleTimer();
 		},
 	};
 }

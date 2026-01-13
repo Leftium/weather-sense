@@ -12,12 +12,9 @@
 	import RadarTimeline from '$lib/RadarTimeline.svelte';
 	import { dev } from '$app/environment';
 	import { clamp } from 'lodash-es';
-	import { MS_IN_SECOND } from '$lib/util.js';
 
 	let mainElement: HTMLElement;
 	let mapElement: HTMLDivElement;
-
-	let animationFrameId: number | null = null;
 
 	let { nsWeatherData }: { nsWeatherData: WeatherStore } = $props();
 
@@ -219,68 +216,13 @@
 				addRainviewerLayer(nsWeatherData.radar.frames[0], 0, true);
 			}
 		});
-
-		///---------------------------------------------------------------------------------------///
-
-		let prevTimestamp = 0;
-		function step(timeStamp: number) {
-			if (nsWeatherData.radar?.generated && nsWeatherData.radar?.frames?.length) {
-				const deltaTime = timeStamp - prevTimestamp;
-
-				if (deltaTime > 20) {
-					// Advance time if playing
-					if (nsWeatherData.radarPlaying) {
-						emit('weatherdata_requestedSetTime', { ms: nsWeatherData.ms + 40 * MS_IN_SECOND });
-					}
-
-					// Update layer opacity
-					if (radarFrameIndex < nsWeatherData.radar.frames.length) {
-						Object.values(radarLayers).forEach((radarLayer, index) => {
-							if (!radarLayer?.ms) return;
-							const layerId = `rv-layer-${radarLayer.ms}`;
-							if (map.getLayer(layerId)) {
-								map.setPaintProperty(
-									layerId,
-									'raster-opacity',
-									index === radarFrameIndex ? 0.6 : 0,
-								);
-							}
-						});
-					}
-
-					prevTimestamp = timeStamp;
-				}
-			}
-			// Only continue animation loop if radar is playing
-			if (nsWeatherData.radarPlaying) {
-				animationFrameId = requestAnimationFrame(step);
-			} else {
-				// Reset so loop can restart when play resumes
-				animationFrameId = null;
-			}
-		}
-
-		// Expose step function for the radarPlaying watcher
-		radarStepFn = step;
 	});
 
-	// Watch radarPlaying and start/stop animation loop accordingly
-	let radarStepFn: ((timeStamp: number) => void) | null = null;
-	$effect(() => {
-		const isPlaying = nsWeatherData.radarPlaying;
-		if (isPlaying && radarStepFn) {
-			// Start animation loop if not already running
-			if (!animationFrameId) {
-				animationFrameId = requestAnimationFrame(radarStepFn);
-			}
-		}
-	});
-
-	// Update radar layer opacity when scrubbing (radarFrameIndex changes)
+	// Update radar layer opacity when radarFrameIndex changes (scrubbing or playback)
+	// Shell's unified RAF loop drives time advancement during playback
 	$effect(() => {
 		const frameIndex = radarFrameIndex;
 		if (!map || !nsWeatherData.radar?.frames?.length) return;
-		if (nsWeatherData.radarPlaying) return; // Animation loop handles this when playing
 
 		// Update layer opacity to show current frame
 		Object.values(radarLayers).forEach((radarLayer, index) => {
@@ -333,9 +275,6 @@
 	onDestroy(() => {
 		if (map) {
 			map.remove();
-		}
-		if (animationFrameId) {
-			cancelAnimationFrame(animationFrameId);
 		}
 	});
 </script>

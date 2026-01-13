@@ -359,8 +359,12 @@ export function initWeatherShell(data: WeatherData) {
 	}
 
 	// =========================================================================
-	// RAF LOOP FOR TRACKING
+	// UNIFIED RAF LOOP (tracking + radar playback)
 	// =========================================================================
+
+	// Radar playback timing constants
+	const RADAR_TIME_STEP = 40 * MS_IN_SECOND; // Advance 40 seconds per frame
+	const RADAR_FRAME_INTERVAL = 20; // ~50fps for smooth radar animation
 
 	function startFrameLoop() {
 		if (frameRafId !== null) return;
@@ -370,13 +374,43 @@ export function initWeatherShell(data: WeatherData) {
 		function frameTick(now: number) {
 			if (frameRafId === null) return;
 
-			if (now - lastFrameTime >= FRAME_INTERVAL) {
+			const elapsed = now - lastFrameTime;
+
+			// Radar playback: advance time when playing (higher framerate for smooth animation)
+			if (data.radarPlaying && elapsed >= RADAR_FRAME_INTERVAL) {
+				const newMs = data.rawMs + RADAR_TIME_STEP;
+				data.rawMs = newMs;
+				data.ms = newMs;
+				emit('weatherdata_frameTick', { ms: newMs });
+				emit('weatherdata_timeChange', { ms: newMs });
+
+				// Check if past radar end
+				const msMaxRadar = (data.radar.frames.at(-1)?.ms || 0) + 10 * MS_IN_MINUTE;
+				if (newMs > msMaxRadar) {
+					data.radarPlaying = false;
+					emit('weatherdata_playStateChange', { playing: false });
+					data.rawMs = Date.now();
+					data.ms = Date.now();
+					resetRadarOnPlay = true;
+					emit('weatherdata_timeChange', { ms: Date.now() });
+					emit('weatherdata_frameTick', { ms: Date.now() });
+				}
+
+				lastFrameTime = now;
+			}
+			// Tracking: emit frame tick at 15fps
+			else if (data.trackedElement && elapsed >= FRAME_INTERVAL) {
 				lastFrameTime = now;
 				data.ms = data.rawMs;
 				emit('weatherdata_frameTick', { ms: data.rawMs });
 			}
 
-			frameRafId = requestAnimationFrame(frameTick);
+			// Continue loop if tracking or playing
+			if (data.trackedElement || data.radarPlaying) {
+				frameRafId = requestAnimationFrame(frameTick);
+			} else {
+				frameRafId = null;
+			}
 		}
 
 		frameRafId = requestAnimationFrame(frameTick);
@@ -462,7 +496,10 @@ export function initWeatherShell(data: WeatherData) {
 		data.rawMs = Date.now();
 		data.ms = Date.now();
 
-		stopFrameLoop();
+		// Don't stop frame loop if radar is still playing
+		if (!data.radarPlaying) {
+			stopFrameLoop();
+		}
 
 		emit('weatherdata_trackingChange', { element: null });
 		emit('weatherdata_frameTick', { ms: data.rawMs });
@@ -473,12 +510,18 @@ export function initWeatherShell(data: WeatherData) {
 		data.radarPlaying = !data.radarPlaying;
 		emit('weatherdata_playStateChange', { playing: data.radarPlaying });
 
-		if (resetRadarOnPlay && data.radar.frames?.length) {
-			data.rawMs = data.radar.frames[0].ms;
-			data.ms = data.radar.frames[0].ms;
-			emit('weatherdata_timeChange', { ms: data.ms });
+		if (data.radarPlaying) {
+			// Reset to first frame if needed
+			if (resetRadarOnPlay && data.radar.frames?.length) {
+				data.rawMs = data.radar.frames[0].ms;
+				data.ms = data.radar.frames[0].ms;
+				emit('weatherdata_timeChange', { ms: data.ms });
+			}
+			resetRadarOnPlay = false;
+			// Start unified frame loop for radar playback
+			startFrameLoop();
 		}
-		resetRadarOnPlay = false;
+		// Loop will auto-stop when radarPlaying becomes false (see frameTick)
 	});
 
 	on('weatherdata_requestedToggleUnits', (params) => {

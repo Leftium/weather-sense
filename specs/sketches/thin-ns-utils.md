@@ -2,7 +2,7 @@
 
 This file demonstrates the proposed refactoring:
 
-- NS reduced from 29 top-level properties to **6** (max depth 2)
+- NS keeps only raw state (flat, ~17 properties)
 - Pure utility functions for lookups, formatting, derived values
 - Components compose utils with raw state via `getDisplayBundle(ns)`
 
@@ -78,85 +78,35 @@ export function makeNsWeatherData() {
 	let trackedElement = $state<HTMLElement | null>(null);
 
 	// ---------------------------------------------------------------------------
-	// COLD STATE (changes on fetch/user action)
+	// COLD STATE - location
 	// ---------------------------------------------------------------------------
 	let coords = $state<Coordinates | null>(null);
 	let name = $state<string | null>(null);
 	let source = $state('???');
 
+	// ---------------------------------------------------------------------------
+	// COLD STATE - timezone
+	// ---------------------------------------------------------------------------
 	let timezone = $state('UTC');
 	let timezoneAbbreviation = $state('UTC');
 	let utcOffsetSeconds = $state(0);
 
-	let units = $state({ temperature: 'F' as 'C' | 'F' });
-
-	let hourlyData = $state<HourlyData>(new Map());
-	let airQualityData = $state<AirQualityData>(new Map());
-	let dailyData = $state<DailyForecast[]>([]);
+	// ---------------------------------------------------------------------------
+	// COLD STATE - data
+	// ---------------------------------------------------------------------------
+	let hourly = $state<HourlyData>(new Map());
+	let daily = $state<DailyForecast[]>([]);
+	let airQuality = $state<AirQualityData>(new Map());
 	let radar = $state<Radar>({ generated: 0, host: '', frames: [] });
 
+	// ---------------------------------------------------------------------------
+	// COLD STATE - settings
+	// ---------------------------------------------------------------------------
+	let units = $state({ temperature: 'F' as 'C' | 'F' });
 	let providerStatus = $state<Record<string, ProviderStatus>>({
 		om: 'idle',
 		omAir: 'idle',
 	});
-
-	// ---------------------------------------------------------------------------
-	// GROUPED OBJECTS (stable references with nested getters)
-	// ---------------------------------------------------------------------------
-
-	const hot = {
-		get ms() {
-			return ms;
-		},
-		get rawMs() {
-			return rawMs;
-		},
-		get radarPlaying() {
-			return radarPlaying;
-		},
-		get trackedElement() {
-			return trackedElement;
-		},
-	};
-
-	const tz = {
-		get timezone() {
-			return timezone;
-		},
-		get abbreviation() {
-			return timezoneAbbreviation;
-		},
-		get offsetSeconds() {
-			return utcOffsetSeconds;
-		},
-	};
-
-	const location = {
-		get coords() {
-			return coords;
-		},
-		get name() {
-			return name;
-		},
-		get source() {
-			return source;
-		},
-	};
-
-	const data = {
-		get hourly() {
-			return hourlyData;
-		},
-		get daily() {
-			return dailyData;
-		},
-		get airQuality() {
-			return airQualityData;
-		},
-		get radar() {
-			return radar;
-		},
-	};
 
 	// ---------------------------------------------------------------------------
 	// EVENT HANDLERS
@@ -202,15 +152,66 @@ export function makeNsWeatherData() {
 	});
 
 	// ---------------------------------------------------------------------------
-	// PUBLIC API - 6 top-level properties, max depth 2
+	// PUBLIC API - flat, raw state only (~17 properties)
 	// ---------------------------------------------------------------------------
 	return {
-		hot, // { ms, rawMs, radarPlaying, trackedElement }
-		tz, // { timezone, abbreviation, offsetSeconds }
-		location, // { coords, name, source }
-		data, // { hourly, daily, airQuality, radar }
-		units, // { temperature: 'F' | 'C' }
-		providerStatus, // { om: 'success', ... }
+		// Hot
+		get ms() {
+			return ms;
+		},
+		get rawMs() {
+			return rawMs;
+		},
+		get radarPlaying() {
+			return radarPlaying;
+		},
+		get trackedElement() {
+			return trackedElement;
+		},
+
+		// Location
+		get coords() {
+			return coords;
+		},
+		get name() {
+			return name;
+		},
+		get source() {
+			return source;
+		},
+
+		// Timezone
+		get timezone() {
+			return timezone;
+		},
+		get timezoneAbbreviation() {
+			return timezoneAbbreviation;
+		},
+		get utcOffsetSeconds() {
+			return utcOffsetSeconds;
+		},
+
+		// Data
+		get hourly() {
+			return hourly;
+		},
+		get daily() {
+			return daily;
+		},
+		get airQuality() {
+			return airQuality;
+		},
+		get radar() {
+			return radar;
+		},
+
+		// Settings
+		get units() {
+			return units;
+		},
+		get providerStatus() {
+			return providerStatus;
+		},
 	};
 }
 
@@ -220,29 +221,27 @@ export type NsWeatherData = ReturnType<typeof makeNsWeatherData>;
 ### Property Access Examples
 
 ```typescript
-// All access is max depth 2
-ns.hot.ms; // number
-ns.hot.rawMs; // number
-ns.hot.radarPlaying; // boolean
-ns.hot.trackedElement; // HTMLElement | null
+// All flat access
+ns.ms; // number
+ns.rawMs; // number
+ns.radarPlaying; // boolean
+ns.trackedElement; // HTMLElement | null
 
-ns.tz.timezone; // string (e.g., 'America/Los_Angeles')
-ns.tz.abbreviation; // string (e.g., 'PST')
-ns.tz.offsetSeconds; // number
+ns.coords; // Coordinates | null
+ns.name; // string | null
+ns.source; // string
 
-ns.location.coords; // Coordinates | null
-ns.location.name; // string | null
-ns.location.source; // string
+ns.timezone; // string (e.g., 'America/Los_Angeles')
+ns.timezoneAbbreviation; // string (e.g., 'PST')
+ns.utcOffsetSeconds; // number
 
-ns.data.hourly; // Map<number, ForecastItem>
-ns.data.daily; // DailyForecast[]
-ns.data.airQuality; // Map<number, AirQualityItem>
-ns.data.radar; // Radar
+ns.hourly; // Map<number, ForecastItem>
+ns.daily; // DailyForecast[]
+ns.airQuality; // Map<number, AirQualityItem>
+ns.radar; // Radar
 
 ns.units.temperature; // 'F' | 'C'
-
 ns.providerStatus.om; // 'idle' | 'loading' | 'success' | 'error'
-ns.providerStatus.omAir; // 'idle' | 'loading' | 'success' | 'error'
 ```
 
 ---
@@ -265,35 +264,35 @@ dayjs.extend(timezonePlugin);
 
 /** Get hourly forecast data at a specific time */
 export function getHourlyAt(
-	hourlyData: Map<number, ForecastItem> | null | undefined,
+	hourly: Map<number, ForecastItem> | null | undefined,
 	ms: number,
 	timezone: string,
 ): ForecastItem | null {
-	if (!hourlyData?.size) return null;
+	if (!hourly?.size) return null;
 	const hourMs = startOf(ms, 'hour', timezone);
-	return hourlyData.get(hourMs) ?? null;
+	return hourly.get(hourMs) ?? null;
 }
 
 /** Get air quality data at a specific time */
 export function getAirQualityAt(
-	airQualityData: Map<number, AirQualityItem> | null | undefined,
+	airQuality: Map<number, AirQualityItem> | null | undefined,
 	ms: number,
 	timezone: string,
 ): AirQualityItem | null {
-	if (!airQualityData?.size) return null;
+	if (!airQuality?.size) return null;
 	const hourMs = startOf(ms, 'hour', timezone);
-	return airQualityData.get(hourMs) ?? null;
+	return airQuality.get(hourMs) ?? null;
 }
 
 /** Get daily forecast for a specific day */
 export function getDailyAt(
-	dailyData: DailyForecast[] | null | undefined,
+	daily: DailyForecast[] | null | undefined,
 	ms: number,
 	timezone: string,
 ): DailyForecast | null {
-	if (!dailyData?.length) return null;
+	if (!daily?.length) return null;
 	const dayMs = startOf(ms, 'day', timezone);
-	return dailyData.find((d) => d.ms === dayMs) ?? null;
+	return daily.find((d) => d.ms === dayMs) ?? null;
 }
 
 /** Get radar frame closest to a specific time */
@@ -367,22 +366,22 @@ export type DisplayBundle = {
 
 /** Get all common display values in one call */
 export function getDisplayBundle(ns: NsWeatherData): DisplayBundle {
-	const hourly = getHourlyAt(ns.data.hourly, ns.hot.ms, ns.tz.timezone);
-	const aq = getAirQualityAt(ns.data.airQuality, ns.hot.ms, ns.tz.timezone);
+	const hourlyItem = getHourlyAt(ns.hourly, ns.ms, ns.timezone);
+	const aqItem = getAirQualityAt(ns.airQuality, ns.ms, ns.timezone);
 
 	return {
-		temperature: formatTemp(hourly?.temperature, ns.units.temperature),
-		humidity: formatPercent(hourly?.humidity),
-		dewPoint: formatTemp(hourly?.dewPoint, ns.units.temperature),
-		precipitation: formatPrecip(hourly?.precipitation),
-		precipChance: formatPercent(hourly?.precipitationProbability),
-		weatherCode: hourly?.weatherCode ?? null,
-		isDay: hourly?.isDay ?? true,
-		aqiUs: formatAqi(aq?.aqiUs),
-		aqiEurope: formatAqi(aq?.aqiEurope),
-		time: formatTime(ns.hot.ms, ns.tz.timezone, ns.tz.abbreviation, 'h:mm:ss A'),
-		date: formatTime(ns.hot.ms, ns.tz.timezone, ns.tz.abbreviation, 'ddd MMM D'),
-		location: ns.location.name ?? 'Loading...',
+		temperature: formatTemp(hourlyItem?.temperature, ns.units.temperature),
+		humidity: formatPercent(hourlyItem?.humidity),
+		dewPoint: formatTemp(hourlyItem?.dewPoint, ns.units.temperature),
+		precipitation: formatPrecip(hourlyItem?.precipitation),
+		precipChance: formatPercent(hourlyItem?.precipitationProbability),
+		weatherCode: hourlyItem?.weatherCode ?? null,
+		isDay: hourlyItem?.isDay ?? true,
+		aqiUs: formatAqi(aqItem?.aqiUs),
+		aqiEurope: formatAqi(aqItem?.aqiEurope),
+		time: formatTime(ns.ms, ns.timezone, ns.timezoneAbbreviation, 'h:mm:ss A'),
+		date: formatTime(ns.ms, ns.timezone, ns.timezoneAbbreviation, 'ddd MMM D'),
+		location: ns.name ?? 'Loading...',
 	};
 }
 
@@ -399,11 +398,11 @@ export type TemperatureStats = {
 
 /** Calculate temperature statistics for y-axis scaling */
 export function getTemperatureStats(
-	hourlyData: Map<number, ForecastItem> | null,
+	hourly: Map<number, ForecastItem> | null,
 ): TemperatureStats | null {
-	if (!hourlyData?.size) return null;
+	if (!hourly?.size) return null;
 
-	const entries = [...hourlyData.values()];
+	const entries = [...hourly.values()];
 	const temps = entries.map((h) => h.temperature);
 	const dewPoints = entries.map((h) => h.dewPoint);
 
@@ -430,18 +429,18 @@ export function buildIntervals(ns: NsWeatherData): IntervalItem[] {
 	const msSet = new Set<number>();
 
 	// Add hourly timestamps
-	if (ns.data.hourly) {
-		for (const ms of ns.data.hourly.keys()) {
+	if (ns.hourly) {
+		for (const ms of ns.hourly.keys()) {
 			msSet.add(ms);
 		}
 	}
 
 	// Add radar frame timestamps
-	if (ns.data.radar?.frames) {
-		for (const frame of ns.data.radar.frames) {
+	if (ns.radar?.frames) {
+		for (const frame of ns.radar.frames) {
 			msSet.add(frame.ms);
 		}
-		const lastFrame = ns.data.radar.frames.at(-1);
+		const lastFrame = ns.radar.frames.at(-1);
 		if (lastFrame) {
 			msSet.add(lastFrame.ms + 10 * 60 * 1000);
 		}
@@ -452,7 +451,7 @@ export function buildIntervals(ns: NsWeatherData): IntervalItem[] {
 	return sorted.map((ms, i) => ({
 		ms,
 		msEnd: sorted[i + 1] ? sorted[i + 1] - 1 : ms,
-		msPretty: formatTime(ms, ns.tz.timezone, ns.tz.abbreviation),
+		msPretty: formatTime(ms, ns.timezone, ns.timezoneAbbreviation),
 	}));
 }
 ```
@@ -496,14 +495,15 @@ export function buildIntervals(ns: NsWeatherData): IntervalItem[] {
 
 	// Custom: show temp with decimal
 	const preciseTemp = $derived.by(() => {
-		const hourly = getHourlyAt(ns.data.hourly, ns.hot.ms, ns.tz.timezone);
-		if (!hourly) return '--';
-		const value = ns.units.temperature === 'C' ? celcius(hourly.temperature) : hourly.temperature;
+		const hourlyItem = getHourlyAt(ns.hourly, ns.ms, ns.timezone);
+		if (!hourlyItem) return '--';
+		const value =
+			ns.units.temperature === 'C' ? celcius(hourlyItem.temperature) : hourlyItem.temperature;
 		return `${value.toFixed(1)}°${ns.units.temperature}`;
 	});
 
 	// Custom: 24-hour time format
-	const time24 = $derived(formatTime(ns.hot.ms, ns.tz.timezone, ns.tz.abbreviation, 'HH:mm'));
+	const time24 = $derived(formatTime(ns.ms, ns.timezone, ns.timezoneAbbreviation, 'HH:mm'));
 </script>
 
 <div class="precise-display">
@@ -524,13 +524,13 @@ export function buildIntervals(ns: NsWeatherData): IntervalItem[] {
 	const { emit } = getEmitter('weatherdata');
 
 	// Raw ms for positioning
-	const currentMs = $derived(ns.hot.ms);
+	const currentMs = $derived(ns.ms);
 
 	// Derived intervals
 	const intervals = $derived(buildIntervals(ns));
 
 	// Formatted time for display
-	const timeLabel = $derived(formatTime(ns.hot.ms, ns.tz.timezone, ns.tz.abbreviation, 'h:mm A'));
+	const timeLabel = $derived(formatTime(ns.ms, ns.timezone, ns.timezoneAbbreviation, 'h:mm A'));
 
 	function handleScrub(newMs: number) {
 		emit('weatherdata_requestedSetTime', { ms: newMs });
@@ -690,11 +690,10 @@ describe('getTemperatureStats', () => {
 
 ## Summary
 
-| Aspect               | Before  | After                   |
-| -------------------- | ------- | ----------------------- |
-| Top-level properties | 29      | **6**                   |
-| Max depth            | 1       | 2                       |
-| Getters in NS        | 29      | 16 (nested in 6 groups) |
-| Display logic        | In NS   | In utils (bundle)       |
-| Derived values       | In NS   | In utils                |
-| Testing              | Mock NS | Pure functions          |
+| Aspect            | Before                       | After             |
+| ----------------- | ---------------------------- | ----------------- |
+| NS properties     | 29                           | **17**            |
+| NS responsibility | State + lookups + formatting | State only        |
+| Display logic     | In NS                        | In utils (bundle) |
+| Derived values    | In NS                        | In utils          |
+| Testing           | Mock NS                      | Pure functions    |

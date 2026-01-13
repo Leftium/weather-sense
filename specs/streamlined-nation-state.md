@@ -6,17 +6,15 @@ Current NS has a **god object** problem: ~29 getters mixing raw state, lookups, 
 
 **Solution: Thin NS + Pure Utils**
 
-- NS reduced from 29 top-level properties to **6** (grouped, max depth 2)
+- NS keeps only raw state (flat, ~17 properties)
 - Pure utility functions for lookups, formatting, derived values
-- Components compose utils with raw state
+- Components compose utils with raw state via `getDisplayBundle(ns)`
 
 See `specs/sketches/thin-ns-utils.md` for implementation details.
 
 ---
 
 ## Architecture Layers
-
-These improvements are independent and can be adopted in any order:
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
@@ -30,13 +28,14 @@ These improvements are independent and can be adopted in any order:
 ┌─────────────────────────────────────────────────────────────┐
 │  Pure Utils (weather-utils.ts)                               │
 │  - formatTemp(), formatTime(), getHourlyAt()                 │
+│  - getDisplayBundle(ns) - preferred pattern                  │
 │  - Stateless, testable, reusable                             │
 └─────────────────────────────────────────────────────────────┘
                               │
                               ▼
 ┌─────────────────────────────────────────────────────────────┐
 │  Thin NS (ns-weather-data.svelte.ts)                         │
-│  - Raw state only (~6 grouped properties)                    │
+│  - Raw state only (flat, ~17 properties)                     │
 │  - Event handlers for mutations                              │
 └─────────────────────────────────────────────────────────────┘
                               │
@@ -90,7 +89,7 @@ get intervals() { ... }
 
 ### Solution: Extract to Pure Utils
 
-#### NS - Just Raw State (Grouped)
+#### NS - Just Raw State (Flat)
 
 ```typescript
 // ns-weather-data.svelte.ts
@@ -102,29 +101,34 @@ export function makeNsWeatherData() {
 	let radarPlaying = $state(false);
 	let trackedElement = $state<HTMLElement | null>(null);
 
-	// COLD STATE (changes on fetch/user action)
+	// COLD STATE - location
 	let coords = $state<Coordinates | null>(null);
 	let name = $state<string | null>(null);
 	let source = $state('???');
 
+	// COLD STATE - timezone
 	let timezone = $state('UTC');
 	let timezoneAbbreviation = $state('UTC');
 	let utcOffsetSeconds = $state(0);
 
-	let units = $state({ temperature: 'F' as 'C' | 'F' });
-
-	let hourlyData = $state<HourlyData>(new Map());
-	let airQualityData = $state<AirQualityData>(new Map());
-	let dailyData = $state<DailyForecast[]>([]);
+	// COLD STATE - data
+	let hourly = $state<HourlyData>(new Map());
+	let daily = $state<DailyForecast[]>([]);
+	let airQuality = $state<AirQualityData>(new Map());
 	let radar = $state<Radar>({ generated: 0, host: '', frames: [] });
 
+	// COLD STATE - settings
+	let units = $state({ temperature: 'F' as 'C' | 'F' });
 	let providerStatus = $state<Record<string, ProviderStatus>>({
 		om: 'idle',
 		omAir: 'idle',
 	});
 
-	// GROUPED OBJECTS (stable references with nested getters)
-	const hot = {
+	// EVENT HANDLERS...
+
+	// PUBLIC API - flat, raw state only
+	return {
+		// Hot
 		get ms() {
 			return ms;
 		},
@@ -137,21 +141,8 @@ export function makeNsWeatherData() {
 		get trackedElement() {
 			return trackedElement;
 		},
-	};
 
-	const tz = {
-		get timezone() {
-			return timezone;
-		},
-		get abbreviation() {
-			return timezoneAbbreviation;
-		},
-		get offsetSeconds() {
-			return utcOffsetSeconds;
-		},
-	};
-
-	const location = {
+		// Location
 		get coords() {
 			return coords;
 		},
@@ -161,42 +152,44 @@ export function makeNsWeatherData() {
 		get source() {
 			return source;
 		},
-	};
 
-	const data = {
+		// Timezone
+		get timezone() {
+			return timezone;
+		},
+		get timezoneAbbreviation() {
+			return timezoneAbbreviation;
+		},
+		get utcOffsetSeconds() {
+			return utcOffsetSeconds;
+		},
+
+		// Data
 		get hourly() {
-			return hourlyData;
+			return hourly;
 		},
 		get daily() {
-			return dailyData;
+			return daily;
 		},
 		get airQuality() {
-			return airQualityData;
+			return airQuality;
 		},
 		get radar() {
 			return radar;
 		},
-	};
 
-	// PUBLIC API - 6 top-level properties, max depth 2
-	return {
-		hot, // { ms, rawMs, radarPlaying, trackedElement }
-		tz, // { timezone, abbreviation, offsetSeconds }
-		location, // { coords, name, source }
-		data, // { hourly, daily, airQuality, radar }
-		units, // { temperature: 'F' | 'C' }
-		providerStatus, // { om: 'success', ... }
+		// Settings
+		get units() {
+			return units;
+		},
+		get providerStatus() {
+			return providerStatus;
+		},
 	};
 }
 ```
 
-**29 → 6 top-level properties**, max depth 2.
-
-#### Why Grouping is Safe (No Perf Concerns)
-
-Svelte 5 uses fine-grained reactivity via Proxies. Accessing `ns.data.hourly` doesn't trigger re-renders when `ns.data.radar` changes.
-
-Key: use **stable object references** with nested getters (as shown above). Don't create new objects on each access.
+**29 → 17 properties** (removed ~12 lookup/formatting getters).
 
 #### Utils - Pure Functions
 
@@ -204,9 +197,9 @@ Key: use **stable object references** with nested getters (as shown above). Don'
 // lib/weather-utils.ts
 
 // LOOKUPS - Get data at a point in time
-export function getHourlyAt(hourlyData, ms, timezone): ForecastItem | null;
-export function getAirQualityAt(airQualityData, ms, timezone): AirQualityItem | null;
-export function getDailyAt(dailyData, ms, timezone): DailyForecast | null;
+export function getHourlyAt(hourly, ms, timezone): ForecastItem | null;
+export function getAirQualityAt(airQuality, ms, timezone): AirQualityItem | null;
+export function getDailyAt(daily, ms, timezone): DailyForecast | null;
 
 // FORMATTING - Convert values to display strings
 export function formatTemp(n, unit): string;
@@ -241,7 +234,7 @@ export function getDisplayBundle(ns): DisplayBundle;
 	const ns = getNsWeatherData();
 
 	// Custom: 24-hour time format
-	const time24 = $derived(formatTime(ns.hot.ms, ns.tz.timezone, ns.tz.abbreviation, 'HH:mm'));
+	const time24 = $derived(formatTime(ns.ms, ns.timezone, ns.timezoneAbbreviation, 'HH:mm'));
 </script>
 ```
 
@@ -249,8 +242,7 @@ export function getDisplayBundle(ns): DisplayBundle;
 
 | Aspect                   | Current (God Object)         | Thin NS + Utils                 |
 | ------------------------ | ---------------------------- | ------------------------------- |
-| NS top-level properties  | 29                           | **6**                           |
-| NS max depth             | 1                            | 2                               |
+| NS properties            | 29                           | **17**                          |
 | NS responsibility        | State + lookups + formatting | State only                      |
 | Testing                  | Must mock NS                 | Utils are pure, trivial to test |
 | Reusability              | Tied to NS instance          | Utils work anywhere             |

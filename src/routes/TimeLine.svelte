@@ -1740,7 +1740,7 @@
 			<div bind:this={labelElements[props.description]}>{props.description}</div>
 		{/each}
 
-		{#each [...AQI_INDEX_US, ...AQI_INDEX_EUROPE] as { text } (text)}
+		{#each [...AQI_INDEX_US, ...AQI_INDEX_EUROPE] as { text }, i (i)}
 			<div bind:this={labelElements[text]}>{text}</div>
 		{/each}
 

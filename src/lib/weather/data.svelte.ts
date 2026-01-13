@@ -8,7 +8,7 @@
  */
 
 import type { Coordinates, Radar } from '$lib/types';
-import type { OmForecast, OmAirQuality, Units } from './types';
+import type { OmForecast, OmAirQuality, OwOneCallResponse, Units } from './types';
 
 /**
  * WeatherData - Pure state container
@@ -69,6 +69,9 @@ class WeatherData {
 
 	/** Open-Meteo air quality data */
 	omAirQuality = $state<OmAirQuality | null>(null);
+
+	/** OpenWeather One Call API data (optional, for minutely forecast) */
+	owOneCall = $state<OwOneCallResponse | null>(null);
 
 	/** Rainviewer radar data */
 	radar = $state<Radar>({ generated: 0, host: '', frames: [] });

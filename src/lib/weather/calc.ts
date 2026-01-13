@@ -15,14 +15,17 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezonePlugin from 'dayjs/plugin/timezone';
 
-import { startOf, celcius, MS_IN_MINUTE } from '$lib/util';
+import { startOf, celcius, MS_IN_MINUTE, MS_IN_SECOND } from '$lib/util';
 import type { WeatherData } from './data.svelte';
 import type {
 	ForecastItem,
 	AirQualityItem,
 	HourlyForecast,
+	DailyForecast,
 	OmForecast,
 	OmAirQuality,
+	OwOneCallResponse,
+	MinutelyPoint,
 	Snapshot,
 	DisplayBundle,
 	TemperatureStats,
@@ -249,7 +252,50 @@ export function getSnapshot(data: WeatherData): Snapshot {
 		// Raw data for lookup Maps (store rebuilds these)
 		omForecast: data.omForecast,
 		omAirQuality: data.omAirQuality,
+
+		// OpenWeather One Call data (optional, for minutely forecast)
+		owOneCall: data.owOneCall,
 	};
+}
+
+// =============================================================================
+// DAILY DATA - Lookup by fromToday
+// =============================================================================
+
+/** Build daily lookup Map keyed by fromToday (-2, -1, 0, 1, 2, ...) */
+export function buildDailyByFromTodayMap(
+	daily: DailyForecast[] | null | undefined,
+): Map<number, DailyForecast> {
+	const map = new Map<number, DailyForecast>();
+	if (!daily) return map;
+
+	for (const day of daily) {
+		map.set(day.fromToday, day);
+	}
+
+	return map;
+}
+
+// =============================================================================
+// MINUTELY DATA - OpenWeather 60-min precipitation
+// =============================================================================
+
+/** Build processed minutely precipitation data from OpenWeather response */
+export function buildMinutelyData(
+	owOneCall: OwOneCallResponse | null,
+	timezone: string,
+	abbreviation: string,
+): MinutelyPoint[] {
+	if (!owOneCall?.minutely) return [];
+
+	return owOneCall.minutely.map((item) => {
+		const ms = item.dt * MS_IN_SECOND;
+		return {
+			ms,
+			msPretty: tzFormat(ms, timezone, abbreviation, 'h:mm A'),
+			precipitation: item.precipitation,
+		};
+	});
 }
 
 // =============================================================================
@@ -373,4 +419,11 @@ export function getDisplayBundleFromStore(store: {
 // RE-EXPORTS for convenience
 // =============================================================================
 
-export type { DisplayBundle, TemperatureStats, IntervalItem, ForecastItem, AirQualityItem };
+export type {
+	DisplayBundle,
+	TemperatureStats,
+	IntervalItem,
+	ForecastItem,
+	AirQualityItem,
+	MinutelyPoint,
+};

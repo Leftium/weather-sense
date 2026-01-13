@@ -821,6 +821,17 @@
 					<span class="debug-label">weatherStore.ms</span>
 					<span>{weatherStore.ms} ({weatherStore.tzFormat(weatherStore.ms)})</span>
 				</div>
+				<div class="debug-item">
+					<span class="debug-label">OpenWeather</span>
+					<span>{weatherStore.owOneCall ? 'Loaded' : 'Not available'}</span>
+					{#if weatherStore.owOneCall}
+						<span class="debug-detail">
+							(minutely: {weatherStore.owOneCall.minutely?.length ?? 0}, hourly: {weatherStore
+								.owOneCall.hourly?.length ?? 0}, daily: {weatherStore.owOneCall.daily?.length ?? 0},
+							alerts: {weatherStore.owOneCall.alerts?.length ?? 0})
+						</span>
+					{/if}
+				</div>
 				<details>
 					<summary>weatherStore.dataAirQuality</summary>
 					<pre>{jsonPretty(summarize(objectFromMap(weatherStore.dataAirQuality)))}</pre>
@@ -837,6 +848,30 @@
 					<summary>weatherStore.daily</summary>
 					<pre>{jsonPretty(summarize(weatherStore.daily))}</pre>
 				</details>
+				{#if weatherStore.owOneCall}
+					<details>
+						<summary>weatherStore.owOneCall.minutely (60-min precipitation)</summary>
+						<pre>{jsonPretty(summarize(weatherStore.owOneCall.minutely))}</pre>
+					</details>
+					<details>
+						<summary>weatherStore.owOneCall.current</summary>
+						<pre>{jsonPretty(weatherStore.owOneCall.current)}</pre>
+					</details>
+					<details>
+						<summary>weatherStore.owOneCall.hourly</summary>
+						<pre>{jsonPretty(summarize(weatherStore.owOneCall.hourly))}</pre>
+					</details>
+					<details>
+						<summary>weatherStore.owOneCall.daily</summary>
+						<pre>{jsonPretty(summarize(weatherStore.owOneCall.daily))}</pre>
+					</details>
+					{#if weatherStore.owOneCall.alerts?.length}
+						<details>
+							<summary>weatherStore.owOneCall.alerts</summary>
+							<pre>{jsonPretty(weatherStore.owOneCall.alerts)}</pre>
+						</details>
+					{/if}
+				{/if}
 			</div>
 		{/if}
 	</footer>

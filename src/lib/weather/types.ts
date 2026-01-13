@@ -238,6 +238,9 @@ export type Snapshot = DisplayBundle & {
 	// Raw forecast data for building lookup Maps
 	omForecast: OmForecast | null;
 	omAirQuality: OmAirQuality | null;
+
+	// OpenWeather One Call data (optional, for minutely forecast)
+	owOneCall: OwOneCallResponse | null;
 };
 
 // =============================================================================
@@ -246,3 +249,135 @@ export type Snapshot = DisplayBundle & {
 
 export const PAST_DAYS = 2; // 0 to 92
 export const FORECAST_DAYS = 10; // 0 to 16 for forecast; 0 to 7 for air-quality
+
+// =============================================================================
+// OPENWEATHER ONE CALL API TYPES
+// =============================================================================
+
+/** OpenWeather minutely precipitation forecast (1-min resolution, 61 entries) */
+export type OwMinutelyForecast = {
+	dt: number; // Unix timestamp (seconds)
+	precipitation: number; // mm/h
+};
+
+/** OpenWeather current weather conditions */
+export type OwCurrentWeather = {
+	dt: number;
+	sunrise: number;
+	sunset: number;
+	temp: number;
+	feels_like: number;
+	pressure: number;
+	humidity: number;
+	dew_point: number;
+	uvi: number;
+	clouds: number;
+	visibility: number;
+	wind_speed: number;
+	wind_deg: number;
+	wind_gust?: number;
+	weather: OwWeatherCondition[];
+	rain?: { '1h': number };
+	snow?: { '1h': number };
+};
+
+/** OpenWeather hourly forecast (48 entries) */
+export type OwHourlyForecast = {
+	dt: number;
+	temp: number;
+	feels_like: number;
+	pressure: number;
+	humidity: number;
+	dew_point: number;
+	uvi: number;
+	clouds: number;
+	visibility: number;
+	wind_speed: number;
+	wind_deg: number;
+	wind_gust?: number;
+	weather: OwWeatherCondition[];
+	pop: number; // Probability of precipitation (0-1)
+	rain?: { '1h': number };
+	snow?: { '1h': number };
+};
+
+/** OpenWeather daily forecast (8 entries) */
+export type OwDailyForecast = {
+	dt: number;
+	sunrise: number;
+	sunset: number;
+	moonrise: number;
+	moonset: number;
+	moon_phase: number;
+	summary: string;
+	temp: {
+		day: number;
+		min: number;
+		max: number;
+		night: number;
+		eve: number;
+		morn: number;
+	};
+	feels_like: {
+		day: number;
+		night: number;
+		eve: number;
+		morn: number;
+	};
+	pressure: number;
+	humidity: number;
+	dew_point: number;
+	wind_speed: number;
+	wind_deg: number;
+	wind_gust?: number;
+	weather: OwWeatherCondition[];
+	clouds: number;
+	pop: number;
+	rain?: number; // mm
+	snow?: number; // mm
+	uvi: number;
+};
+
+/** OpenWeather weather condition descriptor */
+export type OwWeatherCondition = {
+	id: number; // Weather condition code
+	main: string; // Group (Rain, Snow, etc.)
+	description: string;
+	icon: string;
+};
+
+/** OpenWeather weather alert */
+export type OwAlert = {
+	sender_name: string;
+	event: string;
+	start: number;
+	end: number;
+	description: string;
+	tags: string[];
+};
+
+/** OpenWeather One Call API response */
+export type OwOneCallResponse = {
+	available: boolean; // Custom field: true if API key configured
+	error?: string; // Error message if request failed
+	lat: number;
+	lon: number;
+	timezone: string;
+	timezone_offset: number;
+	current?: OwCurrentWeather;
+	minutely?: OwMinutelyForecast[]; // 61 entries (current + 60 minutes)
+	hourly?: OwHourlyForecast[]; // 48 entries
+	daily?: OwDailyForecast[]; // 8 entries
+	alerts?: OwAlert[];
+};
+
+// =============================================================================
+// PROCESSED/DERIVED DATA TYPES
+// =============================================================================
+
+/** Processed minutely precipitation point (from OpenWeather) */
+export type MinutelyPoint = {
+	ms: number; // Unix timestamp (milliseconds)
+	msPretty: string; // Formatted time string
+	precipitation: number; // mm/h
+};

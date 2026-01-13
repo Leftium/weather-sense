@@ -16,8 +16,22 @@
  */
 
 import { getEmitter } from '$lib/emitter';
-import type { WeatherDataEvents, Snapshot, ForecastItem, AirQualityItem, Radar } from './types';
-import { buildForecastMap, buildAirQualityMap, tzFormat } from './calc';
+import type {
+	WeatherDataEvents,
+	Snapshot,
+	ForecastItem,
+	AirQualityItem,
+	DailyForecast,
+	MinutelyPoint,
+	Radar,
+} from './types';
+import {
+	buildForecastMap,
+	buildAirQualityMap,
+	buildMinutelyData,
+	buildDailyByFromTodayMap,
+	tzFormat,
+} from './calc';
 
 const { on } = getEmitter<WeatherDataEvents>(import.meta);
 
@@ -31,6 +45,8 @@ let snapshot = $state<Snapshot | null>(null);
 /** Derived lookup Maps (rebuilt when snapshot changes) */
 let dataForecast = $state<Map<number, ForecastItem>>(new Map());
 let dataAirQuality = $state<Map<number, AirQualityItem>>(new Map());
+let dataMinutely = $state<MinutelyPoint[]>([]);
+let dailyByFromToday = $state<Map<number, DailyForecast>>(new Map());
 
 // =============================================================================
 // HOT STATE (updated via individual events at 15fps)
@@ -65,6 +81,8 @@ on('weatherdata_snapshot', (data) => {
 			data.timezone,
 			data.timezoneAbbreviation,
 		);
+		dataMinutely = buildMinutelyData(data.owOneCall, data.timezone, data.timezoneAbbreviation);
+		dailyByFromToday = buildDailyByFromTodayMap(data.daily);
 	}
 });
 
@@ -162,6 +180,11 @@ export const weatherStore = {
 		return snapshot?.current ?? null;
 	},
 
+	/** OpenWeather One Call data (optional, for minutely forecast) */
+	get owOneCall() {
+		return snapshot?.owOneCall ?? null;
+	},
+
 	/** Forecast lookup Map */
 	get dataForecast() {
 		return dataForecast;
@@ -170,6 +193,16 @@ export const weatherStore = {
 	/** Air quality lookup Map */
 	get dataAirQuality() {
 		return dataAirQuality;
+	},
+
+	/** Processed minutely precipitation data (from OpenWeather) */
+	get dataMinutely() {
+		return dataMinutely;
+	},
+
+	/** Daily lookup Map keyed by fromToday (-2, -1, 0, 1, 2, ...) */
+	get dailyByFromToday() {
+		return dailyByFromToday;
 	},
 
 	/** Format time in location's timezone */

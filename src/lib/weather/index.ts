@@ -44,6 +44,8 @@ export {
 	// Builders
 	buildForecastMap,
 	buildAirQualityMap,
+	buildMinutelyData,
+	buildDailyByFromTodayMap,
 	// Bundles
 	getDisplayBundle,
 	getDisplayBundleFromStore,
@@ -70,6 +72,16 @@ export type {
 	IntervalItem,
 	TemperatureStats,
 	Units,
+	// OpenWeather types
+	OwMinutelyForecast,
+	OwCurrentWeather,
+	OwHourlyForecast,
+	OwDailyForecast,
+	OwWeatherCondition,
+	OwAlert,
+	OwOneCallResponse,
+	// Processed/derived types
+	MinutelyPoint,
 	// Event types
 	WeatherDataEvents,
 	// Snapshot types

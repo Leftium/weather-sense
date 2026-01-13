@@ -16,7 +16,13 @@ import { gg } from '@leftium/gg';
 
 import type { WeatherData } from './data.svelte';
 import { getSnapshot, tzFormat } from './calc';
-import type { WeatherDataEvents, HourlyForecast, DailyForecast, AirQuality } from './types';
+import type {
+	WeatherDataEvents,
+	HourlyForecast,
+	DailyForecast,
+	AirQuality,
+	OwOneCallResponse,
+} from './types';
 import { PAST_DAYS, FORECAST_DAYS } from './types';
 
 // =============================================================================
@@ -323,6 +329,47 @@ export function initWeatherShell(data: WeatherData) {
 		emit('weatherdata_updatedRadar', { radar: data.radar });
 	}
 
+	async function fetchOpenWeatherOneCall() {
+		if (!data.coords) {
+			gg('fetchOpenWeatherOneCall: No coordinates available');
+			return;
+		}
+
+		gg('fetchOpenWeatherOneCall:start');
+		console.time('fetchOpenWeatherOneCall');
+
+		try {
+			const url =
+				`/api/openweather/onecall` + `?lat=${data.coords.latitude}&lon=${data.coords.longitude}`;
+
+			const fetched = await fetch(url);
+			const json: OwOneCallResponse = await fetched.json();
+
+			if (!json.available) {
+				gg('fetchOpenWeatherOneCall: API not available', { error: json.error });
+				data.owOneCall = null;
+				return;
+			}
+
+			data.owOneCall = json;
+
+			gg('fetchOpenWeatherOneCall', {
+				minutelyCount: json.minutely?.length ?? 0,
+				hourlyCount: json.hourly?.length ?? 0,
+				dailyCount: json.daily?.length ?? 0,
+				hasAlerts: (json.alerts?.length ?? 0) > 0,
+			});
+
+			// Emit snapshot so store/components receive the data
+			emitSnapshot();
+		} catch (error) {
+			console.error('fetchOpenWeatherOneCall error:', error);
+			data.owOneCall = null;
+		}
+
+		console.timeEnd('fetchOpenWeatherOneCall');
+	}
+
 	async function reverseGeocode(latitude: number, longitude: number): Promise<string | null> {
 		try {
 			const resp = await fetch(`/api/geo/reverse?lat=${latitude}&lon=${longitude}`);
@@ -492,7 +539,12 @@ export function initWeatherShell(data: WeatherData) {
 		emitSnapshot();
 
 		// Fetch data in parallel
-		await Promise.all([fetchOpenMeteoForecast(), fetchOpenMeteoAirQuality()]);
+		// Open-Meteo is required, OpenWeather is optional (for minutely forecast)
+		await Promise.all([
+			fetchOpenMeteoForecast(),
+			fetchOpenMeteoAirQuality(),
+			fetchOpenWeatherOneCall(),
+		]);
 	});
 
 	on('weatherdata_requestedSetTime', (params) => {

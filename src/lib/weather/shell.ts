@@ -477,11 +477,15 @@ export function initWeatherShell(data: WeatherData) {
 	function startIdleTimer() {
 		if (idleTimeoutId !== null) return; // Already running
 
-		function scheduleNextMinute() {
+		// Update every 4 seconds for tracker movement on minutely plot
+		const IDLE_INTERVAL = 4 * MS_IN_SECOND;
+		function scheduleNextTick() {
 			const now = Date.now();
-			const msUntilNextMinute = MS_IN_MINUTE - (now % MS_IN_MINUTE) + 100; // +100ms buffer
+			const msUntilNextTick = IDLE_INTERVAL - (now % IDLE_INTERVAL) + 50; // Align to :00/:02/:04...
 
 			idleTimeoutId = setTimeout(() => {
+				idleTimeoutId = null; // Clear before potential reschedule
+
 				// Only update if still idle (not tracking or playing)
 				if (!data.trackedElement && !data.radarPlaying) {
 					const currentMs = Date.now();
@@ -489,15 +493,13 @@ export function initWeatherShell(data: WeatherData) {
 					data.ms = currentMs;
 					emit('weatherdata_frameTick', { ms: currentMs });
 
-					// Schedule next minute
-					scheduleNextMinute();
-				} else {
-					idleTimeoutId = null;
+					// Schedule next tick
+					scheduleNextTick();
 				}
-			}, msUntilNextMinute);
+			}, msUntilNextTick);
 		}
 
-		scheduleNextMinute();
+		scheduleNextTick();
 	}
 
 	function stopIdleTimer() {
@@ -588,6 +590,7 @@ export function initWeatherShell(data: WeatherData) {
 		// Don't stop frame loop if radar is still playing
 		if (!data.radarPlaying) {
 			stopFrameLoop();
+			startIdleTimer(); // Resume idle updates
 		}
 
 		emit('weatherdata_trackingChange', { element: null });

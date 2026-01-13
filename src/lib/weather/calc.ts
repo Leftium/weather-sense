@@ -166,6 +166,31 @@ export function getAirQualityAt(
 	return airQualityMap.get(hourMs) ?? null;
 }
 
+/** Get minutely precipitation at a specific time (finds containing minute) */
+export function getMinutelyPrecipAt(dataMinutely: MinutelyPoint[], ms: number): number | null {
+	if (!dataMinutely.length) return null;
+
+	// Find the minute that contains the given ms
+	for (let i = 0; i < dataMinutely.length; i++) {
+		const current = dataMinutely[i];
+		const next = dataMinutely[i + 1];
+
+		// If there's a next point, check if ms falls in this minute's range
+		if (next) {
+			if (ms >= current.ms && ms < next.ms) {
+				return current.precipitation;
+			}
+		} else {
+			// Last point - check if within 1 minute of it
+			if (ms >= current.ms && ms < current.ms + MS_IN_MINUTE) {
+				return current.precipitation;
+			}
+		}
+	}
+
+	return null;
+}
+
 // =============================================================================
 // DISPLAY BUNDLE - Formatted display values
 // =============================================================================
@@ -374,6 +399,7 @@ export function getIntervals(
 /**
  * Get display bundle from a store-like object (weatherStore or similar).
  * This is a convenience function that pulls values from getters.
+ * Precipitation uses minutely data (if available) with hourly fallback.
  */
 export function getDisplayBundleFromStore(store: {
 	ms: number;
@@ -383,15 +409,20 @@ export function getDisplayBundleFromStore(store: {
 	name: string | null;
 	dataForecast: Map<number, ForecastItem>;
 	dataAirQuality: Map<number, AirQualityItem>;
+	dataMinutely: MinutelyPoint[];
 }): DisplayBundle {
 	const hourly = getHourlyAt(store.dataForecast, store.ms, store.timezone);
 	const aq = getAirQualityAt(store.dataAirQuality, store.ms, store.timezone);
+
+	// Precipitation: prefer minutely (1-min resolution), fallback to hourly
+	const minutelyPrecip = getMinutelyPrecipAt(store.dataMinutely, store.ms);
+	const precipitation = minutelyPrecip ?? hourly?.precipitation ?? null;
 
 	return {
 		temperature: formatTemp(hourly?.temperature, store.units.temperature),
 		humidity: formatPercent(hourly?.humidity),
 		dewPoint: formatTemp(hourly?.dewPoint, store.units.temperature),
-		precipitation: formatPrecip(hourly?.precipitation),
+		precipitation: formatPrecip(precipitation),
 		precipChance: formatPercent(hourly?.precipitationProbability),
 		weatherCode: hourly?.weatherCode ?? null,
 		isDay: hourly?.isDay ?? true,
@@ -407,7 +438,7 @@ export function getDisplayBundleFromStore(store: {
 			temperature: hourly?.temperature ?? null,
 			humidity: hourly?.humidity ?? null,
 			dewPoint: hourly?.dewPoint ?? null,
-			precipitation: hourly?.precipitation ?? null,
+			precipitation,
 			precipChance: hourly?.precipitationProbability ?? null,
 			aqiUs: aq?.aqiUs ?? null,
 			aqiEurope: aq?.aqiEurope ?? null,

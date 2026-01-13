@@ -41,6 +41,7 @@ export {
 	// Lookups
 	getHourlyAt,
 	getAirQualityAt,
+	getMinutelyPrecipAt,
 	// Builders
 	buildForecastMap,
 	buildAirQualityMap,

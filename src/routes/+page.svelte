@@ -2,6 +2,7 @@
 	import type { WeatherDataEvents } from '$lib/weather';
 
 	import TimeLine from './TimeLine.svelte';
+	import MinutelyPrecipPlot from './MinutelyPrecipPlot.svelte';
 
 	import DailyTiles from './DailyTiles.svelte';
 
@@ -620,6 +621,8 @@
 			/>
 		</div>
 
+		<MinutelyPrecipPlot nsWeatherData={weatherStore} />
+
 		<div class="timeline-grid">
 			<div class="hourly-row">
 				<div
@@ -831,6 +834,10 @@
 							alerts: {weatherStore.owOneCall.alerts?.length ?? 0})
 						</span>
 					{/if}
+				</div>
+				<div class="debug-item">
+					<span class="debug-label">dataMinutely</span>
+					<span>{weatherStore.dataMinutely.length} points</span>
 				</div>
 				<details>
 					<summary>weatherStore.dataAirQuality</summary>

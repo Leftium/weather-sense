@@ -4,7 +4,7 @@
 	import 'iconify-icon';
 
 	import type { RadarFrame, RadarLayer } from '$lib/types.js';
-	import type { NsWeatherData, WeatherDataEvents } from '$lib/ns-weather-data.svelte.js';
+	import type { WeatherStore, WeatherDataEvents } from '$lib/weather';
 
 	import { onDestroy, onMount } from 'svelte';
 
@@ -19,8 +19,7 @@
 
 	let animationFrameId: number | null = null;
 
-	import type { WeatherStore } from '$lib/weather';
-	let { nsWeatherData }: { nsWeatherData: NsWeatherData | WeatherStore } = $props();
+	let { nsWeatherData }: { nsWeatherData: WeatherStore } = $props();
 
 	const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 
@@ -275,6 +274,22 @@
 				animationFrameId = requestAnimationFrame(radarStepFn);
 			}
 		}
+	});
+
+	// Update radar layer opacity when scrubbing (radarFrameIndex changes)
+	$effect(() => {
+		const frameIndex = radarFrameIndex;
+		if (!map || !nsWeatherData.radar?.frames?.length) return;
+		if (nsWeatherData.radarPlaying) return; // Animation loop handles this when playing
+
+		// Update layer opacity to show current frame
+		Object.values(radarLayers).forEach((radarLayer, index) => {
+			if (!radarLayer?.ms) return;
+			const layerId = `rv-layer-${radarLayer.ms}`;
+			if (map.getLayer(layerId)) {
+				map.setPaintProperty(layerId, 'raster-opacity', index === frameIndex ? 0.6 : 0);
+			}
+		});
 	});
 
 	// Resize map when container size changes (e.g., when day labels change width)

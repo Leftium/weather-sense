@@ -18,16 +18,13 @@
 </script>
 
 <script lang="ts">
-	import type {
-		DailyForecast,
-		NsWeatherData,
-		WeatherDataEvents,
-	} from '$lib/ns-weather-data.svelte';
 	import {
 		getTemperatureStatsLegacy as getTemperatureStats,
 		getIntervals,
 		type TemperatureStats,
 		type WeatherStore,
+		type WeatherDataEvents,
+		type DailyForecast,
 	} from '$lib/weather';
 
 	import { clamp, each, maxBy } from 'lodash-es';
@@ -94,7 +91,7 @@
 		tempStats,
 		debugTrackerMs,
 	}: {
-		nsWeatherData: NsWeatherData | WeatherStore;
+		nsWeatherData: WeatherStore;
 		plotVisibility: PlotVisibility;
 		start?: number;
 		hours?: number;

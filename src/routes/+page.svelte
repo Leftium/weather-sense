@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { WeatherDataEvents } from '$lib/ns-weather-data.svelte.js';
+	import type { WeatherDataEvents } from '$lib/weather';
 
 	import TimeLine from './TimeLine.svelte';
 
@@ -39,6 +39,10 @@
 		formatTemp,
 		getTemperatureStatsLegacy as getTemperatureStats,
 		type TemperatureStats,
+		FORECAST_DAYS,
+		weatherData,
+		initWeatherShell,
+		weatherStore,
 	} from '$lib/weather';
 
 	import { clearEvents, getEmitter } from '$lib/emitter.js';
@@ -48,9 +52,6 @@
 	const STORAGE_KEY_PLOT_VISIBILITY = 'weather-sense:plotVisibility';
 	const STORAGE_KEY_UNITS = 'weather-sense:units';
 
-	import { FORECAST_DAYS, makeNsWeatherData } from '$lib/ns-weather-data.svelte.js';
-	// New architecture (running in parallel during migration)
-	import { weatherData, initWeatherShell, weatherStore } from '$lib/weather';
 	import { slide } from 'svelte/transition';
 	import { maxBy } from 'lodash-es';
 	import dayjs from 'dayjs';
@@ -60,15 +61,14 @@
 	dayjs.extend(utc);
 	dayjs.extend(timezonePlugin);
 
-	const nsWeatherData = makeNsWeatherData();
 	const { emit, on } = getEmitter<WeatherDataEvents>(import.meta);
 
-	// Initialize new shell (parallel to old NS during migration)
+	// Initialize weather shell (I/O orchestrator)
 	const shell = initWeatherShell(weatherData);
 	onDestroy(() => shell.destroy());
 
-	// Display bundle - all formatted display values derived from NS state
-	const display = $derived(getDisplayBundle(nsWeatherData));
+	// Display bundle - all formatted display values derived from store state
+	const display = $derived(getDisplayBundle(weatherStore));
 
 	let { data } = $props();
 
@@ -78,7 +78,7 @@
 
 	// Actual max forecast days based on available data (daily getter removes incomplete last day)
 	const maxForecastDays = $derived(
-		Math.max(0, ...(nsWeatherData.daily?.map((d) => d.fromToday + 1) ?? [FORECAST_DAYS])),
+		Math.max(0, ...(weatherStore.daily?.map((d) => d.fromToday + 1) ?? [FORECAST_DAYS])),
 	);
 	let isWideCollapsed = $state(false); // 480px+ : 3 columns for collapsed
 	let isWideExpanded = $state(false); // 700px+ : 4 columns for expanded
@@ -136,17 +136,9 @@
 			bindKey: 'tempRange',
 			toggleUnits: true,
 			getValue: () =>
-				formatTemp(
-					nsWeatherData.daily?.[2]?.temperatureMin,
-					nsWeatherData.units.temperature,
-					false,
-				),
+				formatTemp(weatherStore.daily?.[2]?.temperatureMin, weatherStore.units.temperature, false),
 			getValueEnd: () =>
-				formatTemp(
-					nsWeatherData.daily?.[2]?.temperatureMax,
-					nsWeatherData.units.temperature,
-					false,
-				),
+				formatTemp(weatherStore.daily?.[2]?.temperatureMax, weatherStore.units.temperature, false),
 		},
 		dewPoint: {
 			key: 'dewPoint',
@@ -155,7 +147,7 @@
 			checked: plotVisibility.dewPoint,
 			bindKey: 'dewPoint',
 			toggleUnits: true,
-			getValue: () => formatTemp(display.raw.dewPoint, nsWeatherData.units.temperature, false),
+			getValue: () => formatTemp(display.raw.dewPoint, weatherStore.units.temperature, false),
 		},
 		humidity: {
 			key: 'humidity',
@@ -250,7 +242,7 @@
 
 	// Find the day that contains a given ms timestamp
 	function findDayForMs(ms: number) {
-		const day = nsWeatherData.daily?.find((d, i, arr) => {
+		const day = weatherStore.daily?.find((d, i, arr) => {
 			const nextDay = arr[i + 1];
 			if (nextDay) {
 				return ms >= d.ms && ms < nextDay.ms;
@@ -259,7 +251,7 @@
 			return ms >= d.ms && ms < d.ms + 24 * 60 * 60 * 1000;
 		});
 		// Fallback to today
-		return day || nsWeatherData.daily?.find((d) => d.fromToday === 0);
+		return day || weatherStore.daily?.find((d) => d.fromToday === 0);
 	}
 
 	// Get representative WMO code for the 24-hour hourly plot
@@ -270,7 +262,7 @@
 		const hourlyEnd = hourlyStart + 24 * MS_IN_HOUR;
 
 		// Filter hourly data to the 24-hour window
-		const hourlyInRange = nsWeatherData.hourly?.filter(
+		const hourlyInRange = weatherStore.hourly?.filter(
 			(h) => h.ms >= hourlyStart && h.ms < hourlyEnd,
 		);
 
@@ -291,8 +283,8 @@
 	// Get isDay for the current real time (where past overlay ends on 24hr plot)
 	const currentIsDay = $derived.by(() => {
 		const now = Date.now();
-		const currentHourMs = startOf(now, 'hour', nsWeatherData.timezone);
-		const hourData = nsWeatherData.dataForecast.get(currentHourMs);
+		const currentHourMs = startOf(now, 'hour', weatherStore.timezone);
+		const hourData = weatherStore.dataForecast.get(currentHourMs);
 		return hourData?.isDay ?? true;
 	});
 
@@ -743,8 +735,8 @@
 	 * Main sky animation entry point - eased transitions on enter/leave/switch, no change while scrubbing
 	 */
 	function animateSky() {
-		const targetMs = nsWeatherData.rawMs; // Poll non-reactive value
-		const trackedElement = nsWeatherData.trackedElement;
+		const targetMs = weatherStore.rawMs; // Poll non-reactive value
+		const trackedElement = weatherStore.trackedElement;
 		const isTracking = !!trackedElement;
 
 		// Handle enter/leave/switch plot
@@ -797,7 +789,7 @@
 		}
 	}
 
-	// Run sky animation on every frame tick (15fps from ns-weather-data's RAF loop)
+	// Run sky animation on every frame tick (15fps from shell's RAF loop)
 	on('weatherdata_frameTick', () => {
 		animateSky();
 	});
@@ -858,11 +850,11 @@
 
 	// Calculate temp range based on visible hourly plot days only
 	const visibleTempStats = $derived.by((): TemperatureStats | null => {
-		const visibleDays = (nsWeatherData.daily || []).filter(
+		const visibleDays = (weatherStore.daily || []).filter(
 			(day) => day.fromToday > -2 && day.fromToday < forecastDaysVisible,
 		);
 		if (visibleDays.length === 0) {
-			return getTemperatureStats(nsWeatherData.dataForecast);
+			return getTemperatureStats(weatherStore.dataForecast);
 		}
 		const minTemp = Math.min(...visibleDays.map((d) => d.temperatureMin));
 		const maxTemp = Math.max(...visibleDays.map((d) => d.temperatureMax));
@@ -894,7 +886,7 @@
 	// Save temperature unit to localStorage when it changes (after initial load)
 	$effect(() => {
 		// Read units to track changes
-		const unit = nsWeatherData.units.temperature;
+		const unit = weatherStore.units.temperature;
 		if (browser && prefsLoaded) {
 			localStorage.setItem(STORAGE_KEY_UNITS, JSON.stringify({ temperature: unit }));
 		}
@@ -977,9 +969,9 @@
 	style:color={textColor}
 >
 	<div class="name">
-		{nsWeatherData.name}
+		{weatherStore.name}
 		<span class="accuracy"
-			>({humanDistance(nsWeatherData.coords?.accuracy) || nsWeatherData.source})</span
+			>({humanDistance(weatherStore.coords?.accuracy) || weatherStore.source})</span
 		>
 	</div>
 	<div class="current">
@@ -994,10 +986,10 @@
 		/>
 
 		<div class="time">
-			<div>{nsWeatherData.tzFormat(nsWeatherData.ms, 'ddd MMM D')}</div>
+			<div>{weatherStore.tzFormat(weatherStore.ms, 'ddd MMM D')}</div>
 			<div>
-				{nsWeatherData.tzFormat(nsWeatherData.ms, 'hh:mma')}
-				<span class="timezone">{nsWeatherData.timezoneAbbreviation}</span>
+				{weatherStore.tzFormat(weatherStore.ms, 'hh:mma')}
+				<span class="timezone">{weatherStore.timezoneAbbreviation}</span>
 			</div>
 		</div>
 	</div>
@@ -1089,16 +1081,16 @@
 			<div class="hourly-row">
 				<div
 					class="temp-gradient-bar"
-					style:--color-high={nsWeatherData.daily?.[2] && visibleTempStats
+					style:--color-high={weatherStore.daily?.[2] && visibleTempStats
 						? temperatureToColor(
-								nsWeatherData.daily[2].temperatureMax,
+								weatherStore.daily[2].temperatureMax,
 								visibleTempStats.minTemperatureOnly,
 								visibleTempStats.maxTemperature,
 							)
 						: '#ccc'}
-					style:--color-low={nsWeatherData.daily?.[2] && visibleTempStats
+					style:--color-low={weatherStore.daily?.[2] && visibleTempStats
 						? temperatureToColor(
-								nsWeatherData.daily[2].temperatureMin,
+								weatherStore.daily[2].temperatureMin,
 								visibleTempStats.minTemperatureOnly,
 								visibleTempStats.maxTemperature,
 							)
@@ -1123,15 +1115,15 @@
 					<div class="high-low">
 						<span class="high" style:color={TEMP_COLOR_HOT} use:toggleUnits={{ temperature: true }}>
 							{formatTemp(
-								nsWeatherData.daily?.[2]?.temperatureMax,
-								nsWeatherData.units.temperature,
+								weatherStore.daily?.[2]?.temperatureMax,
+								weatherStore.units.temperature,
 								false,
 							)}
 						</span>
 						<span class="low" style:color={TEMP_COLOR_COLD} use:toggleUnits={{ temperature: true }}>
 							{formatTemp(
-								nsWeatherData.daily?.[2]?.temperatureMin,
-								nsWeatherData.units.temperature,
+								weatherStore.daily?.[2]?.temperatureMin,
+								weatherStore.units.temperature,
 								false,
 							)}
 						</span>
@@ -1151,7 +1143,7 @@
 
 			<hr class="timeline-divider" />
 
-			{#each (nsWeatherData.daily || []).filter((day) => day.fromToday > -2 && day.fromToday < forecastDaysVisible) as day (day.ms)}
+			{#each (weatherStore.daily || []).filter((day) => day.fromToday > -2 && day.fromToday < forecastDaysVisible) as day (day.ms)}
 				{@const past = day.fromToday < 0}
 				{@const today = day.fromToday === 0}
 				{@const colorHigh = temperatureToColor(
@@ -1167,7 +1159,7 @@
 				{@const dayWmoCode = getDayWmoCode(
 					day.ms,
 					day.weatherCode,
-					nsWeatherData.hourly,
+					weatherStore.hourly,
 					groupIcons,
 					maxBy,
 				)}
@@ -1198,12 +1190,12 @@
 								class="high"
 								style:color={TEMP_COLOR_HOT}
 								use:toggleUnits={{ temperature: true }}
-								>{formatTemp(day.temperatureMax, nsWeatherData.units.temperature, false)}</span
+								>{formatTemp(day.temperatureMax, weatherStore.units.temperature, false)}</span
 							><span
 								class="low"
 								style:color={TEMP_COLOR_COLD}
 								use:toggleUnits={{ temperature: true }}
-								>{formatTemp(day.temperatureMin, nsWeatherData.units.temperature, false)}</span
+								>{formatTemp(day.temperatureMin, weatherStore.units.temperature, false)}</span
 							>
 						</div>
 					</div>
@@ -1283,24 +1275,24 @@
 			<div class="debug">
 				<h3>Debug</h3>
 				<div class="debug-item">
-					<span class="debug-label">nsWeatherData.ms</span>
-					<span>{nsWeatherData.ms} ({nsWeatherData.tzFormat(nsWeatherData.ms)})</span>
+					<span class="debug-label">weatherStore.ms</span>
+					<span>{weatherStore.ms} ({weatherStore.tzFormat(weatherStore.ms)})</span>
 				</div>
 				<details>
-					<summary>nsWeatherData.dataAirQuality</summary>
-					<pre>{jsonPretty(summarize(objectFromMap(nsWeatherData.dataAirQuality)))}</pre>
+					<summary>weatherStore.dataAirQuality</summary>
+					<pre>{jsonPretty(summarize(objectFromMap(weatherStore.dataAirQuality)))}</pre>
 				</details>
 				<details>
-					<summary>nsWeatherData.current</summary>
-					<pre>{jsonPretty(nsWeatherData.current)}</pre>
+					<summary>weatherStore.current</summary>
+					<pre>{jsonPretty(weatherStore.current)}</pre>
 				</details>
 				<details>
-					<summary>nsWeatherData.hourly</summary>
-					<pre>{jsonPretty(summarize(nsWeatherData.hourly))}</pre>
+					<summary>weatherStore.hourly</summary>
+					<pre>{jsonPretty(summarize(weatherStore.hourly))}</pre>
 				</details>
 				<details>
-					<summary>nsWeatherData.daily</summary>
-					<pre>{jsonPretty(summarize(nsWeatherData.daily))}</pre>
+					<summary>weatherStore.daily</summary>
+					<pre>{jsonPretty(summarize(weatherStore.daily))}</pre>
 				</details>
 			</div>
 		{/if}
@@ -1308,7 +1300,7 @@
 
 	<div hidden>
 		<div role="group">
-			<input type="text" value={`${nsWeatherData.name}`} />
+			<input type="text" value={`${weatherStore.name}`} />
 			<button>Search</button>
 		</div>
 	</div>

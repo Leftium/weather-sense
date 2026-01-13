@@ -1,5 +1,4 @@
 <script lang="ts">
-	import { type NsWeatherData, type WeatherDataEvents } from '$lib/ns-weather-data.svelte';
 	import type { RadarLayer } from '$lib/types';
 
 	import { clamp, find } from 'lodash-es';
@@ -9,12 +8,11 @@
 
 	import { MS_IN_MINUTE, MS_IN_SECOND } from './util';
 
-	import type { WeatherStore } from '$lib/weather';
+	import type { WeatherStore, WeatherDataEvents } from '$lib/weather';
 	let {
 		radarLayers = $bindable(),
 		nsWeatherData,
-	}: { radarLayers: Record<string, RadarLayer>; nsWeatherData: NsWeatherData | WeatherStore } =
-		$props();
+	}: { radarLayers: Record<string, RadarLayer>; nsWeatherData: WeatherStore } = $props();
 
 	const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 

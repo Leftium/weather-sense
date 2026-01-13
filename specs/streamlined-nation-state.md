@@ -705,44 +705,100 @@ get intervals() { ... }
 
 ### Solution: Extract to Pure Utils
 
-#### NS - Just Raw State
+#### NS - Just Raw State (Grouped)
 
 ```typescript
 // ns-weather-data.svelte.ts
 
 export function makeNsWeatherData() {
-  // State
+  // -------------------------------------------------------------------------
+  // HOT STATE (changes at 15fps during scrubbing)
+  // -------------------------------------------------------------------------
+  let ms = $state(Date.now());
+  let rawMs = Date.now();
+  let radarPlaying = $state(false);
+  let trackedElement = $state<HTMLElement | null>(null);
+
+  // -------------------------------------------------------------------------
+  // COLD STATE (changes on fetch/user action)
+  // -------------------------------------------------------------------------
   let coords = $state<Coordinates | null>(null);
   let name = $state<string | null>(null);
-  let ms = $state(Date.now());
+  let source = $state('???');
+
   let timezone = $state('UTC');
   let timezoneAbbreviation = $state('UTC');
-  let units = $state({ temperature: 'F' as const });
-  let forecast = $state<Forecast | null>(null);
-  let radar = $state<Radar | null>(null);
-  let providerStatus = $state<Record<string, ProviderStatus>>({});
+  let utcOffsetSeconds = $state(0);
 
-  // Handlers (via events)
-  on('setLocation', async (params) => { ... });
-  on('setTime', (params) => { ms = params.ms; });
-  on('toggleUnits', () => { ... });
+  let units = $state({ temperature: 'F' as 'C' | 'F' });
 
-  // Minimal API - just raw state
-  return {
+  let hourlyData = $state<HourlyData>(new Map());
+  let airQualityData = $state<AirQualityData>(new Map());
+  let dailyData = $state<DailyForecast[]>([]);
+  let radar = $state<Radar>({ generated: 0, host: '', frames: [] });
+
+  let providerStatus = $state<Record<string, ProviderStatus>>({
+    om: 'idle',
+    omAir: 'idle',
+  });
+
+  // -------------------------------------------------------------------------
+  // GROUPED OBJECTS (stable references with nested getters)
+  // -------------------------------------------------------------------------
+  const hot = {
+    get ms() { return ms; },
+    get rawMs() { return rawMs; },
+    get radarPlaying() { return radarPlaying; },
+    get trackedElement() { return trackedElement; },
+  };
+
+  const tz = {
+    get timezone() { return timezone; },
+    get abbreviation() { return timezoneAbbreviation; },
+    get offsetSeconds() { return utcOffsetSeconds; },
+  };
+
+  const location = {
     get coords() { return coords; },
     get name() { return name; },
-    get ms() { return ms; },
-    get timezone() { return timezone; },
-    get timezoneAbbreviation() { return timezoneAbbreviation; },
-    get units() { return units; },
-    get forecast() { return forecast; },
+    get source() { return source; },
+  };
+
+  const data = {
+    get hourly() { return hourlyData; },
+    get daily() { return dailyData; },
+    get airQuality() { return airQualityData; },
     get radar() { return radar; },
-    get providerStatus() { return providerStatus; },
+  };
+
+  // -------------------------------------------------------------------------
+  // HANDLERS (via events)
+  // -------------------------------------------------------------------------
+  on('setLocation', async (params) => { ... });
+  on('setTime', (params) => { rawMs = params.ms; if (!trackedElement) ms = params.ms; });
+  on('toggleUnits', () => { ... });
+
+  // -------------------------------------------------------------------------
+  // PUBLIC API - 6 top-level properties, max depth 2
+  // -------------------------------------------------------------------------
+  return {
+    hot,            // { ms, rawMs, radarPlaying, trackedElement }
+    tz,             // { timezone, abbreviation, offsetSeconds }
+    location,       // { coords, name, source }
+    data,           // { hourly, daily, airQuality, radar }
+    units,          // { temperature: 'F' | 'C' }
+    providerStatus, // { om: 'success', ... }
   };
 }
 ```
 
-**~9 getters** instead of ~40.
+**29 → 6 top-level properties**, max depth 2.
+
+#### Why Grouping is Safe (No Perf Concerns)
+
+Svelte 5 uses fine-grained reactivity via Proxies. Accessing `ns.data.hourly` doesn't trigger re-renders when `ns.data.radar` changes.
+
+Key: use **stable object references** with nested getters (as shown above). Don't create new objects on each access.
 
 #### Utils - Pure Functions
 
@@ -894,25 +950,36 @@ For components that need many display values:
 // weather-utils.ts
 
 /** Bundle common display values for a point in time */
-export function getDisplayBundle(
-	forecast: Forecast | null,
-	ms: number,
-	timezone: string,
-	units: { temperature: 'F' | 'C' },
-) {
-	const hourly = getHourlyAt(forecast, ms, timezone);
+export function getDisplayBundle(ns: NsWeatherData) {
+	const hourly = getHourlyAt(ns.data.hourly, ns.hot.ms, ns.tz.timezone);
+	const aq = getAirQualityAt(ns.data.airQuality, ns.hot.ms, ns.tz.timezone);
 
 	return {
-		temp: formatTemp(hourly?.temperature, units.temperature),
+		temp: formatTemp(hourly?.temperature, ns.units.temperature),
 		humidity: formatPercent(hourly?.humidity),
-		dewPoint: formatTemp(hourly?.dewPoint, units.temperature),
+		dewPoint: formatTemp(hourly?.dewPoint, ns.units.temperature),
 		precipChance: formatPercent(hourly?.precipitationProbability),
 		precip: formatPrecip(hourly?.precipitation),
 		icon: wmoToIcon(hourly?.weatherCode, hourly?.isDay) ?? 'unknown',
-		time: formatTime(ms, timezone, 'h:mm A'),
-		date: formatTime(ms, timezone, 'MMM D'),
+		time: formatTime(ns.hot.ms, ns.tz.timezone, ns.tz.abbreviation, 'h:mm A'),
+		date: formatTime(ns.hot.ms, ns.tz.timezone, ns.tz.abbreviation, 'MMM D'),
+		location: ns.location.name ?? 'Loading...',
+		aqiUs: formatAqi(aq?.aqiUs),
 	};
 }
+```
+
+```svelte
+<!-- Component using bundle -->
+<script lang="ts">
+	import { getNsWeatherData } from '$lib/ns-weather-data.svelte';
+	import { getDisplayBundle } from '$lib/weather-utils';
+
+	const ns = getNsWeatherData();
+	const display = $derived(getDisplayBundle(ns));
+</script>
+
+<p>{display.temp}</p><p>{display.time}</p><p>{display.humidity}</p>
 ```
 
 ```svelte
@@ -932,7 +999,8 @@ export function getDisplayBundle(
 
 | Aspect                   | Current (God Object)         | Thin NS + Utils                 |
 | ------------------------ | ---------------------------- | ------------------------------- |
-| NS getters               | ~40                          | ~9                              |
+| NS top-level properties  | 29                           | **6**                           |
+| NS max depth             | 1                            | 2                               |
 | NS responsibility        | State + lookups + formatting | State only                      |
 | Testing                  | Must mock NS                 | Utils are pure, trivial to test |
 | Reusability              | Tied to NS instance          | Utils work anywhere             |

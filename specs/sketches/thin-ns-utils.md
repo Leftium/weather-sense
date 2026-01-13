@@ -2,7 +2,7 @@
 
 This file demonstrates the proposed refactoring:
 
-- NS reduced to ~12 raw state getters (from ~40)
+- NS reduced from 29 top-level properties to **6** (max depth 2)
 - Pure utility functions for lookups, formatting, derived values
 - Components compose utils with raw state
 
@@ -14,7 +14,10 @@ This file demonstrates the proposed refactoring:
 import { getEmitter } from '$lib/emitter';
 import type { Coordinates, Radar } from '$lib/types';
 
-// Types for the raw data structures
+// =============================================================================
+// TYPES
+// =============================================================================
+
 type HourlyData = Map<number, ForecastItem>;
 type AirQualityData = Map<number, AirQualityItem>;
 
@@ -47,7 +50,9 @@ type DailyForecast = {
 	precipitation: number;
 };
 
-// Event types (unchanged from current)
+type ProviderStatus = 'idle' | 'loading' | 'success' | 'error';
+
+// Event types
 type WeatherDataEvents = {
 	weatherdata_requestedSetLocation: { source: string; coords?: Coordinates; name?: string };
 	weatherdata_requestedSetTime: { ms: number };
@@ -55,23 +60,26 @@ type WeatherDataEvents = {
 	weatherdata_requestedTogglePlay: undefined;
 	weatherdata_requestedTrackingStart: { node: HTMLElement };
 	weatherdata_requestedTrackingEnd: undefined;
-	// ... other events
 };
+
+// =============================================================================
+// NS FACTORY
+// =============================================================================
 
 export function makeNsWeatherData() {
 	const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 
-	// -------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
 	// HOT STATE (changes at 15fps during scrubbing)
-	// -------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
 	let ms = $state(Date.now());
 	let rawMs = Date.now(); // Non-reactive for polling
 	let radarPlaying = $state(false);
 	let trackedElement = $state<HTMLElement | null>(null);
 
-	// -------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
 	// COLD STATE (changes on fetch/user action)
-	// -------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
 	let coords = $state<Coordinates | null>(null);
 	let name = $state<string | null>(null);
 	let source = $state('???');
@@ -87,14 +95,77 @@ export function makeNsWeatherData() {
 	let dailyData = $state<DailyForecast[]>([]);
 	let radar = $state<Radar>({ generated: 0, host: '', frames: [] });
 
-	let providerStatus = $state<Record<string, 'idle' | 'loading' | 'success' | 'error'>>({
+	let providerStatus = $state<Record<string, ProviderStatus>>({
 		om: 'idle',
 		omAir: 'idle',
 	});
 
-	// -------------------------------------------------------------------------
-	// EVENT HANDLERS (internal - mutations happen here)
-	// -------------------------------------------------------------------------
+	// ---------------------------------------------------------------------------
+	// GROUPED OBJECTS (stable references with nested getters)
+	// ---------------------------------------------------------------------------
+
+	// Using nested getters ensures:
+	// 1. Stable object references (no new objects on each access)
+	// 2. Fine-grained reactivity (only re-render when specific property changes)
+
+	const hot = {
+		get ms() {
+			return ms;
+		},
+		get rawMs() {
+			return rawMs;
+		},
+		get radarPlaying() {
+			return radarPlaying;
+		},
+		get trackedElement() {
+			return trackedElement;
+		},
+	};
+
+	const tz = {
+		get timezone() {
+			return timezone;
+		},
+		get abbreviation() {
+			return timezoneAbbreviation;
+		},
+		get offsetSeconds() {
+			return utcOffsetSeconds;
+		},
+	};
+
+	const location = {
+		get coords() {
+			return coords;
+		},
+		get name() {
+			return name;
+		},
+		get source() {
+			return source;
+		},
+	};
+
+	const data = {
+		get hourly() {
+			return hourlyData;
+		},
+		get daily() {
+			return dailyData;
+		},
+		get airQuality() {
+			return airQualityData;
+		},
+		get radar() {
+			return radar;
+		},
+	};
+
+	// ---------------------------------------------------------------------------
+	// EVENT HANDLERS
+	// ---------------------------------------------------------------------------
+
 	on('weatherdata_requestedSetTime', ({ ms: newMs }) => {
 		rawMs = newMs;
 		if (!trackedElement) {
@@ -109,7 +180,8 @@ export function makeNsWeatherData() {
 
 		providerStatus = { ...providerStatus, om: 'loading', omAir: 'loading' };
 
-		// Fetch logic...
+		// Fetch logic would go here...
+		// await Promise.all([fetchForecast(), fetchAirQuality()]);
 	});
 
 	on('weatherdata_requestedToggleUnits', (params) => {
@@ -120,75 +192,64 @@ export function makeNsWeatherData() {
 		}
 	});
 
-	// ... other handlers
+	on('weatherdata_requestedTogglePlay', () => {
+		radarPlaying = !radarPlaying;
+	});
 
-	// -------------------------------------------------------------------------
-	// PUBLIC API - RAW STATE ONLY (~12 getters)
-	// -------------------------------------------------------------------------
+	on('weatherdata_requestedTrackingStart', ({ node }) => {
+		trackedElement = node;
+		// Start RAF loop...
+	});
+
+	on('weatherdata_requestedTrackingEnd', () => {
+		trackedElement = null;
+		rawMs = Date.now();
+		ms = Date.now();
+		// Stop RAF loop...
+	});
+
+	// ---------------------------------------------------------------------------
+	// PUBLIC API - 6 top-level properties, max depth 2
+	// ---------------------------------------------------------------------------
 	return {
-		// Hot state
-		get ms() {
-			return ms;
-		},
-		get rawMs() {
-			return rawMs;
-		},
-		get radarPlaying() {
-			return radarPlaying;
-		},
-		get trackedElement() {
-			return trackedElement;
-		},
-
-		// Location
-		get coords() {
-			return coords;
-		},
-		get name() {
-			return name;
-		},
-		get source() {
-			return source;
-		},
-
-		// Timezone
-		get timezone() {
-			return timezone;
-		},
-		get timezoneAbbreviation() {
-			return timezoneAbbreviation;
-		},
-		get utcOffsetSeconds() {
-			return utcOffsetSeconds;
-		},
-
-		// Settings
-		get units() {
-			return units;
-		},
-
-		// Data (raw)
-		get hourlyData() {
-			return hourlyData;
-		},
-		get airQualityData() {
-			return airQualityData;
-		},
-		get dailyData() {
-			return dailyData;
-		},
-		get radar() {
-			return radar;
-		},
-
-		// Status
-		get providerStatus() {
-			return providerStatus;
-		},
+		hot, // { ms, rawMs, radarPlaying, trackedElement }
+		tz, // { timezone, abbreviation, offsetSeconds }
+		location, // { coords, name, source }
+		data, // { hourly, daily, airQuality, radar }
+		units, // { temperature: 'F' | 'C' }
+		providerStatus, // { om: 'success', ... }
 	};
 }
 
 export type NsWeatherData = ReturnType<typeof makeNsWeatherData>;
+```
+
+### Property Access Examples
+
+```typescript
+// All access is max depth 2
+ns.hot.ms; // number
+ns.hot.rawMs; // number
+ns.hot.radarPlaying; // boolean
+ns.hot.trackedElement; // HTMLElement | null
+
+ns.tz.timezone; // string (e.g., 'America/Los_Angeles')
+ns.tz.abbreviation; // string (e.g., 'PST')
+ns.tz.offsetSeconds; // number
+
+ns.location.coords; // Coordinates | null
+ns.location.name; // string | null
+ns.location.source; // string
+
+ns.data.hourly; // Map<number, ForecastItem>
+ns.data.daily; // DailyForecast[]
+ns.data.airQuality; // Map<number, AirQualityItem>
+ns.data.radar; // Radar
+
+ns.units.temperature; // 'F' | 'C'
+
+ns.providerStatus.om; // 'idle' | 'loading' | 'success' | 'error'
+ns.providerStatus.omAir; // 'idle' | 'loading' | 'success' | 'error'
 ```
 
 ---
@@ -197,34 +258,37 @@ export type NsWeatherData = ReturnType<typeof makeNsWeatherData>;
 
 ```typescript
 import dayjs from 'dayjs';
-import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
+import timezonePlugin from 'dayjs/plugin/timezone';
 import { startOf, celcius } from '$lib/util';
+import type { NsWeatherData } from '$lib/ns-weather-data.svelte';
 
-dayjs.extend(timezone);
+dayjs.extend(utc);
+dayjs.extend(timezonePlugin);
 
-// -----------------------------------------------------------------------------
+// =============================================================================
 // LOOKUPS - Get data at a point in time
-// -----------------------------------------------------------------------------
+// =============================================================================
 
 /** Get hourly forecast data at a specific time */
 export function getHourlyAt(
-	hourlyData: HourlyData | null | undefined,
+	hourlyData: Map<number, ForecastItem> | null | undefined,
 	ms: number,
-	tz: string,
+	timezone: string,
 ): ForecastItem | null {
 	if (!hourlyData?.size) return null;
-	const hourMs = startOf(ms, 'hour', tz);
+	const hourMs = startOf(ms, 'hour', timezone);
 	return hourlyData.get(hourMs) ?? null;
 }
 
 /** Get air quality data at a specific time */
 export function getAirQualityAt(
-	airQualityData: AirQualityData | null | undefined,
+	airQualityData: Map<number, AirQualityItem> | null | undefined,
 	ms: number,
-	tz: string,
+	timezone: string,
 ): AirQualityItem | null {
 	if (!airQualityData?.size) return null;
-	const hourMs = startOf(ms, 'hour', tz);
+	const hourMs = startOf(ms, 'hour', timezone);
 	return airQualityData.get(hourMs) ?? null;
 }
 
@@ -232,10 +296,10 @@ export function getAirQualityAt(
 export function getDailyAt(
 	dailyData: DailyForecast[] | null | undefined,
 	ms: number,
-	tz: string,
+	timezone: string,
 ): DailyForecast | null {
 	if (!dailyData?.length) return null;
-	const dayMs = startOf(ms, 'day', tz);
+	const dayMs = startOf(ms, 'day', timezone);
 	return dailyData.find((d) => d.ms === dayMs) ?? null;
 }
 
@@ -250,9 +314,9 @@ export function getRadarFrameAt(
 	);
 }
 
-// -----------------------------------------------------------------------------
+// =============================================================================
 // FORMATTING - Convert values to display strings
-// -----------------------------------------------------------------------------
+// =============================================================================
 
 /** Format temperature with unit conversion */
 export function formatTemp(n: number | null | undefined, unit: 'F' | 'C'): string {
@@ -262,8 +326,13 @@ export function formatTemp(n: number | null | undefined, unit: 'F' | 'C'): strin
 }
 
 /** Format time in a specific timezone */
-export function formatTime(ms: number, tz: string, tzAbbr: string, format = 'h:mm A'): string {
-	return dayjs.tz(ms, tz).format(format).replace('z', tzAbbr);
+export function formatTime(
+	ms: number,
+	timezone: string,
+	abbreviation: string,
+	format = 'h:mm A',
+): string {
+	return dayjs.tz(ms, timezone).format(format).replace('z', abbreviation);
 }
 
 /** Format percentage */
@@ -278,78 +347,78 @@ export function formatPrecip(mm: number | null | undefined): string {
 	return `${mm.toFixed(1)}mm`;
 }
 
-/** Format AQI with label */
+/** Format AQI */
 export function formatAqi(n: number | null | undefined): string {
 	if (n == null) return '--';
 	return String(Math.round(n));
 }
 
-// -----------------------------------------------------------------------------
-// COMBINED DISPLAY HELPERS - Lookup + Format in one call
-// -----------------------------------------------------------------------------
+// =============================================================================
+// DISPLAY HELPERS - Lookup + Format using NS directly
+// =============================================================================
 
 /** Get formatted temperature at current time */
 export function getDisplayTemp(ns: NsWeatherData): string {
-	const hourly = getHourlyAt(ns.hourlyData, ns.ms, ns.timezone);
+	const hourly = getHourlyAt(ns.data.hourly, ns.hot.ms, ns.tz.timezone);
 	return formatTemp(hourly?.temperature, ns.units.temperature);
 }
 
 /** Get formatted humidity at current time */
 export function getDisplayHumidity(ns: NsWeatherData): string {
-	const hourly = getHourlyAt(ns.hourlyData, ns.ms, ns.timezone);
+	const hourly = getHourlyAt(ns.data.hourly, ns.hot.ms, ns.tz.timezone);
 	return formatPercent(hourly?.humidity);
 }
 
 /** Get formatted dew point at current time */
 export function getDisplayDewPoint(ns: NsWeatherData): string {
-	const hourly = getHourlyAt(ns.hourlyData, ns.ms, ns.timezone);
+	const hourly = getHourlyAt(ns.data.hourly, ns.hot.ms, ns.tz.timezone);
 	return formatTemp(hourly?.dewPoint, ns.units.temperature);
 }
 
 /** Get formatted precipitation at current time */
 export function getDisplayPrecip(ns: NsWeatherData): string {
-	const hourly = getHourlyAt(ns.hourlyData, ns.ms, ns.timezone);
+	const hourly = getHourlyAt(ns.data.hourly, ns.hot.ms, ns.tz.timezone);
 	return formatPrecip(hourly?.precipitation);
 }
 
 /** Get formatted precipitation probability at current time */
 export function getDisplayPrecipChance(ns: NsWeatherData): string {
-	const hourly = getHourlyAt(ns.hourlyData, ns.ms, ns.timezone);
+	const hourly = getHourlyAt(ns.data.hourly, ns.hot.ms, ns.tz.timezone);
 	return formatPercent(hourly?.precipitationProbability);
 }
 
 /** Get weather code at current time */
 export function getDisplayWeatherCode(ns: NsWeatherData): number | null {
-	const hourly = getHourlyAt(ns.hourlyData, ns.ms, ns.timezone);
+	const hourly = getHourlyAt(ns.data.hourly, ns.hot.ms, ns.tz.timezone);
 	return hourly?.weatherCode ?? null;
 }
 
 /** Get isDay at current time */
 export function getDisplayIsDay(ns: NsWeatherData): boolean {
-	const hourly = getHourlyAt(ns.hourlyData, ns.ms, ns.timezone);
+	const hourly = getHourlyAt(ns.data.hourly, ns.hot.ms, ns.tz.timezone);
 	return hourly?.isDay ?? true;
 }
 
 /** Get formatted AQI (US) at current time */
 export function getDisplayAqiUs(ns: NsWeatherData): string {
-	const aq = getAirQualityAt(ns.airQualityData, ns.ms, ns.timezone);
+	const aq = getAirQualityAt(ns.data.airQuality, ns.hot.ms, ns.tz.timezone);
 	return formatAqi(aq?.aqiUs);
 }
 
 /** Get formatted AQI (Europe) at current time */
 export function getDisplayAqiEurope(ns: NsWeatherData): string {
-	const aq = getAirQualityAt(ns.airQualityData, ns.ms, ns.timezone);
+	const aq = getAirQualityAt(ns.data.airQuality, ns.hot.ms, ns.tz.timezone);
 	return formatAqi(aq?.aqiEurope);
 }
 
 /** Get formatted current time */
 export function getDisplayTime(ns: NsWeatherData, format = 'h:mm:ss A'): string {
-	return formatTime(ns.ms, ns.timezone, ns.timezoneAbbreviation, format);
+	return formatTime(ns.hot.ms, ns.tz.timezone, ns.tz.abbreviation, format);
 }
 
-// -----------------------------------------------------------------------------
+// =============================================================================
 // BUNDLE - Get all common display values at once
-// -----------------------------------------------------------------------------
+// =============================================================================
 
 export type DisplayBundle = {
 	temperature: string;
@@ -368,8 +437,8 @@ export type DisplayBundle = {
 
 /** Get all common display values in one call */
 export function getDisplayBundle(ns: NsWeatherData): DisplayBundle {
-	const hourly = getHourlyAt(ns.hourlyData, ns.ms, ns.timezone);
-	const aq = getAirQualityAt(ns.airQualityData, ns.ms, ns.timezone);
+	const hourly = getHourlyAt(ns.data.hourly, ns.hot.ms, ns.tz.timezone);
+	const aq = getAirQualityAt(ns.data.airQuality, ns.hot.ms, ns.tz.timezone);
 
 	return {
 		temperature: formatTemp(hourly?.temperature, ns.units.temperature),
@@ -381,25 +450,27 @@ export function getDisplayBundle(ns: NsWeatherData): DisplayBundle {
 		isDay: hourly?.isDay ?? true,
 		aqiUs: formatAqi(aq?.aqiUs),
 		aqiEurope: formatAqi(aq?.aqiEurope),
-		time: formatTime(ns.ms, ns.timezone, ns.timezoneAbbreviation, 'h:mm:ss A'),
-		date: formatTime(ns.ms, ns.timezone, ns.timezoneAbbreviation, 'ddd MMM D'),
-		location: ns.name ?? 'Loading...',
+		time: formatTime(ns.hot.ms, ns.tz.timezone, ns.tz.abbreviation, 'h:mm:ss A'),
+		date: formatTime(ns.hot.ms, ns.tz.timezone, ns.tz.abbreviation, 'ddd MMM D'),
+		location: ns.location.name ?? 'Loading...',
 	};
 }
 
-// -----------------------------------------------------------------------------
+// =============================================================================
 // DERIVED DATA - Compute derived values from raw data
-// -----------------------------------------------------------------------------
+// =============================================================================
 
 export type TemperatureStats = {
 	min: number;
 	max: number;
 	range: number;
-	minTempOnly: number; // Excluding dew point
+	minTempOnly: number;
 };
 
 /** Calculate temperature statistics for y-axis scaling */
-export function getTemperatureStats(hourlyData: HourlyData | null): TemperatureStats | null {
+export function getTemperatureStats(
+	hourlyData: Map<number, ForecastItem> | null,
+): TemperatureStats | null {
 	if (!hourlyData?.size) return null;
 
 	const entries = [...hourlyData.values()];
@@ -425,28 +496,22 @@ export type IntervalItem = {
 };
 
 /** Build intervals from hourly data and radar frames */
-export function buildIntervals(
-	hourlyData: HourlyData | null,
-	radar: Radar | null,
-	tz: string,
-	tzAbbr: string,
-): IntervalItem[] {
+export function buildIntervals(ns: NsWeatherData): IntervalItem[] {
 	const msSet = new Set<number>();
 
 	// Add hourly timestamps
-	if (hourlyData) {
-		for (const ms of hourlyData.keys()) {
+	if (ns.data.hourly) {
+		for (const ms of ns.data.hourly.keys()) {
 			msSet.add(ms);
 		}
 	}
 
 	// Add radar frame timestamps
-	if (radar?.frames) {
-		for (const frame of radar.frames) {
+	if (ns.data.radar?.frames) {
+		for (const frame of ns.data.radar.frames) {
 			msSet.add(frame.ms);
 		}
-		// Add end of last radar frame
-		const lastFrame = radar.frames.at(-1);
+		const lastFrame = ns.data.radar.frames.at(-1);
 		if (lastFrame) {
 			msSet.add(lastFrame.ms + 10 * 60 * 1000);
 		}
@@ -457,7 +522,7 @@ export function buildIntervals(
 	return sorted.map((ms, i) => ({
 		ms,
 		msEnd: sorted[i + 1] ? sorted[i + 1] - 1 : ms,
-		msPretty: formatTime(ms, tz, tzAbbr),
+		msPretty: formatTime(ms, ns.tz.timezone, ns.tz.abbreviation),
 	}));
 }
 ```
@@ -481,7 +546,7 @@ export function buildIntervals(
 </script>
 
 <div class="current-weather">
-	<h1>{ns.name ?? 'Loading...'}</h1>
+	<h1>{ns.location.name ?? 'Loading...'}</h1>
 	<p class="temp">{temp}</p>
 	<p class="time">{time}</p>
 	<p>Humidity: {humidity}</p>
@@ -524,12 +589,10 @@ export function buildIntervals(
 	const { emit } = getEmitter('weatherdata');
 
 	// Raw ms for positioning
-	const currentMs = $derived(ns.ms);
+	const currentMs = $derived(ns.hot.ms);
 
 	// Derived intervals
-	const intervals = $derived(
-		buildIntervals(ns.hourlyData, ns.radar, ns.timezone, ns.timezoneAbbreviation),
-	);
+	const intervals = $derived(buildIntervals(ns));
 
 	// Formatted time for display
 	const timeLabel = $derived(getDisplayTime(ns));
@@ -550,20 +613,20 @@ export function buildIntervals(
 ```svelte
 <script lang="ts">
 	import { getNsWeatherData } from '$lib/ns-weather-data.svelte';
-	import { getHourlyAt, formatTemp, formatTime } from '$lib/weather-utils';
+	import { getHourlyAt, formatTime, celcius } from '$lib/weather-utils';
 
 	const ns = getNsWeatherData();
 
 	// Custom: show temp with decimal
-	const preciseTemp = $derived(() => {
-		const hourly = getHourlyAt(ns.hourlyData, ns.ms, ns.timezone);
+	const preciseTemp = $derived.by(() => {
+		const hourly = getHourlyAt(ns.data.hourly, ns.hot.ms, ns.tz.timezone);
 		if (!hourly) return '--';
 		const value = ns.units.temperature === 'C' ? celcius(hourly.temperature) : hourly.temperature;
 		return `${value.toFixed(1)}°${ns.units.temperature}`;
 	});
 
 	// Custom: 24-hour time format
-	const time24 = $derived(formatTime(ns.ms, ns.timezone, ns.timezoneAbbreviation, 'HH:mm'));
+	const time24 = $derived(formatTime(ns.hot.ms, ns.tz.timezone, ns.tz.abbreviation, 'HH:mm'));
 </script>
 
 <div class="precise-display">
@@ -580,14 +643,7 @@ export function buildIntervals(
 // weather-utils.test.ts
 
 import { describe, it, expect } from 'vitest';
-import {
-	formatTemp,
-	formatPercent,
-	getHourlyAt,
-	getDisplayBundle,
-	getTemperatureStats,
-	buildIntervals,
-} from './weather-utils';
+import { formatTemp, formatPercent, getHourlyAt, getTemperatureStats } from './weather-utils';
 
 describe('formatTemp', () => {
 	it('formats Fahrenheit', () => {
@@ -722,3 +778,16 @@ describe('getTemperatureStats', () => {
 	});
 });
 ```
+
+---
+
+## Summary
+
+| Aspect               | Before  | After                   |
+| -------------------- | ------- | ----------------------- |
+| Top-level properties | 29      | **6**                   |
+| Max depth            | 1       | 2                       |
+| Getters in NS        | 29      | 16 (nested in 6 groups) |
+| Display logic        | In NS   | In utils                |
+| Derived values       | In NS   | In utils                |
+| Testing              | Mock NS | Pure functions          |

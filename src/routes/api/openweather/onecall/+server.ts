@@ -14,8 +14,15 @@ export const GET: RequestHandler = async ({ url, fetch, cookies }) => {
 	const userKey = cookies.get('openweather_api_key');
 	const apiKey = userKey || env.OPEN_WEATHER_APPID;
 
+	// Debug info (remove after troubleshooting)
+	const debug = {
+		hasUserKey: !!userKey,
+		hasEnvKey: !!env.OPEN_WEATHER_APPID,
+		envKeyLength: env.OPEN_WEATHER_APPID?.length ?? 0,
+	};
+
 	if (!apiKey) {
-		return json({ error: 'API key not configured', available: false });
+		return json({ error: 'API key not configured', available: false, debug });
 	}
 
 	// Track usage for non-BYOK users (nudge system)
@@ -70,7 +77,7 @@ export const GET: RequestHandler = async ({ url, fetch, cookies }) => {
 
 		const data = await response.json();
 
-		return json({ ...data, available: true });
+		return json({ ...data, available: true, debug });
 	} catch (error) {
 		console.error('OpenWeather fetch error:', error);
 		return json({ error: 'Failed to fetch OpenWeather data', available: false }, { status: 500 });

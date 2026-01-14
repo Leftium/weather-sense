@@ -47,7 +47,7 @@ export const DAY_START_HOUR = 4;
 
 export const colors = {
 	humidity: '#20B2AA', // teal - was '#9062CA'
-	precipitationProbability: '#99CCFF', // pale blue - was '#58FAF9'
+	precipitationProbability: '#78E8E8',
 	precipitation: SOLARIZED_BLUE,
 	dewPoint: '#178B8B', // darker teal - was picoColors.blue[600]
 	temperature: 'url(#gradient)', // picoColors.blue[950],

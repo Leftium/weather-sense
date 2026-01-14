@@ -527,6 +527,10 @@
 	});
 </script>
 
+<svelte:head>
+	<title>{weatherStore.name ? `${weatherStore.name} - WeatherSense` : 'WeatherSense'}</title>
+</svelte:head>
+
 <div class="map-row container">
 	<div class="map">
 		<RadarMapLibre nsWeatherData={weatherStore} />

@@ -41,6 +41,20 @@
 		return clamp(index, 0, Math.min(15, nsWeatherData.radar.frames.length - 1));
 	});
 
+	// Detect when tracker is outside radar time range
+	let radarOutOfRange = $derived.by(() => {
+		if (!nsWeatherData.radar?.frames?.length) return false;
+
+		const firstFrame = nsWeatherData.radar.frames[0];
+		const lastFrame =
+			nsWeatherData.radar.frames[15] ??
+			nsWeatherData.radar.frames[nsWeatherData.radar.frames.length - 1];
+
+		if (!firstFrame || !lastFrame) return false;
+
+		return nsWeatherData.ms < firstFrame.ms || nsWeatherData.ms > lastFrame.ms;
+	});
+
 	let map: maplibregl.Map;
 	let scaleControl: maplibregl.ScaleControl;
 	let locationMarker: maplibregl.Marker;
@@ -218,10 +232,11 @@
 		});
 	});
 
-	// Update radar layer opacity when radarFrameIndex changes (scrubbing or playback)
+	// Update radar layer opacity and sepia effect when radarFrameIndex changes
 	// Shell's unified RAF loop drives time advancement during playback
 	$effect(() => {
 		const frameIndex = radarFrameIndex;
+		const outOfRange = radarOutOfRange;
 		if (!map || !nsWeatherData.radar?.frames?.length) return;
 
 		// Update layer opacity to show current frame
@@ -230,6 +245,10 @@
 			const layerId = `rv-layer-${radarLayer.ms}`;
 			if (map.getLayer(layerId)) {
 				map.setPaintProperty(layerId, 'raster-opacity', index === frameIndex ? 0.6 : 0);
+				// Apply sepia effect when tracker is outside radar time range
+				// Sepia approximation: desaturate + hue shift toward brown
+				map.setPaintProperty(layerId, 'raster-saturation', outOfRange ? -0.7 : 0);
+				map.setPaintProperty(layerId, 'raster-hue-rotate', outOfRange ? 30 : 0);
 			}
 		});
 	});

@@ -1535,6 +1535,7 @@ Consider copying/adapting:
 
 - [ ] 60-minute precipitation plot component (uses same sync pattern as radar)
 - [ ] Add minutely timestamps to `intervals` derived state
+- [ ] **Integrate minutely precipitation into hourly plot** - After data unification, add 1-min intervals to the hourly timeline similar to how radar frames are integrated. This would allow scrubbing through minutely data within the hourly plot context, showing fine-grained precipitation alongside temperature/humidity curves. Requires unified data architecture to merge minutely + hourly seamlessly.
 - [ ] Provider comparison visualization (side-by-side temps, etc.)
 - [ ] Weather alerts display component
 - [ ] "Worst case" toggle mode in UI

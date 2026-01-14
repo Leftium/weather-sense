@@ -7,7 +7,7 @@
 	import * as d3 from 'd3';
 	import { clamp } from 'lodash-es';
 
-	const { emit } = getEmitter<WeatherDataEvents>(import.meta);
+	const { emit, on } = getEmitter<WeatherDataEvents>(import.meta);
 
 	type Props = {
 		nsWeatherData: WeatherStore;
@@ -176,32 +176,12 @@
 		];
 	});
 
-	// Render plot when data or dimensions change (NOT on ms change)
-	$effect(() => {
-		// Track all dependencies explicitly
-		const data = dataMinutely;
-		const width = clientWidth;
-		const opts = plotOptions;
-		const m = marks;
-
-		if (!div || data.length === 0) return;
-
-		const plot = Plot.plot({
-			...opts,
-			marks: m,
-		});
-
-		div.replaceChildren(plot);
-	});
-
 	// Tracker line element (reused, just moved via transform)
 	let trackerLine: d3.Selection<SVGLineElement, unknown, null, undefined> | null = null;
 
-	// Update tracker position (separate effect, runs on ms change)
-	$effect(() => {
+	function updateTracker(ms: number) {
 		if (!div || !hasData) return;
 
-		const ms = nsWeatherData.ms;
 		const svg = d3.select(div).select('svg');
 		if (svg.empty()) return;
 
@@ -231,6 +211,38 @@
 			trackerLine.remove();
 			trackerLine = null;
 		}
+	}
+
+	// Render plot when data or dimensions change (NOT on ms change)
+	$effect(() => {
+		// Track all dependencies explicitly
+		const data = dataMinutely;
+		const width = clientWidth;
+		const opts = plotOptions;
+		const m = marks;
+
+		if (!div || data.length === 0) return;
+
+		const plot = Plot.plot({
+			...opts,
+			marks: m,
+		});
+
+		div.replaceChildren(plot);
+
+		// Reset tracker cache since SVG was replaced, then render tracker
+		trackerLine = null;
+		updateTracker(nsWeatherData.ms);
+	});
+
+	// Update tracker on time changes (frameTick events)
+	on('weatherdata_frameTick', ({ ms }) => {
+		updateTracker(ms);
+	});
+
+	// Also update on direct time changes (from scrubbing)
+	on('weatherdata_timeChange', ({ ms }) => {
+		updateTracker(ms);
 	});
 </script>
 

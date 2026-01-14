@@ -1812,6 +1812,11 @@
 		pointer-events: none;
 	}
 
+	/* Shift last tick label left to prevent clipping */
+	div > :global(svg g[aria-label='x-axis tick label'] text:last-of-type) {
+		text-anchor: end;
+	}
+
 	/* Global SVG filters (hidden, only contains filter definitions) */
 	.global-filters {
 		position: absolute;

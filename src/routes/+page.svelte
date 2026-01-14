@@ -77,8 +77,8 @@
 
 	let { data } = $props();
 
-	// Show minutely plot when ?m param is present in URL
-	const showMinutely = $derived(browser && $page.url.searchParams.has('m'));
+	// Show minutely plot when ?m param is present in URL (or set via client-side click)
+	let showMinutely = $state(browser && new URL(location.href).searchParams.has('m'));
 
 	// URL with ?m param added (preserves other params like location)
 	const minutelyUrl = $derived.by(() => {
@@ -801,7 +801,15 @@
 					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 					<li><a href="/aqi">AQI Levels</a></li>
 					<li>
-						<a href={minutelyUrl} data-sveltekit-reload>60min Forecast</a>
+						<a
+							href={minutelyUrl}
+							onclick={(e) => {
+								e.preventDefault();
+								showMinutely = true;
+								emit('weatherdata_requestedFetchMinutely');
+								history.pushState({}, '', minutelyUrl);
+							}}>60min Forecast</a
+						>
 					</li>
 				</ul>
 			</div>

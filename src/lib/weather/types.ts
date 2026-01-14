@@ -143,6 +143,8 @@ export type WeatherDataEvents = {
 
 	weatherdata_requestedFetchRainviewerData: undefined;
 
+	weatherdata_requestedFetchMinutely: undefined;
+
 	weatherdata_requestedTrackingStart: { node: HTMLElement };
 
 	weatherdata_requestedTrackingEnd: undefined;

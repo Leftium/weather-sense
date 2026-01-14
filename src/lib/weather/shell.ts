@@ -637,6 +637,10 @@ export function initWeatherShell(data: WeatherData) {
 		fetchRainviewerData();
 	});
 
+	on('weatherdata_requestedFetchMinutely', () => {
+		fetchOpenWeatherOneCall();
+	});
+
 	// =========================================================================
 	// INITIALIZATION
 	// =========================================================================

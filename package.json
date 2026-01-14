@@ -17,7 +17,7 @@
 	"devDependencies": {
 		"@eslint/compat": "^2.0.1",
 		"@eslint/js": "^9.39.2",
-		"@leftium/gg": "^0.0.20",
+		"@leftium/gg": "^0.0.21",
 		"@leftium/logo": "^0.0.2",
 		"@observablehq/plot": "^0.6.17",
 		"@sveltejs/adapter-auto": "^7.0.0",
@@ -28,7 +28,7 @@
 		"@types/debug": "^4.1.12",
 		"@types/eslint": "^9.6.1",
 		"@types/lodash-es": "^4.17.12",
-		"@types/node": "^25.0.7",
+		"@types/node": "^25.0.8",
 		"@typescript-eslint/eslint-plugin": "^8.53.0",
 		"@typescript-eslint/parser": "^8.53.0",
 		"colorjs.io": "^0.6.0",

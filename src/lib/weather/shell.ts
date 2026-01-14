@@ -545,7 +545,7 @@ export function initWeatherShell(data: WeatherData) {
 		await Promise.all([
 			fetchOpenMeteoForecast(),
 			fetchOpenMeteoAirQuality(),
-			fetchOpenWeatherOneCall(),
+			...(params.fetchMinutely ? [fetchOpenWeatherOneCall()] : []),
 		]);
 	});
 

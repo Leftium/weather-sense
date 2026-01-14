@@ -128,6 +128,7 @@ export type WeatherDataEvents = {
 		source: string;
 		coords?: Coordinates;
 		name?: string;
+		fetchMinutely?: boolean;
 	};
 
 	weatherdata_requestedSetTime: {

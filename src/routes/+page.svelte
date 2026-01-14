@@ -266,6 +266,7 @@
 			source: data.source,
 			name: data.name,
 			coords: data.coords,
+			fetchMinutely: showMinutely,
 		});
 	});
 

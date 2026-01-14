@@ -252,7 +252,7 @@
 	<a
 		class="openweather-link"
 		href="https://openweathermap.org/find?q={encodeURIComponent(nsWeatherData.name ?? '')}"
-		target="_blank">OpenWeather</a
+		target="_blank">Check on OpenWeather</a
 	>
 	{#if hasPrecip}
 		<div

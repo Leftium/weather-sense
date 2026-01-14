@@ -44,14 +44,18 @@
 	const CAP_BONUS = 3; // Small visual boost at LINEAR_MAX threshold
 
 	// Transform precipitation value to scaled visual value (0-140 range, matching hourly)
-	function transformPrecip(p: number): number {
+	// onlyLinear=true: just linear portion (main bar)
+	// onlyLinear=false: linear + cap + exponential (cap bar, drawn underneath)
+	function transformPrecip(p: number, onlyLinear = false): number {
 		if (p === 0) return 0; // No bar for zero precipitation
 		// Linear scale up to LINEAR_MAX mm/hr
 		let result = LINEAR_MAX > 0 ? (Math.min(p, LINEAR_MAX) / LINEAR_MAX) * LINEAR_SECTION : 0;
-		result += CAP_BONUS; // Add cap for visual separation
-		if (p >= LINEAR_MAX) {
-			// Divisor 30 = LINEAR_MAX × 10 (same as hourly)
-			result += (140 - LINEAR_SECTION - CAP_BONUS) * (1 - Math.exp(-(p - LINEAR_MAX) / 30));
+		if (!onlyLinear) {
+			result += CAP_BONUS; // Add cap for visual separation
+			if (p >= LINEAR_MAX) {
+				// Divisor 10: maxes out ~30-40mm/hr (sufficient for extreme rain)
+				result += (140 - LINEAR_SECTION - CAP_BONUS) * (1 - Math.exp(-(p - LINEAR_MAX) / 10));
+			}
 		}
 		return result;
 	}
@@ -129,11 +133,17 @@
 	const marks = $derived.by(() => {
 		if (!hasData) return [];
 
-		// Build bar data - each bar spans 1 minute, with scaled precipitation
-		const barData = dataMinutely.map((d: MinutelyPoint, i: number, arr: MinutelyPoint[]) => ({
+		// Build bar data - each bar spans 1 minute
+		const barDataCap = dataMinutely.map((d: MinutelyPoint, i: number, arr: MinutelyPoint[]) => ({
 			x1: d.ms,
 			x2: arr[i + 1]?.ms ?? d.ms + MS_IN_MINUTE,
-			precipitation: transformPrecip(d.precipitation),
+			precipitation: transformPrecip(d.precipitation, false), // Full height (linear + cap + exponential)
+		}));
+
+		const barDataMain = dataMinutely.map((d: MinutelyPoint, i: number, arr: MinutelyPoint[]) => ({
+			x1: d.ms,
+			x2: arr[i + 1]?.ms ?? d.ms + MS_IN_MINUTE,
+			precipitation: transformPrecip(d.precipitation, true), // Linear only
 		}));
 
 		return [
@@ -144,8 +154,17 @@
 				y: 'y',
 				fill: 'rgba(0, 0, 0, 0.05)',
 			}),
-			// Precipitation bars
-			Plot.rectY(barData, {
+			// Cap bar (underneath) - cyan for exponential region
+			Plot.rectY(barDataCap, {
+				x1: 'x1',
+				x2: 'x2',
+				y: 'precipitation',
+				fill: '#58FAF9',
+				insetLeft: 0.5,
+				insetRight: 0.5,
+			}),
+			// Main bar (on top) - blue for linear region
+			Plot.rectY(barDataMain, {
 				x1: 'x1',
 				x2: 'x2',
 				y: 'precipitation',

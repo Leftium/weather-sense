@@ -280,6 +280,7 @@ export function getSnapshot(data: WeatherData): Snapshot {
 
 		// OpenWeather One Call data (optional, for minutely forecast)
 		owOneCall: data.owOneCall,
+		owError: data.owError,
 	};
 }
 

@@ -73,6 +73,9 @@ class WeatherData {
 	/** OpenWeather One Call API data (optional, for minutely forecast) */
 	owOneCall = $state<OwOneCallResponse | null>(null);
 
+	/** OpenWeather API error message (if fetch failed) */
+	owError = $state<string | null>(null);
+
 	/** Rainviewer radar data */
 	radar = $state<Radar>({ generated: 0, host: '', frames: [] });
 

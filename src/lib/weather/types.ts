@@ -244,6 +244,7 @@ export type Snapshot = DisplayBundle & {
 
 	// OpenWeather One Call data (optional, for minutely forecast)
 	owOneCall: OwOneCallResponse | null;
+	owError: string | null;
 };
 
 // =============================================================================

@@ -348,10 +348,14 @@ export function initWeatherShell(data: WeatherData) {
 			if (!json.available) {
 				gg('fetchOpenWeatherOneCall: API not available', { error: json.error });
 				data.owOneCall = null;
+				// Use message if available (e.g., quota_exceeded), otherwise error
+				data.owError = (json as { message?: string }).message || json.error || 'API not available';
+				emitSnapshot();
 				return;
 			}
 
 			data.owOneCall = json;
+			data.owError = null; // Clear any previous error
 
 			gg('fetchOpenWeatherOneCall', {
 				minutelyCount: json.minutely?.length ?? 0,
@@ -365,6 +369,8 @@ export function initWeatherShell(data: WeatherData) {
 		} catch (error) {
 			console.error('fetchOpenWeatherOneCall error:', error);
 			data.owOneCall = null;
+			data.owError = 'Failed to fetch data';
+			emitSnapshot();
 		}
 
 		console.timeEnd('fetchOpenWeatherOneCall');

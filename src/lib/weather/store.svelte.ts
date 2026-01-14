@@ -185,6 +185,11 @@ export const weatherStore = {
 		return snapshot?.owOneCall ?? null;
 	},
 
+	/** OpenWeather API error message */
+	get owError() {
+		return snapshot?.owError ?? null;
+	},
+
 	/** Forecast lookup Map */
 	get dataForecast() {
 		return dataForecast;

@@ -31,7 +31,7 @@ export function createDebugLogger(name: string, enabled: boolean) {
 	};
 }
 
-export const SOLARIZED_BLUE = '#268bd2';
+export const SOLARIZED_BLUE = '#2244AA'; // was '#268bd2'
 
 // Temperature colors (softer red/blue for hot/cold)
 export const TEMP_COLOR_HOT = '#ff4444';
@@ -46,10 +46,10 @@ export const MS_IN_DAY = 24 * MS_IN_HOUR;
 export const DAY_START_HOUR = 4;
 
 export const colors = {
-	humidity: '#9062CA',
-	precipitationProbability: '#58FAF9',
+	humidity: '#20B2AA', // teal - was '#9062CA'
+	precipitationProbability: '#99CCFF', // pale blue - was '#58FAF9'
 	precipitation: SOLARIZED_BLUE,
-	dewPoint: picoColors.blue[600],
+	dewPoint: '#178B8B', // darker teal - was picoColors.blue[600]
 	temperature: 'url(#gradient)', // picoColors.blue[950],
 };
 

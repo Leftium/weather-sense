@@ -48,7 +48,7 @@
 		initWeatherShell,
 		weatherStore,
 	} from '$lib/weather';
-	import { pushState } from '$app/navigation';
+	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
 
@@ -80,8 +80,8 @@
 
 	let { data } = $props();
 
-	// Show minutely plot when ?m param is present in URL (or set via client-side click)
-	let showMinutely = $state(browser && new URL(location.href).searchParams.has('m'));
+	// Show minutely plot when ?m param is present in URL (reactive to navigation)
+	const showMinutely = $derived($page.url.searchParams.has('m'));
 
 	// URL with ?m param added (preserves other params like location)
 	const minutelyUrl = $derived.by(() => {
@@ -806,9 +806,11 @@
 							href={minutelyUrl}
 							onclick={(e) => {
 								e.preventDefault();
-								showMinutely = true;
 								emit('weatherdata_requestedFetchMinutely');
-								pushState(minutelyUrl, {});
+								goto(minutelyUrl).then(() => {
+									document.documentElement.scrollTop = 0;
+									document.body.scrollTop = 0; // Safari fallback
+								});
 							}}>60min Forecast</a
 						>
 						<!-- eslint-enable svelte/no-navigation-without-resolve -->

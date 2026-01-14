@@ -363,7 +363,7 @@
 		<h2>Precip Bar Cap Color Options</h2>
 		<p class="note">Current bar color: #78E8E8 (soft cyan). Cap should contrast/complement.</p>
 		<div class="swatches wrap">
-			{#each precipCapOptions as { name, color, usage }}
+			{#each precipCapOptions as { name, color, usage } (name)}
 				<div class="swatch-group">
 					<div class="swatch" style="background: {color}"></div>
 					<div class="label">{name}</div>
@@ -378,7 +378,7 @@
 		<h2>Precipitation Bar Color Options (greenish-blue)</h2>
 		<p class="note">Need contrast with WMO rain blues (azure/blue family)</p>
 		<div class="swatches wrap">
-			{#each precipBarOptions as { name, color, usage }}
+			{#each precipBarOptions as { name, color, usage } (name)}
 				<div class="swatch-group">
 					<div class="swatch" style="background: {color}"></div>
 					<div class="label">{name}</div>
@@ -392,7 +392,7 @@
 	<div class="section">
 		<h2>No-Precip Colors (Sky) - Fixed Reference</h2>
 		<div class="swatches">
-			{#each noPrecipColors as { name, color, usage }}
+			{#each noPrecipColors as { name, color, usage } (name)}
 				<div class="swatch-group">
 					<div class="swatch" style="background: {color}"></div>
 					<div class="label">{name}</div>
@@ -405,18 +405,18 @@
 
 	<h2 class="proposals-header">Rain Color Options (to avoid overlap with sky)</h2>
 
-	{#each rainOptions as option}
+	{#each rainOptions as option (option.name)}
 		<div class="option">
 			<h3>{option.name}</h3>
 			<div class="comparison-row">
 				<div class="sky-reference">
-					{#each noPrecipColors as { color }}
+					{#each noPrecipColors as { color } (color)}
 						<div class="mini-swatch" style="background: {color}"></div>
 					{/each}
 					<span class="ref-label">Sky →</span>
 				</div>
 				<div class="swatches compact">
-					{#each option.colors as { name, color, usage }}
+					{#each option.colors as { name, color, usage } (name)}
 						<div class="swatch-group">
 							<div class="swatch" style="background: {color}"></div>
 							<div class="label">{name}</div>
@@ -433,7 +433,7 @@
 	<div class="section">
 		<h2>Colors Currently Used in Hourly Plot</h2>
 		<div class="swatches">
-			{#each usedColors as { name, color, usage }}
+			{#each usedColors as { name, color, usage } (name)}
 				<div class="swatch-group">
 					<div class="swatch" style="background: {color}"></div>
 					<div class="label">{name}</div>
@@ -447,7 +447,7 @@
 	<div class="section">
 		<h2>Current WMO Colors</h2>
 		<div class="swatches">
-			{#each currentWmo as { name, color, usage }}
+			{#each currentWmo as { name, color, usage } (name)}
 				<div class="swatch-group">
 					<div class="swatch" style="background: {color}"></div>
 					<div class="label">{name}</div>
@@ -465,7 +465,7 @@
 	<div class="section">
 		<h2>Merry Timeline / Dark Sky Colors</h2>
 		<div class="swatches wrap">
-			{#each merryColors as { name, color, usage }}
+			{#each merryColors as { name, color, usage } (name)}
 				<div class="swatch-group">
 					<div class="swatch" style="background: {color}"></div>
 					<div class="label">{name}</div>
@@ -487,7 +487,7 @@
 	<div class="section">
 		<h2>Unused Color Families (Available)</h2>
 		<div class="swatches wrap">
-			{#each unusedColors as { name, color, usage }}
+			{#each unusedColors as { name, color, usage } (name)}
 				<div class="swatch-group">
 					<div class="swatch" style="background: {color}"></div>
 					<div class="label">{name}</div>
@@ -500,11 +500,11 @@
 
 	<h2 class="proposals-header">Thunder/Snow/Mixed/Rain Progression Options</h2>
 
-	{#each options as option}
+	{#each options as option (option.name)}
 		<div class="option">
 			<h2>{option.name}</h2>
 			<div class="swatches">
-				{#each option.colors as { type, color }}
+				{#each option.colors as { type, color } (type)}
 					<div class="swatch-group">
 						<div class="swatch" style="background: {color}"></div>
 						<div class="label">{type}</div>

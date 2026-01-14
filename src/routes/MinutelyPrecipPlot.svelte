@@ -217,7 +217,7 @@
 	$effect(() => {
 		// Track all dependencies explicitly
 		const data = dataMinutely;
-		const width = clientWidth;
+		const _width = clientWidth; // eslint-disable-line @typescript-eslint/no-unused-vars -- tracked for reactivity
 		const opts = plotOptions;
 		const m = marks;
 
@@ -228,6 +228,7 @@
 			marks: m,
 		});
 
+		// eslint-disable-next-line svelte/no-dom-manipulating -- Observable Plot requires direct DOM control
 		div.replaceChildren(plot);
 
 		// Reset tracker cache since SVG was replaced, then render tracker

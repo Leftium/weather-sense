@@ -49,6 +49,7 @@
 		weatherStore,
 	} from '$lib/weather';
 	import { pushState } from '$app/navigation';
+	import { SvelteURLSearchParams } from 'svelte/reactivity';
 
 	import { clearEvents, getEmitter } from '$lib/emitter.js';
 	import { browser, dev } from '$app/environment';
@@ -83,7 +84,7 @@
 
 	// URL with ?m param added (preserves other params like location)
 	const minutelyUrl = $derived.by(() => {
-		const params = new URLSearchParams($page.url.search);
+		const params = new SvelteURLSearchParams($page.url.search);
 		params.set('m', '');
 		return `${$page.url.pathname}?${params.toString()}`;
 	});
@@ -802,6 +803,7 @@
 					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 					<li><a href="/aqi">AQI Levels</a></li>
 					<li>
+						<!-- eslint-disable svelte/no-navigation-without-resolve -- dynamic URL from $page -->
 						<a
 							href={minutelyUrl}
 							onclick={(e) => {
@@ -811,6 +813,7 @@
 								pushState(minutelyUrl, {});
 							}}>60min Forecast</a
 						>
+						<!-- eslint-enable svelte/no-navigation-without-resolve -->
 					</li>
 				</ul>
 			</div>

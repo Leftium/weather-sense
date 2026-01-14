@@ -21,9 +21,10 @@
 
 	// Layout constants
 	// Height tuned empirically to match hourly precipitation bar heights
-	const HEIGHT = 63;
-	const MARGIN_LEFT = 4;
-	const MARGIN_RIGHT = 4;
+	// 47px plot area + 20px margin bottom for tick labels
+	const HEIGHT = 67;
+	const MARGIN_LEFT = 2;
+	const MARGIN_RIGHT = 2;
 
 	// Derived data
 	const dataMinutely = $derived(nsWeatherData.dataMinutely);
@@ -88,20 +89,34 @@
 		onTrackingEnd: () => emit('weatherdata_requestedTrackingEnd'),
 	};
 
-	// Plot options
+	// Fixed tick values: now, 15, 30, 45, 60 min from start
+	const tickValues = $derived([
+		msStart,
+		msStart + 15 * MS_IN_MINUTE,
+		msStart + 30 * MS_IN_MINUTE,
+		msStart + 45 * MS_IN_MINUTE,
+		msStart + 60 * MS_IN_MINUTE,
+	]);
+
+	// Plot options - disable default x-axis labels, we'll add custom two-tone labels
 	const plotOptions = $derived({
 		width: clientWidth,
 		height: HEIGHT,
 		marginLeft: MARGIN_LEFT,
 		marginRight: MARGIN_RIGHT,
 		marginTop: 4,
-		marginBottom: 16,
+		marginBottom: 20,
 		x: {
 			type: 'utc' as const,
 			domain: [msStart, msEnd],
 			range: [MARGIN_LEFT, clientWidth - MARGIN_RIGHT],
-			ticks: 4,
-			tickFormat: (ms: number) => nsWeatherData.tzFormat(ms, 'h:mm'),
+			ticks: tickValues,
+			tickFormat: (ms: number) => {
+				const minFromStart = Math.round((ms - msStart) / MS_IN_MINUTE);
+				const absTime = nsWeatherData.tzFormat(ms, 'h:mma').replace(':00', '').toLowerCase();
+				const relTime = minFromStart === 0 ? 'now' : `${minFromStart}min`;
+				return `${relTime} ${absTime}`;
+			},
 		},
 		y: {
 			axis: null,
@@ -212,6 +227,7 @@
 	.minutely-precip-plot {
 		padding: 0.25em 0;
 		background: #f8f8ff;
+		overflow: visible;
 
 		&.hidden {
 			display: none;
@@ -220,7 +236,7 @@
 
 	.plot-container {
 		width: 100%;
-		height: 63px;
+		height: 67px;
 		overflow: visible;
 
 		:global(svg) {
@@ -229,6 +245,22 @@
 
 		:global(svg *) {
 			pointer-events: none;
+		}
+
+		// Style tick labels
+		:global(svg g[aria-label='x-axis tick label'] text) {
+			font-size: 10px;
+			fill: #666;
+		}
+
+		// Shift first tick label right to prevent clipping
+		:global(svg g[aria-label='x-axis tick label'] text:first-of-type) {
+			text-anchor: start;
+		}
+
+		// Shift last tick label left to prevent clipping
+		:global(svg g[aria-label='x-axis tick label'] text:last-of-type) {
+			text-anchor: end;
 		}
 	}
 </style>

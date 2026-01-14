@@ -199,7 +199,6 @@
 </script>
 
 <div class="minutely-precip-plot" class:hidden={!hasData}>
-	<div class="label">60 min</div>
 	<div
 		bind:this={div}
 		bind:clientWidth
@@ -211,26 +210,12 @@
 
 <style lang="scss">
 	.minutely-precip-plot {
-		display: grid;
-		grid-template-columns: auto 1fr;
-		align-items: center;
-		gap: 0.5em;
 		padding: 0.25em 0;
 		background: #f8f8ff;
 
 		&.hidden {
 			display: none;
 		}
-	}
-
-	.label {
-		font-size: 12px;
-		font-weight: 600;
-		color: #666;
-		writing-mode: vertical-rl;
-		text-orientation: mixed;
-		transform: rotate(180deg);
-		padding-left: 4px;
 	}
 
 	.plot-container {

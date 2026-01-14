@@ -501,6 +501,9 @@
 	<div class="map">
 		<RadarMapLibre nsWeatherData={weatherStore} />
 	</div>
+	{#if dev}
+		<MinutelyPrecipPlot nsWeatherData={weatherStore} />
+	{/if}
 </div>
 
 <div
@@ -620,10 +623,6 @@
 				onReset={() => (forecastDaysVisible = 3)}
 			/>
 		</div>
-
-		{#if dev}
-			<MinutelyPrecipPlot nsWeatherData={weatherStore} />
-		{/if}
 
 		<div class="timeline-grid">
 			<div class="hourly-row">

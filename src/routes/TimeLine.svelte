@@ -868,8 +868,9 @@
 				if (!onlyLinear) {
 					resultValue += CAP_BONUS; // Add to get 'cap'
 					if (p >= LINEAR_MAX) {
+						// Divisor 30 = LINEAR_MAX × 10 (original ratio when LINEAR_MAX was 20)
 						resultValue +=
-							(140 - LINEAR_SECTION - CAP_BONUS) * (1 - Math.exp(-(p - LINEAR_MAX) / 200));
+							(140 - LINEAR_SECTION - CAP_BONUS) * (1 - Math.exp(-(p - LINEAR_MAX) / 30));
 					}
 				}
 				return resultValue;

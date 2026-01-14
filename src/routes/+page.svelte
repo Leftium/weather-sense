@@ -900,11 +900,7 @@
 	$size-1: 0.25rem;
 	$size-3: 1rem;
 
-	// Plain ghost white body background (matches content, sky gradient removed for performance)
-	:global(body) {
-		background: $color-ghost-white;
-		min-height: 100vh;
-	}
+	// Note: :global(body) with min-height: 100vh was removed - it breaks iOS Safari sticky positioning
 
 	.sky-gradient-bg {
 		background: var(--sky-gradient-horizontal), var(--sky-gradient-vertical);

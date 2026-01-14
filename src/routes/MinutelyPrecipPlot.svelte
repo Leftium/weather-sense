@@ -20,7 +20,7 @@
 	let clientWidth = $state(300);
 
 	// Layout constants
-	const HEIGHT = 50;
+	const HEIGHT = 70;
 	const MARGIN_LEFT = 4;
 	const MARGIN_RIGHT = 4;
 
@@ -34,10 +34,28 @@
 		(dataMinutely.at(-1)?.ms ?? Date.now() + 59 * MS_IN_MINUTE) + MS_IN_MINUTE,
 	);
 
-	// Max precipitation for y-axis scaling
-	const maxPrecip = $derived(
-		Math.max(0.5, ...dataMinutely.map((d: MinutelyPoint) => d.precipitation)),
-	);
+	// Precipitation scaling constants (same as TimeLine.svelte)
+	// LINEAR_MAX: ~80th percentile for precipitation (snow reports higher mm/hr than rain)
+	const LINEAR_MAX = 3;
+	const LINEAR_SECTION = 70; // Percentage of visual range for linear portion
+	const CAP_BONUS = 3; // Small visual boost at LINEAR_MAX threshold
+
+	// Transform precipitation value to scaled visual value (0-100 range)
+	function transformPrecip(p: number): number {
+		if (p === 0) return 0; // No bar for zero precipitation
+		// Linear scale up to LINEAR_MAX mm/hr
+		let result = LINEAR_MAX > 0 ? (Math.min(p, LINEAR_MAX) / LINEAR_MAX) * LINEAR_SECTION : 0;
+		result += CAP_BONUS; // Add cap for visual separation
+		if (p >= LINEAR_MAX) {
+			// Exponential scaling for heavy precipitation (>3mm/hr)
+			// Divisor of 15 means ~50% of remaining range at 10mm/hr, ~86% at 30mm/hr
+			result += (100 - LINEAR_SECTION - CAP_BONUS) * (1 - Math.exp(-(p - LINEAR_MAX) / 15));
+		}
+		return result;
+	}
+
+	// Fixed y-axis domain (0-100 for normalized scale)
+	const Y_MAX = 100;
 
 	// X scale for tracker positioning and pointer conversion
 	const xScale = $derived(
@@ -87,7 +105,7 @@
 		},
 		y: {
 			axis: null,
-			domain: [0, maxPrecip],
+			domain: [0, Y_MAX],
 		},
 	});
 
@@ -95,16 +113,16 @@
 	const marks = $derived.by(() => {
 		if (!hasData) return [];
 
-		// Build bar data - each bar spans 1 minute
+		// Build bar data - each bar spans 1 minute, with scaled precipitation
 		const barData = dataMinutely.map((d: MinutelyPoint, i: number, arr: MinutelyPoint[]) => ({
 			x1: d.ms,
 			x2: arr[i + 1]?.ms ?? d.ms + MS_IN_MINUTE,
-			precipitation: d.precipitation,
+			precipitation: transformPrecip(d.precipitation),
 		}));
 
 		return [
 			// Background
-			Plot.rectY([{ x1: msStart, x2: msEnd, y: maxPrecip }], {
+			Plot.rectY([{ x1: msStart, x2: msEnd, y: Y_MAX }], {
 				x1: 'x1',
 				x2: 'x2',
 				y: 'y',
@@ -217,7 +235,7 @@
 
 	.plot-container {
 		width: 100%;
-		height: 50px;
+		height: 70px;
 		overflow: visible;
 
 		:global(svg) {

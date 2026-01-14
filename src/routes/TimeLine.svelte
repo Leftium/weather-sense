@@ -855,7 +855,6 @@
 		const LINEAR_MAX = 3;
 
 		const LINEAR_SECTION = 70;
-		const CAP_BONUS = 3;
 
 		return (da: { precipitation: number }[]) => {
 			const resultArray = da.map((d) => {
@@ -865,13 +864,10 @@
 				let resultValue =
 					LINEAR_MAX > 0 ? (Math.min(p, LINEAR_MAX) / LINEAR_MAX) * LINEAR_SECTION : 0;
 
-				if (!onlyLinear) {
-					resultValue += CAP_BONUS; // Always add cap for visibility
-					if (p >= LINEAR_MAX) {
-						// Exponential only for heavy rain; divisor 10 maxes ~30-40mm/hr
-						resultValue +=
-							(140 - LINEAR_SECTION - CAP_BONUS) * (1 - Math.exp(-(p - LINEAR_MAX) / 10));
-					}
+				// Cyan cap only for exponential range (heavy rain)
+				if (!onlyLinear && p >= LINEAR_MAX) {
+					// Divisor 10 maxes ~30-40mm/hr
+					resultValue += (140 - LINEAR_SECTION) * (1 - Math.exp(-(p - LINEAR_MAX) / 10));
 				}
 				return resultValue;
 			});
@@ -1458,7 +1454,7 @@
 						x1: 'x1bar',
 						x2: 'x2bar',
 						y: { transform: makeTransFormPrecipitation(false) },
-						fill: '#58FAF9',
+						fill: '#66AAFF', // cap color (sky blue)
 					}),
 				);
 

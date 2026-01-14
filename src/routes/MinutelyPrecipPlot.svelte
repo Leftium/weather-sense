@@ -20,10 +20,8 @@
 	let clientWidth = $state(300);
 
 	// Layout constants
-	// Height tuned empirically to match hourly precipitation bar heights
-	// Measured: 4.6mm shows 51px minutely vs 83px hourly → scale by 83/51 = 1.63
-	// 77px plot area + 4px marginTop + 20px marginBottom = 101px
-	const HEIGHT = 101;
+	// Height tuned to match hourly precipitation bar heights (83px at LINEAR_MAX)
+	const HEIGHT = 106;
 	const MARGIN_LEFT = 2;
 	const MARGIN_RIGHT = 2;
 
@@ -41,7 +39,6 @@
 	// LINEAR_MAX: ~80th percentile for precipitation (snow reports higher mm/hr than rain)
 	const LINEAR_MAX = 3;
 	const LINEAR_SECTION = 70; // Percentage of visual range for linear portion
-	const CAP_BONUS = 3; // Small visual boost at LINEAR_MAX threshold
 
 	// Transform precipitation value to scaled visual value (0-140 range, matching hourly)
 	// onlyLinear=true: just linear portion (main bar)
@@ -50,12 +47,10 @@
 		if (p === 0) return 0; // No bar for zero precipitation
 		// Linear scale up to LINEAR_MAX mm/hr
 		let result = LINEAR_MAX > 0 ? (Math.min(p, LINEAR_MAX) / LINEAR_MAX) * LINEAR_SECTION : 0;
-		if (!onlyLinear) {
-			result += CAP_BONUS; // Always add cap for visibility
-			if (p >= LINEAR_MAX) {
-				// Exponential only for heavy rain; divisor 10 maxes ~30-40mm/hr
-				result += (140 - LINEAR_SECTION - CAP_BONUS) * (1 - Math.exp(-(p - LINEAR_MAX) / 10));
-			}
+		// Cyan cap only for exponential range (heavy rain)
+		if (!onlyLinear && p >= LINEAR_MAX) {
+			// Divisor 10 maxes ~30-40mm/hr
+			result += (140 - LINEAR_SECTION) * (1 - Math.exp(-(p - LINEAR_MAX) / 10));
 		}
 		return result;
 	}
@@ -159,7 +154,7 @@
 				x1: 'x1',
 				x2: 'x2',
 				y: 'precipitation',
-				fill: '#58FAF9',
+				fill: '#66AAFF', // cap color (sky blue)
 				insetLeft: 0.5,
 				insetRight: 0.5,
 			}),
@@ -256,7 +251,7 @@
 
 	.plot-container {
 		width: 100%;
-		height: 101px;
+		height: 106px;
 		overflow: visible;
 
 		:global(svg) {

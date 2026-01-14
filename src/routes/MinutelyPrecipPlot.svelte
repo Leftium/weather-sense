@@ -158,7 +158,7 @@
 				x1: 'x1',
 				x2: 'x2',
 				y: 'precipitation',
-				fill: '#66AAFF', // cap color (sky blue)
+				fill: '#78E8E8', // cap color (soft cyan)
 				insetLeft: 0.5,
 				insetRight: 0.5,
 			}),

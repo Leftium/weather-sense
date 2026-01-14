@@ -1448,23 +1448,23 @@
 			}
 
 			if (draw.precipitation) {
-				// Rain bar 'cap':
+				// Hourly rain bar 'cap':
 				marks.push(
 					Plot.rectY(dataForecast.rain, {
 						x1: 'x1bar',
 						x2: 'x2bar',
 						y: { transform: makeTransFormPrecipitation(false) },
-						fill: '#66AAFF', // cap color (sky blue)
+						fill: '#78E8E8', // cap color (soft cyan)
 					}),
 				);
 
-				//Rain bar:
+				// Hourly rain bar:
 				marks.push(
 					Plot.rectY(dataForecast.rain, {
 						x1: 'x1bar',
 						x2: 'x2bar',
 						y: { transform: makeTransFormPrecipitation(true) },
-						fill: colors.precipitation,
+						fill: colors.precipitation, // dark navy
 					}),
 				);
 			}
@@ -1681,6 +1681,7 @@
 			svg.querySelectorAll('g[aria-label="image"] image').forEach((img) => {
 				(img as SVGImageElement).style.filter = 'url(#icon-glow)';
 			});
+
 			// Allow tracker to overflow for extended ghost tracker line
 			if (extendTracker) {
 				svg.style.overflow = 'visible';
@@ -1784,6 +1785,20 @@
 			<feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="gray" flood-opacity="0.4" />
 			<feDropShadow dx="0" dy="0" stdDeviation="12" flood-color="gray" flood-opacity="0.3" />
 		</filter>
+
+		<!-- White glow filter for precipitation bars (top-right edge) -->
+		<!-- Constrain left, right, and top for line-like effect -->
+		<filter id="precip-glow" x="5%" y="0%" width="97%" height="100%">
+			<!-- Glow offset upward and right -->
+			<feDropShadow dx="2" dy="-2" stdDeviation="1" flood-color="white" flood-opacity="0.9" />
+		</filter>
+
+		<!-- Gradient for minutely precipitation bars (white top edge) -->
+		<linearGradient id="precip-minutely-gradient" x1="0" y1="0" x2="0" y2="1">
+			<stop offset="0%" stop-color="white" stop-opacity="0.9" />
+			<stop offset="15%" stop-color="#2244AA" />
+			<stop offset="100%" stop-color="#2244AA" />
+		</linearGradient>
 	</defs>
 </svg>
 

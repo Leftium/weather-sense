@@ -16,7 +16,7 @@
 	let { nsWeatherData }: Props = $props();
 
 	// DOM elements
-	let div: HTMLDivElement;
+	let div: HTMLDivElement | undefined = $state();
 	let clientWidth = $state(300);
 
 	// Layout constants
@@ -76,6 +76,7 @@
 	// Trackable options - use getters to always read current derived values
 	const trackableOptions = {
 		getMs: (e: PointerEvent | MouseEvent): number => {
+			if (!div) return msStart;
 			const svgNode = d3.select(div).select('svg').node();
 			if (svgNode) {
 				const [x] = d3.pointer(e, svgNode);

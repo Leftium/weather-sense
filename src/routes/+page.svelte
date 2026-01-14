@@ -784,7 +784,6 @@
 							start={day.ms + DAY_START_HOUR * MS_IN_HOUR}
 							xAxis={day.compactDate == 'Today'}
 							ghostTracker
-							{past}
 							tempStats={visibleTempStats}
 							debugTrackerMs={undefined}
 						/>
@@ -821,7 +820,8 @@
 				<ul>
 					<li><a href="https://open-meteo.com/">Open-Meteo</a></li>
 					<li>
-						<a href="https://openweathermap.org/find?q={encodeURIComponent(weatherStore.name)}"
+						<a
+							href="https://openweathermap.org/find?q={encodeURIComponent(weatherStore.name ?? '')}"
 							>OpenWeather</a
 						>
 					</li>

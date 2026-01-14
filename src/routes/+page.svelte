@@ -530,6 +530,7 @@
 	{#if showMinutely}
 		<MinutelyPrecipPlot nsWeatherData={weatherStore} />
 	{/if}
+	<!-- DEBUG: showMinutely={showMinutely}, hasM={$page.url.searchParams.has('m')}, browser={browser} -->
 </div>
 
 <div

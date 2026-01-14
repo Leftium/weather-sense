@@ -36,6 +36,8 @@
 			hasData,
 			dataLength: dataMinutely.length,
 			hasPrecip: dataMinutely.some((d) => d.precipitation > 0),
+			owOneCall: !!nsWeatherData.owOneCall,
+			owMinutelyLength: nsWeatherData.owOneCall?.minutely?.length ?? 0,
 		});
 	});
 

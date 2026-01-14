@@ -21,8 +21,9 @@
 
 	// Layout constants
 	// Height tuned empirically to match hourly precipitation bar heights
-	// 47px plot area + 20px margin bottom for tick labels
-	const HEIGHT = 67;
+	// Measured: 4.6mm shows 51px minutely vs 83px hourly → scale by 83/51 = 1.63
+	// 77px plot area + 4px marginTop + 20px marginBottom = 101px
+	const HEIGHT = 101;
 	const MARGIN_LEFT = 2;
 	const MARGIN_RIGHT = 2;
 
@@ -236,7 +237,7 @@
 
 	.plot-container {
 		width: 100%;
-		height: 67px;
+		height: 101px;
 		overflow: visible;
 
 		:global(svg) {

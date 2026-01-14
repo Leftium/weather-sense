@@ -118,8 +118,10 @@
 			tickFormat: (ms: number) => {
 				const minFromStart = Math.round((ms - msStart) / MS_IN_MINUTE);
 				const absTime = nsWeatherData.tzFormat(ms, 'h:mma').replace(':00', '').toLowerCase();
-				const relTime = minFromStart === 0 ? 'now' : `${minFromStart}min`;
-				return `${relTime} ${absTime}`;
+				// Show "now" for start, just time for 60min, relative+time for others
+				if (minFromStart === 0) return `now ${absTime}`;
+				if (minFromStart === 60) return absTime;
+				return `${minFromStart}min ${absTime}`;
 			},
 		},
 		y: {

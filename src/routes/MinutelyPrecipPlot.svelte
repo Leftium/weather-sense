@@ -249,6 +249,11 @@
 </script>
 
 <div class="minutely-precip-plot">
+	<a
+		class="openweather-link"
+		href="https://openweathermap.org/find?q={encodeURIComponent(nsWeatherData.name ?? '')}"
+		target="_blank">OpenWeather</a
+	>
 	{#if hasPrecip}
 		<div
 			bind:this={div}
@@ -268,9 +273,25 @@
 
 <style lang="scss">
 	.minutely-precip-plot {
+		position: relative;
 		padding: 0.25em 0;
 		background: #f8f8ff;
 		overflow: visible;
+	}
+
+	.openweather-link {
+		position: absolute;
+		top: 12px;
+		right: 8px;
+		font-size: 10px;
+		color: #888;
+		text-decoration: none;
+		z-index: 1;
+
+		&:hover {
+			color: #666;
+			text-decoration: underline;
+		}
 	}
 
 	.no-precip-message {

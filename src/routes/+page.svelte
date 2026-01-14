@@ -41,6 +41,7 @@
 		getDisplayBundleFromStore as getDisplayBundle,
 		formatTemp,
 		getTemperatureStats,
+		getMinutelyPrecipAt,
 		type TemperatureStats,
 		FORECAST_DAYS,
 		weatherData,
@@ -166,7 +167,17 @@
 			color: colors.precipitation,
 			checked: plotVisibility.precip,
 			bindKey: 'precip',
-			getValue: () => display.precipitation,
+			getValue: () => {
+				const isMinutelyScrub = weatherStore.trackedElement?.closest('.minutely-precip-plot');
+				if (isMinutelyScrub) {
+					const minutely = getMinutelyPrecipAt(weatherStore.dataMinutely, weatherStore.ms);
+					if (minutely !== null) return `${minutely.toFixed(1)}mm`;
+				}
+				// Get hourly value directly (snap to hour boundary)
+				const hourMs = startOf(weatherStore.ms, 'hour', weatherStore.timezone);
+				const hourly = weatherStore.dataForecast.get(hourMs);
+				return `${hourly?.precipitation?.toFixed(1) ?? '?'}mm`;
+			},
 		},
 		chance: {
 			key: 'chance',

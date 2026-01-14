@@ -2,7 +2,7 @@
 	import type { WeatherStore, WeatherDataEvents, MinutelyPoint } from '$lib/weather';
 	import { getEmitter } from '$lib/emitter';
 	import { trackable } from '$lib/trackable';
-	import { colors, MS_IN_MINUTE } from '$lib/util';
+	import { colors, MS_IN_MINUTE, createDebugLogger } from '$lib/util';
 	import * as Plot from '@observablehq/plot';
 	import * as d3 from 'd3';
 	import { clamp } from 'lodash-es';
@@ -32,13 +32,13 @@
 		dataMinutely.length > 0 && dataMinutely.some((d) => d.precipitation > 0),
 	);
 	$effect(() => {
-		console.log('DEBUG MinutelyPrecipPlot:', {
-			hasData,
-			dataLength: dataMinutely.length,
-			hasPrecip: dataMinutely.some((d) => d.precipitation > 0),
-			owOneCall: !!nsWeatherData.owOneCall,
-			owMinutelyLength: nsWeatherData.owOneCall?.minutely?.length ?? 0,
-		});
+		const debug = createDebugLogger('MinutelyPrecipPlot', true);
+		debug.log(`hasData: ${hasData}`);
+		debug.log(`dataLength: ${dataMinutely.length}`);
+		debug.log(`hasPrecip: ${dataMinutely.some((d) => d.precipitation > 0)}`);
+		debug.log(`owOneCall: ${!!nsWeatherData.owOneCall}`);
+		debug.log(`owMinutelyLength: ${nsWeatherData.owOneCall?.minutely?.length ?? 0}`);
+		debug.finish();
 	});
 
 	// Time range for x-axis (extend msEnd by 1 minute to show last bar fully)

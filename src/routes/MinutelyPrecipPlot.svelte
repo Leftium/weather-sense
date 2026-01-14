@@ -27,10 +27,11 @@
 
 	// Derived data
 	const dataMinutely = $derived(nsWeatherData.dataMinutely);
-	// Only show if we have data AND at least one non-zero precipitation value
-	const hasData = $derived(
-		dataMinutely.length > 0 && dataMinutely.some((d) => d.precipitation > 0),
-	);
+	const owError = $derived(nsWeatherData.owError);
+	// Check if we have any minutely data from API
+	const hasData = $derived(dataMinutely.length > 0);
+	// Check if there's any precipitation in the data
+	const hasPrecip = $derived(hasData && dataMinutely.some((d) => d.precipitation > 0));
 
 	// Time range for x-axis (extend msEnd by 1 minute to show last bar fully)
 	const msStart = $derived(dataMinutely[0]?.ms ?? Date.now());
@@ -129,7 +130,7 @@
 
 	// Build plot marks
 	const marks = $derived.by(() => {
-		if (!hasData) return [];
+		if (!hasPrecip) return [];
 
 		// Build bar data - each bar spans 1 minute
 		const barDataCap = dataMinutely.map((d: MinutelyPoint, i: number, arr: MinutelyPoint[]) => ({
@@ -231,14 +232,22 @@
 	});
 </script>
 
-<div class="minutely-precip-plot" class:hidden={!hasData}>
-	<div
-		bind:this={div}
-		bind:clientWidth
-		use:trackable={trackableOptions}
-		role="img"
-		class="plot-container"
-	></div>
+<div class="minutely-precip-plot">
+	{#if hasPrecip}
+		<div
+			bind:this={div}
+			bind:clientWidth
+			use:trackable={trackableOptions}
+			role="img"
+			class="plot-container"
+		></div>
+	{:else if hasData}
+		<div class="no-precip-message">No precipitation within an hour.</div>
+	{:else if owError}
+		<div class="no-precip-message error">{owError}</div>
+	{:else}
+		<div class="no-precip-message">No minutely forecast data.</div>
+	{/if}
 </div>
 
 <style lang="scss">
@@ -246,9 +255,16 @@
 		padding: 0.25em 0;
 		background: #f8f8ff;
 		overflow: visible;
+	}
 
-		&.hidden {
-			display: none;
+	.no-precip-message {
+		padding: 1em;
+		text-align: center;
+		color: #666;
+		font-size: 14px;
+
+		&.error {
+			color: #c33;
 		}
 	}
 

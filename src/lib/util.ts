@@ -3,6 +3,7 @@ import JSON5 from 'json5';
 import Color from 'colorjs.io';
 
 import picoColors from '$lib/pico-color-palette.json';
+export { picoColors };
 import dayjs from 'dayjs';
 
 /**
@@ -31,7 +32,7 @@ export function createDebugLogger(name: string, enabled: boolean) {
 	};
 }
 
-export const SOLARIZED_BLUE = '#2244AA'; // was '#268bd2'
+export const SOLARIZED_BLUE = '#22D3EE'; // cyan/teal
 
 // Temperature colors (softer red/blue for hot/cold)
 export const TEMP_COLOR_HOT = '#ff4444';
@@ -47,8 +48,8 @@ export const DAY_START_HOUR = 4;
 
 export const colors = {
 	humidity: '#20B2AA', // teal - was '#9062CA'
-	precipitationProbability: '#78E8E8',
-	precipitation: SOLARIZED_BLUE,
+	precipitationProbability: '#58FAF9', // original bright cyan
+	precipitation: '#22D3EE', // cyan (was cap)
 	dewPoint: '#178B8B', // darker teal - was picoColors.blue[600]
 	temperature: 'url(#gradient)', // picoColors.blue[950],
 };
@@ -496,20 +497,20 @@ export const WMO_CODES: Record<number, WmoCodeInfo> = {
 	45: makeWmo(1_02_1, 'zinc.350',    'Fog',              'fog'),
     48: makeWmo(1_02_3, 'zinc.550',    'Icy Fog',          'rime-fog'),
 
-	51: makeWmo(2_03_1, 'cyan.300',    'L.Drizzle',        'light-drizzle'),
-	53: makeWmo(2_03_2, 'cyan.400',    'Drizzle',          'moderate-drizzle'),
-	55: makeWmo(2_03_3, 'cyan.500',    'H.Drizzle',        'dense-drizzle'),
-	80: makeWmo(2_04_1, 'cyan.350',    'L.Showers',        'light-rain'),
-	81: makeWmo(2_04_2, 'cyan.450',    'Showers',          'moderate-rain'),
-	82: makeWmo(2_04_3, 'cyan.550',    'H.Showers',        'heavy-rain'),
-	61: makeWmo(2_05_1, 'cyan.450',    'L.Rain',           'light-rain'),
-	63: makeWmo(2_05_2, 'cyan.550',    'Rain',             'moderate-rain'),
-    65: makeWmo(2_05_3, 'cyan.650',    'H.Rain',           'heavy-rain'),
+	51: makeWmo(2_03_1, 'azure.350',   'L.Drizzle',        'light-drizzle'),
+	53: makeWmo(2_03_2, 'azure.450',   'Drizzle',          'moderate-drizzle'),
+	55: makeWmo(2_03_3, 'azure.550',   'H.Drizzle',        'dense-drizzle'),
+	80: makeWmo(2_04_1, 'azure.400',   'L.Showers',        'light-rain'),
+	81: makeWmo(2_04_2, 'azure.500',   'Showers',          'moderate-rain'),
+	82: makeWmo(2_04_3, 'azure.600',   'H.Showers',        'heavy-rain'),
+	61: makeWmo(2_05_1, 'blue.500',    'L.Rain',           'light-rain'),
+	63: makeWmo(2_05_2, 'blue.600',    'Rain',             'moderate-rain'),
+    65: makeWmo(2_05_3, 'blue.700',    'H.Rain',           'heavy-rain'),
 
-	56: makeWmo(3_06_1, '#8090C0',     'L.Icy Drizzle',    'light-freezing-drizzle'),  // Periwinkle light
-	57: makeWmo(3_06_3, '#6A7AB8',     'Icy Drizzle',      'dense-freezing-drizzle'),  // Periwinkle mid
-	66: makeWmo(3_07_1, '#5A6AAD',     'L.Icy Rain',       'light-freezing-rain'),     // Periwinkle darker
-    67: makeWmo(3_07_3, '#4A5A9D',     'Icy Rain',         'heavy-freezing-rain'),     // Periwinkle dark
+	56: makeWmo(3_06_1, 'indigo.350',  'L.Icy Drizzle',    'light-freezing-drizzle'),
+	57: makeWmo(3_06_3, 'indigo.550',  'Icy Drizzle',      'dense-freezing-drizzle'),
+	66: makeWmo(3_07_1, 'violet.500',  'L.Icy Rain',       'light-freezing-rain'),
+    67: makeWmo(3_07_3, 'violet.700',  'Icy Rain',         'heavy-freezing-rain'),
 
 	77: makeWmo(4_08_2, 'purple.150',  'Snow Grains',      'snowflake'),
 	85: makeWmo(4_09_1, 'purple.250',  'L.Snow Showers',   'slight-snowfall'),

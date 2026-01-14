@@ -38,8 +38,9 @@
 		const isSky = codeNum <= 3;
 		const isFog = codeNum === 45 || codeNum === 48;
 		const gradientColors = isSky || isFog ? getCloudGradient(codeNum) : value.gradient;
-		const midColor = gradientColors[1];
-		const { fillText, fillShadow } = getContrastColors(midColor);
+		// All use middle color [1] for solid background
+		const solidColor = gradientColors[1];
+		const { fillText, fillShadow } = getContrastColors(solidColor);
 		// Sky: 315deg (light at top), Fog/Precip: 135deg (dark at top)
 		const getGradientBackground = () => {
 			if (isSky) return getCloudGradientCSS(codeNum); // 315deg default
@@ -52,7 +53,7 @@
 			hasUniqueNight,
 			airyIcon: value.icon,
 			gradientBackground: getGradientBackground(),
-			solidBackground: midColor,
+			solidBackground: solidColor,
 			// Text colors based on gradient middle color
 			textColor: fillText,
 			shadowColor: fillShadow,
@@ -90,8 +91,8 @@
 	// Divider colors with contrast text
 	const dividerColors = [
 		{ bg: '#a8d8f0', ...getContrastColors('#a8d8f0') }, // No Precipitation (sky-clear)
-		{ bg: '#047878', ...getContrastColors('#047878') }, // Rain (cyan)
-		{ bg: '#5a6aad', ...getContrastColors('#5a6aad') }, // Freezing Rain (periwinkle)
+		{ bg: '#2060df', ...getContrastColors('#2060df') }, // Rain (blue)
+		{ bg: '#8352c5', ...getContrastColors('#8352c5') }, // Freezing Rain (violet)
 		{ bg: '#ed2aac', ...getContrastColors('#ed2aac') }, // Snow (fuchsia)
 		{ bg: '#f42c6f', ...getContrastColors('#f42c6f') }, // Thunder Storm (pink)
 	];

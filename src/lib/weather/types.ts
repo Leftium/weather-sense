@@ -248,7 +248,7 @@ export type Snapshot = DisplayBundle & {
 // =============================================================================
 
 export const PAST_DAYS = 2; // 0 to 92
-export const FORECAST_DAYS = 10; // 0 to 16 for forecast; 0 to 7 for air-quality
+export const FORECAST_DAYS = 10; // 0 to 16 for forecast; 0 to 7 for air-quality (extra day for 4am-4am)
 
 // =============================================================================
 // OPENWEATHER ONE CALL API TYPES

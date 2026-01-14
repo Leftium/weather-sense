@@ -81,8 +81,12 @@
 	let groupIcons = $state(true);
 
 	// Actual max forecast days based on available data (daily getter removes incomplete last day)
+	// Cap at FORECAST_DAYS - 1 since we fetch an extra day for 4am-4am boundaries
 	const maxForecastDays = $derived(
-		Math.max(0, ...(weatherStore.daily?.map((d) => d.fromToday + 1) ?? [FORECAST_DAYS])),
+		Math.min(
+			FORECAST_DAYS - 1,
+			Math.max(0, ...(weatherStore.daily?.map((d) => d.fromToday + 1) ?? [FORECAST_DAYS - 1])),
+		),
 	);
 	let isWideCollapsed = $state(false); // 480px+ : 3 columns for collapsed
 	let isWideExpanded = $state(false); // 700px+ : 4 columns for expanded

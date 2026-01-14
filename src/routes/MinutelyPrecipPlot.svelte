@@ -20,7 +20,8 @@
 	let clientWidth = $state(300);
 
 	// Layout constants
-	const HEIGHT = 70;
+	// Height tuned empirically to match hourly precipitation bar heights
+	const HEIGHT = 63;
 	const MARGIN_LEFT = 4;
 	const MARGIN_RIGHT = 4;
 
@@ -34,28 +35,27 @@
 		(dataMinutely.at(-1)?.ms ?? Date.now() + 59 * MS_IN_MINUTE) + MS_IN_MINUTE,
 	);
 
-	// Precipitation scaling constants (same as TimeLine.svelte)
+	// Precipitation scaling constants (identical to TimeLine.svelte for pixel-matching)
 	// LINEAR_MAX: ~80th percentile for precipitation (snow reports higher mm/hr than rain)
 	const LINEAR_MAX = 3;
 	const LINEAR_SECTION = 70; // Percentage of visual range for linear portion
 	const CAP_BONUS = 3; // Small visual boost at LINEAR_MAX threshold
 
-	// Transform precipitation value to scaled visual value (0-100 range)
+	// Transform precipitation value to scaled visual value (0-140 range, matching hourly)
 	function transformPrecip(p: number): number {
 		if (p === 0) return 0; // No bar for zero precipitation
 		// Linear scale up to LINEAR_MAX mm/hr
 		let result = LINEAR_MAX > 0 ? (Math.min(p, LINEAR_MAX) / LINEAR_MAX) * LINEAR_SECTION : 0;
 		result += CAP_BONUS; // Add cap for visual separation
 		if (p >= LINEAR_MAX) {
-			// Exponential scaling for heavy precipitation (>3mm/hr)
-			// Divisor of 15 means ~50% of remaining range at 10mm/hr, ~86% at 30mm/hr
-			result += (100 - LINEAR_SECTION - CAP_BONUS) * (1 - Math.exp(-(p - LINEAR_MAX) / 15));
+			// Divisor 30 = LINEAR_MAX × 10 (same as hourly)
+			result += (140 - LINEAR_SECTION - CAP_BONUS) * (1 - Math.exp(-(p - LINEAR_MAX) / 30));
 		}
 		return result;
 	}
 
-	// Fixed y-axis domain (0-100 for normalized scale)
-	const Y_MAX = 100;
+	// Y domain matches hourly plot's precipitation range
+	const Y_MAX = 140;
 
 	// X scale for tracker positioning and pointer conversion
 	const xScale = $derived(
@@ -235,7 +235,7 @@
 
 	.plot-container {
 		width: 100%;
-		height: 70px;
+		height: 63px;
 		overflow: visible;
 
 		:global(svg) {

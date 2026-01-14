@@ -905,6 +905,7 @@
 	.sky-gradient-bg {
 		background: var(--sky-gradient-horizontal), var(--sky-gradient-vertical);
 		background-blend-mode: overlay;
+		transition: background 1s ease-out;
 	}
 
 	.sticky-info {

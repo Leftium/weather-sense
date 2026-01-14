@@ -48,6 +48,7 @@
 		initWeatherShell,
 		weatherStore,
 	} from '$lib/weather';
+	import { pushState } from '$app/navigation';
 
 	import { clearEvents, getEmitter } from '$lib/emitter.js';
 	import { browser, dev } from '$app/environment';
@@ -807,7 +808,7 @@
 								e.preventDefault();
 								showMinutely = true;
 								emit('weatherdata_requestedFetchMinutely');
-								history.pushState({}, '', minutelyUrl);
+								pushState(minutelyUrl, {});
 							}}>60min Forecast</a
 						>
 					</li>

@@ -51,9 +51,9 @@
 		// Linear scale up to LINEAR_MAX mm/hr
 		let result = LINEAR_MAX > 0 ? (Math.min(p, LINEAR_MAX) / LINEAR_MAX) * LINEAR_SECTION : 0;
 		if (!onlyLinear) {
-			result += CAP_BONUS; // Add cap for visual separation
+			result += CAP_BONUS; // Always add cap for visibility
 			if (p >= LINEAR_MAX) {
-				// Divisor 10: maxes out ~30-40mm/hr (sufficient for extreme rain)
+				// Exponential only for heavy rain; divisor 10 maxes ~30-40mm/hr
 				result += (140 - LINEAR_SECTION - CAP_BONUS) * (1 - Math.exp(-(p - LINEAR_MAX) / 10));
 			}
 		}

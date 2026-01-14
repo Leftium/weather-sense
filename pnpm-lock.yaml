@@ -27,9 +27,6 @@ importers:
       '@observablehq/plot':
         specifier: ^0.6.17
         version: 0.6.17
-      '@picocss/pico':
-        specifier: ^2.1.1
-        version: 2.1.1
       '@sveltejs/adapter-auto':
         specifier: ^7.0.0
         version: 7.0.0(@sveltejs/kit@2.49.4(@sveltejs/vite-plugin-svelte@6.2.4(svelte@5.46.3)(vite@7.3.1(@types/node@25.0.7)(sass@1.97.2)))(svelte@5.46.3)(typescript@5.9.3)(vite@7.3.1(@types/node@25.0.7)(sass@1.97.2)))
@@ -84,9 +81,6 @@ importers:
       globals:
         specifier: ^17.0.0
         version: 17.0.0
-      haversine-distance:
-        specifier: ^1.2.4
-        version: 1.2.4
       htl:
         specifier: ^0.3.1
         version: 0.3.1
@@ -105,9 +99,6 @@ importers:
       mitt:
         specifier: ^3.0.1
         version: 3.0.1
-      open-props-scss:
-        specifier: ^0.8.0
-        version: 0.8.0
       prettier:
         specifier: ^3.7.4
         version: 3.7.4
@@ -512,9 +503,6 @@ packages:
   '@parcel/watcher@2.5.4':
     resolution: {integrity: sha512-WYa2tUVV5HiArWPB3ydlOc4R2ivq0IDrlqhMi3l7mVsFEXNcTfxYFPIHXHXIh/ca/y/V5N4E1zecyxdIBjYnkQ==}
     engines: {node: '>= 10.0.0'}
-
-  '@picocss/pico@2.1.1':
-    resolution: {integrity: sha512-kIDugA7Ps4U+2BHxiNHmvgPIQDWPDU4IeU6TNRdvXQM1uZX+FibqDQT2xUOnnO2yq/LUHcwnGlu1hvf4KfXnMg==}
 
   '@polka/url@1.0.0-next.29':
     resolution: {integrity: sha512-wwQAWhWSuHaag8c4q/KN/vCoeOJYshAIvMQwD4GpSb3OiZklFfvAgmj0VCBBImRpuF/aFgIRzllXlVX93Jevww==}
@@ -1275,9 +1263,6 @@ packages:
     resolution: {integrity: sha512-EykJT/Q1KjTWctppgIAgfSO0tKVuZUjhgMr17kqTumMl6Afv3EISleU7qZUzoXDFTAHTDC4NOoG/ZxU3EvlMPQ==}
     engines: {node: '>=8'}
 
-  haversine-distance@1.2.4:
-    resolution: {integrity: sha512-8MHQBQXR7GXZJIvitCf/ux+gwLtWOxmXNNz5dReG+jJbuvaEoj6QIXlaIO3cPr433BFWM4jececJaLYpwxnZhg==}
-
   htl@0.3.1:
     resolution: {integrity: sha512-1LBtd+XhSc+++jpOOt0lCcEycXs/zTQSupOISnVAUmvGBpV7DH+C2M6hwV7zWYfpTMMg9ch4NO0lHiOTAMHdVA==}
     engines: {node: '>=12'}
@@ -1437,9 +1422,6 @@ packages:
 
   obug@2.1.1:
     resolution: {integrity: sha512-uTqF9MuPraAQ+IsnPf366RG4cP9RtUi7MLO1N3KEc+wb0a6yKpeL0lmk2IB1jY5KHPAlTc6T/JRdC/YqxHNwkQ==}
-
-  open-props-scss@0.8.0:
-    resolution: {integrity: sha512-+y3nOEd+CEkpeMPADoaL11PYVH9OM4D7OLB6qKm65sOkpLMdtts2CQ457glRwpYi3A3jtfujBLrMErNSeaDQDA==}
 
   optionator@0.9.4:
     resolution: {integrity: sha512-6IpQ7mKUxRcZNLIObR0hz7lxsapSSIYNZJwXPGeF0mTVqGKFIXj1DQcMoT22S3ROcLyY/rz0PWaWZ9ayWmad9g==}
@@ -2049,8 +2031,6 @@ snapshots:
       '@parcel/watcher-win32-ia32': 2.5.4
       '@parcel/watcher-win32-x64': 2.5.4
     optional: true
-
-  '@picocss/pico@2.1.1': {}
 
   '@polka/url@1.0.0-next.29': {}
 
@@ -2848,8 +2828,6 @@ snapshots:
 
   has-flag@4.0.0: {}
 
-  haversine-distance@1.2.4: {}
-
   htl@0.3.1: {}
 
   iconify-icon@3.0.2:
@@ -2997,8 +2975,6 @@ snapshots:
     optional: true
 
   obug@2.1.1: {}
-
-  open-props-scss@0.8.0: {}
 
   optionator@0.9.4:
     dependencies:

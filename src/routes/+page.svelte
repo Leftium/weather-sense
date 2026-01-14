@@ -79,6 +79,14 @@
 
 	// Show minutely plot when ?m param is present in URL
 	const showMinutely = $derived(browser && $page.url.searchParams.has('m'));
+	$effect(() => {
+		console.log('DEBUG showMinutely:', {
+			showMinutely,
+			browser,
+			hasM: $page.url.searchParams.has('m'),
+			url: $page.url.href,
+		});
+	});
 
 	// URL with ?m param added (preserves other params like location)
 	const minutelyUrl = $derived.by(() => {

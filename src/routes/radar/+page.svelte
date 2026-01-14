@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { dev } from '$app/environment';
 	import rainviewerColorsTable from '$lib/rainviewer_api_colors_table.json';
 	import { contrastTextColor, prettyLch } from '$lib/util';
@@ -85,8 +86,7 @@
 
 <div class="container-fluid">
 	<center>
-		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-		<a href="/">Back to WeatherSense</a>
+		<a href={resolve('/')}>Back to WeatherSense</a>
 	</center>
 
 	<main>

@@ -49,6 +49,7 @@
 		weatherStore,
 	} from '$lib/weather';
 	import { pushState } from '$app/navigation';
+	import { resolve } from '$app/paths';
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
 
 	import { clearEvents, getEmitter } from '$lib/emitter.js';
@@ -798,10 +799,8 @@
 			<div class="footer-column">
 				<h3>Useful Info</h3>
 				<ul>
-					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-					<li><a href="/wmo-codes">WMO Codes</a></li>
-					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-					<li><a href="/aqi">AQI Levels</a></li>
+					<li><a href={resolve('/wmo-codes')}>WMO Codes</a></li>
+					<li><a href={resolve('/aqi')}>AQI Levels</a></li>
 					<li>
 						<!-- eslint-disable svelte/no-navigation-without-resolve -- dynamic URL from $page -->
 						<a

@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { resolve } from '$app/paths';
 	import { map } from 'lodash-es';
 
 	import {
@@ -100,8 +101,7 @@
 
 <div class="container-fluid flex-column {mode}" bind:offsetWidth bind:offsetHeight>
 	<nav>
-		<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
-		<a href="/">← Back</a>
+		<a href={resolve('/')}>← Back</a>
 		<span class="separator">|</span>
 		<a href="https://blog.leftium.com/2024/07/wmo-codes.html">About</a>
 		<span class="separator">|</span>

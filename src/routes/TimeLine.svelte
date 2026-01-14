@@ -85,7 +85,6 @@
 		xAxis = true,
 		ghostTracker = false,
 		extendTracker = false,
-		past = false, // eslint-disable-line @typescript-eslint/no-unused-vars
 		trackerColor = 'yellow',
 		groupIcons = true,
 		tempStats,
@@ -98,7 +97,6 @@
 		xAxis?: boolean;
 		ghostTracker?: boolean;
 		extendTracker?: boolean;
-		past?: boolean;
 		trackerColor?: string;
 		groupIcons?: boolean;
 		tempStats?: TemperatureStats | null;

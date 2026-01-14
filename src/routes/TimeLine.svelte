@@ -496,9 +496,6 @@
 			});
 		}
 
-		console.log(
-			`Sky slices: ${slices.length} rects (vs ${Math.round((msEnd - msStart) / MS_IN_MINUTE)} minutes in range)`,
-		);
 		return slices;
 	});
 

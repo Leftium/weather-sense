@@ -27,7 +27,10 @@
 
 	// Derived data
 	const dataMinutely = $derived(nsWeatherData.dataMinutely);
-	const hasData = $derived(dataMinutely.length > 0);
+	// Only show if we have data AND at least one non-zero precipitation value
+	const hasData = $derived(
+		dataMinutely.length > 0 && dataMinutely.some((d) => d.precipitation > 0),
+	);
 
 	// Time range for x-axis (extend msEnd by 1 minute to show last bar fully)
 	const msStart = $derived(dataMinutely[0]?.ms ?? Date.now());

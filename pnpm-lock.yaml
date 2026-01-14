@@ -39,12 +39,6 @@ importers:
       '@sveltejs/vite-plugin-svelte':
         specifier: ^6.2.4
         version: 6.2.4(svelte@5.46.3)(vite@7.3.1(@types/node@25.0.7)(sass@1.97.2))
-      '@turf/circle':
-        specifier: ^7.3.1
-        version: 7.3.1
-      '@turf/helpers':
-        specifier: ^7.3.1
-        version: 7.3.1
       '@types/d3':
         specifier: ^7.4.3
         version: 7.4.3
@@ -696,18 +690,6 @@ packages:
     peerDependencies:
       svelte: ^5.0.0
       vite: ^6.3.0 || ^7.0.0
-
-  '@turf/circle@7.3.1':
-    resolution: {integrity: sha512-UY2OM1OK7IuyrtN3YE8026ZM3xM9VIkqZ0vRZln8g33D0AogrJVJ/I9T81/VpRPlxTnrbDpzQxJQBH+3vPG/Ow==}
-
-  '@turf/destination@7.3.1':
-    resolution: {integrity: sha512-yyiJtbQJ4AB9Ny/FKDDNuWI9Sg4Jtd2PMpQPqOV3AFq8NNkg0xJSNmDHDxupb3oPqPWYPxyfVI3tBoF+Xhhoig==}
-
-  '@turf/helpers@7.3.1':
-    resolution: {integrity: sha512-zkL34JVhi5XhsuMEO0MUTIIFEJ8yiW1InMu4hu/oRqamlY4mMoZql0viEmH6Dafh/p+zOl8OYvMJ3Vm3rFshgg==}
-
-  '@turf/invariant@7.3.1':
-    resolution: {integrity: sha512-IdZJfDjIDCLH+Gu2yLFoSM7H23sdetIo5t4ET1/25X8gi3GE2XSqbZwaGjuZgNh02nisBewLqNiJs2bo+hrqZA==}
 
   '@types/cookie@0.6.0':
     resolution: {integrity: sha512-4Kh9a6B2bQciAhf7FSuMRRkUWecJgJu9nPnx3yzpsfXX/c50REIqpHY4C82bXP90qrLtXtkDxTZosYO3UpOwlA==}
@@ -1674,9 +1656,6 @@ packages:
     peerDependencies:
       typescript: '>=4.8.4'
 
-  tslib@2.8.1:
-    resolution: {integrity: sha512-oJFu94HQb+KVduSUQL7wnpmqnfmLsOA/nAh6b6EH0wCEoK0/mPeXU6c3wKDV83MkOuHPRHtSXKKU99IBazS/2w==}
-
   type-check@0.4.0:
     resolution: {integrity: sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==}
     engines: {node: '>= 0.8.0'}
@@ -2199,31 +2178,6 @@ snapshots:
       svelte: 5.46.3
       vite: 7.3.1(@types/node@25.0.7)(sass@1.97.2)
       vitefu: 1.1.1(vite@7.3.1(@types/node@25.0.7)(sass@1.97.2))
-
-  '@turf/circle@7.3.1':
-    dependencies:
-      '@turf/destination': 7.3.1
-      '@turf/helpers': 7.3.1
-      '@types/geojson': 7946.0.16
-      tslib: 2.8.1
-
-  '@turf/destination@7.3.1':
-    dependencies:
-      '@turf/helpers': 7.3.1
-      '@turf/invariant': 7.3.1
-      '@types/geojson': 7946.0.16
-      tslib: 2.8.1
-
-  '@turf/helpers@7.3.1':
-    dependencies:
-      '@types/geojson': 7946.0.16
-      tslib: 2.8.1
-
-  '@turf/invariant@7.3.1':
-    dependencies:
-      '@turf/helpers': 7.3.1
-      '@types/geojson': 7946.0.16
-      tslib: 2.8.1
 
   '@types/cookie@0.6.0': {}
 
@@ -3270,8 +3224,6 @@ snapshots:
   ts-api-utils@2.4.0(typescript@5.9.3):
     dependencies:
       typescript: 5.9.3
-
-  tslib@2.8.1: {}
 
   type-check@0.4.0:
     dependencies:

@@ -24,8 +24,6 @@
 		"@sveltejs/adapter-auto": "^7.0.0",
 		"@sveltejs/kit": "^2.49.4",
 		"@sveltejs/vite-plugin-svelte": "^6.2.4",
-		"@turf/circle": "^7.3.1",
-		"@turf/helpers": "^7.3.1",
 		"@types/d3": "^7.4.3",
 		"@types/dateformat": "^5.0.3",
 		"@types/debug": "^4.1.12",

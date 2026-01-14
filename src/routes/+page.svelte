@@ -800,7 +800,9 @@
 					<li><a href="/wmo-codes">WMO Codes</a></li>
 					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 					<li><a href="/aqi">AQI Levels</a></li>
-					<li><a href={minutelyUrl}>60min Forecast</a></li>
+					<li>
+						<a href={minutelyUrl} data-sveltekit-reload>60min Forecast</a>
+					</li>
 				</ul>
 			</div>
 			<div class="footer-column">

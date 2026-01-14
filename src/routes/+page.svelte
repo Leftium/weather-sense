@@ -51,6 +51,7 @@
 
 	import { clearEvents, getEmitter } from '$lib/emitter.js';
 	import { browser, dev } from '$app/environment';
+	import { page } from '$app/stores';
 	import { onDestroy, onMount, untrack } from 'svelte';
 
 	const STORAGE_KEY_PLOT_VISIBILITY = 'weather-sense:plotVisibility';
@@ -75,6 +76,16 @@
 	const display = $derived(getDisplayBundle(weatherStore));
 
 	let { data } = $props();
+
+	// Show minutely plot when ?m param is present in URL
+	const showMinutely = $derived($page.url.searchParams.has('m'));
+
+	// URL with ?m param added (preserves other params like location)
+	const minutelyUrl = $derived.by(() => {
+		const params = new URLSearchParams($page.url.search);
+		params.set('m', '');
+		return `${$page.url.pathname}?${params.toString()}`;
+	});
 
 	let forecastDaysVisible = $state(3);
 	let showMoreOptions = $state(false);
@@ -516,7 +527,7 @@
 	<div class="map">
 		<RadarMapLibre nsWeatherData={weatherStore} />
 	</div>
-	{#if dev}
+	{#if showMinutely}
 		<MinutelyPrecipPlot nsWeatherData={weatherStore} />
 	{/if}
 </div>
@@ -788,6 +799,7 @@
 					<li><a href="/wmo-codes">WMO Codes</a></li>
 					<!-- eslint-disable-next-line svelte/no-navigation-without-resolve -->
 					<li><a href="/aqi">AQI Levels</a></li>
+					<li><a href={minutelyUrl}>60min Forecast</a></li>
 				</ul>
 			</div>
 			<div class="footer-column">

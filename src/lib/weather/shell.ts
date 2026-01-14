@@ -9,7 +9,7 @@
  * Components never import this directly - they receive snapshots via events.
  */
 
-import { browser, dev } from '$app/environment';
+import { browser } from '$app/environment';
 import { getEmitter } from '$lib/emitter';
 import { MS_IN_SECOND, MS_IN_MINUTE } from '$lib/util';
 import { gg } from '@leftium/gg';
@@ -541,11 +541,11 @@ export function initWeatherShell(data: WeatherData) {
 		emitSnapshot();
 
 		// Fetch data in parallel
-		// Open-Meteo is required, OpenWeather is optional (for minutely forecast, dev only)
+		// Open-Meteo is required, OpenWeather is optional (for minutely forecast)
 		await Promise.all([
 			fetchOpenMeteoForecast(),
 			fetchOpenMeteoAirQuality(),
-			...(dev ? [fetchOpenWeatherOneCall()] : []),
+			fetchOpenWeatherOneCall(),
 		]);
 	});
 

@@ -15,7 +15,7 @@ export const GET: RequestHandler = async ({ url, fetch, cookies }) => {
 	const apiKey = userKey || env.OPEN_WEATHER_APPID;
 
 	if (!apiKey) {
-		return json({ error: 'API key not configured', available: false });
+		return json({ error: 'OpenWeather API key not configured', available: false });
 	}
 
 	// Track usage for non-BYOK users (nudge system)
@@ -59,9 +59,18 @@ export const GET: RequestHandler = async ({ url, fetch, cookies }) => {
 		if (!response.ok) {
 			const errorText = await response.text();
 			console.error(`OpenWeather API error: ${response.status} ${errorText}`);
+
+			// Provide user-friendly error messages
+			let error = `OpenWeather API error: ${response.status}`;
+			if (response.status === 401) {
+				error = 'Invalid or inactive OpenWeather API key';
+			} else if (response.status === 429) {
+				error = 'OpenWeather API rate limit exceeded';
+			}
+
 			return json(
 				{
-					error: `OpenWeather API error: ${response.status}`,
+					error,
 					available: false,
 				},
 				{ status: response.status },

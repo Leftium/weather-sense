@@ -621,7 +621,9 @@
 			/>
 		</div>
 
-		<MinutelyPrecipPlot nsWeatherData={weatherStore} />
+		{#if dev}
+			<MinutelyPrecipPlot nsWeatherData={weatherStore} />
+		{/if}
 
 		<div class="timeline-grid">
 			<div class="hourly-row">

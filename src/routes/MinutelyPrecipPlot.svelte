@@ -31,6 +31,13 @@
 	const hasData = $derived(
 		dataMinutely.length > 0 && dataMinutely.some((d) => d.precipitation > 0),
 	);
+	$effect(() => {
+		console.log('DEBUG MinutelyPrecipPlot:', {
+			hasData,
+			dataLength: dataMinutely.length,
+			hasPrecip: dataMinutely.some((d) => d.precipitation > 0),
+		});
+	});
 
 	// Time range for x-axis (extend msEnd by 1 minute to show last bar fully)
 	const msStart = $derived(dataMinutely[0]?.ms ?? Date.now());

@@ -770,7 +770,7 @@
 					? getPlotLowTemp(day.ms, weatherStore.hourly)
 					: day.temperatureMin}
 				<div class={['day-row', { past }]} transition:slide={{ duration: 1000 }}>
-					<div class="day-label">
+					<div class={['day-label', { past }]}>
 						<div class={['day', { today }]}>
 							{day.compactDate}
 						</div>
@@ -1178,10 +1178,11 @@
 	}
 
 	// Timeline grid - parent container for hourly and daily sections
+	// Uses grid with named columns so subgrid can align temps across rows
 	.timeline-grid {
 		overflow-x: hidden;
-		display: flex;
-		flex-direction: column;
+		display: grid;
+		grid-template-columns: 64px auto auto auto 1fr;
 		row-gap: 1.5em;
 		margin-bottom: 0.2em;
 		background: $color-ghost-white;
@@ -1234,16 +1235,19 @@
 	}
 
 	.timeline-divider {
+		grid-column: 1 / -1; // Span all columns
 		margin: 0.5em 0;
 		border: none;
 		border-top: 1px solid $color-border-light;
 	}
 
 	// Shared row styles for hourly and daily rows
+	// Uses subgrid to inherit column alignment from .timeline-grid
 	.hourly-row,
 	.day-row {
 		display: grid;
-		grid-template-columns: 64px 1fr;
+		grid-column: 1 / -1; // Span all parent columns
+		grid-template-columns: subgrid;
 		grid-template-rows: auto auto; // Row 1: label, Row 2: plot
 		font-family: Lato, sans-serif;
 	}
@@ -1264,12 +1268,13 @@
 	}
 
 	// Day label styles - now on ghost-white background
+	// Uses subgrid to align temps across all rows
 	.day-label {
-		grid-column: 1 / -1; // Span both columns
+		grid-column: 1 / -1; // Span all columns
 		grid-row: 1;
 		align-self: end; // Align to bottom, close to plot
 		display: grid;
-		grid-template-columns: 64px 1fr; // Match parent columns
+		grid-template-columns: subgrid;
 		align-items: baseline;
 		overflow: visible;
 		z-index: 1;
@@ -1289,20 +1294,31 @@
 		}
 
 		.temps {
-			grid-column: 2;
+			grid-column: 2 / 5; // Span avg, high, low columns
+			display: grid;
+			grid-template-columns: subgrid;
 			font-size: 13px;
 			font-weight: bold;
-			display: flex;
-			gap: 0.3em;
+
+			.avg,
+			.high,
+			.low {
+				padding-right: 0.4em;
+				text-align: right;
+			}
 
 			.avg {
 				color: $color-text-secondary;
 			}
 		}
+
+		&.past {
+			opacity: 0.6;
+		}
 	}
 
 	.timeline {
-		grid-column: 2;
+		grid-column: 2 / -1; // Span from column 2 to end (over temp columns + plot)
 		grid-row: 2;
 		min-width: 0; // Allow grid item to shrink below content size
 		height: 64px; // Plot height without x-axis

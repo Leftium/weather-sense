@@ -164,6 +164,199 @@
 		{ name: 'Rain', color: '#22D3EE', usage: 'cyan.300-650' },
 	];
 
+	// ============================================================
+	// LOCKED RAIN COLORS (for reference when designing snow/mixed)
+	// ============================================================
+	const lockedRainColors = [
+		{ name: 'L.Drizzle', color: picoColors.azure[350], pico: 'azure.350' },
+		{ name: 'Drizzle', color: picoColors.azure[450], pico: 'azure.450' },
+		{ name: 'H.Drizzle', color: picoColors.azure[550], pico: 'azure.550' },
+		{ name: 'L.Showers', color: picoColors.azure[400], pico: 'azure.400' },
+		{ name: 'Showers', color: picoColors.azure[500], pico: 'azure.500' },
+		{ name: 'H.Showers', color: picoColors.azure[600], pico: 'azure.600' },
+		{ name: 'L.Rain', color: picoColors.blue[500], pico: 'blue.500' },
+		{ name: 'Rain', color: picoColors.blue[600], pico: 'blue.600' },
+		{ name: 'H.Rain', color: picoColors.blue[700], pico: 'blue.700' },
+	];
+
+	// ============================================================
+	// SNOW COLOR OPTIONS (should be purple family, match rain darkness 350-700)
+	// ============================================================
+	const currentSnowColors = [
+		{ name: 'Snow Grains', color: picoColors.purple[150], pico: 'purple.150' },
+		{ name: 'L.Snow Showers', color: picoColors.purple[250], pico: 'purple.250' },
+		{ name: 'Snow Showers', color: picoColors.purple[450], pico: 'purple.450' },
+		{ name: 'L.Snow', color: picoColors.fuchsia[350], pico: 'fuchsia.350' },
+		{ name: 'Snow', color: picoColors.fuchsia[450], pico: 'fuchsia.450' },
+		{ name: 'H.Snow', color: picoColors.fuchsia[550], pico: 'fuchsia.550' },
+	];
+
+	// Snow Option A: Purple (cooler, more distinct from pink thunder)
+	const snowOptionA = [
+		{ name: 'Snow Grains', color: picoColors.purple[350], pico: 'purple.350' },
+		{ name: 'L.Snow Showers', color: picoColors.purple[400], pico: 'purple.400' },
+		{ name: 'Snow Showers', color: picoColors.purple[550], pico: 'purple.550' },
+		{ name: 'L.Snow', color: picoColors.purple[450], pico: 'purple.450' },
+		{ name: 'Snow', color: picoColors.purple[550], pico: 'purple.550' },
+		{ name: 'H.Snow', color: picoColors.purple[650], pico: 'purple.650' },
+	];
+
+	// Snow Option B: Violet (blue-purple, bridges toward rain)
+	const snowOptionB = [
+		{ name: 'Snow Grains', color: picoColors.violet[350], pico: 'violet.350' },
+		{ name: 'L.Snow Showers', color: picoColors.violet[400], pico: 'violet.400' },
+		{ name: 'Snow Showers', color: picoColors.violet[550], pico: 'violet.550' },
+		{ name: 'L.Snow', color: picoColors.violet[450], pico: 'violet.450' },
+		{ name: 'Snow', color: picoColors.violet[550], pico: 'violet.550' },
+		{ name: 'H.Snow', color: picoColors.violet[650], pico: 'violet.650' },
+	];
+
+	// Snow Option C: Fuchsia darkened (warmer purple, closer to current)
+	const snowOptionC = [
+		{ name: 'Snow Grains', color: picoColors.fuchsia[350], pico: 'fuchsia.350' },
+		{ name: 'L.Snow Showers', color: picoColors.fuchsia[400], pico: 'fuchsia.400' },
+		{ name: 'Snow Showers', color: picoColors.fuchsia[550], pico: 'fuchsia.550' },
+		{ name: 'L.Snow', color: picoColors.fuchsia[450], pico: 'fuchsia.450' },
+		{ name: 'Snow', color: picoColors.fuchsia[550], pico: 'fuchsia.550' },
+		{ name: 'H.Snow', color: picoColors.fuchsia[650], pico: 'fuchsia.650' },
+	];
+
+	// Snow Option D: Dark Sky style purple
+	const snowOptionD = [
+		{ name: 'Snow Grains', color: '#b7b2db', pico: 'DS flurries' },
+		{ name: 'L.Snow Showers', color: '#aba4db', pico: 'DS light snow' },
+		{ name: 'Snow Showers', color: '#9590d0', pico: 'DS blend' },
+		{ name: 'L.Snow', color: '#aba4db', pico: 'DS light snow' },
+		{ name: 'Snow', color: '#8c82ce', pico: 'DS snow' },
+		{ name: 'H.Snow', color: '#7a70c0', pico: 'DS darker' },
+	];
+
+	const snowOptions = [
+		{ name: 'Current Snow', colors: currentSnowColors },
+		{ name: 'A: Purple (350-650)', colors: snowOptionA },
+		{ name: 'B: Violet (350-650)', colors: snowOptionB },
+		{ name: 'C: Fuchsia darkened (350-650)', colors: snowOptionC },
+		{ name: 'D: Dark Sky purple', colors: snowOptionD },
+	];
+
+	// ============================================================
+	// MIXED/FREEZING COLOR OPTIONS (blend of rain blue + snow purple)
+	// ============================================================
+	const currentMixedColors = [
+		{ name: 'L.Icy Drizzle', color: picoColors.indigo[350], pico: 'indigo.350' },
+		{ name: 'Icy Drizzle', color: picoColors.indigo[550], pico: 'indigo.550' },
+		{ name: 'L.Icy Rain', color: picoColors.violet[500], pico: 'violet.500' },
+		{ name: 'Icy Rain', color: picoColors.violet[700], pico: 'violet.700' },
+	];
+
+	// Mixed Option A: Indigo throughout (blue-purple blend)
+	const mixedOptionA = [
+		{ name: 'L.Icy Drizzle', color: picoColors.indigo[400], pico: 'indigo.400' },
+		{ name: 'Icy Drizzle', color: picoColors.indigo[550], pico: 'indigo.550' },
+		{ name: 'L.Icy Rain', color: picoColors.indigo[500], pico: 'indigo.500' },
+		{ name: 'Icy Rain', color: picoColors.indigo[650], pico: 'indigo.650' },
+	];
+
+	// Mixed Option B: Violet throughout (purple-leaning)
+	const mixedOptionB = [
+		{ name: 'L.Icy Drizzle', color: picoColors.violet[400], pico: 'violet.400' },
+		{ name: 'Icy Drizzle', color: picoColors.violet[550], pico: 'violet.550' },
+		{ name: 'L.Icy Rain', color: picoColors.violet[500], pico: 'violet.500' },
+		{ name: 'Icy Rain', color: picoColors.violet[650], pico: 'violet.650' },
+	];
+
+	// Mixed Option C: Slate-purple (grayer, icy feel)
+	const mixedOptionC = [
+		{ name: 'L.Icy Drizzle', color: picoColors.slate[400], pico: 'slate.400' },
+		{ name: 'Icy Drizzle', color: picoColors.slate[550], pico: 'slate.550' },
+		{ name: 'L.Icy Rain', color: picoColors.slate[500], pico: 'slate.500' },
+		{ name: 'Icy Rain', color: picoColors.slate[650], pico: 'slate.650' },
+	];
+
+	// Mixed Option D: Blue-violet gradient (rain→snow transition)
+	const mixedOptionD = [
+		{ name: 'L.Icy Drizzle', color: picoColors.blue[400], pico: 'blue.400' },
+		{ name: 'Icy Drizzle', color: picoColors.indigo[500], pico: 'indigo.500' },
+		{ name: 'L.Icy Rain', color: picoColors.indigo[550], pico: 'indigo.550' },
+		{ name: 'Icy Rain', color: picoColors.violet[600], pico: 'violet.600' },
+	];
+
+	// Mixed Option E: Purple (same as snow but distinguishable)
+	const mixedOptionE = [
+		{ name: 'L.Icy Drizzle', color: picoColors.purple[400], pico: 'purple.400' },
+		{ name: 'Icy Drizzle', color: picoColors.purple[550], pico: 'purple.550' },
+		{ name: 'L.Icy Rain', color: picoColors.purple[500], pico: 'purple.500' },
+		{ name: 'Icy Rain', color: picoColors.purple[650], pico: 'purple.650' },
+	];
+
+	const mixedOptions = [
+		{ name: 'Current Mixed', colors: currentMixedColors },
+		{ name: 'A: Indigo (400-650)', colors: mixedOptionA },
+		{ name: 'B: Violet (400-650)', colors: mixedOptionB },
+		{ name: 'C: Slate (grayer, icy)', colors: mixedOptionC },
+		{ name: 'D: Blue→Violet gradient', colors: mixedOptionD },
+		{ name: 'E: Purple (400-650)', colors: mixedOptionE },
+	];
+
+	// ============================================================
+	// COMBINED PROGRESSIONS (Thunder → Snow → Mixed → Rain)
+	// Rain is LOCKED at azure.500 (middle of the rain range)
+	// ============================================================
+	const lockedRain = picoColors.azure[500];
+	const lockedThunder = picoColors.pink[450]; // keeping thunder consistent too
+
+	const combinedOptions = [
+		{
+			name: 'Current',
+			thunder: lockedThunder,
+			snow: picoColors.fuchsia[450],
+			mixed: picoColors.indigo[450],
+			rain: lockedRain,
+		},
+		{
+			name: 'P1: Purple snow, Indigo mixed',
+			thunder: lockedThunder,
+			snow: picoColors.purple[500],
+			mixed: picoColors.indigo[500],
+			rain: lockedRain,
+		},
+		{
+			name: 'P2: Violet snow, Indigo mixed',
+			thunder: lockedThunder,
+			snow: picoColors.violet[500],
+			mixed: picoColors.indigo[500],
+			rain: lockedRain,
+		},
+		{
+			name: 'P3: Purple snow, Violet mixed',
+			thunder: lockedThunder,
+			snow: picoColors.purple[500],
+			mixed: picoColors.violet[550],
+			rain: lockedRain,
+		},
+		{
+			name: 'P4: Fuchsia snow, Violet mixed',
+			thunder: lockedThunder,
+			snow: picoColors.fuchsia[500],
+			mixed: picoColors.violet[550],
+			rain: lockedRain,
+		},
+		{
+			name: 'P5: Violet snow, Blue-Violet mixed',
+			thunder: lockedThunder,
+			snow: picoColors.violet[500],
+			mixed: picoColors.indigo[550],
+			rain: lockedRain,
+		},
+		{
+			name: 'DS: Dark Sky inspired',
+			thunder: '#E23D68',
+			snow: '#8c82ce',
+			mixed: '#7C8BF5',
+			rain: lockedRain,
+		},
+	];
+
 	// Merry Timeline / Dark Sky colors (from examples + screenshot)
 	const merryColors = [
 		{ name: 'Clear', color: '#eeeef5', usage: 'Almost white' },
@@ -461,6 +654,92 @@
 			style="background: linear-gradient(to right, {currentWmo.map((c) => c.color).join(', ')})"
 		></div>
 	</div>
+
+	<h2 class="proposals-header">Snow & Mixed Color Options</h2>
+	<p class="note">
+		Rain colors are locked. Snow should be purple family, Mixed should blend rain+snow.
+	</p>
+
+	<div class="section">
+		<h2>Locked Rain Colors (Reference)</h2>
+		<div class="swatches wrap">
+			{#each lockedRainColors as { name, color, pico } (name)}
+				<div class="swatch-group">
+					<div class="swatch" style="background: {color}"></div>
+					<div class="label">{name}</div>
+					<div class="hex">{color}</div>
+					<div class="usage">{pico}</div>
+				</div>
+			{/each}
+		</div>
+	</div>
+
+	<h3>Snow Color Options</h3>
+	{#each snowOptions as option (option.name)}
+		<div class="option">
+			<h3>{option.name}</h3>
+			<div class="swatches wrap">
+				{#each option.colors as { name, color, pico } (name)}
+					<div class="swatch-group">
+						<div class="swatch" style="background: {color}"></div>
+						<div class="label">{name}</div>
+						<div class="hex">{color}</div>
+						<div class="usage">{pico}</div>
+					</div>
+				{/each}
+			</div>
+		</div>
+	{/each}
+
+	<h3>Mixed/Freezing Color Options</h3>
+	{#each mixedOptions as option (option.name)}
+		<div class="option">
+			<h3>{option.name}</h3>
+			<div class="swatches wrap">
+				{#each option.colors as { name, color, pico } (name)}
+					<div class="swatch-group">
+						<div class="swatch" style="background: {color}"></div>
+						<div class="label">{name}</div>
+						<div class="hex">{color}</div>
+						<div class="usage">{pico}</div>
+					</div>
+				{/each}
+			</div>
+		</div>
+	{/each}
+
+	<h3>Combined Progressions (Thunder → Snow → Mixed → Rain)</h3>
+	{#each combinedOptions as option (option.name)}
+		<div class="option">
+			<h3>{option.name}</h3>
+			<div class="swatches">
+				<div class="swatch-group">
+					<div class="swatch" style="background: {option.thunder}"></div>
+					<div class="label">Thunder</div>
+					<div class="hex">{option.thunder}</div>
+				</div>
+				<div class="swatch-group">
+					<div class="swatch" style="background: {option.snow}"></div>
+					<div class="label">Snow</div>
+					<div class="hex">{option.snow}</div>
+				</div>
+				<div class="swatch-group">
+					<div class="swatch" style="background: {option.mixed}"></div>
+					<div class="label">Mixed</div>
+					<div class="hex">{option.mixed}</div>
+				</div>
+				<div class="swatch-group">
+					<div class="swatch" style="background: {option.rain}"></div>
+					<div class="label">Rain</div>
+					<div class="hex">{option.rain}</div>
+				</div>
+			</div>
+			<div
+				class="gradient"
+				style="background: linear-gradient(to right, {option.thunder}, {option.snow}, {option.mixed}, {option.rain})"
+			></div>
+		</div>
+	{/each}
 
 	<div class="section">
 		<h2>Merry Timeline / Dark Sky Colors</h2>

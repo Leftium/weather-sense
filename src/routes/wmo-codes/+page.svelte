@@ -89,13 +89,13 @@
 		mounted = true;
 	});
 
-	// Divider colors with contrast text
+	// Divider colors with contrast text (P5: Violet snow, Indigo mixed)
 	const dividerColors = [
 		{ bg: '#a8d8f0', ...getContrastColors('#a8d8f0') }, // No Precipitation (sky-clear)
-		{ bg: '#2060df', ...getContrastColors('#2060df') }, // Rain (blue)
-		{ bg: '#8352c5', ...getContrastColors('#8352c5') }, // Freezing Rain (violet)
-		{ bg: '#ed2aac', ...getContrastColors('#ed2aac') }, // Snow (fuchsia)
-		{ bg: '#f42c6f', ...getContrastColors('#f42c6f') }, // Thunder Storm (pink)
+		{ bg: '#2563eb', ...getContrastColors('#2563eb') }, // Rain (blue.600)
+		{ bg: '#6366f1', ...getContrastColors('#6366f1') }, // Freezing Rain (indigo.500)
+		{ bg: '#8b5cf6', ...getContrastColors('#8b5cf6') }, // Snow (violet.500)
+		{ bg: '#ec4899', ...getContrastColors('#ec4899') }, // Thunder Storm (pink.500)
 	];
 </script>
 

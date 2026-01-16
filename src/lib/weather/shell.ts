@@ -46,6 +46,7 @@ const dailyKeys: Record<string, string> = {
 	weather_code: 'weatherCode',
 	temperature_2m_max: 'temperatureMax',
 	temperature_2m_min: 'temperatureMin',
+	temperature_2m_mean: 'temperatureMean',
 	precipitation_sum: 'precipitation',
 	rain_sum: 'rain',
 	showers_sum: 'showers',
@@ -108,7 +109,7 @@ export function initWeatherShell(data: WeatherData) {
 			`&temperature_unit=fahrenheit` +
 			`&current=temperature_2m,relative_humidity_2m,is_day,precipitation,rain,showers,snowfall,weather_code` +
 			`&hourly=temperature_2m,relative_humidity_2m,precipitation_probability,precipitation,weather_code,dew_point_2m,is_day` +
-			`&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,rain_sum,showers_sum,snowfall_sum,precipitation_hours,precipitation_probability_max`;
+			`&daily=weather_code,temperature_2m_max,temperature_2m_min,temperature_2m_mean,sunrise,sunset,precipitation_sum,rain_sum,showers_sum,snowfall_sum,precipitation_hours,precipitation_probability_max`;
 
 		let json;
 		try {

@@ -15,7 +15,14 @@ import dayjs from 'dayjs';
 import utc from 'dayjs/plugin/utc';
 import timezonePlugin from 'dayjs/plugin/timezone';
 
-import { startOf, celcius, MS_IN_MINUTE, MS_IN_SECOND } from '$lib/util';
+import {
+	startOf,
+	celcius,
+	MS_IN_MINUTE,
+	MS_IN_SECOND,
+	MS_IN_HOUR,
+	DAY_START_HOUR,
+} from '$lib/util';
 import type { WeatherData } from './data.svelte';
 import type {
 	ForecastItem,
@@ -348,6 +355,70 @@ export function getTemperatureStats(
 		temperatureRange: maxTemp - Math.min(minTemp, minDewPoint),
 		minTemperatureOnly: minTemp,
 	};
+}
+
+/**
+ * Get hourly data for the plot's time window: 4am to 4am (24 hours from DAY_START_HOUR).
+ */
+function getHoursInPlotWindow(
+	dayMs: number,
+	hourly: HourlyForecast[] | null | undefined,
+): HourlyForecast[] {
+	if (!hourly?.length) return [];
+
+	// Calculate the time window: 4am this day to 4am next day
+	const startMs = dayMs + DAY_START_HOUR * MS_IN_HOUR;
+	const endMs = startMs + 24 * MS_IN_HOUR;
+
+	return hourly.filter((h) => h.ms >= startMs && h.ms < endMs);
+}
+
+/**
+ * Calculate weighted average temperature for a day from hourly data.
+ * Uses the plot's time window: 4am to 4am (24 hours from DAY_START_HOUR).
+ *
+ * @param dayMs - Start of the calendar day (midnight) in milliseconds
+ * @param hourly - Hourly forecast data array
+ * @returns Weighted average temperature, or null if no hourly data
+ */
+export function getWeightedAvgTemp(
+	dayMs: number,
+	hourly: HourlyForecast[] | null | undefined,
+): number | null {
+	const hoursInWindow = getHoursInPlotWindow(dayMs, hourly);
+	if (hoursInWindow.length === 0) return null;
+
+	// Simple average of temperatures in the window (each hour weighted equally)
+	const sum = hoursInWindow.reduce((acc, h) => acc + h.temperature, 0);
+	return sum / hoursInWindow.length;
+}
+
+/**
+ * Calculate high temperature for a day from hourly data.
+ * Uses the plot's time window: 4am to 4am (24 hours from DAY_START_HOUR).
+ */
+export function getPlotHighTemp(
+	dayMs: number,
+	hourly: HourlyForecast[] | null | undefined,
+): number | null {
+	const hoursInWindow = getHoursInPlotWindow(dayMs, hourly);
+	if (hoursInWindow.length === 0) return null;
+
+	return Math.max(...hoursInWindow.map((h) => h.temperature));
+}
+
+/**
+ * Calculate low temperature for a day from hourly data.
+ * Uses the plot's time window: 4am to 4am (24 hours from DAY_START_HOUR).
+ */
+export function getPlotLowTemp(
+	dayMs: number,
+	hourly: HourlyForecast[] | null | undefined,
+): number | null {
+	const hoursInWindow = getHoursInPlotWindow(dayMs, hourly);
+	if (hoursInWindow.length === 0) return null;
+
+	return Math.min(...hoursInWindow.map((h) => h.temperature));
 }
 
 /**

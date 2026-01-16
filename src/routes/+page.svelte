@@ -42,6 +42,9 @@
 		formatTemp,
 		getTemperatureStats,
 		getMinutelyPrecipAt,
+		getWeightedAvgTemp,
+		getPlotHighTemp,
+		getPlotLowTemp,
 		type TemperatureStats,
 		FORECAST_DAYS,
 		weatherData,
@@ -660,6 +663,38 @@
 
 		<div class="timeline-grid">
 			<div class="hourly-row">
+				<div class="day-label">
+					<div class="day today">24hrs</div>
+					<div class="temps">
+						<span class="avg" use:toggleUnits={{ temperature: true }}>
+							{formatTemp(
+								groupIcons
+									? getWeightedAvgTemp(weatherStore.daily?.[2]?.ms ?? 0, weatherStore.hourly)
+									: weatherStore.daily?.[2]?.temperatureMean,
+								weatherStore.units.temperature,
+								false,
+							)}
+						</span>
+						<span class="high" style:color={TEMP_COLOR_HOT} use:toggleUnits={{ temperature: true }}>
+							{formatTemp(
+								groupIcons
+									? getPlotHighTemp(weatherStore.daily?.[2]?.ms ?? 0, weatherStore.hourly)
+									: weatherStore.daily?.[2]?.temperatureMax,
+								weatherStore.units.temperature,
+								false,
+							)}
+						</span>
+						<span class="low" style:color={TEMP_COLOR_COLD} use:toggleUnits={{ temperature: true }}>
+							{formatTemp(
+								groupIcons
+									? getPlotLowTemp(weatherStore.daily?.[2]?.ms ?? 0, weatherStore.hourly)
+									: weatherStore.daily?.[2]?.temperatureMin,
+								weatherStore.units.temperature,
+								false,
+							)}
+						</span>
+					</div>
+				</div>
 				<div
 					class="temp-gradient-bar"
 					style:--color-high={weatherStore.daily?.[2] && visibleTempStats
@@ -690,25 +725,6 @@
 							/>
 						{/if}
 					</button>
-				</div>
-				<div class="day-label">
-					<div class="day today">24hrs</div>
-					<div class="high-low">
-						<span class="high" style:color={TEMP_COLOR_HOT} use:toggleUnits={{ temperature: true }}>
-							{formatTemp(
-								weatherStore.daily?.[2]?.temperatureMax,
-								weatherStore.units.temperature,
-								false,
-							)}
-						</span>
-						<span class="low" style:color={TEMP_COLOR_COLD} use:toggleUnits={{ temperature: true }}>
-							{formatTemp(
-								weatherStore.daily?.[2]?.temperatureMin,
-								weatherStore.units.temperature,
-								false,
-							)}
-						</span>
-					</div>
 				</div>
 				<div class="timeline today">
 					<TimeLine
@@ -744,7 +760,37 @@
 					groupIcons,
 					maxBy,
 				)}
+				{@const avgTemp = groupIcons
+					? getWeightedAvgTemp(day.ms, weatherStore.hourly)
+					: day.temperatureMean}
+				{@const highTemp = groupIcons
+					? getPlotHighTemp(day.ms, weatherStore.hourly)
+					: day.temperatureMax}
+				{@const lowTemp = groupIcons
+					? getPlotLowTemp(day.ms, weatherStore.hourly)
+					: day.temperatureMin}
 				<div class={['day-row', { past }]} transition:slide={{ duration: 1000 }}>
+					<div class="day-label">
+						<div class={['day', { today }]}>
+							{day.compactDate}
+						</div>
+						<div class="temps">
+							<span class="avg" use:toggleUnits={{ temperature: true }}>
+								{formatTemp(avgTemp, weatherStore.units.temperature, false)}
+							</span>
+							<span
+								class="high"
+								style:color={TEMP_COLOR_HOT}
+								use:toggleUnits={{ temperature: true }}
+								>{formatTemp(highTemp, weatherStore.units.temperature, false)}</span
+							><span
+								class="low"
+								style:color={TEMP_COLOR_COLD}
+								use:toggleUnits={{ temperature: true }}
+								>{formatTemp(lowTemp, weatherStore.units.temperature, false)}</span
+							>
+						</div>
+					</div>
 					<div
 						class={['temp-gradient-bar', { today }]}
 						style:--color-high={colorHigh}
@@ -761,24 +807,6 @@
 								alt=""
 							/>
 						</button>
-					</div>
-					<div class="day-label">
-						<div class={['day', { today }]}>
-							{day.compactDate}
-						</div>
-						<div class="high-low">
-							<span
-								class="high"
-								style:color={TEMP_COLOR_HOT}
-								use:toggleUnits={{ temperature: true }}
-								>{formatTemp(day.temperatureMax, weatherStore.units.temperature, false)}</span
-							><span
-								class="low"
-								style:color={TEMP_COLOR_COLD}
-								use:toggleUnits={{ temperature: true }}
-								>{formatTemp(day.temperatureMin, weatherStore.units.temperature, false)}</span
-							>
-						</div>
 					</div>
 					<div class={['timeline', { today }]}>
 						<TimeLine
@@ -1153,18 +1181,18 @@
 	.timeline-grid {
 		overflow-x: hidden;
 		display: grid;
-		grid-template-columns: 8px auto auto minmax(0, 1fr);
-		grid-row-gap: 1em;
+		grid-template-columns: 64px auto auto minmax(0, 1fr); // Col 1: temp gradient square
+		grid-row-gap: 0.5em; // Gap between day rows (not within rows)
 		grid-column-gap: 0.2em;
 		margin-bottom: 0.2em;
 		background: $color-ghost-white;
 	}
 
-	// Temperature gradient bar - shows day's temp range relative to global range
+	// Temperature gradient bar - shows day's temp range as square/rect with centered icon
 	.temp-gradient-bar {
-		grid-column: 1 / 4; // Span columns 1-3, stop before timeline
-		grid-row: 1;
-		margin-right: -0.2em; // Compensate for grid gap
+		grid-column: 1;
+		grid-row: 2;
+		width: 64px; // Square width
 		height: 64px; // Match TimeLine plot height (without x-axis)
 		background: linear-gradient(
 			to bottom right,
@@ -1174,16 +1202,16 @@
 			var(--color-low) 100%
 		);
 		align-self: center; // Vertically center with plot
-		position: relative;
-		z-index: 0; // Behind icons and labels
+		display: flex;
+		align-items: center;
+		justify-content: center;
 
 		.icon-toggle {
 			all: unset;
 			cursor: pointer;
-			position: absolute;
-			right: -20px; // Position icon at right edge of gradient
-			top: 50%;
-			transform: translateY(calc(-50% - 20px));
+			display: flex;
+			align-items: center;
+			justify-content: center;
 
 			&:hover .icon.small {
 				filter: brightness(1.1);
@@ -1204,7 +1232,7 @@
 
 	.hourly-row .temp-gradient-bar,
 	.temp-gradient-bar.today {
-		height: 104px; // Match TimeLine plot height (with x-axis)
+		height: 104px; // Match TimeLine plot height (with x-axis) - same width (64px)
 	}
 
 	.timeline-divider {
@@ -1214,46 +1242,29 @@
 		border-top: 1px solid $color-border-light;
 	}
 
-	// Hourly row (24hrs) - spans all columns, uses subgrid
+	// Hourly row (24hrs) - spans all columns, uses subgrid with 2 internal rows
 	.hourly-row {
 		display: grid;
 		grid-template-columns: subgrid;
+		grid-template-rows: auto auto; // Row 1: day-label, Row 2: gradient + timeline
+		row-gap: 0; // No gap between label and plot
 		grid-column: 1 / -1;
-		align-items: center;
+		align-items: start;
 		font-family: Lato, sans-serif;
 		margin-top: 0.2em;
 		margin-bottom: 0.5em;
 
-		// Match daily row structure for consistent icon positioning
 		.day-label {
-			display: grid;
-			grid-template-columns: subgrid;
-			grid-column: 2 / span 2;
+			grid-column: 1 / -1; // Span all columns
 			grid-row: 1;
-
-			.day {
-				grid-column: span 2;
-			}
-
-			.high-low {
-				display: grid;
-				grid-template-columns: subgrid;
-				grid-column: span 2;
-
-				span {
-					text-align: right;
-				}
-			}
+			display: grid;
+			grid-template-columns: subgrid; // Inherit parent columns
+			align-items: baseline;
 		}
 
 		.timeline {
-			grid-column: 4;
-			grid-row: 1;
-		}
-
-		div.day {
-			margin: 0 0.1em;
-			text-align: right;
+			grid-column: 2 / -1; // Span from column 2 to end
+			grid-row: 2;
 		}
 	}
 
@@ -1263,79 +1274,58 @@
 		padding-inline: 0;
 	}
 
-	// Daily rows - span all columns, use subgrid
+	// Daily rows - span all columns, use subgrid with 2 internal rows
 	.day-row {
 		display: grid;
 		grid-template-columns: subgrid;
+		grid-template-rows: auto auto; // Row 1: day-label, Row 2: gradient + timeline
+		row-gap: 0; // No gap between label and plot
 		grid-column: 1 / -1;
 		position: relative;
-		align-items: center;
+		align-items: start;
 
-		div.day {
-			margin: 0 0.1em;
-			text-align: right;
-		}
-
-		// Daily section uses subgrid for aligned temps
 		.day-label {
-			display: grid;
-			grid-template-columns: subgrid;
-			grid-column: 2 / span 2;
+			grid-column: 1 / -1; // Span all columns
 			grid-row: 1;
-
-			.day {
-				grid-column: span 2;
-			}
-
-			.high-low {
-				display: grid;
-				grid-template-columns: subgrid;
-				grid-column: span 2;
-
-				span {
-					text-align: right;
-				}
-			}
+			display: grid;
+			grid-template-columns: subgrid; // Inherit parent columns
+			align-items: baseline;
 		}
 
 		.timeline {
-			grid-column: 4;
-			grid-row: 1;
+			grid-column: 2 / -1; // Span from column 2 to end
+			grid-row: 2;
 		}
 	}
 
-	// Day label styles with text outline
+	// Day label styles - now on ghost-white background
 	.day-label {
 		overflow: visible;
-		z-index: 1; // Above temp-gradient-bar
+		z-index: 1;
+		line-height: 1.2;
+		padding-bottom: 4px; // Gap between label and plot
 
 		.day {
-			position: relative;
-			z-index: 1;
-			color: #eee;
+			grid-column: 1; // Above temp gradient
+			text-align: right; // Right-align to the split
+			padding-right: 0.3em;
+			color: $color-text-primary; // #333 - dark grey for readability on light bg
 			font-weight: 600;
-			text-shadow:
-				0 0 3px rgba(128, 128, 128, 0.6),
-				0 0 6px rgba(128, 128, 128, 0.4),
-				0 0 12px rgba(128, 128, 128, 0.3);
 
 			&.today {
 				font-weight: 900;
 			}
 		}
 
-		.high-low {
+		.temps {
+			grid-column: 2 / -1; // Above timeline, starts at split
 			font-size: 13px;
 			font-weight: bold;
+			display: flex;
+			gap: 0.3em;
 
-			.high,
-			.low {
-				text-shadow:
-					0 0 2px rgba(248, 248, 255, 1),
-					0 0 4px rgba(248, 248, 255, 1),
-					0 0 8px rgba(248, 248, 255, 0.9),
-					0 0 12px rgba(248, 248, 255, 0.7),
-					0 0 20px rgba(248, 248, 255, 0.5);
+			.avg {
+				color: $color-text-secondary; // #666 - medium grey
 			}
 		}
 	}

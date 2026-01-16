@@ -1,5 +1,6 @@
 <script lang="ts">
-	import type { WeatherStore, WeatherDataEvents } from '$lib/weather';
+	import type { WeatherStore, WeatherDataEvents, DailyForecast } from '$lib/weather';
+	import { getPlotHighTemp, getPlotLowTemp } from '$lib/weather';
 	import {
 		colors,
 		wmoCode,
@@ -118,8 +119,20 @@
 	const tempStats = $derived.by(() => {
 		if (!days.length) return { min: 0, max: 100, range: 100 };
 
-		const minTemp = minBy(days, 'temperatureMin')?.temperatureMin ?? 0;
-		const maxTemp = maxBy(days, 'temperatureMax')?.temperatureMax ?? 100;
+		// Get min/max based on mode (grouped: 4am-4am, raw: API values)
+		const lows = days.map((day) =>
+			groupIcons
+				? (getPlotLowTemp(day.ms, nsWeatherData.hourly) ?? day.temperatureMin)
+				: day.temperatureMin,
+		);
+		const highs = days.map((day) =>
+			groupIcons
+				? (getPlotHighTemp(day.ms, nsWeatherData.hourly) ?? day.temperatureMax)
+				: day.temperatureMax,
+		);
+
+		const minTemp = Math.min(...lows);
+		const maxTemp = Math.max(...highs);
 		const padding = (maxTemp - minTemp) * 0.15; // 15% padding
 
 		return {
@@ -150,14 +163,31 @@
 		return TEMP_AREA_BOTTOM - normalized * TEMP_AREA_HEIGHT;
 	}
 
+	// Get high temp: from 4am-4am hourly when grouped, from API when raw
+	function getHighTemp(day: DailyForecast): number {
+		if (groupIcons) {
+			return getPlotHighTemp(day.ms, nsWeatherData.hourly) ?? day.temperatureMax;
+		}
+		return day.temperatureMax;
+	}
+
+	// Get low temp: from 4am-4am hourly when grouped, from API when raw
+	function getLowTemp(day: DailyForecast): number {
+		if (groupIcons) {
+			return getPlotLowTemp(day.ms, nsWeatherData.hourly) ?? day.temperatureMin;
+		}
+		return day.temperatureMin;
+	}
+
 	// Generate SVG path for temperature line
-	function generateTempPath(key: 'temperatureMax' | 'temperatureMin'): string {
+	function generateTempPath(key: 'high' | 'low'): string {
 		if (!days.length) return '';
 
 		return days
 			.map((day, i) => {
 				const x = (i + 0.5) * TILE_WIDTH;
-				const y = tempToY(day[key]);
+				const temp = key === 'high' ? getHighTemp(day) : getLowTemp(day);
+				const y = tempToY(temp);
 				return `${i === 0 ? 'M' : 'L'} ${x} ${y}`;
 			})
 			.join(' ');
@@ -339,32 +369,22 @@
 					{/each}
 
 					<!-- High temperature line -->
-					<path
-						d={generateTempPath('temperatureMax')}
-						fill="none"
-						stroke={TEMP_COLOR_HOT}
-						stroke-width="2"
-					/>
+					<path d={generateTempPath('high')} fill="none" stroke={TEMP_COLOR_HOT} stroke-width="2" />
 
 					<!-- Low temperature line -->
-					<path
-						d={generateTempPath('temperatureMin')}
-						fill="none"
-						stroke={TEMP_COLOR_COLD}
-						stroke-width="2"
-					/>
+					<path d={generateTempPath('low')} fill="none" stroke={TEMP_COLOR_COLD} stroke-width="2" />
 
 					<!-- High temperature dots -->
 					{#each days as day, i (day.ms)}
 						{@const x = (i + 0.5) * TILE_WIDTH}
-						{@const y = tempToY(day.temperatureMax)}
+						{@const y = tempToY(getHighTemp(day))}
 						<circle cx={x} cy={y} r="3" fill={TEMP_COLOR_HOT} />
 					{/each}
 
 					<!-- Low temperature dots -->
 					{#each days as day, i (day.ms)}
 						{@const x = (i + 0.5) * TILE_WIDTH}
-						{@const y = tempToY(day.temperatureMin)}
+						{@const y = tempToY(getLowTemp(day))}
 						<circle cx={x} cy={y} r="3" fill={TEMP_COLOR_COLD} />
 					{/each}
 				</svg>
@@ -429,7 +449,8 @@
 					<!-- High temperature labels -->
 					{#each days as day, i (day.ms)}
 						{@const x = (i + 0.5) * TILE_WIDTH}
-						{@const y = tempToY(day.temperatureMax)}
+						{@const highTemp = getHighTemp(day)}
+						{@const y = tempToY(highTemp)}
 						<text
 							{x}
 							y={y - 5}
@@ -444,14 +465,15 @@
 							onclick={toggleUnits}
 							onkeydown={(e) => e.key === 'Enter' && toggleUnits()}
 						>
-							{formatTemp(day.temperatureMax, nsWeatherData.units.temperature)}
+							{formatTemp(highTemp, nsWeatherData.units.temperature)}
 						</text>
 					{/each}
 
 					<!-- Low temperature labels -->
 					{#each days as day, i (day.ms)}
 						{@const x = (i + 0.5) * TILE_WIDTH}
-						{@const y = tempToY(day.temperatureMin)}
+						{@const lowTemp = getLowTemp(day)}
+						{@const y = tempToY(lowTemp)}
 						<text
 							{x}
 							y={y + 14}
@@ -466,7 +488,7 @@
 							onclick={toggleUnits}
 							onkeydown={(e) => e.key === 'Enter' && toggleUnits()}
 						>
-							{formatTemp(day.temperatureMin, nsWeatherData.units.temperature)}
+							{formatTemp(lowTemp, nsWeatherData.units.temperature)}
 						</text>
 					{/each}
 				</svg>

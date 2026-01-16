@@ -58,6 +58,7 @@ export type DailyForecast = {
 	temperature: number;
 	temperatureMax: number;
 	temperatureMin: number;
+	temperatureMean: number;
 	precipitation: number;
 	rain: number;
 	humidity: number;

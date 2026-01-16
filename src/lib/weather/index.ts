@@ -54,6 +54,9 @@ export {
 	// Derived
 	getTemperatureStats,
 	getIntervals,
+	getWeightedAvgTemp,
+	getPlotHighTemp,
+	getPlotLowTemp,
 } from './calc';
 
 // Types

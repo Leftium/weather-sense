@@ -1180,10 +1180,9 @@
 	// Timeline grid - parent container for hourly and daily sections
 	.timeline-grid {
 		overflow-x: hidden;
-		display: grid;
-		grid-template-columns: 64px auto auto minmax(0, 1fr); // Col 1: temp gradient square
-		grid-row-gap: 0.5em; // Gap between day rows (not within rows)
-		grid-column-gap: 0.2em;
+		display: flex;
+		flex-direction: column;
+		row-gap: 1.5em;
 		margin-bottom: 0.2em;
 		background: $color-ghost-white;
 	}
@@ -1192,7 +1191,7 @@
 	.temp-gradient-bar {
 		grid-column: 1;
 		grid-row: 2;
-		width: 64px; // Square width
+		width: 64px;
 		height: 64px; // Match TimeLine plot height (without x-axis)
 		background: linear-gradient(
 			to bottom right,
@@ -1201,7 +1200,6 @@
 			var(--color-low) 80%,
 			var(--color-low) 100%
 		);
-		align-self: center; // Vertically center with plot
 		display: flex;
 		align-items: center;
 		justify-content: center;
@@ -1236,36 +1234,27 @@
 	}
 
 	.timeline-divider {
-		grid-column: 1 / -1;
 		margin: 0.5em 0;
 		border: none;
 		border-top: 1px solid $color-border-light;
 	}
 
-	// Hourly row (24hrs) - spans all columns, uses subgrid with 2 internal rows
-	.hourly-row {
+	// Shared row styles for hourly and daily rows
+	.hourly-row,
+	.day-row {
 		display: grid;
-		grid-template-columns: subgrid;
-		grid-template-rows: auto auto; // Row 1: day-label, Row 2: gradient + timeline
-		row-gap: 0; // No gap between label and plot
-		grid-column: 1 / -1;
-		align-items: start;
+		grid-template-columns: 64px 1fr;
+		grid-template-rows: auto auto; // Row 1: label, Row 2: plot
 		font-family: Lato, sans-serif;
+	}
+
+	.hourly-row {
 		margin-top: 0.2em;
 		margin-bottom: 0.5em;
+	}
 
-		.day-label {
-			grid-column: 1 / -1; // Span all columns
-			grid-row: 1;
-			display: grid;
-			grid-template-columns: subgrid; // Inherit parent columns
-			align-items: baseline;
-		}
-
-		.timeline {
-			grid-column: 2 / -1; // Span from column 2 to end
-			grid-row: 2;
-		}
+	.day-row {
+		position: relative;
 	}
 
 	// Map row - edge-to-edge, no padding
@@ -1274,42 +1263,24 @@
 		padding-inline: 0;
 	}
 
-	// Daily rows - span all columns, use subgrid with 2 internal rows
-	.day-row {
-		display: grid;
-		grid-template-columns: subgrid;
-		grid-template-rows: auto auto; // Row 1: day-label, Row 2: gradient + timeline
-		row-gap: 0; // No gap between label and plot
-		grid-column: 1 / -1;
-		position: relative;
-		align-items: start;
-
-		.day-label {
-			grid-column: 1 / -1; // Span all columns
-			grid-row: 1;
-			display: grid;
-			grid-template-columns: subgrid; // Inherit parent columns
-			align-items: baseline;
-		}
-
-		.timeline {
-			grid-column: 2 / -1; // Span from column 2 to end
-			grid-row: 2;
-		}
-	}
-
 	// Day label styles - now on ghost-white background
 	.day-label {
+		grid-column: 1 / -1; // Span both columns
+		grid-row: 1;
+		align-self: end; // Align to bottom, close to plot
+		display: grid;
+		grid-template-columns: 64px 1fr; // Match parent columns
+		align-items: baseline;
 		overflow: visible;
 		z-index: 1;
 		line-height: 1.2;
-		padding-bottom: 4px; // Gap between label and plot
 
 		.day {
-			grid-column: 1; // Above temp gradient
-			text-align: right; // Right-align to the split
+			grid-column: 1;
+			text-align: right;
 			padding-right: 0.3em;
-			color: $color-text-primary; // #333 - dark grey for readability on light bg
+			box-sizing: border-box;
+			color: $color-text-primary;
 			font-weight: 600;
 
 			&.today {
@@ -1318,25 +1289,26 @@
 		}
 
 		.temps {
-			grid-column: 2 / -1; // Above timeline, starts at split
+			grid-column: 2;
 			font-size: 13px;
 			font-weight: bold;
 			display: flex;
 			gap: 0.3em;
 
 			.avg {
-				color: $color-text-secondary; // #666 - medium grey
+				color: $color-text-secondary;
 			}
 		}
 	}
 
 	.timeline {
-		width: 100%;
+		grid-column: 2;
+		grid-row: 2;
 		min-width: 0; // Allow grid item to shrink below content size
-		height: calc(64px + $size-3);
+		height: 64px; // Plot height without x-axis
 
 		&.today {
-			height: calc(104px + $size-3);
+			height: calc(104px + $size-3); // Extra height for x-axis labels
 		}
 	}
 

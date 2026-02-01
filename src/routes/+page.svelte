@@ -855,8 +855,9 @@
 					<li><a href="https://open-meteo.com/">Open-Meteo</a></li>
 					<li>
 						<a
-							href="https://openweathermap.org/find?q={encodeURIComponent(weatherStore.name ?? '')}"
-							>OpenWeather</a
+							href="https://old.openweathermap.org/find?q={encodeURIComponent(
+								weatherStore.name ?? '',
+							)}">OpenWeather</a
 						>
 					</li>
 					<li><a href="https://www.rainviewer.com/api.html">RainViewer</a></li>

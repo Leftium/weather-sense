@@ -63,6 +63,7 @@
 	import { getSunAltitude } from '$lib/horizon';
 	import { iconSetStore } from '$lib/iconSet.svelte';
 	import { wmoGradientStore } from '$lib/wmoGradient.svelte';
+	import { calmModeStore } from '$lib/calm.svelte';
 	import type { Markish } from '@observablehq/plot';
 	import dayjs from 'dayjs';
 
@@ -900,7 +901,17 @@
 			axis: xAxis ? true : null,
 			domain: [msStart, msEnd],
 			range: [MARGIN_LEFT, clientWidth - MARGIN_RIGHT],
-			tickFormat: (ms: number) => nsWeatherData.tzFormat(ms, 'ha'),
+			tickFormat: (ms: number) => {
+				// In calm mode, only show "Now" for the current hour, blank for others
+				if (calmModeStore.value) {
+					const now = Date.now();
+					const hourStart = ms;
+					const hourEnd = ms + MS_IN_HOUR;
+					if (now >= hourStart && now < hourEnd) return 'Now';
+					return '';
+				}
+				return nsWeatherData.tzFormat(ms, 'ha');
+			},
 		},
 	});
 

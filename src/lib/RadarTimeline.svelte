@@ -9,6 +9,7 @@
 	import { MS_IN_MINUTE, MS_IN_SECOND } from './util';
 
 	import type { WeatherStore, WeatherDataEvents } from '$lib/weather';
+	import { calmModeStore } from '$lib/calm.svelte';
 	let {
 		radarLayers = $bindable(),
 		nsWeatherData,
@@ -61,7 +62,7 @@
 					class:loaded={index === range.length - 1 || find(radarLayers, ['index', index])?.loaded}
 					class:minor-time={isMinorIndex}
 				>
-					{nsWeatherData.tzFormat(ms, isMinorIndex ? 'mm' : 'h:mm')}
+					{calmModeStore.value ? '|' : nsWeatherData.tzFormat(ms, isMinorIndex ? 'mm' : 'h:mm')}
 				</div>
 			{/each}
 		</datalist>

@@ -3,6 +3,7 @@
 	import { getEmitter } from '$lib/emitter';
 	import { trackable } from '$lib/trackable';
 	import { colors, MS_IN_MINUTE } from '$lib/util';
+	import { calmModeStore } from '$lib/calm.svelte';
 	import * as Plot from '@observablehq/plot';
 	import * as d3 from 'd3';
 	import { clamp } from 'lodash-es';
@@ -118,6 +119,13 @@
 			ticks: tickValues,
 			tickFormat: (ms: number) => {
 				const minFromStart = Math.round((ms - msStart) / MS_IN_MINUTE);
+				// In calm mode, use descriptive labels
+				if (calmModeStore.value) {
+					if (minFromStart === 0) return 'Now';
+					if (minFromStart === 30) return 'Half Hour';
+					if (minFromStart === 60) return 'Hour';
+					return '';
+				}
 				const absTime = nsWeatherData.tzFormat(ms, 'h:mma').replace(':00', '').toLowerCase();
 				// Show "now" for start, just time for 60min, relative+time for others
 				if (minFromStart === 0) return `now ${absTime}`;

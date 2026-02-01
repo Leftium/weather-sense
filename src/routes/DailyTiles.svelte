@@ -17,6 +17,7 @@
 	} from '$lib/util';
 	import { iconSetStore } from '$lib/iconSet.svelte';
 	import { wmoGradientStore } from '$lib/wmoGradient.svelte';
+	import { numberToWord, calmCompactDate } from '$lib/calm.svelte';
 	import { trackable, isTempLabel } from '$lib/trackable';
 	import { getEmitter } from '$lib/emitter';
 	import { clamp, minBy, maxBy } from 'lodash-es';
@@ -29,6 +30,7 @@
 		maxForecastDays = 16,
 
 		groupIcons = true,
+		calmMode = false,
 		onMore,
 		onAll,
 		onReset,
@@ -38,6 +40,7 @@
 		maxForecastDays?: number;
 
 		groupIcons?: boolean;
+		calmMode?: boolean;
 		onMore?: () => void;
 		onAll?: () => void;
 		onReset?: () => void;
@@ -336,7 +339,9 @@
 							in:fade={{ duration: 300 }}
 						/>
 						<div class="tile-content" in:fade={{ duration: 300 }}>
-							<div class="date" class:today class:past>{day.compactDate}</div>
+							<div class="date" class:today class:past>
+								{calmMode ? calmCompactDate(day.compactDate) : day.compactDate}
+							</div>
 						</div>
 					{/if}
 					<div class="past-overlay" class:past></div>
@@ -431,7 +436,7 @@
 
 					<!-- Precipitation labels -->
 					{#each days as day, i (day.ms)}
-						{#if day.precipitation > 0}
+						{#if day.precipitation > 0 && !calmMode}
 							<text
 								x={(i + 1) * TILE_WIDTH - 4}
 								y={PRECIP_LABEL_Y}
@@ -446,51 +451,55 @@
 						{/if}
 					{/each}
 
-					<!-- High temperature labels -->
-					{#each days as day, i (day.ms)}
-						{@const x = (i + 0.5) * TILE_WIDTH}
-						{@const highTemp = getHighTemp(day)}
-						{@const y = tempToY(highTemp)}
-						<text
-							{x}
-							y={y - 5}
-							text-anchor="middle"
-							font-size="13"
-							font-weight="bold"
-							fill={TEMP_COLOR_HOT}
-							filter="url(#white-glow)"
-							class="temp-label"
-							role="button"
-							tabindex="0"
-							onclick={toggleUnits}
-							onkeydown={(e) => e.key === 'Enter' && toggleUnits()}
-						>
-							{formatTemp(highTemp, nsWeatherData.units.temperature)}
-						</text>
-					{/each}
+					<!-- High temperature labels (hidden in calm mode) -->
+					{#if !calmMode}
+						{#each days as day, i (day.ms)}
+							{@const x = (i + 0.5) * TILE_WIDTH}
+							{@const highTemp = getHighTemp(day)}
+							{@const y = tempToY(highTemp)}
+							<text
+								{x}
+								y={y - 5}
+								text-anchor="middle"
+								font-size="13"
+								font-weight="bold"
+								fill={TEMP_COLOR_HOT}
+								filter="url(#white-glow)"
+								class="temp-label"
+								role="button"
+								tabindex="0"
+								onclick={toggleUnits}
+								onkeydown={(e) => e.key === 'Enter' && toggleUnits()}
+							>
+								{formatTemp(highTemp, nsWeatherData.units.temperature)}
+							</text>
+						{/each}
+					{/if}
 
-					<!-- Low temperature labels -->
-					{#each days as day, i (day.ms)}
-						{@const x = (i + 0.5) * TILE_WIDTH}
-						{@const lowTemp = getLowTemp(day)}
-						{@const y = tempToY(lowTemp)}
-						<text
-							{x}
-							y={y + 14}
-							text-anchor="middle"
-							font-size="13"
-							font-weight="bold"
-							fill={TEMP_COLOR_COLD}
-							filter="url(#white-glow)"
-							class="temp-label"
-							role="button"
-							tabindex="0"
-							onclick={toggleUnits}
-							onkeydown={(e) => e.key === 'Enter' && toggleUnits()}
-						>
-							{formatTemp(lowTemp, nsWeatherData.units.temperature)}
-						</text>
-					{/each}
+					<!-- Low temperature labels (hidden in calm mode) -->
+					{#if !calmMode}
+						{#each days as day, i (day.ms)}
+							{@const x = (i + 0.5) * TILE_WIDTH}
+							{@const lowTemp = getLowTemp(day)}
+							{@const y = tempToY(lowTemp)}
+							<text
+								{x}
+								y={y + 14}
+								text-anchor="middle"
+								font-size="13"
+								font-weight="bold"
+								fill={TEMP_COLOR_COLD}
+								filter="url(#white-glow)"
+								class="temp-label"
+								role="button"
+								tabindex="0"
+								onclick={toggleUnits}
+								onkeydown={(e) => e.key === 'Enter' && toggleUnits()}
+							>
+								{formatTemp(lowTemp, nsWeatherData.units.temperature)}
+							</text>
+						{/each}
+					{/if}
 				</svg>
 			{/if}
 
@@ -518,7 +527,7 @@
 	<div class="button-bar">
 		<div class="button-group">
 			<button class="day-count" onclick={() => onMore?.()} disabled={isLoading || !canExpand}>
-				{forecastDaysVisible} day forecast
+				{calmMode ? numberToWord(forecastDaysVisible) : forecastDaysVisible} day forecast
 			</button>
 
 			<button class="tile-btn" onclick={() => onAll?.()} disabled={isLoading || !canExpand}
@@ -530,8 +539,18 @@
 		</div>
 
 		<div class="button-group">
-			<button class="tile-btn unit-toggle" onclick={toggleUnits}>
-				°{nsWeatherData.units.temperature}, {nsWeatherData.units.temperature === 'C' ? 'km' : 'mi'}
+			<button
+				class="tile-btn unit-toggle"
+				class:calm={calmMode}
+				onclick={() => !calmMode && toggleUnits()}
+			>
+				{#if calmMode}
+					Show Units
+				{:else}
+					°{nsWeatherData.units.temperature}, {nsWeatherData.units.temperature === 'C'
+						? 'km'
+						: 'mi'}
+				{/if}
 			</button>
 		</div>
 	</div>
@@ -738,6 +757,11 @@
 				width: 62px;
 				text-align: center;
 				white-space: nowrap;
+
+				&.calm {
+					width: auto;
+					min-width: 62px;
+				}
 			}
 		}
 	}

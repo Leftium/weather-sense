@@ -16,7 +16,8 @@
 	let mainElement: HTMLElement;
 	let mapElement: HTMLDivElement;
 
-	let { nsWeatherData }: { nsWeatherData: WeatherStore } = $props();
+	let { nsWeatherData, calmMode = false }: { nsWeatherData: WeatherStore; calmMode?: boolean } =
+		$props();
 
 	const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 
@@ -298,7 +299,7 @@
 	});
 </script>
 
-<main bind:this={mainElement}>
+<main bind:this={mainElement} class:calm={calmMode}>
 	<div bind:this={mapElement}></div>
 	<RadarTimeline bind:radarLayers {nsWeatherData} />
 </main>
@@ -322,5 +323,10 @@
 		border: 2px solid white;
 		border-radius: 50%;
 		box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
+	}
+
+	/* Hide scale control in calm mode */
+	main.calm :global(.maplibregl-ctrl-scale) {
+		display: none;
 	}
 </style>

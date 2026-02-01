@@ -36,6 +36,17 @@
 	} from '$lib/skyAnimation';
 	import type { WmoCodeInfo } from '$lib/util.js';
 	import { iconSetStore } from '$lib/iconSet.svelte';
+	import {
+		calmModeStore,
+		describeTemp,
+		describePrecipAmount,
+		describePrecipChance,
+		describeHumidity,
+		describeAqi,
+		numberToWord,
+		dayOfMonthToOrdinal,
+		calmCompactDate,
+	} from '$lib/calm.svelte';
 	import RadarMapLibre from './RadarMapLibre.svelte';
 	import {
 		getDisplayBundleFromStore as getDisplayBundle,
@@ -85,6 +96,29 @@
 
 	// Show minutely plot when ?m param is present in URL (reactive to navigation)
 	const showMinutely = $derived($page.url.searchParams.has('m'));
+
+	// Calm mode - hides numbers and units for a more peaceful display
+	// Entered via ?calm URL param, exited on any click/touch
+	const calmModeFromUrl = $derived($page.url.searchParams.has('calm'));
+
+	// Track if user has manually exited calm mode (to prevent URL from re-enabling)
+	let calmModeUserExited = $state(false);
+
+	// Sync URL param to store on mount and URL changes
+	$effect(() => {
+		if (calmModeFromUrl && !calmModeStore.value && !calmModeUserExited) {
+			calmModeStore.value = true;
+		}
+	});
+
+	// Reference for convenience in template
+	const calmMode = $derived(calmModeStore.value);
+
+	// Exit calm mode and mark as user-exited
+	function exitCalmMode() {
+		calmModeUserExited = true;
+		calmModeStore.exit();
+	}
 
 	// URL with ?m param added (preserves other params like location)
 	const minutelyUrl = $derived.by(() => {
@@ -151,19 +185,31 @@
 			color: 'gradient',
 			checked: plotVisibility.temp,
 			bindKey: 'temp',
-			toggleUnits: true,
-			getValue: () => display.temperature,
+			toggleUnits: !calmMode,
+			getValue: () => (calmMode ? describeTemp(display.raw.temperature) : display.temperature),
 		},
 		tempRange: {
 			key: 'tempRange',
 			color: 'gray',
 			checked: plotVisibility.tempRange,
 			bindKey: 'tempRange',
-			toggleUnits: true,
+			toggleUnits: !calmMode,
 			getValue: () =>
-				formatTemp(weatherStore.daily?.[2]?.temperatureMin, weatherStore.units.temperature, false),
+				calmMode
+					? describeTemp(weatherStore.daily?.[2]?.temperatureMin)
+					: formatTemp(
+							weatherStore.daily?.[2]?.temperatureMin,
+							weatherStore.units.temperature,
+							false,
+						),
 			getValueEnd: () =>
-				formatTemp(weatherStore.daily?.[2]?.temperatureMax, weatherStore.units.temperature, false),
+				calmMode
+					? describeTemp(weatherStore.daily?.[2]?.temperatureMax)
+					: formatTemp(
+							weatherStore.daily?.[2]?.temperatureMax,
+							weatherStore.units.temperature,
+							false,
+						),
 		},
 		dewPoint: {
 			key: 'dewPoint',
@@ -171,16 +217,19 @@
 			color: colors.dewPoint,
 			checked: plotVisibility.dewPoint,
 			bindKey: 'dewPoint',
-			toggleUnits: true,
-			getValue: () => formatTemp(display.raw.dewPoint, weatherStore.units.temperature, false),
+			toggleUnits: !calmMode,
+			getValue: () =>
+				calmMode
+					? describeTemp(display.raw.dewPoint)
+					: formatTemp(display.raw.dewPoint, weatherStore.units.temperature, false),
 		},
 		humidity: {
 			key: 'humidity',
-			label: 'Humidity:',
+			label: calmMode ? 'Humid:' : 'Humidity:',
 			color: colors.humidity,
 			checked: plotVisibility.humidity,
 			bindKey: 'humidity',
-			getValue: () => display.humidity,
+			getValue: () => (calmMode ? describeHumidity(display.raw.humidity) : display.humidity),
 		},
 		precip: {
 			key: 'precip',
@@ -192,12 +241,15 @@
 				const isMinutelyScrub = weatherStore.trackedElement?.closest('.minutely-precip-plot');
 				if (isMinutelyScrub) {
 					const minutely = getMinutelyPrecipAt(weatherStore.dataMinutely, weatherStore.ms);
-					if (minutely !== null) return `${minutely.toFixed(1)}mm`;
+					if (minutely !== null) {
+						return calmMode ? describePrecipAmount(minutely) : `${minutely.toFixed(1)}mm`;
+					}
 				}
 				// Get hourly value directly (snap to hour boundary)
 				const hourMs = startOf(weatherStore.ms, 'hour', weatherStore.timezone);
 				const hourly = weatherStore.dataForecast.get(hourMs);
-				return `${hourly?.precipitation?.toFixed(1) ?? '?'}mm`;
+				const precip = hourly?.precipitation ?? null;
+				return calmMode ? describePrecipAmount(precip) : `${precip?.toFixed(1) ?? '?'}mm`;
 			},
 		},
 		chance: {
@@ -206,15 +258,16 @@
 			color: colors.precipitationProbability,
 			checked: plotVisibility.chance,
 			bindKey: 'chance',
-			getValue: () => display.precipChance,
+			getValue: () =>
+				calmMode ? describePrecipChance(display.raw.precipChance) : display.precipChance,
 		},
 		euAqi: {
 			key: 'euAqi',
-			label: 'EU AQI:',
+			label: calmMode ? 'AQI:' : 'EU AQI:',
 			color: aqiEuropeToLabel(display.raw.aqiEurope).color,
 			checked: plotVisibility.euAqi,
 			bindKey: 'euAqi',
-			getValue: () => display.aqiEurope,
+			getValue: () => (calmMode ? describeAqi(display.raw.aqiEurope) : display.aqiEurope),
 		},
 		usAqi: {
 			key: 'usAqi',
@@ -222,7 +275,7 @@
 			color: aqiUsToLabel(display.raw.aqiUs).color,
 			checked: plotVisibility.usAqi,
 			bindKey: 'usAqi',
-			getValue: () => display.aqiUs,
+			getValue: () => (calmMode ? describeAqi(display.raw.aqiUs) : display.aqiUs),
 		},
 		showAll: {
 			key: 'showAll',
@@ -528,15 +581,28 @@
 			mqExpanded.removeEventListener('change', handlerExpanded);
 		};
 	});
+
+	// Calm mode exit handler - use svelte:window for reliable event handling
+	// Don't exit if user is scrubbing (trackedElement is set during scrub)
+	function handleCalmModeExit(event: MouseEvent) {
+		// Skip if scrubbing is active
+		if (weatherStore.trackedElement) return;
+
+		if (calmMode) {
+			exitCalmMode();
+		}
+	}
 </script>
 
 <svelte:head>
 	<title>{weatherStore.name ? `${weatherStore.name} - WeatherSense` : 'WeatherSense'}</title>
 </svelte:head>
 
+<svelte:window onclick={handleCalmModeExit} />
+
 <div class="map-row container">
 	<div class="map">
-		<RadarMapLibre nsWeatherData={weatherStore} />
+		<RadarMapLibre nsWeatherData={weatherStore} {calmMode} />
 	</div>
 	{#if showMinutely}
 		<MinutelyPrecipPlot nsWeatherData={weatherStore} />
@@ -570,11 +636,17 @@
 		/>
 
 		<div class="time">
-			<div>{weatherStore.tzFormat(weatherStore.ms, 'ddd MMM D')}</div>
-			<div>
-				{weatherStore.tzFormat(weatherStore.ms, 'hh:mma')}
-				<span class="timezone">{weatherStore.timezoneAbbreviation}</span>
-			</div>
+			{#if calmMode}
+				{@const dayOfMonth = parseInt(weatherStore.tzFormat(weatherStore.ms, 'D'), 10)}
+				<div>{weatherStore.tzFormat(weatherStore.ms, 'ddd')}</div>
+				<div>{weatherStore.tzFormat(weatherStore.ms, 'MMM')} {dayOfMonthToOrdinal(dayOfMonth)}</div>
+			{:else}
+				<div>{weatherStore.tzFormat(weatherStore.ms, 'ddd MMM D')}</div>
+				<div>
+					{weatherStore.tzFormat(weatherStore.ms, 'hh:mma')}
+					<span class="timezone">{weatherStore.timezoneAbbreviation}</span>
+				</div>
+			{/if}
 		</div>
 	</div>
 
@@ -655,6 +727,7 @@
 				{forecastDaysVisible}
 				{maxForecastDays}
 				{groupIcons}
+				{calmMode}
 				onMore={() => (forecastDaysVisible = Math.min(forecastDaysVisible + 2, maxForecastDays))}
 				onAll={() => (forecastDaysVisible = maxForecastDays)}
 				onReset={() => (forecastDaysVisible = 3)}
@@ -664,36 +737,46 @@
 		<div class="timeline-grid">
 			<div class="hourly-row">
 				<div class="day-label">
-					<div class="day today">24hrs</div>
-					<div class="temps">
-						<span class="avg" use:toggleUnits={{ temperature: true }}>
-							{formatTemp(
-								groupIcons
-									? getWeightedAvgTemp(weatherStore.daily?.[2]?.ms ?? 0, weatherStore.hourly)
-									: weatherStore.daily?.[2]?.temperatureMean,
-								weatherStore.units.temperature,
-								false,
-							)}
-						</span>
-						<span class="high" style:color={TEMP_COLOR_HOT} use:toggleUnits={{ temperature: true }}>
-							{formatTemp(
-								groupIcons
-									? getPlotHighTemp(weatherStore.daily?.[2]?.ms ?? 0, weatherStore.hourly)
-									: weatherStore.daily?.[2]?.temperatureMax,
-								weatherStore.units.temperature,
-								false,
-							)}
-						</span>
-						<span class="low" style:color={TEMP_COLOR_COLD} use:toggleUnits={{ temperature: true }}>
-							{formatTemp(
-								groupIcons
-									? getPlotLowTemp(weatherStore.daily?.[2]?.ms ?? 0, weatherStore.hourly)
-									: weatherStore.daily?.[2]?.temperatureMin,
-								weatherStore.units.temperature,
-								false,
-							)}
-						</span>
-					</div>
+					<div class="day today">{calmMode ? 'Twenty-four Hour Outlook' : '24hrs'}</div>
+					{#if !calmMode}
+						<div class="temps">
+							<span class="avg" use:toggleUnits={{ temperature: true }}>
+								{formatTemp(
+									groupIcons
+										? getWeightedAvgTemp(weatherStore.daily?.[2]?.ms ?? 0, weatherStore.hourly)
+										: weatherStore.daily?.[2]?.temperatureMean,
+									weatherStore.units.temperature,
+									false,
+								)}
+							</span>
+							<span
+								class="high"
+								style:color={TEMP_COLOR_HOT}
+								use:toggleUnits={{ temperature: true }}
+							>
+								{formatTemp(
+									groupIcons
+										? getPlotHighTemp(weatherStore.daily?.[2]?.ms ?? 0, weatherStore.hourly)
+										: weatherStore.daily?.[2]?.temperatureMax,
+									weatherStore.units.temperature,
+									false,
+								)}
+							</span>
+							<span
+								class="low"
+								style:color={TEMP_COLOR_COLD}
+								use:toggleUnits={{ temperature: true }}
+							>
+								{formatTemp(
+									groupIcons
+										? getPlotLowTemp(weatherStore.daily?.[2]?.ms ?? 0, weatherStore.hourly)
+										: weatherStore.daily?.[2]?.temperatureMin,
+									weatherStore.units.temperature,
+									false,
+								)}
+							</span>
+						</div>
+					{/if}
 				</div>
 				<div
 					class="temp-gradient-bar"
@@ -772,24 +855,26 @@
 				<div class={['day-row', { past }]} transition:slide={{ duration: 1000 }}>
 					<div class={['day-label', { past }]}>
 						<div class={['day', { today }]}>
-							{day.compactDate}
+							{calmMode ? calmCompactDate(day.compactDate) : day.compactDate}
 						</div>
-						<div class="temps">
-							<span class="avg" use:toggleUnits={{ temperature: true }}>
-								{formatTemp(avgTemp, weatherStore.units.temperature, false)}
-							</span>
-							<span
-								class="high"
-								style:color={TEMP_COLOR_HOT}
-								use:toggleUnits={{ temperature: true }}
-								>{formatTemp(highTemp, weatherStore.units.temperature, false)}</span
-							><span
-								class="low"
-								style:color={TEMP_COLOR_COLD}
-								use:toggleUnits={{ temperature: true }}
-								>{formatTemp(lowTemp, weatherStore.units.temperature, false)}</span
-							>
-						</div>
+						{#if !calmMode}
+							<div class="temps">
+								<span class="avg" use:toggleUnits={{ temperature: true }}>
+									{formatTemp(avgTemp, weatherStore.units.temperature, false)}
+								</span>
+								<span
+									class="high"
+									style:color={TEMP_COLOR_HOT}
+									use:toggleUnits={{ temperature: true }}
+									>{formatTemp(highTemp, weatherStore.units.temperature, false)}</span
+								><span
+									class="low"
+									style:color={TEMP_COLOR_COLD}
+									use:toggleUnits={{ temperature: true }}
+									>{formatTemp(lowTemp, weatherStore.units.temperature, false)}</span
+								>
+							</div>
+						{/if}
 					</div>
 					<div
 						class={['temp-gradient-bar', { today }]}
@@ -843,7 +928,7 @@
 									document.documentElement.scrollTop = 0;
 									document.body.scrollTop = 0; // Safari fallback
 								});
-							}}>60min Forecast</a
+							}}>{calmMode ? 'Minutely Forecast' : '60min Forecast'}</a
 						>
 						<!-- eslint-enable svelte/no-navigation-without-resolve -->
 					</li>
@@ -1283,11 +1368,12 @@
 
 		.day {
 			grid-column: 1;
-			text-align: right;
-			padding-right: 0.3em;
+			text-align: left;
+			padding-left: 0.3em;
 			box-sizing: border-box;
 			color: $color-text-primary;
 			font-weight: 600;
+			white-space: nowrap;
 
 			&.today {
 				font-weight: 900;

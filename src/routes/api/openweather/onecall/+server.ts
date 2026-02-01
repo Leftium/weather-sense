@@ -18,31 +18,32 @@ export const GET: RequestHandler = async ({ url, fetch, cookies }) => {
 		return json({ error: 'OpenWeather API key not configured', available: false });
 	}
 
+	// TODO: Re-enable after BYOK UX is complete
 	// Track usage for non-BYOK users (nudge system)
-	if (!userKey && env.OPEN_WEATHER_APPID) {
-		const usesLeft = parseInt(cookies.get('openweather_uses') ?? '10');
-
-		if (usesLeft <= 0) {
-			return json(
-				{
-					error: 'quota_exceeded',
-					message: 'Free usage limit reached. Add your own API key for unlimited access.',
-					settingsUrl: '/settings#openweather',
-					available: false,
-				},
-				{ status: 402 },
-			);
-		}
-
-		// Decrement usage counter
-		cookies.set('openweather_uses', String(usesLeft - 1), {
-			path: '/',
-			httpOnly: true,
-			secure: true,
-			sameSite: 'strict',
-			maxAge: 60 * 60 * 24 * 365, // 1 year
-		});
-	}
+	// if (!userKey && env.OPEN_WEATHER_APPID) {
+	// 	const usesLeft = parseInt(cookies.get('openweather_uses') ?? '10');
+	//
+	// 	if (usesLeft <= 0) {
+	// 		return json(
+	// 			{
+	// 				error: 'quota_exceeded',
+	// 				message: 'Free usage limit reached. Add your own API key for unlimited access.',
+	// 				settingsUrl: '/settings#openweather',
+	// 				available: false,
+	// 			},
+	// 			{ status: 402 },
+	// 		);
+	// 	}
+	//
+	// 	// Decrement usage counter
+	// 	cookies.set('openweather_uses', String(usesLeft - 1), {
+	// 		path: '/',
+	// 		httpOnly: true,
+	// 		secure: true,
+	// 		sameSite: 'strict',
+	// 		maxAge: 60 * 60 * 24 * 365, // 1 year
+	// 	});
+	// }
 
 	try {
 		// Build API URL

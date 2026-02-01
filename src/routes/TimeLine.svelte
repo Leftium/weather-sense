@@ -1664,10 +1664,49 @@
 		div?.append(plot); // Then add the new chart.
 		/* eslint-enable svelte/no-dom-manipulating */
 
-		// Apply SVG filters to plot elements (more reliable than CSS filters on iOS)
-		// Filters are defined globally in template, referenced here by ID
+		// Apply SVG filters to plot elements
+		// iOS Safari requires filter definitions to be in the SAME SVG document,
+		// so we inject them into each plot's SVG rather than using a global SVG
 		const svg = div?.querySelector('svg');
 		if (svg) {
+			// Inject filter definitions into this SVG's defs (iOS-compatible)
+			let defs = svg.querySelector('defs');
+			if (!defs) {
+				defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+				svg.insertBefore(defs, svg.firstChild);
+			}
+
+			// Add emboss-glow filter if not present
+			if (!defs.querySelector('#emboss-glow')) {
+				const embossFilter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+				embossFilter.setAttribute('id', 'emboss-glow');
+				embossFilter.setAttribute('x', '-50%');
+				embossFilter.setAttribute('y', '-50%');
+				embossFilter.setAttribute('width', '200%');
+				embossFilter.setAttribute('height', '200%');
+				embossFilter.innerHTML = `
+					<feDropShadow dx="-1" dy="-1" stdDeviation="1" flood-color="white" flood-opacity="0.5" />
+					<feDropShadow dx="1" dy="1" stdDeviation="1" flood-color="black" flood-opacity="0.4" />
+				`;
+				defs.appendChild(embossFilter);
+			}
+
+			// Add icon-glow filter if not present
+			if (!defs.querySelector('#icon-glow')) {
+				const iconFilter = document.createElementNS('http://www.w3.org/2000/svg', 'filter');
+				iconFilter.setAttribute('id', 'icon-glow');
+				iconFilter.setAttribute('x', '-50%');
+				iconFilter.setAttribute('y', '-50%');
+				iconFilter.setAttribute('width', '200%');
+				iconFilter.setAttribute('height', '200%');
+				iconFilter.innerHTML = `
+					<feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="gray" flood-opacity="0.6" />
+					<feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="gray" flood-opacity="0.4" />
+					<feDropShadow dx="0" dy="0" stdDeviation="12" flood-color="gray" flood-opacity="0.3" />
+				`;
+				defs.appendChild(iconFilter);
+			}
+
 			// Apply embossed glow to plot lines
 			svg.querySelectorAll('g[aria-label="line"] path').forEach((path) => {
 				(path as SVGPathElement).style.filter = 'url(#emboss-glow)';
@@ -1756,47 +1795,6 @@
 	</div>
 {/if}
 
-<!-- Global SVG filter definitions (shared across all plots, avoids duplication) -->
-<svg class="global-filters">
-	<defs>
-		<!-- Embossed glow filter for plot lines (iOS-compatible) -->
-		<filter id="emboss-glow" x="-50%" y="-50%" width="200%" height="200%">
-			<!-- Light shadow (top-left) -->
-			<feDropShadow
-				dx="-1"
-				dy="-1"
-				stdDeviation="1"
-				flood-color="white"
-				flood-opacity="0.5"
-				result="light"
-			/>
-			<!-- Dark shadow (bottom-right) -->
-			<feDropShadow dx="1" dy="1" stdDeviation="1" flood-color="black" flood-opacity="0.4" />
-		</filter>
-
-		<!-- Gray glow filter for WMO icons -->
-		<filter id="icon-glow" x="-50%" y="-50%" width="200%" height="200%">
-			<feDropShadow dx="0" dy="0" stdDeviation="3" flood-color="gray" flood-opacity="0.6" />
-			<feDropShadow dx="0" dy="0" stdDeviation="6" flood-color="gray" flood-opacity="0.4" />
-			<feDropShadow dx="0" dy="0" stdDeviation="12" flood-color="gray" flood-opacity="0.3" />
-		</filter>
-
-		<!-- White glow filter for precipitation bars (top-right edge) -->
-		<!-- Constrain left, right, and top for line-like effect -->
-		<filter id="precip-glow" x="5%" y="0%" width="97%" height="100%">
-			<!-- Glow offset upward and right -->
-			<feDropShadow dx="2" dy="-2" stdDeviation="1" flood-color="white" flood-opacity="0.9" />
-		</filter>
-
-		<!-- Gradient for minutely precipitation bars (white top edge) -->
-		<linearGradient id="precip-minutely-gradient" x1="0" y1="0" x2="0" y2="1">
-			<stop offset="0%" stop-color="white" stop-opacity="0.9" />
-			<stop offset="15%" stop-color="#2244AA" />
-			<stop offset="100%" stop-color="#2244AA" />
-		</linearGradient>
-	</defs>
-</svg>
-
 <div
 	bind:this={div}
 	bind:clientWidth
@@ -1825,14 +1823,6 @@
 	/* Shift last tick label left to prevent clipping */
 	div > :global(svg g[aria-label='x-axis tick label'] text:last-of-type) {
 		text-anchor: end;
-	}
-
-	/* Global SVG filters (hidden, only contains filter definitions) */
-	.global-filters {
-		position: absolute;
-		width: 0;
-		height: 0;
-		overflow: hidden;
 	}
 
 	div {

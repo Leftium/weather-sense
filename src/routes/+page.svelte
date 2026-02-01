@@ -121,9 +121,22 @@
 	}
 
 	// URL with ?m param added (preserves other params like location)
+	// Also preserves calm mode if active
 	const minutelyUrl = $derived.by(() => {
 		const params = new SvelteURLSearchParams($page.url.search);
 		params.set('m', '');
+		if (calmMode && !calmModeUserExited) {
+			params.set('calm', '');
+		} else {
+			params.delete('calm');
+		}
+		return `${$page.url.pathname}?${params.toString()}`;
+	});
+
+	// URL with ?calm param added (for Calm mode link)
+	const calmUrl = $derived.by(() => {
+		const params = new SvelteURLSearchParams($page.url.search);
+		params.set('calm', '');
 		return `${$page.url.pathname}?${params.toString()}`;
 	});
 
@@ -913,7 +926,7 @@
 	<footer>
 		<div class="footer-content">
 			<div class="footer-column">
-				<h3>Useful Info</h3>
+				<h3>Useful Links</h3>
 				<ul>
 					<li><a href={resolve('/wmo-codes')}>WMO Codes</a></li>
 					<li><a href={resolve('/aqi')}>AQI Levels</a></li>
@@ -929,6 +942,20 @@
 									document.body.scrollTop = 0; // Safari fallback
 								});
 							}}>{calmMode ? 'Minutely Forecast' : '60min Forecast'}</a
+						>
+						<!-- eslint-enable svelte/no-navigation-without-resolve -->
+					</li>
+					<li>
+						<!-- eslint-disable svelte/no-navigation-without-resolve -- dynamic URL from $page -->
+						<a
+							href={calmUrl}
+							onclick={(e) => {
+								e.preventDefault();
+								e.stopPropagation(); // Prevent window click handler from exiting calm mode
+								calmModeUserExited = false;
+								calmModeStore.value = true;
+								goto(calmUrl);
+							}}>Calm Mode</a
 						>
 						<!-- eslint-enable svelte/no-navigation-without-resolve -->
 					</li>

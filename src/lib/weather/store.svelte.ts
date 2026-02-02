@@ -172,6 +172,10 @@ export const weatherStore = {
 		return snapshot?.name ?? null;
 	},
 
+	get countryCode() {
+		return snapshot?.countryCode ?? null;
+	},
+
 	get source() {
 		return snapshot?.source ?? '???';
 	},

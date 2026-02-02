@@ -129,6 +129,7 @@ export type WeatherDataEvents = {
 		source: string;
 		coords?: Coordinates;
 		name?: string;
+		countryCode?: string;
 		fetchMinutely?: boolean;
 	};
 
@@ -231,6 +232,7 @@ export type Snapshot = DisplayBundle & {
 	// Location
 	coords: Coordinates | null;
 	name: string | null;
+	countryCode: string | null;
 	source: string;
 
 	// Current weather

@@ -273,6 +273,7 @@ export function getSnapshot(data: WeatherData): Snapshot {
 		// Location
 		coords: data.coords,
 		name: data.name,
+		countryCode: data.countryCode,
 		source: data.source,
 
 		// Current weather

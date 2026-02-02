@@ -259,7 +259,9 @@
 <div class="minutely-precip-plot">
 	<a
 		class="openweather-link"
-		href="https://old.openweathermap.org/find?q={encodeURIComponent(nsWeatherData.name ?? '')}"
+		href="https://old.openweathermap.org/find?q={encodeURIComponent(
+			nsWeatherData.name ?? '',
+		)}{nsWeatherData.countryCode ? ',' + nsWeatherData.countryCode : ''}"
 		target="_blank">Check on OpenWeather</a
 	>
 	{#if hasPrecip}

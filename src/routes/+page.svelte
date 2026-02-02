@@ -337,6 +337,7 @@
 		emit('weatherdata_requestedSetLocation', {
 			source: data.source,
 			name: data.name,
+			countryCode: data.countryCode ?? undefined,
 			coords: data.coords,
 			fetchMinutely: showMinutely,
 		});
@@ -969,7 +970,7 @@
 						<a
 							href="https://old.openweathermap.org/find?q={encodeURIComponent(
 								weatherStore.name ?? '',
-							)}">OpenWeather</a
+							)}{weatherStore.countryCode ? ',' + weatherStore.countryCode : ''}">OpenWeather</a
 						>
 					</li>
 					<li><a href="https://www.rainviewer.com/api.html">RainViewer</a></li>

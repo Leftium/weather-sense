@@ -4,6 +4,7 @@ export const load = async (loadEvent) => {
 
 	let source = 'hardcoded';
 	let name = 'St Paul, MN';
+	let countryCode: string | null = 'US'; // Default for hardcoded St Paul, MN
 	let coords = {
 		latitude: 44.9478656,
 		longitude: -93.1856384,
@@ -19,9 +20,30 @@ export const load = async (loadEvent) => {
 	//gg(paramName);
 
 	if (paramName) {
-		const fetched = await fetch(
-			`https://geocoding-api.open-meteo.com/v1/search?name=${paramName}&count=1`,
-		);
+		// Parse "City, CC" format (like OpenWeather: city name, comma, 2-letter country code)
+		let cityName = paramName;
+		let parsedCountryCode: string | null = null;
+
+		if (paramName.includes(',')) {
+			const parts = paramName.split(',').map((p: string) => p.trim());
+			const lastPart = parts[parts.length - 1];
+
+			// Check if last part is a 2-letter country code (ISO-3166-1 alpha2)
+			if (lastPart.length === 2 && /^[A-Za-z]{2}$/.test(lastPart)) {
+				parsedCountryCode = lastPart.toUpperCase();
+				cityName = parts.slice(0, -1).join(', '); // Rejoin remaining parts as city name
+			}
+		}
+
+		// Build API URL with proper encoding
+		const apiUrl = new URL('https://geocoding-api.open-meteo.com/v1/search');
+		apiUrl.searchParams.set('name', cityName);
+		apiUrl.searchParams.set('count', '10'); // Higher count needed for countryCode filter to work reliably
+		if (parsedCountryCode) {
+			apiUrl.searchParams.set('countryCode', parsedCountryCode);
+		}
+
+		const fetched = await fetch(apiUrl);
 		const jsoned = await fetched.json();
 
 		//gg(jsoned);
@@ -29,6 +51,7 @@ export const load = async (loadEvent) => {
 		if (jsoned?.results?.length) {
 			source = `geocoded`;
 			name = jsoned.results[0].name;
+			countryCode = jsoned.results[0].country_code ?? null;
 			coords = {
 				latitude: jsoned.results[0].latitude,
 				longitude: jsoned.results[0].longitude,
@@ -52,6 +75,7 @@ export const load = async (loadEvent) => {
 		if (city && country && latitude && longitude) {
 			source = 'geo-ip';
 			name = `${city}, ${country === 'US' ? region : country}`;
+			countryCode = country || null; // Vercel IP headers provide 2-letter country code
 			coords = {
 				latitude,
 				longitude,
@@ -64,6 +88,7 @@ export const load = async (loadEvent) => {
 		ipAddress,
 		source,
 		name,
+		countryCode,
 		coords,
 		mapStyle,
 		timezone,

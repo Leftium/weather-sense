@@ -543,6 +543,10 @@ export function initWeatherShell(data: WeatherData) {
 			}
 		}
 
+		if (params.countryCode) {
+			data.countryCode = params.countryCode;
+		}
+
 		// Emit initial snapshot with location data (before fetch)
 		// This ensures components have coords/name immediately
 		emitSnapshot();

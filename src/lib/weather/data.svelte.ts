@@ -44,6 +44,9 @@ class WeatherData {
 	/** Location name (city, region) */
 	name = $state<string | null>(null);
 
+	/** ISO-3166-1 alpha2 country code (e.g., 'US', 'GB') */
+	countryCode = $state<string | null>(null);
+
 	/** Source of location (gps, search, default) */
 	source = $state('???');
 

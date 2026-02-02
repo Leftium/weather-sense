@@ -902,12 +902,16 @@
 			domain: [msStart, msEnd],
 			range: [MARGIN_LEFT, clientWidth - MARGIN_RIGHT],
 			tickFormat: (ms: number) => {
-				// In calm mode, only show "Now" for the current hour, blank for others
+				// In calm mode, show meaningful labels instead of numeric times
 				if (calmModeStore.value) {
 					const now = Date.now();
 					const hourStart = ms;
 					const hourEnd = ms + MS_IN_HOUR;
 					if (now >= hourStart && now < hourEnd) return 'Now';
+					// Check for noon/midnight using local hour
+					const hour = parseInt(nsWeatherData.tzFormat(ms, 'H'), 10);
+					if (hour === 12) return 'Noon';
+					if (hour === 0) return 'Midnight';
 					return '';
 				}
 				return nsWeatherData.tzFormat(ms, 'ha');

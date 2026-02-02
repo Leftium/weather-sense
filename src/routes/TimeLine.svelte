@@ -922,6 +922,7 @@
 		showSkyThroughWmo, // WMO label band tap toggle
 		groupIcons, // Summary icon click (group/ungroup WMO codes)
 		wmoGradient: wmoGradientStore.value, // Gradient vs solid WMO backgrounds
+		calmMode: calmModeStore.value, // Calm mode changes x-axis tick format
 	});
 
 	// @ts-expect-error: x.type is valid.

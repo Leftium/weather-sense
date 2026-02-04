@@ -2,7 +2,8 @@
 
 User-friendly, actionable weather forecasts.
 
-<img width="961" height="1282" alt="image" src="https://github.com/user-attachments/assets/daf6f637-e680-4029-9b74-0d9ea41b4166" />
+<img width="654" height="1281" alt="image" src="https://github.com/user-attachments/assets/474e0cad-8d40-460e-be91-c921a307422a" />
+
 
 
 ## Notes for devs

@@ -1368,8 +1368,8 @@
 		.icon.small {
 			height: 40px;
 			width: 40px;
-			filter: drop-shadow(0 0 3px rgba(100, 149, 237, 0.6))
-				drop-shadow(0 0 6px rgba(100, 149, 237, 0.4)) drop-shadow(0 0 12px rgba(100, 149, 237, 0.3));
+			filter: drop-shadow(0 0 3px rgba(248, 248, 255, 0.6))
+				drop-shadow(0 0 6px rgba(248, 248, 255, 0.4)) drop-shadow(0 0 12px rgba(248, 248, 255, 0.3));
 		}
 	}
 

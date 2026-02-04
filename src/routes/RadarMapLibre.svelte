@@ -72,7 +72,7 @@
 			style: 'https://tiles.openfreemap.org/styles/positron',
 			cooperativeGestures: true,
 			center: [lon, lat],
-			zoom: (dev ? 5 : 9) + 0.7725, // Can zoom past 10 thanks to overzoom
+			zoom: (dev ? 8 : 9) + 0.7725, // Can zoom past 10 thanks to overzoom
 			attributionControl: false,
 		});
 
@@ -104,7 +104,7 @@
 
 			map.flyTo({
 				center: [longitude, latitude],
-				zoom: dev ? 5 : 10, // Can use zoom 10+ with overzoom enabled
+				zoom: dev ? 8 : 10, // Can use zoom 10+ with overzoom enabled
 				duration: 0,
 			});
 		});
@@ -168,7 +168,7 @@
 						type: 'raster',
 						tiles: [tileUrl],
 						tileSize: 256,
-						maxzoom: 10, // Don't fetch tiles above zoom 10 - will overzoom instead
+						maxzoom: 7, // RainViewer restricted to zoom 7 as of Feb 2026
 					});
 				}
 

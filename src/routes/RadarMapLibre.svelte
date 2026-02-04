@@ -16,8 +16,11 @@
 	let mainElement: HTMLElement;
 	let mapElement: HTMLDivElement;
 
-	let { nsWeatherData, calmMode = false }: { nsWeatherData: WeatherStore; calmMode?: boolean } =
-		$props();
+	let {
+		nsWeatherData,
+		calmMode = false,
+		demoMode = false,
+	}: { nsWeatherData: WeatherStore; calmMode?: boolean; demoMode?: boolean } = $props();
 
 	const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 
@@ -42,8 +45,9 @@
 		return clamp(index, 0, Math.min(15, nsWeatherData.radar.frames.length - 1));
 	});
 
-	// Detect when tracker is outside radar time range
+	// Detect when tracker is outside radar time range (demo mode never mutes)
 	let radarOutOfRange = $derived.by(() => {
+		if (demoMode) return false;
 		if (!nsWeatherData.radar?.frames?.length) return false;
 
 		const firstFrame = nsWeatherData.radar.frames[0];
@@ -67,12 +71,15 @@
 
 		emit('weatherdata_requestedFetchRainviewerData');
 
+		// Demo mode uses zoom 5 (zoomed out to avoid grainy radar tiles)
+		const initialZoom = demoMode ? 5 : (dev ? 8 : 9) + 0.7725;
+
 		map = new maplibregl.Map({
 			container: mapElement,
 			style: 'https://tiles.openfreemap.org/styles/positron',
 			cooperativeGestures: true,
 			center: [lon, lat],
-			zoom: (dev ? 8 : 9) + 0.7725, // Can zoom past 10 thanks to overzoom
+			zoom: initialZoom,
 			attributionControl: false,
 		});
 
@@ -104,7 +111,7 @@
 
 			map.flyTo({
 				center: [longitude, latitude],
-				zoom: dev ? 8 : 10, // Can use zoom 10+ with overzoom enabled
+				zoom: demoMode ? 5 : dev ? 8 : 10, // Demo mode zoomed out for cleaner radar
 				duration: 0,
 			});
 		});

@@ -97,6 +97,14 @@
 	// Show minutely plot when ?m param is present in URL (reactive to navigation)
 	const showMinutely = $derived($page.url.searchParams.has('m'));
 
+	// Demo mode - freezes sky gradient at ideal twilight for screenshots
+	// ?demo or ?demo=sunset → sunset twilight, ?demo=sunrise → sunrise twilight
+	const demoModeParam = $derived($page.url.searchParams.get('demo'));
+	const isDemoMode = $derived(demoModeParam !== null);
+	const demoType = $derived<'sunrise' | 'sunset'>(
+		demoModeParam === 'sunrise' ? 'sunrise' : 'sunset',
+	);
+
 	// Calm mode - hides numbers and units for a more peaceful display
 	// Entered via ?calm URL param, exited on any click/touch
 	const calmModeFromUrl = $derived($page.url.searchParams.has('calm'));
@@ -357,6 +365,18 @@
 		return day || weatherStore.daily?.find((d) => d.fromToday === 0);
 	}
 
+	// Calculate ideal demo time for peak twilight colors
+	// ~35 min offset gives rich colors (deeper into civil twilight)
+	const demoMs = $derived.by(() => {
+		if (!isDemoMode) return null;
+		const today = weatherStore.daily?.find((d) => d.fromToday === 0);
+		if (!today) return null;
+		const TWILIGHT_OFFSET = 35 * 60 * 1000; // 35 minutes
+		return demoType === 'sunrise'
+			? today.sunrise - TWILIGHT_OFFSET
+			: today.sunset + TWILIGHT_OFFSET;
+	});
+
 	// Get representative WMO code for the 24-hour hourly plot
 	// When groupIcons=true: groups codes like TimeLine does, then picks most severe group representative
 	// When groupIcons=false: picks most severe code overall (highest wsCode value)
@@ -414,10 +434,17 @@
 			const day = findDayForMs(ms);
 			return day ? { ms: day.ms, sunrise: day.sunrise, sunset: day.sunset } : undefined;
 		},
-		getTrackingState: () => ({
-			targetMs: weatherStore.rawMs,
-			trackedElement: weatherStore.trackedElement,
-		}),
+		getTrackingState: () => {
+			// Demo mode: freeze at ideal twilight time
+			if (demoMs !== null) {
+				// Create a fake element to indicate "tracking" so animator uses our time
+				return { targetMs: demoMs, trackedElement: document.body };
+			}
+			return {
+				targetMs: weatherStore.rawMs,
+				trackedElement: weatherStore.trackedElement,
+			};
+		},
 		getHeights: () => ({ stickyHeight, tilesHeight }),
 		getElements: () => ({ stickyEl: stickyInfoEl, tilesEl: skyGradientBgEl }),
 		defaultColors: DEFAULT_COLORS,
@@ -616,10 +643,10 @@
 
 <div class="map-row container">
 	<div class="map">
-		<RadarMapLibre nsWeatherData={weatherStore} {calmMode} />
+		<RadarMapLibre nsWeatherData={weatherStore} {calmMode} demoMode={isDemoMode} />
 	</div>
 	{#if showMinutely}
-		<MinutelyPrecipPlot nsWeatherData={weatherStore} />
+		<MinutelyPrecipPlot nsWeatherData={weatherStore} {demoMs} />
 	{/if}
 </div>
 

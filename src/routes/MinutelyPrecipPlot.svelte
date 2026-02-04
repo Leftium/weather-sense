@@ -12,9 +12,10 @@
 
 	type Props = {
 		nsWeatherData: WeatherStore;
+		demoMs?: number | null;
 	};
 
-	let { nsWeatherData }: Props = $props();
+	let { nsWeatherData, demoMs = null }: Props = $props();
 
 	// DOM elements
 	let div: HTMLDivElement | undefined = $state();
@@ -33,6 +34,12 @@
 	const hasData = $derived(dataMinutely.length > 0);
 	// Check if there's any precipitation in the data
 	const hasPrecip = $derived(hasData && dataMinutely.some((d) => d.precipitation > 0));
+
+	// In demo mode, offset displayed times to match demoMs
+	// e.g., if demoMs is 6pm but actual data starts at 1pm, add 5 hours to labels
+	const demoTimeOffset = $derived(
+		demoMs !== null ? demoMs - (dataMinutely[0]?.ms ?? Date.now()) : 0,
+	);
 
 	// Time range for x-axis (extend msEnd by 1 minute to show last bar fully)
 	const msStart = $derived(dataMinutely[0]?.ms ?? Date.now());
@@ -126,7 +133,9 @@
 					if (minFromStart === 60) return 'Hour';
 					return '';
 				}
-				const absTime = nsWeatherData.tzFormat(ms, 'h:mma').replace(':00', '').toLowerCase();
+				// In demo mode, offset displayed time to match demo time
+				const displayMs = ms + demoTimeOffset;
+				const absTime = nsWeatherData.tzFormat(displayMs, 'h:mma').replace(':00', '').toLowerCase();
 				// Show "now" for start, just time for 60min, relative+time for others
 				if (minFromStart === 0) return `now ${absTime}`;
 				if (minFromStart === 60) return absTime;

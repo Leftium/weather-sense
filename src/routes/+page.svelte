@@ -381,10 +381,13 @@
 	// When groupIcons=true: groups codes like TimeLine does, then picks most severe group representative
 	// When groupIcons=false: picks most severe code overall (highest wsCode value)
 	const hourly24WmoCode = $derived.by(() => {
-		const hourlyStart = Date.now() - 2 * MS_IN_HOUR;
-		const hourlyEnd = hourlyStart + 24 * MS_IN_HOUR;
+		// Use same boundaries as TimeLine: startOf(hour) and exclude the 25th fencepost hour
+		const hourlyStart = +dayjs
+			.tz(Date.now() - 2 * MS_IN_HOUR, weatherStore.timezone)
+			.startOf('hour');
+		const hourlyEnd = hourlyStart + 24 * MS_IN_HOUR; // Exclusive: don't include 25th hour
 
-		// Filter hourly data to the 24-hour window
+		// Filter hourly data to the 24-hour window (exclusive end to skip fencepost hour)
 		const hourlyInRange = weatherStore.hourly?.filter(
 			(h) => h.ms >= hourlyStart && h.ms < hourlyEnd,
 		);

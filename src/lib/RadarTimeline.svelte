@@ -13,7 +13,15 @@
 	let {
 		radarLayers = $bindable(),
 		nsWeatherData,
-	}: { radarLayers: Record<string, RadarLayer>; nsWeatherData: WeatherStore } = $props();
+		demoMs = null,
+	}: {
+		radarLayers: Record<string, RadarLayer>;
+		nsWeatherData: WeatherStore;
+		demoMs?: number | null;
+	} = $props();
+
+	// In demo mode, offset displayed times to match demoMs
+	const demoTimeOffset = $derived(demoMs !== null ? demoMs - nsWeatherData.ms : 0);
 
 	const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 
@@ -62,7 +70,9 @@
 					class:loaded={index === range.length - 1 || find(radarLayers, ['index', index])?.loaded}
 					class:minor-time={isMinorIndex}
 				>
-					{calmModeStore.value ? '|' : nsWeatherData.tzFormat(ms, isMinorIndex ? 'mm' : 'h:mm')}
+					{calmModeStore.value
+						? '|'
+						: nsWeatherData.tzFormat(ms + demoTimeOffset, isMinorIndex ? 'mm' : 'h:mm')}
 				</div>
 			{/each}
 		</datalist>

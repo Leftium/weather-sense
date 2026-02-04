@@ -643,7 +643,7 @@
 
 <div class="map-row container">
 	<div class="map">
-		<RadarMapLibre nsWeatherData={weatherStore} {calmMode} demoMode={isDemoMode} />
+		<RadarMapLibre nsWeatherData={weatherStore} {calmMode} {demoMs} />
 	</div>
 	{#if showMinutely}
 		<MinutelyPrecipPlot nsWeatherData={weatherStore} {demoMs} />

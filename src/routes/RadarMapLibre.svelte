@@ -19,8 +19,11 @@
 	let {
 		nsWeatherData,
 		calmMode = false,
-		demoMode = false,
-	}: { nsWeatherData: WeatherStore; calmMode?: boolean; demoMode?: boolean } = $props();
+		demoMs = null,
+	}: { nsWeatherData: WeatherStore; calmMode?: boolean; demoMs?: number | null } = $props();
+
+	// Demo mode is active when demoMs is provided
+	const demoMode = $derived(demoMs !== null);
 
 	const { on, emit } = getEmitter<WeatherDataEvents>(import.meta);
 
@@ -308,7 +311,7 @@
 
 <main bind:this={mainElement} class:calm={calmMode}>
 	<div bind:this={mapElement}></div>
-	<RadarTimeline bind:radarLayers {nsWeatherData} />
+	<RadarTimeline bind:radarLayers {nsWeatherData} {demoMs} />
 </main>
 
 <style>

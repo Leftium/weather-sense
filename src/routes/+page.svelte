@@ -47,7 +47,9 @@
 		dayOfMonthToOrdinal,
 		calmCompactDate,
 	} from '$lib/calm.svelte';
-	import RadarMapLibre from './RadarMapLibre.svelte';
+	// RadarMapLibre is lazy-loaded to reduce initial bundle size (~400KB+ savings)
+	// maplibre-gl is the largest dependency
+	const RadarMapLibrePromise = import('./RadarMapLibre.svelte');
 	import {
 		getDisplayBundleFromStore as getDisplayBundle,
 		formatTemp,
@@ -646,7 +648,11 @@
 
 <div class="map-row container">
 	<div class="map">
-		<RadarMapLibre nsWeatherData={weatherStore} {calmMode} {demoMs} />
+		{#await RadarMapLibrePromise}
+			<div class="map-loading">Loading map...</div>
+		{:then { default: RadarMapLibre }}
+			<RadarMapLibre nsWeatherData={weatherStore} {calmMode} {demoMs} />
+		{/await}
 	</div>
 	{#if showMinutely}
 		<MinutelyPrecipPlot nsWeatherData={weatherStore} {demoMs} />
@@ -1487,6 +1493,16 @@
 
 		:global(main) {
 			width: 100%;
+		}
+
+		.map-loading {
+			height: 100%;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background: #e8e8e8;
+			color: #666;
+			font-family: Lato, sans-serif;
 		}
 	}
 

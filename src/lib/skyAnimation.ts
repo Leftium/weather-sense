@@ -527,7 +527,7 @@ export function createSkyAnimator(config: SkyAnimatorConfig): SkyAnimator {
 }
 
 // =============================================================================
-// HELPER: Get initial colors from timezone estimate
+// HELPER: Get initial colors from coordinates + timezone estimate
 // =============================================================================
 
 import dayjs from 'dayjs';
@@ -538,15 +538,83 @@ dayjs.extend(utc);
 dayjs.extend(timezonePlugin);
 
 /**
- * Calculate initial sky colors based on timezone (estimates 6am sunrise, 6pm sunset).
- * Returns null if no timezone available.
+ * Estimate sunrise/sunset timestamps for a given date and latitude.
+ * Uses the standard solar declination / hour-angle equation.
+ * Returns { sunrise, sunset } as UTC millisecond timestamps,
+ * or null for polar day/night (sun never rises or never sets).
  */
-export function getInitialSkyColors(timezone: string | null): string[] | null {
+function estimateSunTimes(
+	date: Date,
+	latitude: number,
+	longitude: number,
+): { sunrise: number; sunset: number } | null {
+	const RAD = Math.PI / 180;
+	// Day of year
+	const start = new Date(date.getFullYear(), 0, 0);
+	const diff = date.getTime() - start.getTime();
+	const dayOfYear = Math.floor(diff / 86_400_000);
+
+	// Solar declination (radians)
+	const declination = -23.44 * Math.cos((360 / 365) * (dayOfYear + 10) * RAD) * RAD;
+
+	// Hour angle for sunrise/sunset (solar zenith ~90.833° accounts for refraction + solar disc)
+	const latRad = latitude * RAD;
+	const cosHourAngle =
+		(Math.cos(90.833 * RAD) - Math.sin(latRad) * Math.sin(declination)) /
+		(Math.cos(latRad) * Math.cos(declination));
+
+	// Polar night or midnight sun — no standard sunrise/sunset
+	if (cosHourAngle > 1 || cosHourAngle < -1) return null;
+
+	const hourAngleDeg = Math.acos(cosHourAngle) / RAD;
+
+	// Solar noon in minutes from midnight UTC, adjusted for longitude
+	// 720 = 12h * 60min (solar noon at prime meridian)
+	const solarNoonMin = 720 - 4 * longitude;
+
+	const sunriseMin = solarNoonMin - 4 * hourAngleDeg;
+	const sunsetMin = solarNoonMin + 4 * hourAngleDeg;
+
+	const midnightUtc = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+
+	return {
+		sunrise: midnightUtc + sunriseMin * 60_000,
+		sunset: midnightUtc + sunsetMin * 60_000,
+	};
+}
+
+/**
+ * Calculate initial sky colors using lat/lon for accurate sunrise/sunset estimation.
+ * Falls back to timezone-based 6am/6pm estimate if coords unavailable,
+ * or returns null if neither is available.
+ */
+export function getInitialSkyColors(
+	timezone: string | null,
+	coords?: { latitude: number; longitude: number } | null,
+): string[] | null {
 	if (!timezone) return null;
 	const now = dayjs().tz(timezone);
 	const todayStart = now.startOf('day');
-	const estimatedSunrise = todayStart.add(6, 'hour').valueOf();
-	const estimatedSunset = todayStart.add(18, 'hour').valueOf();
+
+	let estimatedSunrise: number;
+	let estimatedSunset: number;
+
+	if (coords) {
+		const sunTimes = estimateSunTimes(now.toDate(), coords.latitude, coords.longitude);
+		if (sunTimes) {
+			estimatedSunrise = sunTimes.sunrise;
+			estimatedSunset = sunTimes.sunset;
+		} else {
+			// Polar day/night — fall back to hardcoded
+			estimatedSunrise = todayStart.add(6, 'hour').valueOf();
+			estimatedSunset = todayStart.add(18, 'hour').valueOf();
+		}
+	} else {
+		// No coords — fall back to hardcoded
+		estimatedSunrise = todayStart.add(6, 'hour').valueOf();
+		estimatedSunset = todayStart.add(18, 'hour').valueOf();
+	}
+
 	return getSkyColors(now.valueOf(), estimatedSunrise, estimatedSunset);
 }
 

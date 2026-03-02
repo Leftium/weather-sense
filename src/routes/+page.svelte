@@ -420,7 +420,8 @@
 	// Uses SkyAnimator for eased transitions on enter/leave/switch and time-based scrubbing
 
 	const initialTimezone = untrack(() => data.timezone); // Capture initial value (intentionally non-reactive)
-	const DEFAULT_COLORS = getInitialSkyColors(initialTimezone) ?? DAY_COLORS;
+	const initialCoords = untrack(() => data.coords); // Capture initial coords for accurate sunrise/sunset estimate
+	const DEFAULT_COLORS = getInitialSkyColors(initialTimezone, initialCoords) ?? DAY_COLORS;
 
 	// DOM refs for direct gradient updates (bypasses Svelte reactivity)
 	let stickyInfoEl: HTMLDivElement;

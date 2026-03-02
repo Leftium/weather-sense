@@ -17,7 +17,7 @@
 	"devDependencies": {
 		"@eslint/compat": "^2.0.1",
 		"@eslint/js": "^9.39.2",
-		"@leftium/gg": "^0.0.21",
+		"@leftium/gg": "^0.0.50",
 		"@leftium/logo": "^0.0.2",
 		"@observablehq/plot": "^0.6.17",
 		"@sveltejs/adapter-auto": "^7.0.0",

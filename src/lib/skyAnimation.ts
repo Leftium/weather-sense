@@ -17,6 +17,7 @@ import {
 	MS_IN_HOUR,
 } from '$lib/util';
 import { getSunAltitude } from '$lib/horizon';
+import { gg } from '@leftium/gg';
 
 // =============================================================================
 // TYPES
@@ -244,9 +245,26 @@ export class SkyAnimator {
 	// INTERNAL: Color computation
 	// ===========================================================================
 
+	private hasLoggedRealData = false;
+
 	private getTargetColors(targetMs: number): string[] {
 		const day = this.config.findDayForMs(targetMs);
 		if (!day) return this.config.defaultColors;
+
+		if (!this.hasLoggedRealData) {
+			this.hasLoggedRealData = true;
+			const nowMs = Date.now();
+			const altRad = getSunAltitude(nowMs, day.sunrise, day.sunset);
+			const altDeg = altRad * (180 / Math.PI);
+			const utc = (ms: number) => new Date(ms).toISOString().slice(11, 19) + ' UTC';
+			gg('sky FINAL', {
+				now: utc(nowMs),
+				sunrise: utc(day.sunrise),
+				sunset: utc(day.sunset),
+				altitudeDeg: Math.round(altDeg * 100) / 100,
+			});
+		}
+
 		return getSkyColorsFullPalette(targetMs, day.sunrise, day.sunset);
 	}
 
@@ -549,13 +567,33 @@ function estimateSunTimes(
 	longitude: number,
 ): { sunrise: number; sunset: number } | null {
 	const RAD = Math.PI / 180;
-	// Day of year
-	const start = new Date(date.getFullYear(), 0, 0);
-	const diff = date.getTime() - start.getTime();
-	const dayOfYear = Math.floor(diff / 86_400_000);
+	// Day of year (UTC-based to avoid local timezone issues)
+	const year = date.getUTCFullYear();
+	const startOfYear = Date.UTC(year, 0, 1);
+	const dayOfYear = Math.floor((date.getTime() - startOfYear) / 86_400_000) + 1;
 
-	// Solar declination (radians)
-	const declination = -23.44 * Math.cos((360 / 365) * (dayOfYear + 10) * RAD) * RAD;
+	// Fractional year in radians (γ)
+	const gamma = ((2 * Math.PI) / 365) * (dayOfYear - 1);
+
+	// Equation of time correction (minutes) — accounts for orbital eccentricity and axial tilt
+	// Source: NOAA Solar Calculations
+	const eqTime =
+		229.18 *
+		(0.000075 +
+			0.001868 * Math.cos(gamma) -
+			0.032077 * Math.sin(gamma) -
+			0.014615 * Math.cos(2 * gamma) -
+			0.04089 * Math.sin(2 * gamma));
+
+	// Solar declination (radians) — NOAA formula
+	const declination =
+		0.006918 -
+		0.399912 * Math.cos(gamma) +
+		0.070257 * Math.sin(gamma) -
+		0.006758 * Math.cos(2 * gamma) +
+		0.000907 * Math.sin(2 * gamma) -
+		0.002697 * Math.cos(3 * gamma) +
+		0.00148 * Math.sin(3 * gamma);
 
 	// Hour angle for sunrise/sunset (solar zenith ~90.833° accounts for refraction + solar disc)
 	const latRad = latitude * RAD;
@@ -568,9 +606,9 @@ function estimateSunTimes(
 
 	const hourAngleDeg = Math.acos(cosHourAngle) / RAD;
 
-	// Solar noon in minutes from midnight UTC, adjusted for longitude
+	// Solar noon in minutes from midnight UTC, adjusted for longitude and equation of time
 	// 720 = 12h * 60min (solar noon at prime meridian)
-	const solarNoonMin = 720 - 4 * longitude;
+	const solarNoonMin = 720 - 4 * longitude - eqTime;
 
 	const sunriseMin = solarNoonMin - 4 * hourAngleDeg;
 	const sunsetMin = solarNoonMin + 4 * hourAngleDeg;
@@ -591,31 +629,54 @@ function estimateSunTimes(
 export function getInitialSkyColors(
 	timezone: string | null,
 	coords?: { latitude: number; longitude: number } | null,
-): string[] | null {
-	if (!timezone) return null;
-	const now = dayjs().tz(timezone);
-	const todayStart = now.startOf('day');
+): { colors: string[]; meta: Record<string, unknown> } | null {
+	const nowMs = Date.now();
 
 	let estimatedSunrise: number;
 	let estimatedSunset: number;
+	let source: string;
 
 	if (coords) {
-		const sunTimes = estimateSunTimes(now.toDate(), coords.latitude, coords.longitude);
+		const sunTimes = estimateSunTimes(new Date(nowMs), coords.latitude, coords.longitude);
 		if (sunTimes) {
 			estimatedSunrise = sunTimes.sunrise;
 			estimatedSunset = sunTimes.sunset;
+			source = 'solar equation';
 		} else {
-			// Polar day/night — fall back to hardcoded
+			// Polar day/night — can't estimate, fall back
+			if (!timezone) return null;
+			const todayStart = dayjs(nowMs).tz(timezone).startOf('day');
 			estimatedSunrise = todayStart.add(6, 'hour').valueOf();
 			estimatedSunset = todayStart.add(18, 'hour').valueOf();
+			source = 'hardcoded 6am/6pm (polar fallback)';
 		}
-	} else {
-		// No coords — fall back to hardcoded
+	} else if (timezone) {
+		const todayStart = dayjs(nowMs).tz(timezone).startOf('day');
 		estimatedSunrise = todayStart.add(6, 'hour').valueOf();
 		estimatedSunset = todayStart.add(18, 'hour').valueOf();
+		source = 'hardcoded 6am/6pm';
+	} else {
+		return null;
 	}
 
-	return getSkyColors(now.valueOf(), estimatedSunrise, estimatedSunset);
+	// Format times for logging — use timezone if available, otherwise show UTC
+	const formatTime = timezone
+		? (ms: number) => dayjs(ms).tz(timezone).format('HH:mm:ss')
+		: (ms: number) => dayjs(ms).utc().format('HH:mm:ss [UTC]');
+
+	return {
+		colors: getSkyColors(nowMs, estimatedSunrise, estimatedSunset),
+		meta: {
+			now: formatTime(nowMs),
+			sunrise: formatTime(estimatedSunrise),
+			sunset: formatTime(estimatedSunset),
+			altitudeDeg:
+				Math.round(
+					((getSunAltitude(nowMs, estimatedSunrise, estimatedSunset) * 180) / Math.PI) * 100,
+				) / 100,
+			source,
+		},
+	};
 }
 
 export { DAY_COLORS };

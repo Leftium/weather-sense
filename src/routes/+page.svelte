@@ -34,6 +34,7 @@
 		DAY_COLORS,
 		type DayInfo,
 	} from '$lib/skyAnimation';
+	import { gg } from '@leftium/gg';
 	import type { WmoCodeInfo } from '$lib/util.js';
 	import { iconSetStore } from '$lib/iconSet.svelte';
 	import {
@@ -421,7 +422,13 @@
 
 	const initialTimezone = untrack(() => data.timezone); // Capture initial value (intentionally non-reactive)
 	const initialCoords = untrack(() => data.coords); // Capture initial coords for accurate sunrise/sunset estimate
-	const DEFAULT_COLORS = getInitialSkyColors(initialTimezone, initialCoords) ?? DAY_COLORS;
+	const initialSky = getInitialSkyColors(initialTimezone, initialCoords);
+	const DEFAULT_COLORS = initialSky?.colors ?? DAY_COLORS;
+
+	// Log preview sky info (SSR is disabled, so this always runs on the client)
+	if (initialSky) {
+		gg('sky PREVIEW', initialSky.meta);
+	}
 
 	// DOM refs for direct gradient updates (bypasses Svelte reactivity)
 	let stickyInfoEl: HTMLDivElement;

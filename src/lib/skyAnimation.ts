@@ -665,7 +665,7 @@ export function getInitialSkyColors(
 		: (ms: number) => dayjs(ms).utc().format('HH:mm:ss [UTC]');
 
 	return {
-		colors: getSkyColors(nowMs, estimatedSunrise, estimatedSunset),
+		colors: getSkyColorsFullPalette(nowMs, estimatedSunrise, estimatedSunset),
 		meta: {
 			now: formatTime(nowMs),
 			sunrise: formatTime(estimatedSunrise),

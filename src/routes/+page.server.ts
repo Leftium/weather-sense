@@ -1,3 +1,5 @@
+import { gg } from '@leftium/gg';
+
 export const load = async (loadEvent) => {
 	const ipAddress = loadEvent.getClientAddress();
 	const { headers } = loadEvent.request;
@@ -17,7 +19,7 @@ export const load = async (loadEvent) => {
 		? 'openstreetmap'
 		: searchParams.get('mapstyle') || 'stamen';
 
-	//gg(paramName);
+	gg(paramName);
 
 	if (paramName) {
 		// Parse "City, CC" format (like OpenWeather: city name, comma, 2-letter country code)
@@ -46,7 +48,7 @@ export const load = async (loadEvent) => {
 		const fetched = await fetch(apiUrl);
 		const jsoned = await fetched.json();
 
-		//gg(jsoned);
+		gg(jsoned);
 
 		if (jsoned?.results?.length) {
 			source = `geocoded`;

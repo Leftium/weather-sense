@@ -4,9 +4,6 @@ User-friendly, actionable weather forecasts.
 
 <img width="654" height="1281" alt="image" src="https://github.com/user-attachments/assets/d03ab2b2-cff2-4e07-84d8-06956b463b2b" />
 
-
-
-
 ## Notes for devs
 
 ### API Keys

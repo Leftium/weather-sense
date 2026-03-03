@@ -1,8 +1,6 @@
 // Calm mode state - hides numbers and units for a more peaceful display
 // Entered via ?calm URL parameter, exited on any click/touch
 
-import { browser } from '$app/environment';
-
 let calmMode = $state(false);
 
 export function getCalmMode(): boolean {

@@ -20,7 +20,7 @@
 	import { numberToWord, calmCompactDate } from '$lib/calm.svelte';
 	import { trackable, isTempLabel } from '$lib/trackable';
 	import { getEmitter } from '$lib/emitter';
-	import { clamp, minBy, maxBy } from 'lodash-es';
+	import { clamp, maxBy } from 'lodash-es';
 	import { fade } from 'svelte/transition';
 	import { tick } from 'svelte';
 

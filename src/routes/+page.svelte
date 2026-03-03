@@ -44,7 +44,6 @@
 		describePrecipChance,
 		describeHumidity,
 		describeAqi,
-		numberToWord,
 		dayOfMonthToOrdinal,
 		calmCompactDate,
 	} from '$lib/calm.svelte';
@@ -638,7 +637,7 @@
 
 	// Calm mode exit handler - use svelte:window for reliable event handling
 	// Don't exit if user is scrubbing (trackedElement is set during scrub)
-	function handleCalmModeExit(event: MouseEvent) {
+	function handleCalmModeExit() {
 		// Skip if scrubbing is active
 		if (weatherStore.trackedElement) return;
 

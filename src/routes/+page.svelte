@@ -70,7 +70,7 @@
 
 	import { clearEvents, getEmitter } from '$lib/emitter.js';
 	import { browser, dev } from '$app/environment';
-	import { page } from '$app/stores';
+	import { page } from '$app/state';
 	import { onDestroy, onMount, untrack } from 'svelte';
 
 	const STORAGE_KEY_PLOT_VISIBILITY = 'weather-sense:plotVisibility';
@@ -97,11 +97,11 @@
 	let { data } = $props();
 
 	// Show minutely plot when ?m param is present in URL (reactive to navigation)
-	const showMinutely = $derived($page.url.searchParams.has('m'));
+	const showMinutely = $derived(page.url.searchParams.has('m'));
 
 	// Demo mode - freezes sky gradient at ideal twilight for screenshots
 	// ?demo or ?demo=sunset → sunset twilight, ?demo=sunrise → sunrise twilight
-	const demoModeParam = $derived($page.url.searchParams.get('demo'));
+	const demoModeParam = $derived(page.url.searchParams.get('demo'));
 	const isDemoMode = $derived(demoModeParam !== null);
 	const demoType = $derived<'sunrise' | 'sunset'>(
 		demoModeParam === 'sunrise' ? 'sunrise' : 'sunset',
@@ -109,7 +109,7 @@
 
 	// Calm mode - hides numbers and units for a more peaceful display
 	// Entered via ?calm URL param, exited on any click/touch
-	const calmModeFromUrl = $derived($page.url.searchParams.has('calm'));
+	const calmModeFromUrl = $derived(page.url.searchParams.has('calm'));
 
 	// Track if user has manually exited calm mode (to prevent URL from re-enabling)
 	let calmModeUserExited = $state(false);
@@ -133,21 +133,21 @@
 	// URL with ?m param added (preserves other params like location)
 	// Also preserves calm mode if active
 	const minutelyUrl = $derived.by(() => {
-		const params = new SvelteURLSearchParams($page.url.search);
+		const params = new SvelteURLSearchParams(page.url.search);
 		params.set('m', '');
 		if (calmMode && !calmModeUserExited) {
 			params.set('calm', '');
 		} else {
 			params.delete('calm');
 		}
-		return `${$page.url.pathname}?${params.toString()}`;
+		return `${page.url.pathname}?${params.toString()}`;
 	});
 
 	// URL with ?calm param added (for Calm mode link)
 	const calmUrl = $derived.by(() => {
-		const params = new SvelteURLSearchParams($page.url.search);
+		const params = new SvelteURLSearchParams(page.url.search);
 		params.set('calm', '');
-		return `${$page.url.pathname}?${params.toString()}`;
+		return `${page.url.pathname}?${params.toString()}`;
 	});
 
 	let forecastDaysVisible = $state(3);
@@ -975,7 +975,7 @@
 					<li><a href={resolve('/wmo-codes')}>WMO Codes</a></li>
 					<li><a href={resolve('/aqi')}>AQI Levels</a></li>
 					<li>
-						<!-- eslint-disable svelte/no-navigation-without-resolve -- dynamic URL from $page -->
+						<!-- eslint-disable svelte/no-navigation-without-resolve -- dynamic URL from page state -->
 						<a
 							href={minutelyUrl}
 							onclick={(e) => {
@@ -990,7 +990,7 @@
 						<!-- eslint-enable svelte/no-navigation-without-resolve -->
 					</li>
 					<li>
-						<!-- eslint-disable svelte/no-navigation-without-resolve -- dynamic URL from $page -->
+						<!-- eslint-disable svelte/no-navigation-without-resolve -- dynamic URL from page state -->
 						<a
 							href={calmUrl}
 							onclick={(e) => {

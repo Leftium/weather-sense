@@ -1,3 +1,44 @@
-# allow crawling everything by default
+# Search engines
+User-agent: Googlebot
+Allow: /
+
+User-agent: Bingbot
+Allow: /
+
+# Social preview / link unfurl bots
+User-agent: facebookexternalhit
+Allow: /
+
+User-agent: Twitterbot
+Allow: /
+
+User-agent: LinkedInBot
+Allow: /
+
+User-agent: Slackbot
+Allow: /
+
+User-agent: Discordbot
+Allow: /
+
+User-agent: WhatsApp
+Allow: /
+
+User-agent: Telegram
+Allow: /
+
+User-agent: vkShare
+Allow: /
+
+User-agent: Naverbot
+Allow: /
+
+User-agent: redditbot
+Allow: /
+
+User-agent: Applebot
+Allow: /
+
+# Block everything else (including TikTokSpider, AI crawlers, etc.)
 User-agent: *
-Disallow:
+Disallow: /

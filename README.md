@@ -1,8 +1,12 @@
+<div align="center"><img src="https://raw.githubusercontent.com/Leftium/weather-sense/refs/heads/main/static/logo.svg" alt="logo" width="200" />
+
 # WeatherSense
 
 User-friendly, actionable weather forecasts.
 
 <img width="654" height="1281" alt="image" src="https://github.com/user-attachments/assets/d03ab2b2-cff2-4e07-84d8-06956b463b2b" />
+
+</div>
 
 ## Notes for devs
 

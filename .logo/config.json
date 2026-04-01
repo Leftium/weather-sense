@@ -1,0 +1,57 @@
+{
+	"icon": "⛅",
+	"iconColor": "#ffffff",
+	"iconColorMode": "original",
+	"background": {
+		"colors": [
+			"#0029c1",
+			"#3973ff",
+			"#0029c1"
+		],
+		"stops": [
+			0,
+			0.29,
+			1
+		],
+		"angle": 45,
+		"position": 0,
+		"scale": 1
+	},
+	"cornerRadius": 50,
+	"cornerShape": "superellipse(2)",
+	"logo": {
+		"iconSize": 80,
+		"iconOffsetX": 0,
+		"iconOffsetY": 0,
+		"iconRotation": 0,
+		"grayscaleLightness": 108
+	},
+	"favicon": {
+		"icon": "⛅",
+		"iconColor": "#ffffff",
+		"iconColorMode": "original",
+		"background": {
+			"colors": [
+				"#0029c1",
+				"#3973ff",
+				"#0029c1"
+			],
+			"stops": [
+				0,
+				0.29,
+				1
+			],
+			"angle": 45,
+			"position": 0,
+			"scale": 1
+		},
+		"cornerRadius": 50,
+		"cornerShape": "superellipse(2)",
+		"iconSize": 80,
+		"iconOffsetX": 0,
+		"iconOffsetY": 0,
+		"iconRotation": 0,
+		"grayscaleLightness": 108
+	},
+	"emojiStyle": "noto"
+}

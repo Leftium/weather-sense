@@ -21,9 +21,6 @@ importers:
       '@leftium/gg':
         specifier: ~0.1.0
         version: 0.1.0(svelte@5.55.1)
-      '@leftium/logo':
-        specifier: ^0.0.2
-        version: 0.0.2(svelte@5.55.1)
       '@observablehq/plot':
         specifier: ^0.6.17
         version: 0.6.17
@@ -378,11 +375,6 @@ packages:
     peerDependenciesMeta:
       svelte:
         optional: true
-
-  '@leftium/logo@0.0.2':
-    resolution: {integrity: sha512-5+WN/GCAMeLhWxoPfhMlv1HTifyBDsc8lWdd0bMntOdUtAYk1ELAdflImRPcH/brhYsi+smTwaqjAjq4YpnVlA==}
-    peerDependencies:
-      svelte: ^5.0.0
 
   '@mapbox/jsonlint-lines-primitives@2.0.2':
     resolution: {integrity: sha512-rY0o9A5ECsTQRVhv7tL/OyDpGAoUB4tTvLiW1DSzQGq4bvTPhNw1VpSNjDJc5GFZ2XuyOtSWSVN05qOtcD71qQ==}
@@ -2378,10 +2370,6 @@ snapshots:
       esm-env: 1.2.2
       launch-editor: 2.13.2
     optionalDependencies:
-      svelte: 5.55.1
-
-  '@leftium/logo@0.0.2(svelte@5.55.1)':
-    dependencies:
       svelte: 5.55.1
 
   '@mapbox/jsonlint-lines-primitives@2.0.2': {}

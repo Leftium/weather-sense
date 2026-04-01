@@ -19,7 +19,6 @@
 		"@eslint/compat": "^2.0.3",
 		"@eslint/js": "^10.0.1",
 		"@leftium/gg": "~0.1.0",
-		"@leftium/logo": "^0.0.2",
 		"@observablehq/plot": "^0.6.17",
 		"@sveltejs/adapter-auto": "^7.0.1",
 		"@sveltejs/kit": "^2.55.0",

@@ -50,6 +50,7 @@ export type DailyForecast = {
 	ms: number;
 	msPretty: string;
 	compactDate: string;
+	beforeDayStartHour: boolean;
 	fromToday: number;
 	sunrise: number;
 	sunset: number;

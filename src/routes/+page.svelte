@@ -911,8 +911,10 @@
 					: day.temperatureMin}
 				<div class={['day-row', { past }]} transition:slide={{ duration: 1000 }}>
 					<div class={['day-label', { past }]}>
-						<div class={['day', { today }]}>
-							{calmMode ? calmCompactDate(day.compactDate) : day.compactDate}
+						<div class={['day', { today }, { 'before-day-start-hour': day.beforeDayStartHour }]}>
+							{calmMode
+								? calmCompactDate(day.compactDate)
+								: day.compactDate}{#if day.beforeDayStartHour}*{/if}
 						</div>
 						{#if !calmMode}
 							<div class="temps">
@@ -956,7 +958,7 @@
 							{plotVisibility}
 							{groupIcons}
 							start={day.ms + DAY_START_HOUR * MS_IN_HOUR}
-							xAxis={day.compactDate == 'Today'}
+							xAxis={day.compactDate === 'Today'}
 							ghostTracker
 							tempStats={visibleTempStats}
 							debugTrackerMs={undefined}
@@ -1446,6 +1448,10 @@
 
 			&.today {
 				font-weight: 900;
+			}
+
+			&.before-day-start-hour {
+				font-style: italic;
 			}
 		}
 

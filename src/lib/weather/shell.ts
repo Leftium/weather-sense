@@ -196,6 +196,7 @@ export function initWeatherShell(data: WeatherData) {
 				const object: Partial<DailyForecast> = {
 					msPretty: tzFormat(ms, data.timezone, data.timezoneAbbreviation, DATEFORMAT_MASK),
 					compactDate,
+					beforeDayStartHour: fromToday === 0 && earlyHourShift > 0,
 					ms,
 					fromToday,
 					sunrise,

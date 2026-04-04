@@ -339,8 +339,15 @@
 							in:fade={{ duration: 300 }}
 						/>
 						<div class="tile-content" in:fade={{ duration: 300 }}>
-							<div class="date" class:today class:past>
-								{calmMode ? calmCompactDate(day.compactDate) : day.compactDate}
+							<div
+								class="date"
+								class:today
+								class:past
+								class:before-day-start-hour={day.beforeDayStartHour}
+							>
+								{calmMode
+									? calmCompactDate(day.compactDate)
+									: day.compactDate}{#if day.beforeDayStartHour}*{/if}
 							</div>
 						</div>
 					{/if}
@@ -778,6 +785,10 @@
 
 		&.today {
 			font-weight: 900;
+		}
+
+		&.before-day-start-hour {
+			font-style: italic;
 		}
 	}
 

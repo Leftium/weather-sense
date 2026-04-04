@@ -254,7 +254,7 @@ export type Snapshot = DisplayBundle & {
 // CONSTANTS
 // =============================================================================
 
-export const PAST_DAYS = 2; // 0 to 92
+export const PAST_DAYS = 3; // 0 to 92 (extra day so early-hour shift still has 2 past days)
 export const FORECAST_DAYS = 10; // 0 to 16 for forecast; 0 to 7 for air-quality (extra day for 4am-4am)
 
 // =============================================================================

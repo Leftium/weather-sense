@@ -105,8 +105,8 @@
 			return primary.slice(0, effectiveMaxTiles);
 		}
 
-		// Have room for more - add older past days
-		const remaining = effectiveMaxTiles - primary.length;
+		// Have room for more - add older past days (limit to 1 so total past days ≤ 2)
+		const remaining = Math.min(1, effectiveMaxTiles - primary.length);
 		const older = allDays
 			.filter((day) => day.fromToday < -1)
 			.sort((a, b) => b.fromToday - a.fromToday) // most recent first (-2 before -3)

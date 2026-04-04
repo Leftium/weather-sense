@@ -11,7 +11,7 @@
 
 import { browser } from '$app/environment';
 import { getEmitter } from '$lib/emitter';
-import { MS_IN_SECOND, MS_IN_MINUTE } from '$lib/util';
+import { MS_IN_SECOND, MS_IN_MINUTE, DAY_START_HOUR } from '$lib/util';
 import { gg } from '@leftium/gg';
 
 import type { WeatherData } from './data.svelte';
@@ -169,12 +169,19 @@ export function initWeatherShell(data: WeatherData) {
 			})
 			.filter((item: HourlyForecast) => item.weatherCode !== null);
 
+		// When the local time is before DAY_START_HOUR (4 AM), the "plot day" is still
+		// the previous calendar day. Shift fromToday by +1 so day labels and hourly
+		// plots stay aligned to the 4am-4am plot boundary.
+		const localHour = parseInt(tzFormat(Date.now(), data.timezone, data.timezoneAbbreviation, 'H'));
+		const earlyHourShift = localHour < DAY_START_HOUR ? 1 : 0;
+
 		// Parse daily
 		const daily = json.daily.time
 			.map((unixtime: number, index: number) => {
 				const ms = unixtime * MS_IN_SECOND;
+				const fromToday = index - PAST_DAYS + earlyHourShift;
 				const compactDate =
-					index === PAST_DAYS
+					fromToday === 0
 						? 'Today'
 						: tzFormat(
 								ms,
@@ -190,7 +197,7 @@ export function initWeatherShell(data: WeatherData) {
 					msPretty: tzFormat(ms, data.timezone, data.timezoneAbbreviation, DATEFORMAT_MASK),
 					compactDate,
 					ms,
-					fromToday: index - PAST_DAYS,
+					fromToday,
 					sunrise,
 					sunset,
 				};

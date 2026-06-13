@@ -379,33 +379,45 @@
 			: today.sunset + TWILIGHT_OFFSET;
 	});
 
+	// Use same boundaries as TimeLine: startOf(hour) and exclude the 25th fencepost hour.
+	const hourly24Start = $derived(
+		+dayjs
+			.tz(Date.now() - 2 * MS_IN_HOUR, weatherStore.timezone)
+			.startOf('hour'),
+	);
+	const hourly24End = $derived(hourly24Start + 24 * MS_IN_HOUR);
+	const hourly24InRange = $derived(
+		weatherStore.hourly?.filter((h) => h.ms >= hourly24Start && h.ms < hourly24End) ?? [],
+	);
+	const hourly24AvgTemp = $derived.by(() => {
+		if (hourly24InRange.length === 0) return null;
+		return hourly24InRange.reduce((acc, h) => acc + h.temperature, 0) / hourly24InRange.length;
+	});
+	const hourly24HighTemp = $derived.by(() => {
+		if (hourly24InRange.length === 0) return null;
+		return Math.max(...hourly24InRange.map((h) => h.temperature));
+	});
+	const hourly24LowTemp = $derived.by(() => {
+		if (hourly24InRange.length === 0) return null;
+		return Math.min(...hourly24InRange.map((h) => h.temperature));
+	});
+
 	// Get representative WMO code for the 24-hour hourly plot
 	// When groupIcons=true: groups codes like TimeLine does, then picks most severe group representative
 	// When groupIcons=false: picks most severe code overall (highest wsCode value)
 	const hourly24WmoCode = $derived.by(() => {
-		// Use same boundaries as TimeLine: startOf(hour) and exclude the 25th fencepost hour
-		const hourlyStart = +dayjs
-			.tz(Date.now() - 2 * MS_IN_HOUR, weatherStore.timezone)
-			.startOf('hour');
-		const hourlyEnd = hourlyStart + 24 * MS_IN_HOUR; // Exclusive: don't include 25th hour
-
-		// Filter hourly data to the 24-hour window (exclusive end to skip fencepost hour)
-		const hourlyInRange = weatherStore.hourly?.filter(
-			(h) => h.ms >= hourlyStart && h.ms < hourlyEnd,
-		);
-
-		if (!hourlyInRange?.length) return null;
+		if (hourly24InRange.length === 0) return null;
 
 		if (!groupIcons) {
 			// Ungrouped: find the most severe weather code overall
 			const mostSevere = maxBy(
-				hourlyInRange,
+				hourly24InRange,
 				(h) => (wmoCode(h.weatherCode) as WmoCodeInfo).wsCode ?? 0,
 			);
 			return mostSevere?.weatherCode ?? null;
 		}
 
-		return getGroupedWmoCode(hourlyInRange, maxBy);
+		return getGroupedWmoCode(hourly24InRange, maxBy);
 	});
 
 	// Get isDay for the current real time (where past overlay ends on 24hr plot)
@@ -799,9 +811,7 @@
 						<div class="temps">
 							<span class="avg" use:toggleUnits={{ temperature: true }}>
 								{formatTemp(
-									groupIcons
-										? getWeightedAvgTemp(weatherStore.daily?.[2]?.ms ?? 0, weatherStore.hourly)
-										: weatherStore.daily?.[2]?.temperatureMean,
+									hourly24AvgTemp,
 									weatherStore.units.temperature,
 									false,
 								)}
@@ -812,9 +822,7 @@
 								use:toggleUnits={{ temperature: true }}
 							>
 								{formatTemp(
-									groupIcons
-										? getPlotHighTemp(weatherStore.daily?.[2]?.ms ?? 0, weatherStore.hourly)
-										: weatherStore.daily?.[2]?.temperatureMax,
+									hourly24HighTemp,
 									weatherStore.units.temperature,
 									false,
 								)}
@@ -825,9 +833,7 @@
 								use:toggleUnits={{ temperature: true }}
 							>
 								{formatTemp(
-									groupIcons
-										? getPlotLowTemp(weatherStore.daily?.[2]?.ms ?? 0, weatherStore.hourly)
-										: weatherStore.daily?.[2]?.temperatureMin,
+									hourly24LowTemp,
 									weatherStore.units.temperature,
 									false,
 								)}
@@ -837,16 +843,16 @@
 				</div>
 				<div
 					class="temp-gradient-bar"
-					style:--color-high={weatherStore.daily?.[2] && visibleTempStats
+					style:--color-high={hourly24HighTemp != null && visibleTempStats
 						? temperatureToColor(
-								weatherStore.daily[2].temperatureMax,
+								hourly24HighTemp,
 								visibleTempStats.minTemperatureOnly,
 								visibleTempStats.maxTemperature,
 							)
 						: '#ccc'}
-					style:--color-low={weatherStore.daily?.[2] && visibleTempStats
+					style:--color-low={hourly24LowTemp != null && visibleTempStats
 						? temperatureToColor(
-								weatherStore.daily[2].temperatureMin,
+								hourly24LowTemp,
 								visibleTempStats.minTemperatureOnly,
 								visibleTempStats.maxTemperature,
 							)

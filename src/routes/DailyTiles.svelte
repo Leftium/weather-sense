@@ -622,14 +622,14 @@
 		/* Two-tone one-direction hatch matching the hourly past-hours treatment. */
 		background: linear-gradient(
 			135deg,
-			transparent 42%,
-			rgba(30, 28, 24, 0.1) 42%,
-			rgba(30, 28, 24, 0.1) 50%,
+			transparent 40%,
+			rgba(30, 28, 24, 0.16) 40%,
+			rgba(30, 28, 24, 0.16) 50%,
 			rgba(255, 255, 255, 0.32) 50%,
-			rgba(255, 255, 255, 0.32) 58%,
-			transparent 58%
+			rgba(255, 255, 255, 0.32) 60%,
+			transparent 60%
 		);
-		background-size: 8px 8px;
+		background-size: 7px 7px;
 		opacity: 0;
 		pointer-events: none;
 		z-index: 3; /* Below precip-underlay (4), so temp plot stays visible */

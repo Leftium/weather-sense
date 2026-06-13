@@ -673,10 +673,10 @@ export function getWeatherIcon(code: number, iconSet: 'airy' | 'google', isDay =
 }
 
 // Get the precipitation group for a WMO code (used for grouping similar weather types)
-// Group 0 = clear/mostly clear, 1 = cloudy, 2 = fog, 3 = rain/drizzle, 4 = freezing rain, 5 = snow, 6 = thunderstorm
+// Group 0 = clear, 1 = cloudy, 2 = fog, 3 = rain/drizzle, 4 = freezing rain, 5 = snow, 6 = thunderstorm
 export function precipitationGroup(code: number): number {
-	if (code >= 0 && code <= 1) return 0;
-	if (code >= 2 && code <= 3) return 1;
+	if (code === 0) return 0;
+	if (code >= 1 && code <= 3) return 1;
 
 	if (WMO_CODES[code]?.wsCode !== undefined) {
 		return (Math.floor(WMO_CODES[code].wsCode / 1000) % 10) + 1;
@@ -686,6 +686,60 @@ export function precipitationGroup(code: number): number {
 
 function isClearOrCloudCoverCode(code: number): boolean {
 	return code >= 0 && code <= 3;
+}
+
+function getAdaptivePrecipitationGroup(
+	hourlyData: { weatherCode: number }[],
+	index: number,
+): number {
+	const code = hourlyData[index]?.weatherCode;
+	if (code !== 1) return precipitationGroup(code);
+
+	let runStart = index;
+	while (runStart > 0 && hourlyData[runStart - 1]?.weatherCode === 1) runStart -= 1;
+
+	let runEnd = index;
+	while (runEnd < hourlyData.length - 1 && hourlyData[runEnd + 1]?.weatherCode === 1) runEnd += 1;
+
+	const leftCode = hourlyData[runStart - 1]?.weatherCode;
+	const rightCode = hourlyData[runEnd + 1]?.weatherCode;
+	const leftGroup = leftCode !== undefined ? precipitationGroup(leftCode) : undefined;
+	const rightGroup = rightCode !== undefined ? precipitationGroup(rightCode) : undefined;
+
+	if (leftGroup === 0 && rightGroup !== 1) return 0;
+	if (rightGroup === 0 && leftGroup !== 1) return 0;
+	if (leftGroup === 1 && rightGroup !== 0) return 1;
+	if (rightGroup === 1 && leftGroup !== 0) return 1;
+
+	if (leftGroup === 0 && rightGroup === 1) {
+		let leftRunLength = 0;
+		for (let i = runStart - 1; i >= 0 && precipitationGroup(hourlyData[i].weatherCode) === 0; i--) {
+			leftRunLength += 1;
+		}
+
+		let rightRunLength = 0;
+		for (let i = runEnd + 1; i < hourlyData.length && precipitationGroup(hourlyData[i].weatherCode) === 1; i++) {
+			rightRunLength += 1;
+		}
+
+		return rightRunLength > leftRunLength ? 1 : 0;
+	}
+
+	if (leftGroup === 1 && rightGroup === 0) {
+		let leftRunLength = 0;
+		for (let i = runStart - 1; i >= 0 && precipitationGroup(hourlyData[i].weatherCode) === 1; i--) {
+			leftRunLength += 1;
+		}
+
+		let rightRunLength = 0;
+		for (let i = runEnd + 1; i < hourlyData.length && precipitationGroup(hourlyData[i].weatherCode) === 0; i++) {
+			rightRunLength += 1;
+		}
+
+		return leftRunLength > rightRunLength ? 1 : 0;
+	}
+
+	return 0;
 }
 
 // Get the most severe WMO code from grouped hourly data
@@ -708,36 +762,33 @@ export function getGroupedWmoCode(
 	}
 
 	// Build grouped codes
-	type GroupedCode = { weatherCode: number; counts: Record<number, number> };
-	const groupedCodes = hourlyData.reduce((accumulator: GroupedCode[], current) => {
+	type GroupedCode = { weatherCode: number; group: number; counts: Record<number, number> };
+	const groupedCodes = hourlyData.reduce((accumulator: GroupedCode[], current, index) => {
 		const prevItem = accumulator.at(-1);
-		const prevCode = prevItem?.weatherCode;
-		const prevPrecipGroup =
-			prevCode !== undefined
-				? precipitationGroup(prevCode)
-				: precipitationGroup(current.weatherCode);
+		const currentGroup = getAdaptivePrecipitationGroup(hourlyData, index);
+		const prevPrecipGroup = prevItem?.group ?? currentGroup;
 
-		let nextCode = determineNextCode(prevCode, current.weatherCode);
-		const counts =
-			prevItem !== undefined && prevPrecipGroup === precipitationGroup(nextCode)
-				? prevItem.counts
-				: {};
+		let nextCode = current.weatherCode;
+		if (prevItem && prevPrecipGroup === currentGroup) {
+			nextCode = determineNextCode(prevItem.weatherCode, current.weatherCode);
+		}
+		const counts = prevItem !== undefined && prevPrecipGroup === currentGroup ? prevItem.counts : {};
 		counts[current.weatherCode] = counts[current.weatherCode] || 0;
 
 		// Count all hours (unlike TimeLine.svelte which has a 25th fencepost item to skip)
 		counts[current.weatherCode] += 1;
 
-		// For clear/cloud cover groups (0-1, 2-3), pick most common code
+		// For clear/cloud cover codes (0-3), pick most common code
 		if (isClearOrCloudCoverCode(nextCode)) {
 			nextCode = Number(
 				maxByFn(Object.keys(counts), (code) => counts[Number(code)] + Number(code) / 100),
 			);
 		}
 
-		if (prevItem && prevPrecipGroup === precipitationGroup(nextCode)) {
-			accumulator[accumulator.length - 1] = { weatherCode: nextCode, counts };
+		if (prevItem && prevPrecipGroup === currentGroup) {
+			accumulator[accumulator.length - 1] = { weatherCode: nextCode, group: currentGroup, counts };
 		} else {
-			accumulator.push({ weatherCode: nextCode, counts });
+			accumulator.push({ weatherCode: nextCode, group: currentGroup, counts });
 		}
 		return accumulator;
 	}, [] as GroupedCode[]);
@@ -762,9 +813,9 @@ export function getGroupedWmoCode(
 
 			// Count hours in gap by summing counts
 			const gapHours = Object.values(gap.counts).reduce((sum, n) => sum + n, 0);
-			const gapGroup = precipitationGroup(gap.weatherCode);
-			const prevGroup = precipitationGroup(prev.weatherCode);
-			const nextGroup = precipitationGroup(next.weatherCode);
+			const gapGroup = gap.group;
+			const prevGroup = prev.group;
+			const nextGroup = next.group;
 
 			// Merge brief lower-severity gaps within the same precipitation event.
 			if (
@@ -782,6 +833,7 @@ export function getGroupedWmoCode(
 				// Merge prev + gap + next into prev
 				groupedCodes[i - 1] = {
 					weatherCode: mergedCode,
+					group: prevGroup,
 					counts: { ...prev.counts, ...gap.counts, ...next.counts },
 				};
 

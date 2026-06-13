@@ -538,6 +538,7 @@
 			type CodesItem = {
 				ms: number;
 				weatherCode: number;
+				group: number;
 				isDay: boolean;
 				text: string;
 				x1: number;
@@ -570,17 +571,67 @@
 				return code >= 0 && code <= 3;
 			}
 
+			function getAdaptivePrecipGroup(index: number) {
+				const code = metrics[index]?.weatherCode;
+				if (code !== 1) return getPrecipGroup(code);
+
+				let runStart = index;
+				while (runStart > 0 && metrics[runStart - 1]?.weatherCode === 1) runStart -= 1;
+
+				let runEnd = index;
+				while (runEnd < metrics.length - 1 && metrics[runEnd + 1]?.weatherCode === 1) runEnd += 1;
+
+				const leftCode = metrics[runStart - 1]?.weatherCode;
+				const rightCode = metrics[runEnd + 1]?.weatherCode;
+				const leftGroup = leftCode !== undefined ? getPrecipGroup(leftCode) : undefined;
+				const rightGroup = rightCode !== undefined ? getPrecipGroup(rightCode) : undefined;
+
+				if (leftGroup === 0 && rightGroup !== 1) return 0;
+				if (rightGroup === 0 && leftGroup !== 1) return 0;
+				if (leftGroup === 1 && rightGroup !== 0) return 1;
+				if (rightGroup === 1 && leftGroup !== 0) return 1;
+
+				if (leftGroup === 0 && rightGroup === 1) {
+					let leftRunLength = 0;
+					for (let i = runStart - 1; i >= 0 && getPrecipGroup(metrics[i].weatherCode) === 0; i--) {
+						leftRunLength += 1;
+					}
+
+					let rightRunLength = 0;
+					for (let i = runEnd + 1; i < metrics.length && getPrecipGroup(metrics[i].weatherCode) === 1; i++) {
+						rightRunLength += 1;
+					}
+
+					return rightRunLength > leftRunLength ? 1 : 0;
+				}
+
+				if (leftGroup === 1 && rightGroup === 0) {
+					let leftRunLength = 0;
+					for (let i = runStart - 1; i >= 0 && getPrecipGroup(metrics[i].weatherCode) === 1; i--) {
+						leftRunLength += 1;
+					}
+
+					let rightRunLength = 0;
+					for (let i = runEnd + 1; i < metrics.length && getPrecipGroup(metrics[i].weatherCode) === 0; i++) {
+						rightRunLength += 1;
+					}
+
+					return leftRunLength > rightRunLength ? 1 : 0;
+				}
+
+				return 0;
+			}
+
 			const codes = metrics.reduce((accumulator: CodesItem[], current, index, array) => {
 				const prevItem = accumulator.at(-1);
-				const prevCode = prevItem?.weatherCode;
-				const prevPrecipGroup =
-					prevCode !== undefined ? getPrecipGroup(prevCode) : getPrecipGroup(current.weatherCode);
+				const currentGroup = getAdaptivePrecipGroup(index);
+				const prevPrecipGroup = prevItem?.group ?? currentGroup;
 
-				let nextCode = determineNextCode(prevCode, current.weatherCode);
-				const counts =
-					prevItem !== undefined && prevPrecipGroup === getPrecipGroup(nextCode)
-						? prevItem.counts
-						: {};
+				let nextCode = current.weatherCode;
+				if (prevItem && prevPrecipGroup === currentGroup) {
+					nextCode = determineNextCode(prevItem.weatherCode, current.weatherCode);
+				}
+				const counts = prevItem !== undefined && prevPrecipGroup === currentGroup ? prevItem.counts : {};
 				counts[current.weatherCode] = counts[current.weatherCode] || 0;
 
 				// Don't count final (25th) hour (needed for fence post problem).
@@ -588,7 +639,7 @@
 					counts[current.weatherCode] += 1;
 				}
 
-				// For clear/cloud cover groups (0-1, 2-3), pick most common code
+				// For clear/cloud cover codes (0-3), pick most common code
 				if (isClearOrCloudCoverCode(nextCode)) {
 					nextCode = Number(
 						maxBy(Object.keys(counts), (code) => counts[Number(code)] + Number(code) / 100),
@@ -621,9 +672,10 @@
 					counts,
 				};
 
-				if (prevItem && prevPrecipGroup === getPrecipGroup(nextCode)) {
+				if (prevItem && prevPrecipGroup === currentGroup) {
 					accumulator[accumulator.length - 1] = {
 						...draftItem,
+						group: currentGroup,
 						x1: prevItem.x1,
 						xMiddle: (Number(prevItem.x1) + x2) / 2,
 						// If any hour in merged segment is day, show day icon
@@ -631,7 +683,7 @@
 						counts,
 					};
 				} else {
-					accumulator.push(draftItem);
+					accumulator.push({ ...draftItem, group: currentGroup });
 				}
 				return accumulator;
 			}, [] as CodesItem[]);
@@ -657,9 +709,9 @@
 					if (!gap || !prev || !next) continue;
 
 					const gapDuration = gap.x2 - gap.x1;
-					const gapGroup = getPrecipGroup(gap.weatherCode);
-					const prevGroup = getPrecipGroup(prev.weatherCode);
-					const nextGroup = getPrecipGroup(next.weatherCode);
+					const gapGroup = gap.group;
+					const prevGroup = prev.group;
+					const nextGroup = next.group;
 
 					// Merge brief lower-severity gaps within the same precipitation event.
 					if (

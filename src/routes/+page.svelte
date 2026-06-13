@@ -551,8 +551,17 @@
 		if (visibleDays.length === 0) {
 			return getTemperatureStats(weatherStore.dataForecast);
 		}
-		const minTemp = Math.min(...visibleDays.map((d) => d.temperatureMin));
-		const maxTemp = Math.max(...visibleDays.map((d) => d.temperatureMax));
+		const minTemps = visibleDays.map((day) =>
+			groupIcons ? getPlotLowTemp(day.ms, weatherStore.hourly) : day.temperatureMin,
+		);
+		const maxTemps = visibleDays.map((day) =>
+			groupIcons ? getPlotHighTemp(day.ms, weatherStore.hourly) : day.temperatureMax,
+		);
+		const minTemp = Math.min(...minTemps.filter((temp): temp is number => temp != null));
+		const maxTemp = Math.max(...maxTemps.filter((temp): temp is number => temp != null));
+		if (!Number.isFinite(minTemp) || !Number.isFinite(maxTemp)) {
+			return getTemperatureStats(weatherStore.dataForecast);
+		}
 		return {
 			minTemperature: minTemp, // For visible days, use same as minTemperatureOnly
 			maxTemperature: maxTemp,
@@ -889,16 +898,6 @@
 			{#each (weatherStore.daily || []).filter((day) => day.fromToday > -2 && day.fromToday < forecastDaysVisible) as day (day.ms)}
 				{@const past = day.fromToday < 0}
 				{@const today = day.fromToday === 0}
-				{@const colorHigh = temperatureToColor(
-					day.temperatureMax,
-					visibleTempStats?.minTemperatureOnly ?? 0,
-					visibleTempStats?.maxTemperature ?? 100,
-				)}
-				{@const colorLow = temperatureToColor(
-					day.temperatureMin,
-					visibleTempStats?.minTemperatureOnly ?? 0,
-					visibleTempStats?.maxTemperature ?? 100,
-				)}
 				{@const dayWmoCode = getDayWmoCode(
 					day.ms,
 					day.weatherCode,
@@ -915,6 +914,16 @@
 				{@const lowTemp = groupIcons
 					? getPlotLowTemp(day.ms, weatherStore.hourly)
 					: day.temperatureMin}
+				{@const colorHigh = temperatureToColor(
+					highTemp ?? day.temperatureMax,
+					visibleTempStats?.minTemperatureOnly ?? 0,
+					visibleTempStats?.maxTemperature ?? 100,
+				)}
+				{@const colorLow = temperatureToColor(
+					lowTemp ?? day.temperatureMin,
+					visibleTempStats?.minTemperatureOnly ?? 0,
+					visibleTempStats?.maxTemperature ?? 100,
+				)}
 				<div class={['day-row', { past }]} transition:slide={{ duration: 1000 }}>
 					<div class={['day-label', { past }]}>
 						<div class={['day', { today }, { 'before-day-start-hour': day.beforeDayStartHour }]}>

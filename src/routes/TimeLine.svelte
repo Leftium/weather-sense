@@ -1645,7 +1645,7 @@
 
 			// Sunrise/sunset indicators removed - sky strip shows this now
 
-			// Past overlay - hatch texture only, keeping weather colors readable
+			// Past overlay - one-direction hatch texture, keeping weather colors readable
 			const now = Date.now();
 			const pastEnd = Math.min(msEnd, Math.max(msStart, now));
 
@@ -1654,15 +1654,15 @@
 					() => htl.svg`<defs>
 						<pattern id="past-overlay-hatch-${msStart}" patternUnits="userSpaceOnUse" width="8" height="8">
 							<path
-								d="M -4 8 L 8 -4 M 0 12 L 12 0 M -4 0 L 8 12 M 0 -4 L 12 8"
+								d="M -4 8 L 8 -4 M 0 12 L 12 0"
 								stroke="rgb(30, 28, 24)"
-								stroke-opacity="0.08"
+								stroke-opacity="0.1"
 								stroke-width="1.25"
 							/>
 							<path
-								d="M -5 7 L 7 -5 M -1 11 L 11 -1 M -5 -1 L 7 11 M -1 -5 L 11 7"
+								d="M -5 7 L 7 -5 M -1 11 L 11 -1"
 								stroke="white"
-								stroke-opacity="0.28"
+								stroke-opacity="0.32"
 								stroke-width="1.25"
 							/>
 						</pattern>

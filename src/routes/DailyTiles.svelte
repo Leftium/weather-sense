@@ -619,26 +619,16 @@
 	.past-overlay {
 		width: 100%;
 		height: 100%;
-		/* Two-tone crosshatch matching the hourly past-hours treatment. */
-		background:
-			linear-gradient(
-				45deg,
-				transparent 42%,
-				rgba(30, 28, 24, 0.08) 42%,
-				rgba(30, 28, 24, 0.08) 50%,
-				rgba(255, 255, 255, 0.28) 50%,
-				rgba(255, 255, 255, 0.28) 58%,
-				transparent 58%
-			),
-			linear-gradient(
-				315deg,
-				transparent 42%,
-				rgba(30, 28, 24, 0.08) 42%,
-				rgba(30, 28, 24, 0.08) 50%,
-				rgba(255, 255, 255, 0.28) 50%,
-				rgba(255, 255, 255, 0.28) 58%,
-				transparent 58%
-			);
+		/* Two-tone one-direction hatch matching the hourly past-hours treatment. */
+		background: linear-gradient(
+			135deg,
+			transparent 42%,
+			rgba(30, 28, 24, 0.1) 42%,
+			rgba(30, 28, 24, 0.1) 50%,
+			rgba(255, 255, 255, 0.32) 50%,
+			rgba(255, 255, 255, 0.32) 58%,
+			transparent 58%
+		);
 		background-size: 8px 8px;
 		opacity: 0;
 		pointer-events: none;

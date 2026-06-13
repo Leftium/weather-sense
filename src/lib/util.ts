@@ -673,10 +673,10 @@ export function getWeatherIcon(code: number, iconSet: 'airy' | 'google', isDay =
 }
 
 // Get the precipitation group for a WMO code (used for grouping similar weather types)
-// Group 0 = clear, 1 = cloudy, 2 = fog, 3 = rain/drizzle, 4 = freezing rain, 5 = snow, 6 = thunderstorm
+// Group 0 = clear/mostly clear, 1 = cloudy, 2 = fog, 3 = rain/drizzle, 4 = freezing rain, 5 = snow, 6 = thunderstorm
 export function precipitationGroup(code: number): number {
-	if (code === 0) return 0;
-	if (code >= 1 && code <= 3) return 1;
+	if (code >= 0 && code <= 1) return 0;
+	if (code >= 2 && code <= 3) return 1;
 
 	if (WMO_CODES[code]?.wsCode !== undefined) {
 		return (Math.floor(WMO_CODES[code].wsCode / 1000) % 10) + 1;
@@ -684,13 +684,13 @@ export function precipitationGroup(code: number): number {
 	return -1;
 }
 
-function isCloudCoverCode(code: number): boolean {
-	return code >= 1 && code <= 3;
+function isClearOrCloudCoverCode(code: number): boolean {
+	return code >= 0 && code <= 3;
 }
 
 // Get the most severe WMO code from grouped hourly data
 // Replicates TimeLine's grouping logic: groups consecutive hours by precipitation type,
-// picks the most severe code within each group (or most common for cloudy),
+// picks the most severe code within each group (or most common for clear/cloud cover),
 // then returns the most severe among all group representatives
 export function getGroupedWmoCode(
 	hourlyData: { weatherCode: number }[],
@@ -727,8 +727,8 @@ export function getGroupedWmoCode(
 		// Count all hours (unlike TimeLine.svelte which has a 25th fencepost item to skip)
 		counts[current.weatherCode] += 1;
 
-		// For cloudy group (1-3), pick most common code
-		if (isCloudCoverCode(nextCode)) {
+		// For clear/cloud cover groups (0-1, 2-3), pick most common code
+		if (isClearOrCloudCoverCode(nextCode)) {
 			nextCode = Number(
 				maxByFn(Object.keys(counts), (code) => counts[Number(code)] + Number(code) / 100),
 			);

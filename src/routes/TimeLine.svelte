@@ -566,8 +566,8 @@
 				return currCode;
 			}
 
-			function isCloudCoverCode(code: number) {
-				return code >= 1 && code <= 3;
+			function isClearOrCloudCoverCode(code: number) {
+				return code >= 0 && code <= 3;
 			}
 
 			const codes = metrics.reduce((accumulator: CodesItem[], current, index, array) => {
@@ -588,8 +588,8 @@
 					counts[current.weatherCode] += 1;
 				}
 
-				// For cloudy group (1-3), pick most common code
-				if (isCloudCoverCode(nextCode)) {
+				// For clear/cloud cover groups (0-1, 2-3), pick most common code
+				if (isClearOrCloudCoverCode(nextCode)) {
 					nextCode = Number(
 						maxBy(Object.keys(counts), (code) => counts[Number(code)] + Number(code) / 100),
 					);

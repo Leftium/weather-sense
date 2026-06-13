@@ -571,60 +571,17 @@
 				return code >= 0 && code <= 3;
 			}
 
-			function getAdaptivePrecipGroup(index: number) {
-				const code = metrics[index]?.weatherCode;
-				if (code !== 1) return getPrecipGroup(code);
-
-				let runStart = index;
-				while (runStart > 0 && metrics[runStart - 1]?.weatherCode === 1) runStart -= 1;
-
-				let runEnd = index;
-				while (runEnd < metrics.length - 1 && metrics[runEnd + 1]?.weatherCode === 1) runEnd += 1;
-
-				const leftCode = metrics[runStart - 1]?.weatherCode;
-				const rightCode = metrics[runEnd + 1]?.weatherCode;
-				const leftGroup = leftCode !== undefined ? getPrecipGroup(leftCode) : undefined;
-				const rightGroup = rightCode !== undefined ? getPrecipGroup(rightCode) : undefined;
-
-				if (leftGroup === 0 && rightGroup !== 1) return 0;
-				if (rightGroup === 0 && leftGroup !== 1) return 0;
-				if (leftGroup === 1 && rightGroup !== 0) return 1;
-				if (rightGroup === 1 && leftGroup !== 0) return 1;
-
-				if (leftGroup === 0 && rightGroup === 1) {
-					let leftRunLength = 0;
-					for (let i = runStart - 1; i >= 0 && getPrecipGroup(metrics[i].weatherCode) === 0; i--) {
-						leftRunLength += 1;
-					}
-
-					let rightRunLength = 0;
-					for (let i = runEnd + 1; i < metrics.length && getPrecipGroup(metrics[i].weatherCode) === 1; i++) {
-						rightRunLength += 1;
-					}
-
-					return rightRunLength > leftRunLength ? 1 : 0;
+			function mergeCounts(left: Record<number, number>, right: Record<number, number>) {
+				const merged = { ...left };
+				for (const [code, count] of Object.entries(right)) {
+					merged[Number(code)] = (merged[Number(code)] || 0) + count;
 				}
-
-				if (leftGroup === 1 && rightGroup === 0) {
-					let leftRunLength = 0;
-					for (let i = runStart - 1; i >= 0 && getPrecipGroup(metrics[i].weatherCode) === 1; i--) {
-						leftRunLength += 1;
-					}
-
-					let rightRunLength = 0;
-					for (let i = runEnd + 1; i < metrics.length && getPrecipGroup(metrics[i].weatherCode) === 0; i++) {
-						rightRunLength += 1;
-					}
-
-					return leftRunLength > rightRunLength ? 1 : 0;
-				}
-
-				return 0;
+				return merged;
 			}
 
 			const codes = metrics.reduce((accumulator: CodesItem[], current, index, array) => {
 				const prevItem = accumulator.at(-1);
-				const currentGroup = getAdaptivePrecipGroup(index);
+				const currentGroup = getPrecipGroup(current.weatherCode);
 				const prevPrecipGroup = prevItem?.group ?? currentGroup;
 
 				let nextCode = current.weatherCode;
@@ -688,6 +645,76 @@
 				return accumulator;
 			}, [] as CodesItem[]);
 
+			function updateCodeDisplay(item: CodesItem, weatherCode: number) {
+				const solidColor = WMO_CODES[weatherCode].color;
+				const fill = wmoGradientStore.value
+					? `url(#cloud-gradient-${weatherCode}-${msStart})`
+					: solidColor;
+				const { fillText, fillShadow } = getContrastColors(solidColor);
+
+				item.weatherCode = weatherCode;
+				item.group = getPrecipGroup(weatherCode);
+				item.text = WMO_CODES[weatherCode].description;
+				item.fill = fill;
+				item.fillText = fillText;
+				item.fillShadow = fillShadow;
+			}
+
+			const MAX_SKY_GAP_HOURS = 3;
+			const MAX_SKY_GAP_MS = MAX_SKY_GAP_HOURS * MS_IN_HOUR + 3 * MS_IN_MINUTE;
+			if (groupIcons && codes.length >= 3) {
+				for (let changed = true; changed; ) {
+					changed = false;
+					for (let i = 1; i < codes.length - 1; i++) {
+						const gap = codes[i];
+						const prev = codes[i - 1];
+						const next = codes[i + 1];
+						if (!gap || !prev || !next) continue;
+						if (!isClearOrCloudCoverCode(gap.weatherCode)) continue;
+						if (!isClearOrCloudCoverCode(prev.weatherCode) || !isClearOrCloudCoverCode(next.weatherCode)) continue;
+						if (gap.x2 - gap.x1 > MAX_SKY_GAP_MS) continue;
+
+						const prevDuration = prev.x2 - prev.x1;
+						const nextDuration = next.x2 - next.x1;
+						const target = prevDuration >= nextDuration ? prev : next;
+
+						target.counts = mergeCounts(target.counts, gap.counts);
+						const nextCode = Number(
+							maxBy(Object.keys(target.counts), (code) => target.counts[Number(code)] + Number(code) / 100),
+						);
+						if (target === prev) {
+							prev.x2 = gap.x2;
+							prev.ms = gap.ms;
+						} else {
+							next.x1 = gap.x1;
+						}
+						target.xMiddle = (Number(target.x1) + Number(target.x2)) / 2;
+						updateCodeDisplay(target, nextCode);
+						codes.splice(i, 1);
+						changed = true;
+						break;
+					}
+				}
+				for (let i = codes.length - 1; i >= 1; i--) {
+					const prev = codes[i - 1];
+					const current = codes[i];
+					if (!prev || !current) continue;
+					if (!isClearOrCloudCoverCode(prev.weatherCode) || !isClearOrCloudCoverCode(current.weatherCode)) continue;
+					if (prev.group !== current.group) continue;
+
+					prev.x2 = current.x2;
+					prev.ms = current.ms;
+					prev.xMiddle = (Number(prev.x1) + Number(current.x2)) / 2;
+					prev.isDay = prev.isDay || current.isDay;
+					prev.counts = mergeCounts(prev.counts, current.counts);
+					const nextCode = Number(
+						maxBy(Object.keys(prev.counts), (code) => prev.counts[Number(code)] + Number(code) / 100),
+					);
+					updateCodeDisplay(prev, nextCode);
+					codes.splice(i, 1);
+				}
+			}
+
 			// Second pass: merge short gaps into surrounding precipitation segments
 			// A gap is merged if:
 			// 1. Its duration is <= MAX_GAP_HOURS hours, AND
@@ -746,6 +773,7 @@
 							fill: fillMerged,
 							fillText,
 							fillShadow,
+							counts: mergeCounts(mergeCounts(prev.counts, gap.counts), next.counts),
 						};
 
 						// Remove gap and next (they're now merged into prev)

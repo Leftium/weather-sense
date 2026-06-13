@@ -619,23 +619,30 @@
 	.past-overlay {
 		width: 100%;
 		height: 100%;
-		/* Sepia-tinted vignette - upper-right and lower-left corners */
+		/* Two-tone crosshatch matching the hourly past-hours treatment. */
 		background:
 			linear-gradient(
-				to bottom left,
-				rgba(100, 80, 50, 0.6) 0%,
-				rgba(100, 80, 50, 0.6) 10%,
-				transparent 35%
+				45deg,
+				transparent 42%,
+				rgba(30, 28, 24, 0.08) 42%,
+				rgba(30, 28, 24, 0.08) 50%,
+				rgba(255, 255, 255, 0.28) 50%,
+				rgba(255, 255, 255, 0.28) 58%,
+				transparent 58%
 			),
 			linear-gradient(
-				to top right,
-				rgba(100, 80, 50, 0.6) 0%,
-				rgba(100, 80, 50, 0.6) 10%,
-				transparent 35%
+				315deg,
+				transparent 42%,
+				rgba(30, 28, 24, 0.08) 42%,
+				rgba(30, 28, 24, 0.08) 50%,
+				rgba(255, 255, 255, 0.28) 50%,
+				rgba(255, 255, 255, 0.28) 58%,
+				transparent 58%
 			);
+		background-size: 8px 8px;
 		opacity: 0;
 		pointer-events: none;
-		z-index: 3; // Below precip-underlay (4), so temp plot stays visible
+		z-index: 3; /* Below precip-underlay (4), so temp plot stays visible */
 
 		&.past {
 			opacity: 1;
@@ -650,7 +657,7 @@
 		filter: drop-shadow(0 0 3px rgba(128, 128, 128, 0.6))
 			drop-shadow(0 0 6px rgba(128, 128, 128, 0.4)) drop-shadow(0 0 12px rgba(128, 128, 128, 0.3));
 
-		// Google icons: centered horizontally, raised up (may clip at top)
+		/* Google icons: centered horizontally, raised up (may clip at top) */
 		&.google-icon {
 			width: 52px;
 			height: 52px;
@@ -665,21 +672,21 @@
 		align-items: center;
 		padding-top: 4px;
 		position: relative;
-		z-index: 6; // Above tracker-line (5), below overlay (10)
+		z-index: 6; /* Above tracker-line (5), below overlay (10) */
 	}
 
-	// Tracker SVG - between precip bars and text labels
+	/* Tracker SVG - between precip bars and text labels */
 	.tracker-svg {
 		position: absolute;
 		top: 0;
 		left: 0;
 		width: 100%;
 		height: 100%;
-		z-index: 5; // Behind tile-content (6) and overlay/labels (10)
+		z-index: 5; /* Behind tile-content (6) and overlay/labels (10) */
 		pointer-events: none;
 	}
 
-	// Tracker uses CSS transform for GPU-accelerated positioning
+	/* Tracker uses CSS transform for GPU-accelerated positioning */
 	.tracker {
 		will-change: transform, opacity;
 		filter: drop-shadow(0 0 3px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 6px rgba(0, 0, 0, 0.2));
@@ -799,7 +806,7 @@
 		width: calc(var(--tile-count) * 70px);
 		height: 114px;
 		pointer-events: none;
-		z-index: 4; // Behind tracker line
+		z-index: 4; /* Behind tracker line */
 	}
 
 	.overlay {
@@ -809,7 +816,7 @@
 		width: calc(var(--tile-count) * 70px);
 		height: 114px;
 		pointer-events: none;
-		z-index: 10; // Above tile content so temp labels can be clicked
+		z-index: 10; /* Above tile content so temp labels can be clicked */
 
 		:global(.temp-label) {
 			pointer-events: auto;

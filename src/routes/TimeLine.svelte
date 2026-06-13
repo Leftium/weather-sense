@@ -1645,19 +1645,27 @@
 
 			// Sunrise/sunset indicators removed - sky strip shows this now
 
-			// Past overlay - sepia-tinted top and bottom edges
+			// Past overlay - hatch texture only, keeping weather colors readable
 			const now = Date.now();
 			const pastEnd = Math.min(msEnd, Math.max(msStart, now));
 
 			if (now > msStart) {
 				marks.push(
 					() => htl.svg`<defs>
-						<linearGradient id="past-overlay-gradient-${msStart}" x1="0" y1="0" x2="0" y2="1">
-							<stop offset="0%" stop-color="rgb(100, 80, 50)" stop-opacity=".6" />
-							<stop offset="10%" stop-color="rgb(100, 80, 50)" stop-opacity=".6" />
-							<stop offset="30%" stop-color="rgb(100, 80, 50)" stop-opacity="0" />
-							<stop offset="100%" stop-color="rgb(100, 80, 50)" stop-opacity="0" />
-						</linearGradient>
+						<pattern id="past-overlay-hatch-${msStart}" patternUnits="userSpaceOnUse" width="8" height="8">
+							<path
+								d="M -4 8 L 8 -4 M 0 12 L 12 0 M -4 0 L 8 12 M 0 -4 L 12 8"
+								stroke="rgb(30, 28, 24)"
+								stroke-opacity="0.08"
+								stroke-width="1.25"
+							/>
+							<path
+								d="M -5 7 L 7 -5 M -1 11 L 11 -1 M -5 -1 L 7 11 M -1 -5 L 11 7"
+								stroke="white"
+								stroke-opacity="0.28"
+								stroke-width="1.25"
+							/>
+						</pattern>
 					</defs>`,
 				);
 				marks.push(
@@ -1666,7 +1674,7 @@
 						x2: pastEnd,
 						y1: yDomainTop,
 						y2: yDomainBottom,
-						fill: `url(#past-overlay-gradient-${msStart})`,
+						fill: `url(#past-overlay-hatch-${msStart})`,
 					}),
 				);
 			}

@@ -639,7 +639,8 @@
 			// Second pass: merge short gaps into surrounding precipitation segments
 			// A gap is merged if:
 			// 1. Its duration is <= MAX_GAP_HOURS hours, AND
-			// 2. Its precipitation group is less severe than BOTH surrounding segments
+			// 2. Surrounding segments are the same precipitation group, AND
+			// 3. The gap is less severe than the surrounding precipitation group
 			// Only run when groupIcons is enabled
 			// NOTE: Similar logic exists in util.ts getGroupedWmoCode() for daily tile icons
 			const MAX_GAP_HOURS = 1;
@@ -660,8 +661,13 @@
 					const prevGroup = getPrecipGroup(prev.weatherCode);
 					const nextGroup = getPrecipGroup(next.weatherCode);
 
-					// Merge if gap is short and less severe than both neighbors
-					if (gapDuration <= MAX_GAP_MS && gapGroup < prevGroup && gapGroup < nextGroup) {
+					// Merge brief lower-severity gaps within the same precipitation event.
+					if (
+						gapDuration <= MAX_GAP_MS &&
+						prevGroup === nextGroup &&
+						prevGroup >= 3 &&
+						gapGroup < prevGroup
+					) {
 						// Use the more severe weather code from surrounding segments
 						const mergedCode =
 							WMO_CODES[prev.weatherCode].wsCode > WMO_CODES[next.weatherCode].wsCode

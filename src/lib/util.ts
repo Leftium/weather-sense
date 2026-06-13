@@ -745,7 +745,8 @@ export function getGroupedWmoCode(
 	// Second pass: merge short gaps into surrounding precipitation segments
 	// A gap is merged if:
 	// 1. Its duration is <= MAX_GAP_HOURS hours, AND
-	// 2. Its precipitation group is less severe than BOTH surrounding segments
+	// 2. Surrounding segments are the same precipitation group, AND
+	// 3. The gap is less severe than the surrounding precipitation group
 	// NOTE: Similar logic exists in TimeLine.svelte for hourly display
 	const MAX_GAP_HOURS = 1;
 
@@ -765,8 +766,13 @@ export function getGroupedWmoCode(
 			const prevGroup = precipitationGroup(prev.weatherCode);
 			const nextGroup = precipitationGroup(next.weatherCode);
 
-			// Merge if gap is short and less severe than both neighbors
-			if (gapHours <= MAX_GAP_HOURS && gapGroup < prevGroup && gapGroup < nextGroup) {
+			// Merge brief lower-severity gaps within the same precipitation event.
+			if (
+				gapHours <= MAX_GAP_HOURS &&
+				prevGroup === nextGroup &&
+				prevGroup >= 3 &&
+				gapGroup < prevGroup
+			) {
 				// Use the more severe weather code from surrounding segments
 				const mergedCode =
 					WMO_CODES[prev.weatherCode].wsCode > WMO_CODES[next.weatherCode].wsCode

@@ -15,8 +15,8 @@ import {
 	contrastTextColor,
 	lerpPaletteFast,
 	MS_IN_HOUR,
-} from '$lib/util';
-import { getSunAltitude } from '$lib/horizon';
+} from '#lib/util.js';
+import { getSunAltitude } from '#lib/horizon.js';
 import { gg } from '@leftium/gg';
 
 // =============================================================================

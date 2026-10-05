@@ -15,7 +15,7 @@
  * - True decoupling (no weatherData import)
  */
 
-import { getEmitter } from '$lib/emitter';
+import { getEmitter } from '#lib/emitter.js';
 import type {
 	WeatherDataEvents,
 	Snapshot,

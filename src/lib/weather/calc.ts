@@ -22,7 +22,7 @@ import {
 	MS_IN_SECOND,
 	MS_IN_HOUR,
 	DAY_START_HOUR,
-} from '$lib/util';
+} from '#lib/util.js';
 import type { WeatherData } from './data.svelte';
 import type {
 	ForecastItem,

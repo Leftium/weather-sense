@@ -6,7 +6,13 @@ import svelte from 'eslint-plugin-svelte';
 import { defineConfig } from 'eslint/config';
 import globals from 'globals';
 import ts from 'typescript-eslint';
-import svelteConfig from './svelte.config.js';
+import { loadConfig } from '@sveltejs/load-config';
+
+const loadedConfig = await loadConfig('./', { traverse: false });
+if (!loadedConfig || 'error' in loadedConfig) {
+	throw new Error('Unable to load the Svelte configuration from vite.config.ts');
+}
+const svelteConfig = loadedConfig.config;
 
 const gitignorePath = fileURLToPath(new URL('./.gitignore', import.meta.url));
 

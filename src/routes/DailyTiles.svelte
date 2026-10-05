@@ -1,6 +1,6 @@
 <script lang="ts">
-	import type { WeatherStore, WeatherDataEvents, DailyForecast } from '$lib/weather';
-	import { getPlotHighTemp, getPlotLowTemp } from '$lib/weather';
+	import type { WeatherStore, WeatherDataEvents, DailyForecast } from '#lib/weather/index.js';
+	import { getPlotHighTemp, getPlotLowTemp } from '#lib/weather/index.js';
 	import {
 		colors,
 		wmoCode,
@@ -14,12 +14,12 @@
 		DAY_START_HOUR,
 		TEMP_COLOR_HOT,
 		TEMP_COLOR_COLD,
-	} from '$lib/util';
-	import { iconSetStore } from '$lib/iconSet.svelte';
-	import { wmoGradientStore } from '$lib/wmoGradient.svelte';
-	import { numberToWord, calmCompactDate } from '$lib/calm.svelte';
-	import { trackable, isTempLabel } from '$lib/trackable';
-	import { getEmitter } from '$lib/emitter';
+	} from '#lib/util.js';
+	import { iconSetStore } from '#lib/iconSet.svelte.js';
+	import { wmoGradientStore } from '#lib/wmoGradient.svelte.js';
+	import { numberToWord, calmCompactDate } from '#lib/calm.svelte.js';
+	import { trackable, isTempLabel } from '#lib/trackable.js';
+	import { getEmitter } from '#lib/emitter.js';
 	import { clamp, maxBy } from 'lodash-es';
 	import { fade } from 'svelte/transition';
 	import { tick } from 'svelte';

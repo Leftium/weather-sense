@@ -1,5 +1,5 @@
 <script module lang="ts">
-	import { browser } from '$app/environment';
+	import { browser } from '$app/env';
 
 	let adjustedLabelWidths = $state(false);
 	let labelWidths: Record<string, number> = $state({});
@@ -25,7 +25,7 @@
 		type WeatherStore,
 		type WeatherDataEvents,
 		type DailyForecast,
-	} from '$lib/weather';
+	} from '#lib/weather/index.js';
 
 	import { clamp, each, maxBy } from 'lodash-es';
 	import * as d3 from 'd3';
@@ -33,8 +33,8 @@
 	import { gg } from '@leftium/gg';
 	import * as Plot from '@observablehq/plot';
 	import * as htl from 'htl';
-	import { getEmitter } from '$lib/emitter';
-	import { trackable } from '$lib/trackable';
+	import { getEmitter } from '#lib/emitter.js';
+	import { trackable } from '#lib/trackable.js';
 	import { onMount, tick, untrack } from 'svelte';
 	import {
 		AQI_INDEX_EUROPE,
@@ -59,11 +59,11 @@
 		TEMP_COLOR_HOT,
 		TEMP_COLOR_COLD,
 		skyPalettes,
-	} from '$lib/util';
-	import { getSunAltitude } from '$lib/horizon';
-	import { iconSetStore } from '$lib/iconSet.svelte';
-	import { wmoGradientStore } from '$lib/wmoGradient.svelte';
-	import { calmModeStore } from '$lib/calm.svelte';
+	} from '#lib/util.js';
+	import { getSunAltitude } from '#lib/horizon.js';
+	import { iconSetStore } from '#lib/iconSet.svelte.js';
+	import { wmoGradientStore } from '#lib/wmoGradient.svelte.js';
+	import { calmModeStore } from '#lib/calm.svelte.js';
 	import type { Markish } from '@observablehq/plot';
 	import dayjs from 'dayjs';
 

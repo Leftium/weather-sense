@@ -1,9 +1,9 @@
 <script lang="ts">
-	import type { WeatherStore, WeatherDataEvents, MinutelyPoint } from '$lib/weather';
-	import { getEmitter } from '$lib/emitter';
-	import { trackable } from '$lib/trackable';
-	import { colors, MS_IN_MINUTE } from '$lib/util';
-	import { calmModeStore } from '$lib/calm.svelte';
+	import type { WeatherStore, WeatherDataEvents, MinutelyPoint } from '#lib/weather/index.js';
+	import { getEmitter } from '#lib/emitter.js';
+	import { trackable } from '#lib/trackable.js';
+	import { colors, MS_IN_MINUTE } from '#lib/util.js';
+	import { calmModeStore } from '#lib/calm.svelte.js';
 	import * as Plot from '@observablehq/plot';
 	import * as d3 from 'd3';
 	import { clamp } from 'lodash-es';

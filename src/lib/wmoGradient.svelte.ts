@@ -1,7 +1,7 @@
 // Shared store for WMO code gradient preference (solid vs gradient backgrounds)
 // Persists to localStorage
 
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 const STORAGE_KEY = 'weather-sense:wmoGradient';
 

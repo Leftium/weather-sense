@@ -1,5 +1,5 @@
 <script lang="ts">
-	import type { WeatherDataEvents } from '$lib/weather';
+	import type { WeatherDataEvents } from '#lib/weather/index.js';
 
 	import TimeLine from './TimeLine.svelte';
 	import MinutelyPrecipPlot from './MinutelyPrecipPlot.svelte';
@@ -27,16 +27,16 @@
 		temperatureToColor,
 		DAY_START_HOUR,
 		mixColors,
-	} from '$lib/util.js';
+	} from '#lib/util.js';
 	import {
 		createSkyAnimator,
 		getInitialSkyColors,
 		DAY_COLORS,
 		type DayInfo,
-	} from '$lib/skyAnimation';
+	} from '#lib/skyAnimation.js';
 	import { gg } from '@leftium/gg';
-	import type { WmoCodeInfo } from '$lib/util.js';
-	import { iconSetStore } from '$lib/iconSet.svelte';
+	import type { WmoCodeInfo } from '#lib/util.js';
+	import { iconSetStore } from '#lib/iconSet.svelte.js';
 	import {
 		calmModeStore,
 		describeTemp,
@@ -46,7 +46,7 @@
 		describeAqi,
 		dayOfMonthToOrdinal,
 		calmCompactDate,
-	} from '$lib/calm.svelte';
+	} from '#lib/calm.svelte.js';
 	// RadarMapLibre is lazy-loaded to reduce initial bundle size (~400KB+ savings)
 	// maplibre-gl is the largest dependency
 	const RadarMapLibrePromise = import('./RadarMapLibre.svelte');
@@ -63,13 +63,13 @@
 		weatherData,
 		initWeatherShell,
 		weatherStore,
-	} from '$lib/weather';
+	} from '#lib/weather/index.js';
 	import { goto } from '$app/navigation';
 	import { resolve } from '$app/paths';
 	import { SvelteURLSearchParams } from 'svelte/reactivity';
 
-	import { clearEvents, getEmitter } from '$lib/emitter.js';
-	import { browser, dev } from '$app/environment';
+	import { clearEvents, getEmitter } from '#lib/emitter.js';
+	import { browser, dev } from '$app/env';
 	import { page } from '$app/state';
 	import { onDestroy, onMount, untrack } from 'svelte';
 
@@ -989,8 +989,8 @@
 			<div class="footer-column">
 				<h3>Useful Links</h3>
 				<ul>
-					<li><a href={resolve('/wmo-codes')}>WMO Codes</a></li>
-					<li><a href={resolve('/aqi')}>AQI Levels</a></li>
+					<li><a href={resolve('wmo-codes')}>WMO Codes</a></li>
+					<li><a href={resolve('aqi')}>AQI Levels</a></li>
 					<li>
 						<!-- eslint-disable svelte/no-navigation-without-resolve -- dynamic URL from page state -->
 						<a

@@ -2,7 +2,7 @@ import { get } from 'lodash-es';
 import JSON5 from 'json5';
 import Color from 'colorjs.io';
 
-import picoColors from '$lib/pico-color-palette.json';
+import picoColors from '#lib/pico-color-palette.json';
 export { picoColors };
 import dayjs from 'dayjs';
 

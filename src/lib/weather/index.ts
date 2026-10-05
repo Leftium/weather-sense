@@ -10,12 +10,12 @@
  * Usage:
  * ```typescript
  * // In root component (e.g., +page.svelte)
- * import { weatherData, initWeatherShell } from '$lib/weather';
+ * import { weatherData, initWeatherShell } from '#lib/weather/index.js';
  * const shell = initWeatherShell(weatherData);
  * onDestroy(() => shell.destroy());
  *
  * // In any component
- * import { weatherStore } from '$lib/weather';
+ * import { weatherStore } from '#lib/weather/index.js';
  * const { snapshot } = weatherStore;
  * ```
  */

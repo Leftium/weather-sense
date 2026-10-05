@@ -9,9 +9,9 @@
  * Components never import this directly - they receive snapshots via events.
  */
 
-import { browser } from '$app/environment';
-import { getEmitter } from '$lib/emitter';
-import { MS_IN_SECOND, MS_IN_MINUTE, DAY_START_HOUR } from '$lib/util';
+import { browser } from '$app/env';
+import { getEmitter } from '#lib/emitter.js';
+import { MS_IN_SECOND, MS_IN_MINUTE, DAY_START_HOUR } from '#lib/util.js';
 import { gg } from '@leftium/gg';
 
 import type { WeatherData } from './data.svelte';

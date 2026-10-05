@@ -1,5 +1,5 @@
-import { env } from '$env/dynamic/private';
-import { json, type RequestHandler } from '@sveltejs/kit';
+import { OPEN_WEATHER_APPID } from '$app/env/private';
+import type { RequestHandler } from '@sveltejs/kit';
 
 export const GET: RequestHandler = async ({ url, fetch, cookies }) => {
 	const lat = url.searchParams.get('lat');
@@ -7,24 +7,27 @@ export const GET: RequestHandler = async ({ url, fetch, cookies }) => {
 	const exclude = url.searchParams.get('exclude') || '';
 
 	if (!lat || !lon) {
-		return json({ error: 'Missing lat/lon parameters', available: false }, { status: 400 });
+		return Response.json(
+			{ error: 'Missing lat/lon parameters', available: false },
+			{ status: 400 },
+		);
 	}
 
 	// BYOK: User's cookie key takes priority over ENV key
 	const userKey = cookies.get('openweather_api_key');
-	const apiKey = userKey || env.OPEN_WEATHER_APPID;
+	const apiKey = userKey || OPEN_WEATHER_APPID;
 
 	if (!apiKey) {
-		return json({ error: 'OpenWeather API key not configured', available: false });
+		return Response.json({ error: 'OpenWeather API key not configured', available: false });
 	}
 
 	// TODO: Re-enable after BYOK UX is complete
 	// Track usage for non-BYOK users (nudge system)
-	// if (!userKey && env.OPEN_WEATHER_APPID) {
+	// if (!userKey && OPEN_WEATHER_APPID) {
 	// 	const usesLeft = parseInt(cookies.get('openweather_uses') ?? '10');
 	//
 	// 	if (usesLeft <= 0) {
-	// 		return json(
+	// 		return Response.json(
 	// 			{
 	// 				error: 'quota_exceeded',
 	// 				message: 'Free usage limit reached. Add your own API key for unlimited access.',
@@ -69,7 +72,7 @@ export const GET: RequestHandler = async ({ url, fetch, cookies }) => {
 				error = 'OpenWeather API rate limit exceeded';
 			}
 
-			return json(
+			return Response.json(
 				{
 					error,
 					available: false,
@@ -80,9 +83,12 @@ export const GET: RequestHandler = async ({ url, fetch, cookies }) => {
 
 		const data = await response.json();
 
-		return json({ ...data, available: true });
+		return Response.json({ ...data, available: true });
 	} catch (error) {
 		console.error('OpenWeather fetch error:', error);
-		return json({ error: 'Failed to fetch OpenWeather data', available: false }, { status: 500 });
+		return Response.json(
+			{ error: 'Failed to fetch OpenWeather data', available: false },
+			{ status: 500 },
+		);
 	}
 };

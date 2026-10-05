@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { picoColors } from '$lib/util';
+	import { picoColors } from '#lib/util.js';
 
 	// Current no-precip colors (sky blues) - these are fixed
 	const noPrecipColors = [

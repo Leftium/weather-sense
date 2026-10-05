@@ -1,8 +1,8 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { dev } from '$app/environment';
-	import rainviewerColorsTable from '$lib/rainviewer_api_colors_table.json';
-	import { contrastTextColor, prettyLch } from '$lib/util';
+	import { dev } from '$app/env';
+	import rainviewerColorsTable from '#lib/rainviewer_api_colors_table.json';
+	import { contrastTextColor, prettyLch } from '#lib/util.js';
 	import Color from 'colorjs.io';
 
 	import tippy from 'tippy.js';
@@ -86,7 +86,7 @@
 
 <div class="container-fluid">
 	<center>
-		<a href={resolve('/')}>Back to WeatherSense</a>
+		<a href={resolve('')}>Back to WeatherSense</a>
 	</center>
 
 	<main>

@@ -3,14 +3,14 @@
 	import 'maplibre-gl/dist/maplibre-gl.css';
 	import 'iconify-icon';
 
-	import type { RadarFrame, RadarLayer } from '$lib/types.js';
-	import type { WeatherStore, WeatherDataEvents } from '$lib/weather';
+	import type { RadarFrame, RadarLayer } from '#lib/types.js';
+	import type { WeatherStore, WeatherDataEvents } from '#lib/weather/index.js';
 
 	import { onDestroy, onMount } from 'svelte';
 
-	import { getEmitter } from '$lib/emitter.js';
-	import RadarTimeline from '$lib/RadarTimeline.svelte';
-	import { dev } from '$app/environment';
+	import { getEmitter } from '#lib/emitter.js';
+	import RadarTimeline from '#lib/RadarTimeline.svelte';
+	import { dev } from '$app/env';
 	import { clamp } from 'lodash-es';
 
 	let mainElement: HTMLElement;

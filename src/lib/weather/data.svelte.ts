@@ -7,7 +7,7 @@
  * - Shell reads/writes this, components receive snapshots
  */
 
-import type { Coordinates, Radar } from '$lib/types';
+import type { Coordinates, Radar } from '#lib/types.js';
 import type { OmForecast, OmAirQuality, OwOneCallResponse, Units } from './types';
 
 /**

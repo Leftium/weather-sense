@@ -10,9 +10,9 @@
 		getCloudGradientCSS,
 		getCloudGradient,
 		getContrastColors,
-	} from '$lib/util';
-	import { iconSetStore } from '$lib/iconSet.svelte';
-	import { wmoGradientStore } from '$lib/wmoGradient.svelte';
+	} from '#lib/util.js';
+	import { iconSetStore } from '#lib/iconSet.svelte.js';
+	import { wmoGradientStore } from '#lib/wmoGradient.svelte.js';
 	import { onMount } from 'svelte';
 
 	let offsetWidth = $state(0);
@@ -101,7 +101,7 @@
 
 <div class="container-fluid flex-column {mode}" bind:offsetWidth bind:offsetHeight>
 	<nav>
-		<a href={resolve('/')}>← Back</a>
+		<a href={resolve('')}>← Back</a>
 		<span class="separator">|</span>
 		<a href="https://blog.leftium.com/2024/07/wmo-codes.html">About</a>
 		<span class="separator">|</span>

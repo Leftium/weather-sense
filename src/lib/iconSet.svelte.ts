@@ -1,7 +1,7 @@
 // Shared store for icon set preference (Airy vs Google)
 // Persists to localStorage
 
-import { browser } from '$app/environment';
+import { browser } from '$app/env';
 
 const STORAGE_KEY = 'weather-sense:iconSet';
 

@@ -1,15 +1,15 @@
 <script lang="ts">
-	import type { RadarLayer } from '$lib/types';
+	import type { RadarLayer } from '#lib/types.js';
 
 	import { clamp, find } from 'lodash-es';
 	import { untrack } from 'svelte';
 
-	import { getEmitter } from '$lib/emitter';
+	import { getEmitter } from '#lib/emitter.js';
 
 	import { MS_IN_MINUTE, MS_IN_SECOND } from './util';
 
-	import type { WeatherStore, WeatherDataEvents } from '$lib/weather';
-	import { calmModeStore } from '$lib/calm.svelte';
+	import type { WeatherStore, WeatherDataEvents } from '#lib/weather/index.js';
+	import { calmModeStore } from '#lib/calm.svelte.js';
 	let {
 		radarLayers = $bindable(),
 		nsWeatherData,

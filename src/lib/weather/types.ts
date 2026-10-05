@@ -8,7 +8,7 @@
  */
 
 // Re-export shared types
-export type { Coordinates, Radar, RadarFrame } from '$lib/types';
+export type { Coordinates, Radar, RadarFrame } from '#lib/types.js';
 
 // =============================================================================
 // DATA TYPES - Shape of state in data.svelte.ts
@@ -183,7 +183,7 @@ export type WeatherDataEvents = {
 // SNAPSHOT TYPE - Read-only data that components receive
 // =============================================================================
 
-import type { Coordinates, Radar } from '$lib/types';
+import type { Coordinates, Radar } from '#lib/types.js';
 
 /** Display values (formatted strings) */
 export type DisplayBundle = {

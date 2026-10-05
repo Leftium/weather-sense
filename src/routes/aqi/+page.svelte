@@ -1,12 +1,12 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { dev } from '$app/environment';
-	import { AQI_INDEX_US, AQI_INDEX_EUROPE } from '$lib/util';
+	import { dev } from '$app/env';
+	import { AQI_INDEX_US, AQI_INDEX_EUROPE } from '#lib/util.js';
 </script>
 
 <div class="container">
 	<nav>
-		<a href={resolve('/')}>← Back to WeatherSense</a>
+		<a href={resolve('')}>← Back to WeatherSense</a>
 	</nav>
 
 	<article>

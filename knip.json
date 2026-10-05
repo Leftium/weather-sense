@@ -4,5 +4,5 @@
 	"exclude": ["exports", "types"],
 	"ignoreDependencies": ["sanitize.css"],
 	"ignore": ["scripts/**"],
-	"entry": ["src/routes/RadarMapLibre.svelte"]
+	"entry": ["src/routes/RadarMapLibre.svelte", "src/env.ts"]
 }
